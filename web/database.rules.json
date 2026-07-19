@@ -1,0 +1,64 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null && auth.token.role === 'super_admin'",
+    "principals": {
+      "$username": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "virtual_pets": {
+      ".indexOn": ["schoolId", "studentId"],
+      "$petId": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('ownerUid').isString() && newData.child('ownerUid').val() === auth.uid && newData.child('id').val() === $petId && newData.child('studentId').isString() && newData.child('studentId').val() !== '' && newData.child('schoolId').isString() && newData.child('schoolId').val() !== '') || (data.exists() && newData.exists() && newData.child('ownerUid').val() === data.child('ownerUid').val() && newData.child('id').val() === $petId && newData.child('studentId').val() === data.child('studentId').val() && newData.child('schoolId').val() === data.child('schoolId').val()) || (data.exists() && !newData.exists() && data.child('ownerUid').val() === auth.uid))"
+      }
+    },
+    "pet_quests": {
+      ".indexOn": ["petId"],
+      "$questId": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('petId').isString() && newData.child('petId').val() !== '' && root.child('virtual_pets').child(newData.child('petId').val()).exists()) || (data.exists() && newData.exists() && data.child('petId').val() === newData.child('petId').val() && root.child('virtual_pets').child(data.child('petId').val()).exists()) || (data.exists() && !newData.exists() && root.child('virtual_pets').child(data.child('petId').val()).exists()))"
+      }
+    },
+    "pet_achievements": {
+      ".indexOn": ["petId"],
+      "$achievementId": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('petId').isString() && newData.child('petId').val() !== '' && root.child('virtual_pets').child(newData.child('petId').val()).exists()) || (data.exists() && newData.exists() && data.child('petId').val() === newData.child('petId').val() && root.child('virtual_pets').child(data.child('petId').val()).exists()) || (data.exists() && !newData.exists() && root.child('virtual_pets').child(data.child('petId').val()).exists()))"
+      }
+    },
+    "gas": {
+      "schools": {
+        "$schoolId": {
+          ".read": "auth != null",
+          ".write": "auth != null && (auth.token.role === 'admin' && auth.token.schoolId === $schoolId)",
+          "students": {
+            ".indexOn": ["nisn", "username"],
+            "$studentId": {
+              ".write": "auth != null && (!data.child('device_uuid').exists() || data.child('device_uuid').val() == '' || data.child('device_uuid').val() == newData.child('device_uuid').val() || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val())"
+            }
+          },
+          "teachers": {
+            ".indexOn": ["nuptk", "username"]
+          }
+        }
+      }
+    },
+    "active_devices": {
+      "$schoolId": {
+        "$deviceId": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
+    },
+    "prayer_attendance": {
+      ".indexOn": ["schoolId"]
+    },
+    "schools": {
+      ".indexOn": ["npsn"]
+    }
+  }
+}
