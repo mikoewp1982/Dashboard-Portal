@@ -8,7 +8,7 @@ const serviceAccount = require('./service-account.json');
 
 initializeApp({
   credential: cert(serviceAccount),
-  databaseURL: "https://dashboard-portal-179f7-default-rtdb.asia-southeast1.firebasedatabase.app"
+  databaseURL: "https://kompas-5f0b4-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
 const db = getDatabase();

@@ -4,16 +4,15 @@ import { getFirestore } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
 import { getFunctions } from "firebase/functions";
 
-// Menggunakan kredensial asli dari Firebase Console
+// Menggunakan kredensial dari Firebase Console - Project KOMPAS
 const firebaseConfig = {
-  apiKey: "AIzaSyC0EzPVyqD6Z2NPF29I_bMSh0ejy116y44",
-  authDomain: "dashboard-portal-179f7.firebaseapp.com",
-  projectId: "dashboard-portal-179f7",
-  storageBucket: "dashboard-portal-179f7.firebasestorage.app",
-  messagingSenderId: "840983275298",
-  appId: "1:840983275298:web:1c0470d3ba05a7f863677b",
-  // Format standar URL RTDB (diperlukan jika Anda menggunakan layanan gratis Firebase Realtime Database)
-  databaseURL: "https://dashboard-portal-179f7-default-rtdb.asia-southeast1.firebasedatabase.app"
+  apiKey: "AIzaSyDu0-azn8PV7dNEnXC2MHsf2_gx5d7dzcs",
+  authDomain: "kompas-5f0b4.firebaseapp.com",
+  projectId: "kompas-5f0b4",
+  storageBucket: "kompas-5f0b4.firebasestorage.app",
+  messagingSenderId: "562277218066",
+  appId: "1:562277218066:web:e44ba41f591cbc34cba5cb",
+  databaseURL: "https://kompas-5f0b4-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
 // Initialize Firebase only if it hasn't been initialized

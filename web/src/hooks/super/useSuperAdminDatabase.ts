@@ -421,7 +421,7 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
                updatedAt: now,
          };
          
-         const res = await fetch(`https://dashboard-portal-179f7-default-rtdb.asia-southeast1.firebasedatabase.app/schools/${key}.json?auth=${idToken}`, {
+         const res = await fetch(`https://kompas-5f0b4-default-rtdb.asia-southeast1.firebasedatabase.app/schools/${key}.json?auth=${idToken}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)

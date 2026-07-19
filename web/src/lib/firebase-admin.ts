@@ -6,7 +6,7 @@ import { getDatabase } from 'firebase-admin/database';
 import { getFirestore } from 'firebase-admin/firestore';
 
 const DEFAULT_DATABASE_URL =
-  'https://dashboard-portal-179f7-default-rtdb.asia-southeast1.firebasedatabase.app';
+  'https://kompas-5f0b4-default-rtdb.asia-southeast1.firebasedatabase.app';
 
 let initialized = false;
 
@@ -40,11 +40,18 @@ function ensureFirebaseAdminInitialized() {
   }
 
   const serviceAccount = readServiceAccount();
-  if (serviceAccount && !getApps().length) {
-    initializeApp({
-      credential: cert(serviceAccount),
-      databaseURL: process.env.FIREBASE_DATABASE_URL?.trim() || DEFAULT_DATABASE_URL,
-    });
+  if (!getApps().length) {
+    if (serviceAccount) {
+      initializeApp({
+        credential: cert(serviceAccount),
+        databaseURL: process.env.FIREBASE_DATABASE_URL?.trim() || DEFAULT_DATABASE_URL,
+      });
+    } else {
+      // Jika di-deploy ke Cloud Run / App Hosting, gunakan Application Default Credentials
+      initializeApp({
+        databaseURL: process.env.FIREBASE_DATABASE_URL?.trim() || DEFAULT_DATABASE_URL,
+      });
+    }
   }
   initialized = true;
 }
