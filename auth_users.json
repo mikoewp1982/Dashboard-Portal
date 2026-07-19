@@ -1,0 +1,233 @@
+{"users": [
+{
+  "localId": "0vyZ2P37L7WBhIlKwYtRWyuX5qh1",
+  "lastSignedInAt": "1784179003368",
+  "createdAt": "1784179003368"
+},
+{
+  "localId": "2zmpTPptwkYCjy8jQM4LSOQE1Pd2",
+  "email": "mikoewp1982@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "12M8uwc+O7jfA6KcQuH2V4r4EC7bfxob0engKcDeZ3A4xUV9Bqf9BA4WickqNN0TeiEoODKlgnjiLEkd+Bn6cg==",
+  "salt": "DSOT9I526mxleg==",
+  "lastSignedInAt": "1784448968426",
+  "createdAt": "1783960661565",
+  "disabled": false,
+  "customAttributes": "{\"role\":\"super_admin\"}",
+  "providerUserInfo": []
+},
+{
+  "localId": "85v8t8b0nTNNwaElnXHisEBJfhG2",
+  "lastSignedInAt": "1784215856688",
+  "createdAt": "1784215856688"
+},
+{
+  "localId": "BKH52itkwQM8odSQYggDh76NXYi1",
+  "lastSignedInAt": "1784212065653",
+  "createdAt": "1784212065653"
+},
+{
+  "localId": "BtEUoOulMaNIo52vL9Jwpl3Bgp43",
+  "lastSignedInAt": "1784317807551",
+  "createdAt": "1784317807551"
+},
+{
+  "localId": "C387GbnKZbc4Yh7TgfCDSB2MLtP2",
+  "lastSignedInAt": "1784206217939",
+  "createdAt": "1784206217939"
+},
+{
+  "localId": "DRFYncDMb7M0SDwHQwxCLffpUwr1",
+  "email": "20555784@edulock.local",
+  "emailVerified": true,
+  "passwordHash": "MkfV/SZKfKveLOhGaWTiXLbvIXJtAIEcPlwV7krHo8F0Yao+lrSwaIeiW4rg4U7HYO2JiKO2Q7oh4c/MejWE7g==",
+  "salt": "rQ54w5MwjjvAgg==",
+  "lastSignedInAt": "1784449027348",
+  "createdAt": "1783997676417",
+  "disabled": false,
+  "customAttributes": "{\"role\":\"admin\",\"schoolId\":\"smpn_3_pacet\",\"npsn\":\"20555784\",\"schoolName\":\"SMPN 3 PACET\"}",
+  "providerUserInfo": []
+},
+{
+  "localId": "G27M8l6b5nUxMGacM6vlT9NGftX2",
+  "lastSignedInAt": "1784205501142",
+  "createdAt": "1784205501142"
+},
+{
+  "localId": "GAsgyFXfNJW8qVzXPD9nXG2F2zl1",
+  "lastSignedInAt": "1784179005131",
+  "createdAt": "1784179005131"
+},
+{
+  "localId": "IlLPGaCDLThWQKcKg0rBLIbqS9I2",
+  "lastSignedInAt": "1784210608644",
+  "createdAt": "1784210608644"
+},
+{
+  "localId": "LXhTtZRZRnYv1ZQTJBuUmbFoDWm2",
+  "lastSignedInAt": "1784211976275",
+  "createdAt": "1784211976275"
+},
+{
+  "localId": "Lt3hHlqLVORXcsCqLfZF6m350Y32",
+  "lastSignedInAt": "1784317545171",
+  "createdAt": "1784317545171"
+},
+{
+  "localId": "Maws1UvsdNPBLnA7NENPKTVd21W2",
+  "lastSignedInAt": "1784316927758",
+  "createdAt": "1784316927758"
+},
+{
+  "localId": "Nw1yONa0X9b5GXCxcvkEUTUekaR2",
+  "lastSignedInAt": "1784214026746",
+  "createdAt": "1784214026746"
+},
+{
+  "localId": "PS2LvtNJVMg7TuJKAU5DvOuxdUA3",
+  "lastSignedInAt": "1784179006014",
+  "createdAt": "1784179006014"
+},
+{
+  "localId": "RlGB8fLUsLbsy9vdzw7Sds0rlFg2",
+  "lastSignedInAt": "1784318014950",
+  "createdAt": "1784318014950"
+},
+{
+  "localId": "SL8W2wh94IOBZejET9fnKSP9dHF2",
+  "email": "mikoe_smpn3pacet@kepsek.edulock.local",
+  "emailVerified": true,
+  "passwordHash": "umyKmTk+O1EXE/OuE85621XdEglAX2Mrcg2wP27mDHEQjCX9NYT0TO7+/6h5Yj3K/f3c8i35B/DtN0Ykb+drCQ==",
+  "salt": "auUpRFQfdeHqjQ==",
+  "createdAt": "1784006892538",
+  "disabled": false,
+  "customAttributes": "{\"role\":\"principal\",\"schoolId\":\"smpn_3_pacet\",\"npsn\":\"20555784\"}",
+  "providerUserInfo": []
+},
+{
+  "localId": "UjJvoEPtJ2OP2zpijSmqV5p06l93",
+  "lastSignedInAt": "1784206454668",
+  "createdAt": "1784206454668"
+},
+{
+  "localId": "Ux5UhVRtVRU6zNEPK1b9DQryUHx1",
+  "email": "20502603@edulock.local",
+  "emailVerified": true,
+  "passwordHash": "pQ2nl9MpdcPeWc99UQF4IzHjLwTmrUGsz3i+1d4ya77iXA+bCGmMHzwHraotoqk4OGn3ahUWB0tYkiXUj7KA9w==",
+  "salt": "4kBfq9CqdVe7Ag==",
+  "createdAt": "1784373547697",
+  "disabled": false,
+  "customAttributes": "{\"role\":\"admin\",\"schoolId\":\"smpn_3_gedeg\",\"npsn\":\"20502603\",\"schoolName\":\"SMP GEDEG SWASTA\"}",
+  "providerUserInfo": []
+},
+{
+  "localId": "W8Ahg5l4ThMZABApbdxbSFlvHMy2",
+  "lastSignedInAt": "1784212122282",
+  "createdAt": "1784212122282"
+},
+{
+  "localId": "WG8YlR8iOKNtM9OUcLUyUB0VDj92",
+  "lastSignedInAt": "1784318170514",
+  "createdAt": "1784318170514"
+},
+{
+  "localId": "X9gsJSJQIYhXwUaivXI8RQq32rq1",
+  "lastSignedInAt": "1784317801069",
+  "createdAt": "1784317801069"
+},
+{
+  "localId": "XBOzPGdL96eqsFNOcyYRrj1EMMk2",
+  "lastSignedInAt": "1784281726298",
+  "createdAt": "1784281726298"
+},
+{
+  "localId": "XvbTfNnY0kZSKWZTZDQwXTji3cM2",
+  "lastSignedInAt": "1784242738198",
+  "createdAt": "1784242738198"
+},
+{
+  "localId": "Z11ByK3I8zUHXsu7dbPDO5kdOYs2",
+  "lastSignedInAt": "1784316893731",
+  "createdAt": "1784316893731"
+},
+{
+  "localId": "e9OZ2UlooRYuoKNaE5cSybXICmu2",
+  "lastSignedInAt": "1784211516132",
+  "createdAt": "1784211516132"
+},
+{
+  "localId": "eE0r8jONs7SOtHBuF30SpmZMeWy2",
+  "lastSignedInAt": "1784284877165",
+  "createdAt": "1784284877165"
+},
+{
+  "localId": "erOPWpLjfSRfsiZ2eVtDa9UcF9u2",
+  "lastSignedInAt": "1784212493519",
+  "createdAt": "1784212493519"
+},
+{
+  "localId": "iaDSYkT2jJduVPvV3OsrcqTTKok2",
+  "lastSignedInAt": "1784285522017",
+  "createdAt": "1784285522017"
+},
+{
+  "localId": "jvGlAoBAdQTPPfibV4Z3jaTHHJl1",
+  "lastSignedInAt": "1784282204601",
+  "createdAt": "1784282204601"
+},
+{
+  "localId": "jyqdGdHwX2ZhCmqW0brynRv2JOG3",
+  "lastSignedInAt": "1784180030947",
+  "createdAt": "1784180030947"
+},
+{
+  "localId": "k36py1Fq8UVuSypXfDUJHnftX2X2",
+  "lastSignedInAt": "1784316902564",
+  "createdAt": "1784316902564"
+},
+{
+  "localId": "lRNFeYZv55adcWTc6zOBv7DQYP53",
+  "lastSignedInAt": "1784179122265",
+  "createdAt": "1784179122265"
+},
+{
+  "localId": "m7TutRne3RZhQt2k27nHeiT8hi03",
+  "lastSignedInAt": "1784318176650",
+  "createdAt": "1784318176650"
+},
+{
+  "localId": "nj5ofyUAVANvoSexeK9fhMT0XR33",
+  "lastSignedInAt": "1784178980907",
+  "createdAt": "1784178980907"
+},
+{
+  "localId": "osSx90DXSCNRMuBlBze2PHPCGiB2",
+  "email": "wahyu@kepsek.edulock.local",
+  "emailVerified": false,
+  "passwordHash": "7SImI24sa2+9nz1abTreWU8s/ocXyXQrhdqe2qY6V39pFBKj5IzXcW9N0RL6AEZvTOo2uZQcn7gouPtaG1NzJg==",
+  "salt": "Y48BM2rg6Z6hbw==",
+  "displayName": "wahyu",
+  "createdAt": "1784317967865",
+  "disabled": false,
+  "providerUserInfo": []
+},
+{
+  "localId": "paeWaGl5H4RwZzOVusH7sbDTCdf1",
+  "lastSignedInAt": "1784317559311",
+  "createdAt": "1784317559311"
+},
+{
+  "localId": "qRk4K1nTdfX7lBaXYzSLb4F3SK52",
+  "lastSignedInAt": "1784211381438",
+  "createdAt": "1784211381438"
+},
+{
+  "localId": "uHKYKZaDRHSgvLQIuJodiaDyvgE3",
+  "lastSignedInAt": "1784318277597",
+  "createdAt": "1784318277597"
+},
+{
+  "localId": "ypaoc36dqrWMJTiQDoB022erdRm2",
+  "lastSignedInAt": "1784212090815",
+  "createdAt": "1784212090815"
+}]}
