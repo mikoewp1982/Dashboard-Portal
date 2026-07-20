@@ -97,7 +97,7 @@ export function GasSidebar({ activeTab, onTabChange }: GasSidebarProps) {
             </div>
             <div>
               <div className="text-sm font-bold text-white leading-tight">
-                Gerbang Aplikasi<br />Sekolah
+                Gerbang Aplikasi Sekolah
               </div>
               <div className="mt-1 text-xs text-slate-400">Admin Sekolah</div>
             </div>
@@ -109,18 +109,6 @@ export function GasSidebar({ activeTab, onTabChange }: GasSidebarProps) {
           <div className="mt-2 text-sm font-semibold text-white">{user?.schoolId || user?.name || "-"}</div>
           <div className="text-xs font-semibold uppercase text-blue-300">Admin Sekolah</div>
           {user?.schoolName ? <div className="mt-1 text-xs text-slate-400">{user.schoolName}</div> : null}
-        </div>
-
-        <div className="mt-4">
-          <Link
-            href="/dashboard"
-            className="flex items-center justify-between rounded-xl border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
-          >
-            <span className="flex items-center gap-3">
-              <LayoutDashboard className="h-4 w-4" />
-              Satu Pintu
-            </span>
-          </Link>
         </div>
 
         <div className="mt-4">

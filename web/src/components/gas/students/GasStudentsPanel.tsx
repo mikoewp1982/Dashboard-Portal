@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Loader2, RefreshCw, Search, Smartphone, Users } from "lucide-react";
+import { Loader2, RefreshCw, Search, Smartphone, Users, ArrowLeft } from "lucide-react";
 import { useGasStudents } from "@/hooks/gas/useGasStudents";
 import { useClassesRealtime } from "@/hooks/database/useClassesRealtime";
 import { GasStudentsTable } from "./GasStudentsTable";
@@ -99,9 +99,10 @@ export function GasStudentsPanel({ schoolId }: GasStudentsPanelProps) {
               </button>
               <Link
                 href="/dashboard"
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10"
+                className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-white border border-white/10 hover:bg-white/10 transition-colors"
               >
-                Kembali ke Dashboard Satu Pintu
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Kembali ke Dashboard Satu Pintu</span>
               </Link>
             </div>
           </div>

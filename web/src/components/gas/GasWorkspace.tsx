@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { GasSidebar } from "./shared/GasSidebar";
 import { defaultGasTab, GasTab, isGasImplementedTab } from "./shared/gasConfig";
@@ -68,7 +70,7 @@ export default function GasWorkspace() {
     <div className="flex min-h-screen flex-col bg-[#0b1228] text-slate-200 lg:h-screen lg:overflow-hidden lg:flex-row">
       <GasSidebar activeTab={activeTab} onTabChange={handleTabChange} />
 
-      <div className="flex flex-1 flex-col lg:min-h-0">
+      <div className="flex flex-1 flex-col lg:min-h-0 relative">
         {activeTab === "dashboard" && <GasDashboardPanel schoolId={user.schoolId || ""} />}
         {activeTab === "students" && <GasStudentsPanel schoolId={user.schoolId} />}
         {activeTab === "teachers" && <GasTeachersPanel schoolId={user.schoolId} />}

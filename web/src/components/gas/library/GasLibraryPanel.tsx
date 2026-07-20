@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
-import { BookOpen, FileText, Book, BarChart3, Plus, Pencil, Trash2, RotateCcw, Clock, AlertCircle, Download } from "lucide-react";
+import { BookOpen, FileText, Book, BarChart3, Plus, Pencil, Trash2, RotateCcw, Clock, AlertCircle, Download, ArrowLeft } from "lucide-react";
 import { useGasLibrary } from "@/hooks/gas/library/useGasLibrary";
 import { useGasStudents } from "@/hooks/gas/useGasStudents";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -103,9 +103,10 @@ export function GasLibraryPanel({ schoolId }: { schoolId: string }) {
           </button>
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 self-start"
+            className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-white border border-white/10 hover:bg-white/10 transition-colors self-start"
           >
-            Kembali ke Dashboard Satu Pintu
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Kembali ke Dashboard Satu Pintu</span>
           </Link>
         </div>
       </div>
