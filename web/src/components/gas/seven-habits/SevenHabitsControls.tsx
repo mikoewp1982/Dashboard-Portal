@@ -57,14 +57,23 @@ export function SevenHabitsControls(props: SevenHabitsControlsProps) {
 
   return (
     <>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
+      <div className="flex justify-end print:hidden mb-4">
+        <Link
+          href="/dashboard"
+          className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10"
+        >
+          Kembali ke Dashboard Satu Pintu
+        </Link>
+      </div>
+
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between print:hidden">
         <div>
           <h1 className="text-2xl font-bold text-slate-100">Laporan 7 Kebiasaan (7 KAIH)</h1>
           <p className="mt-1 text-sm text-slate-400">Monitoring pelaksanaan 7 Kebiasaan Anak Indonesia Hebat</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="mr-4 flex items-center rounded-lg bg-slate-800/50 p-1">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center rounded-lg bg-slate-800/50 p-1">
             <button
               onClick={() => onViewModeChange("monitoring")}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all cursor-pointer ${
@@ -92,7 +101,7 @@ export function SevenHabitsControls(props: SevenHabitsControlsProps) {
           <button
             onClick={onRefresh}
             disabled={habitsLoading}
-            className="inline-flex items-center gap-2 rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 shadow-sm transition-all hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {habitsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             Muat Ulang
@@ -100,7 +109,7 @@ export function SevenHabitsControls(props: SevenHabitsControlsProps) {
 
           <button
             onClick={onExport}
-            className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-green-700 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-green-500/30 hover:shadow-green-500/40 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
           >
             <Download className="w-4 h-4" />
             Export Excel
@@ -108,22 +117,15 @@ export function SevenHabitsControls(props: SevenHabitsControlsProps) {
 
           <button
             onClick={onPrint}
-            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-indigo-700 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             Cetak Laporan
           </button>
-
-          <Link
-            href="/dashboard"
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 self-start"
-          >
-            Kembali ke Dashboard Satu Pintu
-          </Link>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 bg-[#111827]/80 p-4 rounded-xl border border-slate-800 print:hidden">
+      <div className="mt-6 flex flex-wrap items-center gap-4 print:hidden">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-400">Tahun:</span>
           <select
@@ -181,7 +183,7 @@ export function SevenHabitsControls(props: SevenHabitsControlsProps) {
         )}
       </div>
 
-      <div className="border-b border-slate-800 print:hidden">
+      <div className="mt-4 border-b border-slate-800 print:hidden">
         <nav className="-mb-px flex space-x-8">
           {(["VII", "VIII", "IX"] as const).map((grade) => (
             <button

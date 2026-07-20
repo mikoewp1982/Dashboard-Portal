@@ -76,13 +76,14 @@ export const GasHaloSpentgapaPanel: React.FC<GasHaloSpentgapaPanelProps> = ({ sc
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-3">
             Layanan Aduan
-            <button
+              <button
               onClick={fetchReports}
               disabled={isLoading}
-              className="p-1.5 rounded-md bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               title="Muat Ulang Data"
             >
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Muat Ulang
             </button>
           </h1>
           <p className="text-sm text-slate-400">

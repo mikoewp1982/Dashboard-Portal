@@ -19,6 +19,7 @@ import { Gas7HabitsPanel } from "./seven-habits/Gas7HabitsPanel";
 import { GasHaloSpentgapaPanel } from "./halo-spentgapa/GasHaloSpentgapaPanel";
 import { GasNotificationsPanel } from "./notifications/GasNotificationsPanel";
 import { GasComingSoonPanel } from "./GasComingSoonPanel";
+import { GasDashboardPanel } from "./dashboard/GasDashboardPanel";
 
 export default function GasWorkspace() {
   const { user } = useAuthStore();
@@ -68,6 +69,7 @@ export default function GasWorkspace() {
       <GasSidebar activeTab={activeTab} onTabChange={handleTabChange} />
 
       <div className="flex flex-1 flex-col lg:min-h-0">
+        {activeTab === "dashboard" && <GasDashboardPanel schoolId={user.schoolId || ""} />}
         {activeTab === "students" && <GasStudentsPanel schoolId={user.schoolId} />}
         {activeTab === "teachers" && <GasTeachersPanel schoolId={user.schoolId} />}
         {activeTab === "attendance" && <GasAttendancePanel schoolId={user.schoolId || ""} />}

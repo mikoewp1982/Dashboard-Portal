@@ -134,7 +134,7 @@ export const GasNotificationsPanel: React.FC<GasNotificationsPanelProps> = ({ sc
           <button
             onClick={() => void handleRefresh()}
             disabled={isLoading || loadingRecipients}
-            className="p-2 rounded-md bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors disabled:opacity-50 flex items-center gap-2 text-sm cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             title="Muat Ulang Data"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading || loadingRecipients ? 'animate-spin' : ''}`} />

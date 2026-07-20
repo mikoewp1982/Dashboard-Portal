@@ -1,7 +1,7 @@
 "use client";
 
 export const gasMenuItems = [
-  { id: "dashboard", label: "Beranda GAS", status: "coming_soon" },
+  { id: "dashboard", label: "Beranda GAS", status: "active" },
   { id: "students", label: "Manajemen Siswa", status: "active" },
   { id: "attendance", label: "Presensi Sekolah", status: "active" },
   { id: "presensi-sholat", label: "Presensi Sholat", status: "active" },
@@ -42,4 +42,4 @@ export const getGasPath = (tab: GasTab, schoolId: string) => {
   return "";
 };
 
-export const isGasImplementedTab = (tab: GasTab) => tab === "students" || tab === "teachers" || tab === "attendance" || tab === "presensi-sholat" || tab === "settings" || tab === "attendance-report" || tab === "prayer-monitoring" || tab === "discipline" || tab === "library" || tab === "virtual-pet" || tab === "seven-habits" || tab === "halo-spentgapa" || tab === "notifications";
+export const isGasImplementedTab = (tab: GasTab) => tab === "dashboard" || tab === "students" || tab === "teachers" || tab === "attendance" || tab === "presensi-sholat" || tab === "settings" || tab === "attendance-report" || tab === "prayer-monitoring" || tab === "discipline" || tab === "library" || tab === "virtual-pet" || tab === "seven-habits" || tab === "halo-spentgapa" || tab === "notifications";

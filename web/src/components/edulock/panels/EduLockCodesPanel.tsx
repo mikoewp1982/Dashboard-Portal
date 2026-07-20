@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldAlert, Trash2, Plus } from "lucide-react";
+import { ShieldAlert, Trash2, Plus, Loader2 } from "lucide-react";
 import QRCode from "react-qr-code";
+import { useEduLockCodes } from "@/hooks/edulock/useEduLockCodes";
 
 const calculateDuration = (start: string, end: string) => {
   if (!start || !end) return 0;
@@ -16,40 +17,19 @@ const calculateDuration = (start: string, end: string) => {
 export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
   const [startTimeInput, setStartTimeInput] = useState("07:00");
   const [endTimeInput, setEndTimeInput] = useState("14:00");
-  const [loading, setLoading] = useState(false);
 
-  const [codes, setCodes] = useState([
-    {
-      code: "EDULOCK-2839",
-      sessionStart: "07:00",
-      sessionEnd: "08:00",
-      duration: 60,
-      expiresAt: Date.now() + 1000 * 60 * 60 * 24, // tomorrow
-    }
-  ]);
+  const { codes, loading, saving, generateCode, deleteCode, deleteExpiredCodes } = useEduLockCodes(schoolId);
 
   const handleCreateCode = () => {
-    setLoading(true);
-    setTimeout(() => {
-      const newCodeStr = "EDULOCK-" + Math.floor(1000 + Math.random() * 9000);
-      const newCode = {
-        code: newCodeStr,
-        sessionStart: startTimeInput,
-        sessionEnd: endTimeInput,
-        duration: calculateDuration(startTimeInput, endTimeInput),
-        expiresAt: Date.now() + 1000 * 60 * 60 * 24, 
-      };
-      setCodes([newCode, ...codes]);
-      setLoading(false);
-    }, 500);
+    void generateCode(startTimeInput, endTimeInput, calculateDuration(startTimeInput, endTimeInput));
   };
 
   const handleDeleteExpiredCodes = () => {
-    setCodes(codes.filter(c => Date.now() <= c.expiresAt));
+    void deleteExpiredCodes();
   };
 
   const handleDeleteCode = (codeToRemove: string) => {
-    setCodes(codes.filter(c => c.code !== codeToRemove));
+    void deleteCode(codeToRemove);
   };
 
   const isExpired = (expiresAt: number) => {
@@ -83,10 +63,10 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
             <button 
               type="button" 
               onClick={handleCreateCode} 
-              disabled={loading} 
+              disabled={saving} 
               className="flex-1 flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50"
             >
-              {loading ? "Memproses..." : (
+              {saving ? "Memproses..." : (
                 <>
                   <Plus className="w-5 h-5 mr-2" /> Generate
                 </>
@@ -95,7 +75,7 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
             <button 
               type="button" 
               onClick={handleDeleteExpiredCodes} 
-              disabled={loading} 
+              disabled={saving} 
               className="flex-shrink-0 flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 font-semibold text-white transition hover:bg-white/10 disabled:opacity-50"
               title="Hapus semua kode expired"
             >
@@ -113,7 +93,12 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
           </span>
         </div>
         <div className="divide-y divide-white/10">
-          {codes.length === 0 ? (
+          {loading ? (
+            <div className="p-6 text-center text-slate-400">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-400" />
+              Memuat data kode akses...
+            </div>
+          ) : codes.length === 0 ? (
             <div className="p-6 text-center text-slate-400">Tidak ada kode aktif saat ini.</div>
           ) : (
             codes.map((item: any) => (

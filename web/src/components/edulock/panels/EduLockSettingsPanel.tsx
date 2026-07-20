@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, ShieldAlert, Clock, Activity, Save } from "lucide-react";
 import { useGasSettings } from "@/hooks/gas/attendance/useGasSettings";
 import { useEduLockUninstallAccess } from "@/hooks/edulock/useEduLockUninstallAccess";
+import { useEduLockSettings } from "@/hooks/edulock/useEduLockSettings";
 
 function hasActiveUninstallCode(access: { code: string; expiresAt: number | null } | null) {
   return Boolean(access?.code && access.expiresAt);
@@ -19,23 +20,21 @@ function getHolidayNote(holiday: unknown) {
 }
 
 export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
-  const [loading] = useState(false);
-
   const { schedules, holidays, location } = useGasSettings(schoolId);
   const { access: uninstallAccess, loading: uninstallLoading } = useEduLockUninstallAccess(schoolId);
   const hasUninstallCode = hasActiveUninstallCode(uninstallAccess);
 
-  // MOCK STATE FOR EDULOCK SPECIFIC
-  const [schoolConfig, setSchoolConfig] = useState({
-    is_active_protection: true,
-    is_holiday_mode: false,
-  });
+  const { settings, loading: settingsLoading, saving, saveSettings } = useEduLockSettings(schoolId);
+  const [gpsWarnMinutes, setGpsWarnMinutes] = useState(2);
+  const [gpsLockMinutes, setGpsLockMinutes] = useState(5);
+
+  useEffect(() => {
+    setGpsWarnMinutes(settings.gpsWarnMinutes);
+    setGpsLockMinutes(settings.gpsLockMinutes);
+  }, [settings.gpsWarnMinutes, settings.gpsLockMinutes]);
 
   const [holidayDateInput, setHolidayDateInput] = useState("");
   const [holidayNoteInput, setHolidayNoteInput] = useState("");
-  
-  const [gpsWarnMinutes, setGpsWarnMinutes] = useState(2);
-  const [gpsLockMinutes, setGpsLockMinutes] = useState(5);
   
   const handleSaveWeekdaySchedule = () => {
     window.alert("Jadwal EduLock mengikuti Pengaturan Sistem GAS Presensi. Ubah jam efektif dari halaman GAS.");
@@ -87,10 +86,11 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
                   <input
                     type="checkbox"
                     className="sr-only peer"
-                    checked={schoolConfig.is_active_protection}
+                    checked={settings.is_active_protection}
                     onChange={(e) => {
-                      setSchoolConfig({ ...schoolConfig, is_active_protection: e.target.checked });
+                      void saveSettings({ is_active_protection: e.target.checked });
                     }}
+                    disabled={settingsLoading || saving}
                   />
                   <div className="w-14 h-7 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600 border border-white/10"></div>
                 </label>
@@ -110,10 +110,11 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
                   <input
                     type="checkbox"
                     className="sr-only peer"
-                    checked={schoolConfig.is_holiday_mode}
+                    checked={settings.is_holiday_mode}
                     onChange={(e) => {
-                      setSchoolConfig({ ...schoolConfig, is_holiday_mode: e.target.checked });
+                      void saveSettings({ is_holiday_mode: e.target.checked });
                     }}
+                    disabled={settingsLoading || saving}
                   />
                   <div className="w-14 h-7 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-fuchsia-600 border border-white/10"></div>
                 </label>
@@ -126,7 +127,7 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
                       <div className="text-sm font-semibold text-white">Jadwal & Hari Efektif</div>
                       <div className="text-xs text-slate-400 mt-1">Jadwal ini mengikuti Pengaturan Sistem GAS Presensi agar jam masuk/pulang siswa selalu sinkron.</div>
                     </div>
-                    <button type="button" onClick={handleSaveWeekdaySchedule} disabled={loading} className="btn-primary px-4 py-2 text-sm bg-indigo-600 rounded-xl font-semibold hover:bg-indigo-500 transition-colors flex items-center">
+                    <button type="button" onClick={handleSaveWeekdaySchedule} disabled={settingsLoading} className="btn-primary px-4 py-2 text-sm bg-indigo-600 rounded-xl font-semibold hover:bg-indigo-500 transition-colors flex items-center">
                       <Save className="w-4 h-4 mr-2" />
                       Info
                     </button>
@@ -195,7 +196,7 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
                   </div>
 
                   <div className="mt-4 flex justify-end">
-                    <button type="button" onClick={handleAddHoliday} disabled={loading} className="bg-indigo-600/50 text-white px-5 py-2 text-sm rounded-lg font-semibold cursor-not-allowed opacity-80 transition-colors flex items-center">
+                    <button type="button" onClick={handleAddHoliday} disabled={true} className="bg-indigo-600/50 text-white px-5 py-2 text-sm rounded-lg font-semibold cursor-not-allowed opacity-80 transition-colors flex items-center">
                       <span className="text-lg mr-1">+</span> Info
                     </button>
                   </div>
@@ -237,9 +238,9 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
                         Berlaku saat jam sekolah dan siswa terdeteksi di zona sekolah. Set 0 menit untuk lockdown langsung.
                       </div>
                     </div>
-                    <button type="button" disabled={loading} onClick={handleSaveGpsPolicy} className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 text-sm rounded-xl font-semibold whitespace-nowrap transition flex items-center">
+                    <button type="button" disabled={saving || settingsLoading} onClick={() => void saveSettings({ gpsWarnMinutes, gpsLockMinutes })} className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 text-sm rounded-xl font-semibold whitespace-nowrap transition flex items-center">
                       <Save className="w-4 h-4 mr-2" />
-                      Simpan
+                      {saving ? "Menyimpan..." : "Simpan"}
                     </button>
                   </div>
 

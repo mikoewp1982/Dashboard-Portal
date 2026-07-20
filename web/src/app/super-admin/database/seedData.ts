@@ -8,7 +8,7 @@ export const SEED_RAW = `{
     "smpn_3_gondang": { "id": "smpn_3_gondang", "schoolId": "smpn_3_gondang", "name": "SMPN 3 GONDANG", "district": "Gondang", "npsn": "20551769", "authEmail": "20551769@edulock.local" },
     "smpn_1_pacet": { "id": "smpn_1_pacet", "schoolId": "smpn_1_pacet", "name": "SMPN 1 PACET", "district": "Pacet", "npsn": "20502654", "authEmail": "20502654@edulock.local" },
     "smpn_2_pacet": { "id": "smpn_2_pacet", "schoolId": "smpn_2_pacet", "name": "SMPN 2 PACET", "district": "Pacet", "npsn": "20502631", "authEmail": "20502631@edulock.local" },
-    "smpn_3_pacet": { "id": "smpn_3_pacet", "schoolId": "smpn_3_pacet", "name": "SMPN 3 PACET", "district": "Pacet", "npsn": "20555784", "authEmail": "20555784@edulock.local" },
+    "smpn3_pacet": { "id": "smpn3_pacet", "schoolId": "smpn3_pacet", "name": "SMPN 3 PACET", "district": "Pacet", "npsn": "20555784", "authEmail": "20555784@edulock.local" },
     "smpn_1_trawas": { "id": "smpn_1_trawas", "schoolId": "smpn_1_trawas", "name": "SMPN 1 TRAWAS", "district": "Trawas", "npsn": "20502636", "authEmail": "20502636@edulock.local" },
     "smpn_2_trawas": { "id": "smpn_2_trawas", "schoolId": "smpn_2_trawas", "name": "SMPN 2 TRAWAS", "district": "Trawas", "npsn": "20502634", "authEmail": "20502634@edulock.local" },
     "smpn_1_ngoro": { "id": "smpn_1_ngoro", "schoolId": "smpn_1_ngoro", "name": "SMPN 1 NGORO", "district": "Ngoro", "npsn": "20502653", "authEmail": "20502653@edulock.local" },

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { db, rtdb } from "@/lib/firebase/client";
 import { collection, query, getDocs, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
-import { ref as rtdbRef, get } from "firebase/database";
+import { ref as rtdbRef, get, update } from "firebase/database";
 import { LibraryTask } from "@/types/library";
 import { callAdminApi } from "@/lib/callAdminApi";
 import { isSessionInactiveError } from "@/lib/firebase/waitForClientUser";
@@ -164,6 +164,18 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     setTasks(prev => prev.filter(t => t.id !== taskId));
   };
 
+  const updateLiteracyLogStatus = async (logId: string, status: "GRADED" | "REJECTED", grade: string, feedback: string) => {
+    if (!schoolId) return;
+    try {
+      const logRef = rtdbRef(rtdb, `literacy_logs/${logId}`);
+      await update(logRef, { status, grade, feedback, gradedAt: Date.now() });
+      setLiteracyLogs(prev => prev.map(l => l.id === logId ? { ...l, status, grade, feedback } : l));
+    } catch(e) {
+      console.error("Gagal menilai laporan literasi:", e);
+      throw e;
+    }
+  };
+
   return {
     tasks,
     classes,
@@ -174,6 +186,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     refresh,
     addTask,
     updateTaskStatus,
-    deleteTask
+    deleteTask,
+    updateLiteracyLogStatus
   };
 }
