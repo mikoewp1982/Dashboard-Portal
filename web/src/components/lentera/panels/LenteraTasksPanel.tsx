@@ -49,6 +49,8 @@ export function LenteraTasksPanel() {
     try {
       await addTask({
         ...newTask,
+        assignedBy: user?.uid || user?.id || "unknown",
+        assignedByName: user?.name || "Guru",
         status: "CLOSED", // default to draft
         createdAt: Date.now(),
         updatedAt: Date.now(),
