@@ -1,38 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import { useAuthStore } from "@/store/useAuthStore";
-import { ArrowRight, Database, Lock, Rocket, BookOpen } from "lucide-react";
-
-const moduleCards = [
-  {
-    getHref: (role: string) => (role === "super_admin" ? "/super-admin/database" : "/dashboard/database"),
-    title: "DATABASE",
-    description: "Rumah data induk akun sekolah untuk siswa, guru, OSIS, dan kelas paralel.",
-    icon: Database,
-  },
-  {
-    getHref: () => "/dashboard/gas",
-    title: "GAS",
-    description: "Operasional harian aplikasi sekolah berbasis data induk yang sudah dikunci di DATABASE.",
-    icon: Rocket,
-  },
-  {
-    getHref: () => "/dashboard/edulock",
-    title: "EduLock",
-    description: "Monitoring dan kontrol area EduLock untuk tenant sekolah.",
-    icon: Lock,
-  },
-  {
-    getHref: () => "/dashboard/lentera",
-    title: "Lentera Digital",
-    description: "Ruang kerja literasi dan aktivitas konten sekolah.",
-    icon: BookOpen,
-  },
-];
 
 export default function DashboardHomePage() {
   const { user } = useAuthStore();
@@ -67,41 +38,41 @@ export default function DashboardHomePage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="text-xs font-semibold tracking-[0.24em] text-slate-400">DASHBOARD UTAMA</div>
-                <h1 className="mt-2 text-2xl font-bold text-white">Dashboard Satu Pintu</h1>
+                <h1 className="mt-2 text-2xl font-bold text-white">Selamat Datang, {user.name}</h1>
                 <p className="mt-2 max-w-2xl text-sm text-slate-300">
-                  Pusat masuk ke seluruh modul tenant sekolah. DATABASE tetap menjadi sumber identitas akun, lalu
-                  modul lain membaca data sesuai kontrak sistem yang sudah kita kunci.
+                  Ini adalah pusat kendali operasional sekolah Anda. Silakan gunakan menu di sidebar sebelah kiri untuk mengelola Database, GAS, EduLock, maupun Lentera Digital.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-100">
-                ADMIN SEKOLAH
+              <div className="flex flex-col items-end gap-2">
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-100 uppercase">
+                  {user.role.replace("_", " ")}
+                </div>
+                {user.npsn && (
+                  <div className="text-xs font-medium text-slate-400">
+                    NPSN: {user.npsn}
+                  </div>
+                )}
               </div>
             </div>
           </header>
 
-          <section className="grid gap-4 md:grid-cols-2">
-            {moduleCards.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.title}
-                  href={item.getHref(user.role)}
-                  className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 shadow-xl backdrop-blur transition hover:bg-slate-900/75"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-                        <Icon className="h-6 w-6 text-blue-300" />
-                      </div>
-                      <h2 className="mt-4 text-lg font-semibold text-white">{item.title}</h2>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">{item.description}</p>
-                    </div>
-                    <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-slate-400" />
-                  </div>
-                </Link>
-              );
-            })}
+          <section className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 shadow-xl backdrop-blur transition hover:bg-slate-900/75">
+               <div className="text-xs font-semibold tracking-widest text-slate-400">STATUS SISTEM</div>
+               <div className="mt-2 text-2xl font-bold text-emerald-400">Online</div>
+               <div className="mt-1 text-sm text-slate-300">Semua layanan berjalan normal</div>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 shadow-xl backdrop-blur transition hover:bg-slate-900/75">
+               <div className="text-xs font-semibold tracking-widest text-slate-400">SEKOLAH</div>
+               <div className="mt-2 text-xl font-bold text-white line-clamp-1">{user.schoolName || "-"}</div>
+               <div className="mt-1 text-sm text-slate-300">Tenant aktif</div>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 shadow-xl backdrop-blur transition hover:bg-slate-900/75">
+               <div className="text-xs font-semibold tracking-widest text-slate-400">AKSES</div>
+               <div className="mt-2 text-xl font-bold text-blue-300">Otorisasi Penuh</div>
+               <div className="mt-1 text-sm text-slate-300">Hak akses administrator</div>
+            </div>
           </section>
         </main>
       </div>
