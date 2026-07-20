@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Edit, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Trash2, CheckCircle, XCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useGasLibrary } from "@/hooks/gas/library/useGasLibrary";
 
