@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { ShieldAlert, MapPin, AlertTriangle, Loader2 } from "lucide-react";
 import { useStudentsRealtime } from "@/hooks/database/useStudentsRealtime";
 import { useEduLockOverview } from "@/hooks/edulock/useEduLockOverview";
+import { useEduLockViolations } from "@/hooks/edulock/useEduLockViolations";
 
 type EduLockStudentRecord = {
   id?: string;
@@ -19,10 +20,11 @@ type EduLockStudentRecord = {
 export function EduLockViolationsPanel({ schoolId }: { schoolId: string }) {
   const { data: studentsData, loading: studentsLoading } = useStudentsRealtime(schoolId);
   const { overview, loading: overviewLoading, refresh } = useEduLockOverview(schoolId);
+  const { logs: persistentLogs, loading: logsLoading } = useEduLockViolations(schoolId);
 
-  const loading = studentsLoading || overviewLoading;
+  const loading = studentsLoading || overviewLoading || logsLoading;
 
-  const alerts = useMemo(
+  const runtimeAlerts = useMemo(
     () =>
       overview.activeDevices.flatMap((device) => {
         const student = (studentsData as EduLockStudentRecord[]).find((item) => {
@@ -74,11 +76,25 @@ export function EduLockViolationsPanel({ schoolId }: { schoolId: string }) {
     [overview.activeDevices, studentsData]
   );
 
+  const combinedAlerts = useMemo(() => {
+    // Gabungkan persistent logs dari database dengan runtime alerts
+    // Filter duplikat berdasarkan ID
+    const all = [...runtimeAlerts, ...persistentLogs];
+    const uniqueIds = new Set();
+    const result = [];
+    for (const item of all) {
+      if (!uniqueIds.has(item.id)) {
+        uniqueIds.add(item.id);
+        result.push(item);
+      }
+    }
+    return result.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  }, [runtimeAlerts, persistentLogs]);
+
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-100 shadow-inner">
-        Panel ini sekarang membaca <strong>alert runtime</strong> dari telemetry EduLock yang benar-benar aktif. Riwayat audit
-        persisten jangka panjang belum tersedia karena backend log pelanggaran tenant belum dibuat.
+      <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-100 shadow-inner">
+        Panel ini sekarang siap membaca <strong>Log Audit Persisten</strong> dari database secara *real-time*, sekaligus mendeteksi <strong>Alert Runtime</strong> dari telemetry perangkat yang sedang aktif.
       </div>
       <div className="rounded-2xl border border-white/10 bg-[#1e293b]/50 overflow-hidden backdrop-blur-xl shadow-xl">
         <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -112,14 +128,14 @@ export function EduLockViolationsPanel({ schoolId }: { schoolId: string }) {
                     Memuat alert runtime EduLock...
                   </td>
                 </tr>
-              ) : alerts.length === 0 ? (
+              ) : combinedAlerts.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
-                    Belum ada alert runtime aktif. Jika telemetry perangkat belum hidup, tabel ini memang masih kosong.
+                    Belum ada log pelanggaran maupun alert runtime aktif saat ini.
                   </td>
                 </tr>
               ) : (
-                alerts.map((log) => {
+                combinedAlerts.map((log) => {
                   return (
                     <tr key={log.id} className="hover:bg-white/5 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">

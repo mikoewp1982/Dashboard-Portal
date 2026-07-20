@@ -25,7 +25,7 @@ export function GasPetHeader({ loading, onRefresh }: GasPetHeaderProps) {
           <button
             onClick={onRefresh}
             disabled={loading}
-            className="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl bg-slate-800 px-4 py-2 text-sm font-bold text-slate-100 transition hover:bg-slate-700 disabled:opacity-50"
+            className="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
             Muat Ulang

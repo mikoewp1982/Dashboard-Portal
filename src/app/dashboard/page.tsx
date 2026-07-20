@@ -38,7 +38,9 @@ export default function DashboardHomePage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="text-xs font-semibold tracking-[0.24em] text-slate-400">DASHBOARD UTAMA</div>
-                <h1 className="mt-2 text-2xl font-bold text-white">Selamat Datang, {user.name}</h1>
+                <h1 className="mt-2 text-2xl font-bold text-white uppercase">
+                  Selamat Datang, Admin {user.schoolName || "Sekolah"}
+                </h1>
                 <p className="mt-2 max-w-2xl text-sm text-slate-300">
                   Ini adalah pusat kendali operasional sekolah Anda. Silakan gunakan menu di sidebar sebelah kiri untuk mengelola Database, GAS, EduLock, maupun Lentera Digital.
                 </p>

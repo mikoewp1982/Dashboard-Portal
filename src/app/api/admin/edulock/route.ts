@@ -229,43 +229,105 @@ export async function POST(request: Request) {
     const schoolContext = await resolveAuthorizedSchoolId(request, body.schoolId);
     const schoolId = schoolContext.schoolId;
 
-    if (body.action !== "reset-student-device") {
-      return NextResponse.json({ success: false, error: "Aksi tidak dikenali" }, { status: 400 });
+    if (body.action === "save-settings") {
+      const settings = (body as any).settings;
+      if (!settings || typeof settings !== "object") {
+        return NextResponse.json({ success: false, error: "Settings tidak valid" }, { status: 400 });
+      }
+      
+      const settingsRef = adminDb.ref(`edulock_settings/${schoolId}`);
+      await settingsRef.update(settings);
+      
+      return NextResponse.json({
+        success: true,
+        message: "Pengaturan EduLock berhasil disimpan.",
+      });
     }
 
-    const studentId = String(body.studentId || "").trim();
-    if (!studentId) {
-      return NextResponse.json({ success: false, error: "studentId wajib diisi" }, { status: 400 });
+    if (body.action === "generate-access-code") {
+      const { sessionStart, sessionEnd, duration } = body as any;
+      const code = "EDULOCK-" + Math.floor(1000 + Math.random() * 9000);
+      const expiresAt = Date.now() + 1000 * 60 * 60 * 24; // tomorrow
+      
+      const newCode = {
+        sessionStart: sessionStart || "07:00",
+        sessionEnd: sessionEnd || "14:00",
+        duration: duration || 0,
+        expiresAt,
+      };
+      
+      await adminDb.ref(`edulock_access_codes/${schoolId}/${code}`).set(newCode);
+      
+      return NextResponse.json({
+        success: true,
+        message: "Kode berhasil dibuat.",
+        code,
+      });
     }
 
-    const studentRef = adminDb.ref(`gas/schools/${schoolId}/students/${studentId}`);
-    const studentSnap = await studentRef.get();
-    if (!studentSnap.exists()) {
-      return NextResponse.json({ success: false, error: "Data siswa tidak ditemukan" }, { status: 404 });
+    if (body.action === "delete-access-code") {
+      const code = (body as any).code;
+      if (code) {
+        await adminDb.ref(`edulock_access_codes/${schoolId}/${code}`).remove();
+      }
+      return NextResponse.json({ success: true, message: "Kode berhasil dihapus." });
     }
 
-    const studentValue =
-      studentSnap.val() && typeof studentSnap.val() === "object"
-        ? (studentSnap.val() as Record<string, unknown>)
-        : {};
-    const nisn = readString(studentValue, "nisn");
-
-    const updates: Record<string, null> = {
-      [`gas/schools/${schoolId}/students/${studentId}/deviceId`]: null,
-      [`gas/schools/${schoolId}/students/${studentId}/device`]: null,
-    };
-
-    if (nisn) {
-      updates[`master_students/${nisn}/deviceId`] = null;
-      updates[`master_students/${nisn}/device`] = null;
+    if (body.action === "delete-expired-codes") {
+      const codesSnap = await adminDb.ref(`edulock_access_codes/${schoolId}`).get();
+      if (codesSnap.exists()) {
+        const now = Date.now();
+        const updates: Record<string, null> = {};
+        codesSnap.forEach((child) => {
+          const val = child.val();
+          if (val && val.expiresAt && val.expiresAt < now) {
+            updates[child.key!] = null;
+          }
+        });
+        if (Object.keys(updates).length > 0) {
+          await adminDb.ref(`edulock_access_codes/${schoolId}`).update(updates);
+        }
+      }
+      return NextResponse.json({ success: true, message: "Kode expired berhasil dibersihkan." });
     }
 
-    await adminDb.ref().update(updates);
+    if (body.action === "reset-student-device") {
+      const studentId = String(body.studentId || "").trim();
+      if (!studentId) {
+        return NextResponse.json({ success: false, error: "studentId wajib diisi" }, { status: 400 });
+      }
 
-    return NextResponse.json({
-      success: true,
-      message: "Binding device siswa berhasil direset.",
-    });
+      const studentRef = adminDb.ref(`gas/schools/${schoolId}/students/${studentId}`);
+      const studentSnap = await studentRef.get();
+      if (!studentSnap.exists()) {
+        return NextResponse.json({ success: false, error: "Data siswa tidak ditemukan" }, { status: 404 });
+      }
+
+      const studentValue =
+        studentSnap.val() && typeof studentSnap.val() === "object"
+          ? (studentSnap.val() as Record<string, unknown>)
+          : {};
+      const nisn = readString(studentValue, "nisn");
+
+      const updates: Record<string, null> = {
+        [`gas/schools/${schoolId}/students/${studentId}/deviceId`]: null,
+        [`gas/schools/${schoolId}/students/${studentId}/device`]: null,
+      };
+
+      if (nisn) {
+        updates[`master_students/${nisn}/deviceId`] = null;
+        updates[`master_students/${nisn}/device`] = null;
+      }
+
+      await adminDb.ref().update(updates);
+
+      return NextResponse.json({
+        success: true,
+        message: "Binding device siswa berhasil direset.",
+      });
+    }
+
+    return NextResponse.json({ success: false, error: "Aksi tidak dikenali" }, { status: 400 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Terjadi kesalahan server";
     const status =
