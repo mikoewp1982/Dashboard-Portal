@@ -112,6 +112,18 @@ export function GasSidebar({ activeTab, onTabChange }: GasSidebarProps) {
         </div>
 
         <div className="mt-4">
+          <Link
+            href="/dashboard"
+            className="flex items-center justify-between rounded-xl border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+          >
+            <span className="flex items-center gap-3">
+              <LayoutDashboard className="h-4 w-4" />
+              Satu Pintu
+            </span>
+          </Link>
+        </div>
+
+        <div className="mt-4">
           <div className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">GAS</div>
           <div className="mt-2 space-y-1">
             {renderMenuButton("dashboard", "Beranda GAS", { level: "section" })}

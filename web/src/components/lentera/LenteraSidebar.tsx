@@ -65,6 +65,18 @@ export function LenteraSidebar() {
           <p className="text-xs text-blue-300 uppercase font-semibold mt-1">{_hasHydrated ? user?.role : ""}</p>
         </div>
 
+        <div className="px-4 mt-4">
+          <Link
+            href="/dashboard"
+            className="flex items-center justify-between rounded-xl border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+          >
+            <span className="flex items-center gap-3">
+              <LayoutDashboard className="h-4 w-4" />
+              Satu Pintu
+            </span>
+          </Link>
+        </div>
+
         <nav className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar">
           <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Menu Utama</div>
 
