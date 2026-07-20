@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { ShieldAlert, MapPin, AlertTriangle, Loader2 } from "lucide-react";
+import { useStudentsRealtime } from "@/hooks/database/useStudentsRealtime";
 import { useEduLockOverview } from "@/hooks/edulock/useEduLockOverview";
 import { useEduLockViolations } from "@/hooks/edulock/useEduLockViolations";
 
