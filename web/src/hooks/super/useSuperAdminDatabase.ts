@@ -335,7 +335,7 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
   };
 
   const schoolsWithoutAdmin = useMemo(() => {
-    return superSchools.filter(s => s.isActive && !s.authEmail && !s.adminEmail);
+    return superSchools.filter(s => s.isActive && !s.authEmail && !s.adminEmail && !s.npsn);
   }, [superSchools]);
 
   const schoolsWithoutPrincipal = useMemo(() => {
@@ -345,7 +345,7 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
   const superStats = useMemo(() => {
     const tenantsTotal = superSchools.length;
     const tenantsActive = superSchools.filter((s) => s.isActive).length;
-    const adminsActive = superSchools.filter((s) => s.adminAccessActive && (s.authEmail || s.adminEmail)).length;
+    const adminsActive = superSchools.filter((s) => s.adminAccessActive && (s.authEmail || s.adminEmail || s.npsn)).length;
     const tenantsMissingAdmin = Math.max(0, tenantsTotal - adminsActive);
     const principalsActive = superPrincipals.filter(p => p.isActive).length; 
     const schoolsMissingPrincipalCount = tenantsActive - principalsActive;

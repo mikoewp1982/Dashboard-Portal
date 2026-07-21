@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.satupintu.mobile.data.service.PresenceService
 import com.satupintu.mobile.data.service.TeacherNotificationListener
 import com.satupintu.mobile.ui.AppNavigation
 import com.satupintu.mobile.ui.theme.GaspaTheme
@@ -20,6 +21,7 @@ import android.widget.Toast
 class MainActivity : ComponentActivity() {
     
     private var notificationListener: TeacherNotificationListener? = null
+    private var presenceService: PresenceService? = null
     private var pendingNavigationRoute by mutableStateOf<String?>(null)
     
     // Listen for login/logout changes to start/stop notifications immediately
@@ -30,6 +32,7 @@ class MainActivity : ComponentActivity() {
                 checkUserRoleAndStartListening()
             } else {
                 notificationListener?.stopListening()
+                presenceService?.stopListening()
             }
         }
     }
@@ -73,6 +76,7 @@ class MainActivity : ComponentActivity() {
         val prefs = SecurePreferences.getSessionPrefs(this)
         prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
         notificationListener?.stopListening()
+        presenceService?.stopListening()
     }
 
     private fun checkUserRoleAndStartListening() {
@@ -83,15 +87,26 @@ class MainActivity : ComponentActivity() {
         
         if (loginKey.isEmpty() || !SecurityUtils.isSessionConsistent(prefs, SecurityUtils.normalizeAudienceFlavor(BuildConfig.FLAVOR))) {
             notificationListener?.stopListening()
+            presenceService?.stopListening()
             return
         }
 
         val listener = notificationListener ?: TeacherNotificationListener(applicationContext).also {
             notificationListener = it
         }
+        val presence = presenceService ?: PresenceService().also {
+            presenceService = it
+        }
+
         when (role) {
-            "teacher", "staff" -> listener.startListening("Guru", loginKey, schoolId)
-            "student" -> listener.startListening("Siswa", loginKey, schoolId)
+            "teacher", "staff" -> {
+                listener.startListening("Guru", loginKey, schoolId)
+                presence.startListening(loginKey, schoolId, role)
+            }
+            "student" -> {
+                listener.startListening("Siswa", loginKey, schoolId)
+                presence.startListening(loginKey, schoolId, role)
+            }
         }
     }
 

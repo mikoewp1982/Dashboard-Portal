@@ -8,11 +8,11 @@ export default function SuperAdminDashboardPage() {
   const { user } = useAuthStore();
   const { metrics, schools, principals, securityLogs, supportRequests, syncJobs } = useSuperAdminLiveData();
 
-  const totalAdminLogins = schools.filter((s) => s.adminEmail || s.authEmail).length;
+  const totalAdminLogins = schools.filter((s) => s.adminEmail || s.authEmail || s.npsn).length;
   const latestLogs = securityLogs.slice(0, 5);
   const latestSupport = supportRequests.slice(0, 5);
   const latestJobs = syncJobs.slice(0, 5);
-  const schoolsWithoutAdmin = schools.filter((row) => !row.authEmail && !row.adminEmail);
+  const schoolsWithoutAdmin = schools.filter((row) => !row.authEmail && !row.adminEmail && !row.npsn);
   const schoolsWithoutPrincipal = schools.filter((row) => !principals.some((principal) => principal.schoolId === row.schoolId));
 
   if (!user || user.role !== "super_admin") {
