@@ -82,17 +82,16 @@ function parseActiveDevices(rawValue: unknown) {
         ? (rawRecord as Record<string, unknown>)
         : {};
 
-    const lastSeenAt = readNumber(record, "lastSeenAt", "lastSeen", "updatedAt", "timestamp");
-    const rawStatus = readString(record, "status", "state", "connectionStatus");
-    const insideSchool = readBoolean(record, "insideSchool", "isInsideSchool");
+    const lastSeenAt = readNumber(record, "lastSeenAt", "lastSeen", "lastUpdated", "updatedAt", "timestamp");
+    const rawStatus = readString(record, "status", "state", "connectionStatus", "deviceStatus");
+    const insideSchool = readBoolean(record, "insideSchool", "isInsideSchool", "isInsideZone");
     const isOutOfZoneExplicit = readBoolean(record, "isOutOfZone", "outOfZone");
     const isEmergencyUnlock = readBoolean(record, "isEmergencyUnlock", "emergencyUnlock", "emergencyUnlocked") === true;
     const isUninstallBypass = readBoolean(record, "isUninstallBypass", "uninstallBypass", "uninstallAuthorized") === true;
     const isPermissionActive = readBoolean(record, "isPermissionActive", "permissionActive", "tempPermissionActive") === true;
     const computedOnline =
       rawStatus.toUpperCase() === "ONLINE" ||
-      lastSeenAt === null ||
-      now - lastSeenAt <= ONLINE_WINDOW_MS;
+      (lastSeenAt !== null && now - lastSeenAt <= ONLINE_WINDOW_MS);
 
     return {
       deviceId,
