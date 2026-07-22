@@ -268,9 +268,10 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "generate-access-code") {
-      const { sessionStart, sessionEnd, duration } = body as any;
+      const { sessionStart, sessionEnd, duration, codeValidityMinutes } = body as any;
       const code = "EDULOCK-" + Math.floor(1000 + Math.random() * 9000);
-      const expiresAt = Date.now() + 1000 * 60 * 60 * 24; // tomorrow
+      const validityMs = (typeof codeValidityMinutes === "number" && codeValidityMinutes > 0 ? codeValidityMinutes : 30) * 60 * 1000;
+      const expiresAt = Date.now() + validityMs;
       
       const newCode = {
         sessionStart: sessionStart || "07:00",

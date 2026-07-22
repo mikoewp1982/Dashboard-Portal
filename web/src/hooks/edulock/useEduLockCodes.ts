@@ -39,7 +39,7 @@ export function useEduLockCodes(schoolId: string) {
     return () => unsub();
   }, [schoolId]);
 
-  const generateCode = async (sessionStart: string, sessionEnd: string, duration: number) => {
+  const generateCode = async (sessionStart: string, sessionEnd: string, duration: number, codeValidityMinutes: number = 30) => {
     setSaving(true);
     try {
       await callAdminApi("/api/admin/edulock", "POST", {
@@ -48,6 +48,7 @@ export function useEduLockCodes(schoolId: string) {
         sessionStart,
         sessionEnd,
         duration,
+        codeValidityMinutes,
       });
     } catch (error) {
       console.error("Gagal generate kode EduLock:", error);

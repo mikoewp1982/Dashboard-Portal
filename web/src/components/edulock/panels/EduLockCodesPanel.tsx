@@ -17,11 +17,12 @@ const calculateDuration = (start: string, end: string) => {
 export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
   const [startTimeInput, setStartTimeInput] = useState("07:00");
   const [endTimeInput, setEndTimeInput] = useState("14:00");
+  const [validityInput, setValidityInput] = useState(30);
 
   const { codes, loading, saving, generateCode, deleteCode, deleteExpiredCodes } = useEduLockCodes(schoolId);
 
   const handleCreateCode = () => {
-    void generateCode(startTimeInput, endTimeInput, calculateDuration(startTimeInput, endTimeInput));
+    void generateCode(startTimeInput, endTimeInput, calculateDuration(startTimeInput, endTimeInput), validityInput);
   };
 
   const handleDeleteExpiredCodes = () => {
@@ -40,9 +41,9 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
     <div className="space-y-6">
       <div className="rounded-2xl border border-white/10 bg-[#1e293b]/50 overflow-hidden backdrop-blur-xl shadow-xl p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Generate Kode Baru</h3>
-        <div className="grid gap-4 md:grid-cols-3 items-end">
+        <div className="grid gap-4 md:grid-cols-4 items-end">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Jam Mulai</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Jam Mulai Izin</label>
             <input 
               type="time" 
               value={startTimeInput} 
@@ -51,13 +52,27 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Jam Akhir</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Jam Akhir Izin</label>
             <input 
               type="time" 
               value={endTimeInput} 
               onChange={(e) => setEndTimeInput(e.target.value)} 
               className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white outline-none focus:border-indigo-500" 
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Masa Kadaluarsa Kode</label>
+            <select
+              value={validityInput}
+              onChange={(e) => setValidityInput(Number(e.target.value))}
+              className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+            >
+              <option value={15} className="bg-slate-900">15 Menit</option>
+              <option value={30} className="bg-slate-900">30 Menit (Default)</option>
+              <option value={60} className="bg-slate-900">1 Jam</option>
+              <option value={120} className="bg-slate-900">2 Jam</option>
+              <option value={1440} className="bg-slate-900">24 Jam</option>
+            </select>
           </div>
           <div className="flex gap-2">
             <button 
