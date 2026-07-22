@@ -361,6 +361,41 @@ export async function POST(request: Request) {
       });
     }
 
+    if (body.action === "revoke-student-permission") {
+      const nisn = String(body.nisn || "").trim();
+      if (!nisn) {
+        return NextResponse.json({ success: false, error: "NISN wajib diisi" }, { status: 400 });
+      }
+
+      await adminDb.ref(`active_sessions/${nisn}`).remove();
+      await adminDb.ref(`active_sessions_by_school/${schoolId}/${nisn}`).remove();
+
+      return NextResponse.json({
+        success: true,
+        message: `Izin penggunaan HP untuk NISN ${nisn} berhasil dicabut.`,
+      });
+    }
+
+    if (body.action === "revoke-all-permissions") {
+      const schoolSnap = await adminDb.ref(`active_sessions_by_school/${schoolId}`).get();
+      if (schoolSnap.exists() && schoolSnap.val()) {
+        const data = schoolSnap.val() as Record<string, unknown>;
+        const updates: Record<string, null> = {};
+        Object.keys(data).forEach((nisnKey) => {
+          updates[`active_sessions/${nisnKey}`] = null;
+          updates[`active_sessions_by_school/${schoolId}/${nisnKey}`] = null;
+        });
+        await adminDb.ref().update(updates);
+      } else {
+        await adminDb.ref(`active_sessions_by_school/${schoolId}`).remove();
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Seluruh izin aktif penggunaan HP berhasil dicabut.",
+      });
+    }
+
     return NextResponse.json({ success: false, error: "Aksi tidak dikenali" }, { status: 400 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Terjadi kesalahan server";

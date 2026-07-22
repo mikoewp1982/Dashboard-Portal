@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MapPin, Loader2, Battery, Wifi, WifiOff } from "lucide-react";
+import { MapPin, Loader2, Battery, Wifi, WifiOff, ShieldAlert, Trash2, Smartphone } from "lucide-react";
 import { useClassesRealtime } from "@/hooks/database/useClassesRealtime";
 import { useStudentsRealtime } from "@/hooks/database/useStudentsRealtime";
 import { useEduLockOverview, type EduLockActiveDevice } from "@/hooks/edulock/useEduLockOverview";
+import { useEduLockActiveSessions } from "@/hooks/edulock/useEduLockActiveSessions";
 
 type EduLockStudentRecord = {
   id?: string;
@@ -29,6 +30,7 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
   const { data: classesData, loading: classesLoading } = useClassesRealtime(schoolId);
   const { data: studentsData, loading: studentsLoading } = useStudentsRealtime(schoolId);
   const { overview, loading: overviewLoading, refresh } = useEduLockOverview(schoolId);
+  const { sessions: activeSessions, loading: sessionsLoading, revoking, revokeSession, revokeAllSessions } = useEduLockActiveSessions(schoolId);
 
   const loading = classesLoading || studentsLoading || overviewLoading;
 
@@ -106,6 +108,102 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
 
   return (
     <>
+      {/* SISI SAMA SISWA AKTIF MENGGUNAKAN HP (IZIN GURU) */}
+      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-950/20 overflow-hidden backdrop-blur-xl shadow-xl mb-6">
+        <div className="px-6 py-4 border-b border-emerald-500/20 flex flex-wrap justify-between items-center bg-emerald-500/10 gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300">
+              <Smartphone className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white flex items-center gap-2">
+                Siswa Ber-Izin Aktif Menggunakan HP
+                <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-bold text-emerald-300">
+                  {activeSessions.length} Siswa
+                </span>
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Daftar siswa yang saat ini sedang diberi izin memakai HP (bebas terkunci). Anda dapat mencabut izin kapan saja.
+              </p>
+            </div>
+          </div>
+
+          {activeSessions.length > 0 && (
+            <button
+              onClick={() => {
+                if (confirm("Apakah Anda yakin ingin mencabut seluruh izin penggunaan HP untuk SEMUA SISWA saat ini?")) {
+                  void revokeAllSessions();
+                }
+              }}
+              disabled={revoking}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-bold text-white transition-all disabled:opacity-50 shadow-lg shadow-rose-900/30"
+            >
+              <Trash2 className="w-4 h-4" />
+              Cabut Semua Izin ({activeSessions.length})
+            </button>
+          )}
+        </div>
+
+        <div className="p-6">
+          {sessionsLoading ? (
+            <div className="flex items-center justify-center py-6 text-sm text-slate-400">
+              <Loader2 className="w-5 h-5 animate-spin mr-2 text-emerald-400" />
+              Memuat data izin aktif...
+            </div>
+          ) : activeSessions.length === 0 ? (
+            <div className="text-center py-6 text-sm text-slate-400 bg-white/5 rounded-xl border border-white/5">
+              🟢 Tidak ada siswa yang sedang mengaktifkan izin HP saat ini. Semua HP siswa terkunci rapi.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {activeSessions.map((session) => (
+                <div key={session.nisn} className="rounded-xl border border-emerald-500/30 bg-slate-900/80 p-4 flex flex-col justify-between gap-3 shadow-md hover:border-emerald-500/50 transition-all">
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="font-bold text-white text-base">{session.name || "Siswa"}</h4>
+                        <div className="text-xs text-emerald-400 font-medium">
+                          {session.class || "Kelas -"} • <span className="font-mono text-slate-300">{session.nisn}</span>
+                        </div>
+                      </div>
+                      <span className="rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold px-2 py-0.5 border border-emerald-500/30">
+                        IZIN AKTIF
+                      </span>
+                    </div>
+
+                    {session.deviceModel && (
+                      <div className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+                        <Smartphone className="w-3 h-3 text-slate-500" />
+                        Device: <span className="text-slate-300">{session.deviceModel}</span>
+                      </div>
+                    )}
+
+                    {session.endTime && (
+                      <div className="text-xs text-slate-300 mt-2 bg-slate-800/80 rounded-lg p-2 border border-white/5">
+                        Selesai: <span className="font-bold text-amber-300">{new Date(session.endTime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (confirm(`Cabut izin penggunaan HP untuk ${session.name || session.nisn}? HP siswa akan LANGSUNG TERKUNCI kembali.`)) {
+                        void revokeSession(session.nisn);
+                      }
+                    }}
+                    disabled={revoking}
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600 border border-rose-500/30 text-rose-300 hover:text-white py-2 text-xs font-bold transition-all disabled:opacity-50"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    🔴 Cabut Izin HP Siswa Ini
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-white/10 bg-[#1e293b]/50 overflow-hidden backdrop-blur-xl shadow-xl mb-6">
         <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
           <div>
