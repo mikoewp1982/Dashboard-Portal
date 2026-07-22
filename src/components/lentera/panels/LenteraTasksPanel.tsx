@@ -50,6 +50,7 @@ export function LenteraTasksPanel() {
       await addTask({
         ...newTask,
         status: "CLOSED", // default to draft
+        assignedBy: user?.name || "Admin",
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });

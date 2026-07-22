@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 
-type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "authorize-uninstall" | "authorize-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions";
+type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "authorize-uninstall" | "authorize-uninstall-mass" | "toggle-uninstall" | "toggle-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions";
 
 type EduLockRequestBody = {
   action?: EduLockAction;
