@@ -106,20 +106,23 @@ export function useEduLockOverview(schoolId: string | undefined) {
     await refresh();
   };
 
-  const authorizeUninstall = async (nisn: string) => {
+  const toggleUninstall = async (studentId: string, nisn: string, isAuthorized: boolean) => {
     await callAdminApi("/api/admin/edulock", "POST", {
-      action: "authorize-uninstall",
+      action: "toggle-uninstall",
       schoolId,
+      studentId,
       nisn,
+      isAuthorized,
     });
     await refresh();
   };
 
-  const authorizeUninstallMass = async (nisns: string[]) => {
+  const toggleUninstallMass = async (students: { studentId: string; nisn: string }[], isAuthorized: boolean) => {
     await callAdminApi("/api/admin/edulock", "POST", {
-      action: "authorize-uninstall-mass",
+      action: "toggle-uninstall-mass",
       schoolId,
-      nisns,
+      students,
+      isAuthorized,
     });
     await refresh();
   };
@@ -129,7 +132,7 @@ export function useEduLockOverview(schoolId: string | undefined) {
     loading,
     refresh,
     resetStudentDevice,
-    authorizeUninstall,
-    authorizeUninstallMass,
+    toggleUninstall,
+    toggleUninstallMass,
   };
 }

@@ -77,6 +77,11 @@ fun VirtualPetScreen(
         }
     }
 
+    val context = LocalContext.current
+    LaunchedEffect(uiState.pet?.status) {
+        // Logika nagging telah dipindahkan ke EduLock
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {

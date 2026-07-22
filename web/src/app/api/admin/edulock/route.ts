@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 
-type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "authorize-uninstall" | "authorize-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions";
+type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "authorize-uninstall" | "authorize-uninstall-mass" | "toggle-uninstall" | "toggle-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions";
 
 type EduLockRequestBody = {
   action?: EduLockAction;
@@ -399,40 +399,71 @@ export async function POST(request: Request) {
       });
     }
 
-    if (body.action === "authorize-uninstall") {
+    if (body.action === "toggle-uninstall") {
       const rawNisn = String(body.nisn || "");
       const nisn = rawNisn.trim();
+      const studentId = String((body as any).studentId || "").trim();
+      const isAuthorized = (body as any).isAuthorized === true;
+
       if (!nisn) {
         return NextResponse.json({ success: false, error: "NISN wajib diisi" }, { status: 400 });
       }
 
-      const updates: Record<string, any> = {
-        [`students/${nisn}/uninstall_authorized`]: true,
-        [`students/${nisn}/uninstall_authorized_until`]: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-      };
+      const updates: Record<string, any> = {};
+      
+      if (isAuthorized) {
+        updates[`students/${nisn}/uninstall_authorized`] = true;
+        updates[`students/${nisn}/uninstall_authorized_until`] = Date.now() + 24 * 60 * 60 * 1000;
+        if (studentId) {
+          updates[`gas/schools/${schoolId}/students/${studentId}/uninstall_authorized`] = true;
+        }
+      } else {
+        updates[`students/${nisn}/uninstall_authorized`] = null;
+        updates[`students/${nisn}/uninstall_authorized_until`] = null;
+        if (studentId) {
+          updates[`gas/schools/${schoolId}/students/${studentId}/uninstall_authorized`] = null;
+        }
+      }
 
       await adminDb.ref().update(updates);
 
       return NextResponse.json({
         success: true,
-        message: `Mode Uninstall di HP untuk NISN ${nisn} berhasil diaktifkan.`,
+        message: isAuthorized 
+          ? `Mode Uninstall di HP untuk NISN ${nisn} berhasil diaktifkan.`
+          : `Mode Uninstall di HP untuk NISN ${nisn} berhasil dicabut.`,
       });
     }
 
-    if (body.action === "authorize-uninstall-mass") {
-      const nisns = body.nisns;
-      if (!Array.isArray(nisns) || nisns.length === 0) {
-        return NextResponse.json({ success: false, error: "Daftar NISN kosong" }, { status: 400 });
+    if (body.action === "toggle-uninstall-mass") {
+      const studentsToToggle = (body as any).students || []; // Array of { nisn, studentId }
+      const isAuthorized = (body as any).isAuthorized === true;
+
+      if (!Array.isArray(studentsToToggle) || studentsToToggle.length === 0) {
+        return NextResponse.json({ success: false, error: "Daftar siswa kosong" }, { status: 400 });
       }
 
       const updates: Record<string, any> = {};
       const expiry = Date.now() + 24 * 60 * 60 * 1000;
 
-      for (const rawNisn of nisns) {
-        const nisn = String(rawNisn).trim();
+      for (const student of studentsToToggle) {
+        const nisn = String(student.nisn || "").trim();
+        const studentId = String(student.studentId || "").trim();
+        
         if (nisn) {
-          updates[`students/${nisn}/uninstall_authorized`] = true;
-          updates[`students/${nisn}/uninstall_authorized_until`] = expiry;
+          if (isAuthorized) {
+            updates[`students/${nisn}/uninstall_authorized`] = true;
+            updates[`students/${nisn}/uninstall_authorized_until`] = expiry;
+            if (studentId) {
+              updates[`gas/schools/${schoolId}/students/${studentId}/uninstall_authorized`] = true;
+            }
+          } else {
+            updates[`students/${nisn}/uninstall_authorized`] = null;
+            updates[`students/${nisn}/uninstall_authorized_until`] = null;
+            if (studentId) {
+              updates[`gas/schools/${schoolId}/students/${studentId}/uninstall_authorized`] = null;
+            }
+          }
         }
       }
 
@@ -442,7 +473,9 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `Mode Uninstall massal untuk ${nisns.length} siswa berhasil diaktifkan.`,
+        message: isAuthorized
+          ? `Mode Uninstall massal untuk ${studentsToToggle.length} siswa berhasil diaktifkan.`
+          : `Izin Uninstall massal untuk ${studentsToToggle.length} siswa berhasil dicabut.`,
       });
     }
 

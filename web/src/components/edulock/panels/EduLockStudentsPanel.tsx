@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UserCog, Download, RefreshCw, Loader2, Trash2 } from "lucide-react";
+import { UserCog, Download, RefreshCw, Loader2, Lock, Unlock } from "lucide-react";
 import { useClassesRealtime } from "@/hooks/database/useClassesRealtime";
 import { useStudentsRealtime } from "@/hooks/database/useStudentsRealtime";
 import { useEduLockOverview } from "@/hooks/edulock/useEduLockOverview";
@@ -14,6 +14,7 @@ type EduLockStudentRecord = {
   className?: string;
   device?: string;
   deviceId?: string;
+  uninstall_authorized?: boolean;
 };
 
 type EduLockClassRecord = {
@@ -26,7 +27,7 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
   const [studentClassFilterKey, setStudentClassFilterKey] = useState("all");
   const { data: classesData, loading: classesLoading } = useClassesRealtime(schoolId);
   const { data: studentsData, loading: studentsLoading } = useStudentsRealtime(schoolId);
-  const { resetStudentDevice, authorizeUninstall, authorizeUninstallMass, loading: overviewLoading } = useEduLockOverview(schoolId);
+  const { resetStudentDevice, toggleUninstall, toggleUninstallMass, loading: overviewLoading } = useEduLockOverview(schoolId);
 
   const loading = classesLoading || studentsLoading || overviewLoading;
 
@@ -44,6 +45,7 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
       class: s.className || s.class || "-",
       classKey: String(s.className || s.class || ""),
       device_uuid: s.deviceId || s.device || "",
+      uninstall_authorized: s.uninstall_authorized === true,
     }));
 
   const handleExportData = () => {
@@ -93,41 +95,50 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
     }
   };
 
-  const handleAuthorizeUninstall = async (nisn: string, name: string) => {
-    if (!window.confirm(`Apakah Anda yakin ingin memberikan izin UNINSTALL untuk siswa ${name} (${nisn})? \n\nAplikasi di HP siswa akan memunculkan tombol hapus secara otomatis.`)) {
+  const handleToggleUninstall = async (studentId: string, nisn: string, name: string, currentState: boolean) => {
+    const newState = !currentState;
+    const actionName = newState ? "MEMBUKA GEMBOK (Memberi Izin Uninstall)" : "MENUTUP GEMBOK (Mencabut Izin Uninstall)";
+    
+    if (!window.confirm(`Apakah Anda yakin ingin ${actionName} untuk siswa ${name} (${nisn})?`)) {
       return;
     }
 
     try {
-      await authorizeUninstall(nisn);
-      window.alert(`Izin uninstall untuk ${name} berhasil diaktifkan. Siswa sekarang bisa menghapus aplikasinya.`);
+      await toggleUninstall(studentId, nisn, newState);
+      window.alert(newState 
+        ? `Izin uninstall untuk ${name} berhasil DIBERIKAN.` 
+        : `Izin uninstall untuk ${name} berhasil DICABUT.`
+      );
     } catch (error) {
-      console.error("Gagal memberikan izin uninstall:", error);
-      window.alert(error instanceof Error ? error.message : "Gagal memberikan izin uninstall.");
+      console.error("Gagal mengubah izin uninstall:", error);
+      window.alert(error instanceof Error ? error.message : "Gagal mengubah izin uninstall.");
     }
   };
 
-  const handleAuthorizeUninstallMass = async () => {
-    const studentsToUninstall = filteredStudents.filter(
+  const handleToggleUninstallMass = async (action: "grant" | "revoke") => {
+    const studentsToToggle = filteredStudents.filter(
       (student) => studentClassFilterKey === "all" || student.classKey === studentClassFilterKey
     );
 
-    if (studentsToUninstall.length === 0) {
+    if (studentsToToggle.length === 0) {
       window.alert("Tidak ada siswa yang dipilih berdasarkan filter kelas saat ini.");
       return;
     }
 
-    if (!window.confirm(`PERINGATAN: Anda akan memberikan izin UNINSTALL kepada ${studentsToUninstall.length} siswa secara massal. Lanjutkan?`)) {
+    const isGranting = action === "grant";
+    const actionName = isGranting ? "MEMBUKA GEMBOK (Memberi Izin)" : "MENUTUP GEMBOK (Mencabut Izin)";
+
+    if (!window.confirm(`PERINGATAN: Anda akan ${actionName} UNINSTALL kepada ${studentsToToggle.length} siswa secara massal. Lanjutkan?`)) {
       return;
     }
 
     try {
-      const nisns = studentsToUninstall.map(s => s.nisn).filter(Boolean);
-      await authorizeUninstallMass(nisns);
-      window.alert(`Izin uninstall massal untuk ${nisns.length} siswa berhasil diaktifkan.`);
+      const payloads = studentsToToggle.map(s => ({ studentId: s.id, nisn: s.nisn })).filter(p => p.nisn);
+      await toggleUninstallMass(payloads, isGranting);
+      window.alert(`Izin uninstall massal untuk ${payloads.length} siswa berhasil ${isGranting ? 'diaktifkan' : 'dicabut'}.`);
     } catch (error) {
-      console.error("Gagal memberikan izin uninstall massal:", error);
-      window.alert(error instanceof Error ? error.message : "Gagal memberikan izin uninstall massal.");
+      console.error("Gagal mengubah izin uninstall massal:", error);
+      window.alert(error instanceof Error ? error.message : "Gagal mengubah izin uninstall massal.");
     }
   };
 
@@ -153,10 +164,16 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export</span>
             </button>
-            <button onClick={handleAuthorizeUninstallMass} className="flex items-center justify-center gap-2 rounded-lg bg-rose-500/20 px-3 py-2 text-sm font-semibold text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 transition" title="Berikan Izin Uninstall Sesuai Filter Kelas">
-              <Trash2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Uninstall Massal</span>
-            </button>
+            <div className="flex rounded-lg overflow-hidden border border-rose-500/30">
+              <button onClick={() => void handleToggleUninstallMass("revoke")} className="flex items-center justify-center gap-2 bg-slate-800/80 px-3 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-700 transition" title="Tutup Gembok Massal (Cabut Izin)">
+                <Lock className="w-4 h-4" />
+                <span className="hidden lg:inline">Tutup Gembok</span>
+              </button>
+              <button onClick={() => void handleToggleUninstallMass("grant")} className="flex items-center justify-center gap-2 bg-rose-500/20 px-3 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-500/30 transition border-l border-rose-500/30" title="Buka Gembok Massal (Beri Izin Uninstall)">
+                <Unlock className="w-4 h-4" />
+                <span className="hidden lg:inline">Buka Gembok</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -244,11 +261,15 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
                           <RefreshCw className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => void handleAuthorizeUninstall(student.nisn, student.name || student.nisn)}
-                          title="Beri Izin Uninstall"
-                          className="p-2 text-rose-300 hover:bg-rose-500/20 rounded-xl transition-colors ml-1"
+                          onClick={() => void handleToggleUninstall(student.id, student.nisn, student.name || student.nisn, student.uninstall_authorized)}
+                          title={student.uninstall_authorized ? "Cabut Izin Uninstall (Kunci Kembali)" : "Beri Izin Uninstall (Buka Gembok)"}
+                          className={`p-2 rounded-xl transition-colors ml-1 ${
+                            student.uninstall_authorized
+                              ? "text-rose-400 hover:bg-rose-500/20"
+                              : "text-slate-400 hover:bg-slate-500/20"
+                          }`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {student.uninstall_authorized ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                         </button>
                       </div>
                     </td>

@@ -107,6 +107,13 @@
             android:launchMode="singleTask"
             android:theme="@style/Theme.EduLock.Fullscreen" />
 
+        <!-- Pet Dead Lock Activity -->
+        <activity
+            android:name=".PetDeadLockActivity"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.EduLock.Fullscreen" />
+
         <!-- Device Admin Receiver -->
         <receiver
             android:name=".DeviceAdminReceiver"

@@ -255,7 +255,7 @@ class MonitoringService : Service() {
                 // Jika Active Mode & Jam Sekolah -> Jangan Update (Keep True) agar terdeteksi kabur (Sticky State)
                 // Jika Active Mode & Luar Jam -> Update (False)
                 
-                if (!prefsManager.isProtectionActive || !isSchoolTime) {
+                if (!isSchoolTime) {
                     prefsManager.isInsideSchoolZone = false
                 }
             }
@@ -531,14 +531,8 @@ class MonitoringService : Service() {
 
     private fun showLockScreen(message: String) {
         try {
-            val intent = Intent(this, LockScreenActivity::class.java)
-            intent.putExtra("MESSAGE", message)
-            intent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP
-            )
-            startActivity(intent)
+            lockEnforcer.relaunchEduLock()
+            lockEnforcer.requestKiosk()
         } catch (_: Exception) {
         }
 
@@ -554,7 +548,7 @@ class MonitoringService : Service() {
                 manager.createNotificationChannel(channel)
             }
 
-            val fullScreenIntent = Intent(this, LockScreenActivity::class.java).apply {
+            val fullScreenIntent = (packageManager.getLaunchIntentForPackage(packageName) ?: Intent(this, MainActivity::class.java)).apply {
                 putExtra("MESSAGE", message)
                 addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -754,6 +748,31 @@ class MonitoringService : Service() {
                 // Hanya update jika berubah agar tidak spam log/toast
                 if (isAuthorized != prefsManager.isUninstallAuthorized) {
                     prefsManager.isUninstallAuthorized = isAuthorized
+                    if (isAuthorized) {
+                        try {
+                            val intent = android.content.Intent(this@MonitoringService, MainActivity::class.java).apply {
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                            }
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            android.util.Log.e("MonitoringService", "Gagal memunculkan layar Uninstall otomatis: ${e.message}")
+                        }
+                    } else {
+                        // Reset bypass flags secara total ketika izin dicabut oleh Admin
+                        prefsManager.uninstallBypassUntil = 0L
+                        prefsManager.settingsGraceUntil = 0L
+                        prefsManager.isSettingsOpen = false
+
+                        try {
+                            val intent = android.content.Intent(this@MonitoringService, MainActivity::class.java).apply {
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                                putExtra("ACTION_DISMISS_UNINSTALL", true)
+                            }
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            android.util.Log.e("MonitoringService", "Gagal mereset layar Uninstall: ${e.message}")
+                        }
+                    }
                 }
             }
 
@@ -913,15 +932,13 @@ class MonitoringService : Service() {
                         val shouldEnforce = isSchoolTime && !prefsManager.isHolidayMode && !permissionManager.isPermissionActive()
 
                         if (shouldEnforce) {
-                            val insideNow = try {
-                                locationMonitor.isInsideSchoolArea()
-                            } catch (_: Exception) {
-                                prefsManager.isInsideSchoolZone
-                            }
-
-                            if (insideNow) {
-                                prefsManager.isInsideSchoolZone = true
+                            prefsManager.isInsideSchoolZone = true
+                            try {
                                 showLockScreen("Proteksi diaktifkan kembali. EduLock mengunci perangkat.")
+                                lockEnforcer.relaunchEduLock()
+                                lockEnforcer.requestKiosk()
+                            } catch (e: Exception) {
+                                android.util.Log.e("MonitoringService", "Gagal mengunci dari listener: ${e.message}")
                             }
                         }
 

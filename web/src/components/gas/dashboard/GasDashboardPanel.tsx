@@ -2,9 +2,8 @@
 
 import { useGasStudents } from "@/hooks/gas/useGasStudents";
 import { useGasTeachers } from "@/hooks/gas/useGasTeachers";
-import { Users, GraduationCap, Activity, Wifi, ArrowLeft } from "lucide-react";
+import { Users, GraduationCap, Activity, Wifi } from "lucide-react";
 import { useMemo } from "react";
-import Link from "next/link";
 
 export function GasDashboardPanel({ schoolId }: { schoolId: string }) {
   const { data: students, loading: loadingStudents } = useGasStudents(schoolId);
@@ -15,20 +14,11 @@ export function GasDashboardPanel({ schoolId }: { schoolId: string }) {
 
   return (
     <div className="flex h-full flex-col p-6 lg:p-8 overflow-y-auto">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Beranda GAS</h1>
-          <p className="mt-2 text-sm text-slate-400">
-            Ringkasan utama operasional Gerbang Aplikasi Sekolah (GAS) secara real-time.
-          </p>
-        </div>
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-white border border-white/10 hover:bg-white/10 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Kembali ke Dashboard Satu Pintu</span>
-        </Link>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-white">Beranda GAS</h1>
+        <p className="mt-2 text-sm text-slate-400">
+          Ringkasan utama operasional Gerbang Aplikasi Sekolah (GAS) secara real-time.
+        </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

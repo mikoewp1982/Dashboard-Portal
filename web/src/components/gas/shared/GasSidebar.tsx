@@ -97,7 +97,7 @@ export function GasSidebar({ activeTab, onTabChange }: GasSidebarProps) {
             </div>
             <div>
               <div className="text-sm font-bold text-white leading-tight">
-                Gerbang Aplikasi Sekolah
+                Gerbang Aplikasi<br />Sekolah
               </div>
               <div className="mt-1 text-xs text-slate-400">Admin Sekolah</div>
             </div>

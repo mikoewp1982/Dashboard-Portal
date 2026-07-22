@@ -28,78 +28,34 @@ export async function POST(req: NextRequest) {
     }
 
     const dbRef = adminDb.ref(`school_settings/${targetSchoolId}/attendance`);
-    const edulockRef = adminDb.ref(`schools/${targetSchoolId}`);
 
     if (action === "save-attendance-schedules") {
       const formatted: Record<string, any> = {};
-      const edulockWeekdays: Record<string, any> = {};
-
-      const dayMap: Record<number, string> = {
-        0: "sun", 1: "mon", 2: "tue", 3: "wed", 4: "thu", 5: "fri", 6: "sat"
-      };
-
       schedules.forEach((s: any) => {
         formatted[String(s.dayId + 1)] = {
           startTime: s.entryTime,
           endTime: s.exitTime,
           isHoliday: !s.isEnabled
         };
-
-        const eduDay = dayMap[s.dayId];
-        if (eduDay) {
-          edulockWeekdays[eduDay] = {
-            enabled: s.isEnabled,
-            start: s.entryTime,
-            end: s.exitTime
-          };
-        }
       });
       await dbRef.child("schedules").set(formatted);
-      await edulockRef.child("schedule/weekdays").set(edulockWeekdays);
       return NextResponse.json({ success: true });
     }
 
     if (action === "add-holiday") {
       const newRef = dbRef.child("holidays").push();
       await newRef.set(holiday);
-
-      if (holiday?.date) {
-        await edulockRef.child("holidays").child(holiday.date).set({
-          note: holiday.description || ""
-        });
-      }
       return NextResponse.json({ success: true, id: newRef.key });
     }
 
     if (action === "remove-holiday") {
       if (!holiday?.id) throw new Error("Holiday ID missing");
-      
-      const snap = await dbRef.child("holidays").child(holiday.id).once("value");
-      const hData = snap.val();
-      if (hData && hData.date) {
-        await edulockRef.child("holidays").child(hData.date).remove();
-      }
-
       await dbRef.child("holidays").child(holiday.id).remove();
       return NextResponse.json({ success: true });
     }
 
     if (action === "save-school-location") {
       await dbRef.child("school_location").set(location);
-      
-      await edulockRef.child("config").update({
-        latitude: location.latitude,
-        longitude: location.longitude,
-        radius: location.radius
-      });
-
-      const gasRef = adminDb.ref(`gas/schools/${targetSchoolId}`);
-      await gasRef.update({
-        latitude: location.latitude,
-        longitude: location.longitude,
-        radius: location.radius
-      });
-      
       return NextResponse.json({ success: true });
     }
 

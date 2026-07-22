@@ -50,7 +50,7 @@ function getStudentClass(student?: GasStudentRecord | null) {
 }
 
 export function GasPetPanel({ schoolId }: { schoolId: string }) {
-  const { pets, reviveHistory, loading, refresh, revivePet, killPet, resetPetLevel, giveReward } = useGasVirtualPet(schoolId);
+  const { pets, reviveHistory, loading, refresh, revivePet, resetPetLevel, giveReward } = useGasVirtualPet(schoolId);
   const { data: students } = useGasStudents(schoolId);
   const [activeTab, setActiveTab] = useState<GasPetTab>('risk');
   const [searchTerm, setSearchTerm] = useState('');
@@ -302,9 +302,8 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
               riskPets={riskPets}
               onSearchChange={setSearchTerm}
               onRevivePet={async (petId, studentName) => {
-                if (confirm(`Revive pet milik ${studentName}?`)) {
+                if (confirm(`Hidupkan kembali pet milik ${studentName}? Status akan di-reset ke 50%.`)) {
                   await revivePet(petId);
-                  alert("Berhasil menghidupkan kembali pet.");
                 }
               }}
               onResetPetLevel={async (petId, studentName) => {
@@ -316,9 +315,7 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
           )}
 
           {activeTab === 'leaderboard' && (
-            <GasPetLeaderboardTab 
-              leaderboardData={leaderboardData} 
-            />
+            <GasPetLeaderboardTab leaderboardData={leaderboardData} />
           )}
           
           {activeTab === 'stats' && (

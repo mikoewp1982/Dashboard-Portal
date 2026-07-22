@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0F1035"
+    android:background="#0B0D21"
     android:fillViewport="true"
     tools:context=".MainActivity">
 
@@ -12,18 +12,19 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:padding="12dp"
         android:clipToPadding="false">
 
         <!-- ═══════════════════════════════════════════
-             HEADER CARD — Premium Gradient, Logo Tengah
+             HEADER CARD — Compact Gradient Logo & Profile
              ═══════════════════════════════════════════ -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="8dp"
-            app:strokeWidth="0dp">
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#1E2942">
 
             <LinearLayout
                 android:id="@+id/llHeader"
@@ -31,21 +32,21 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/bg_header"
-                android:paddingTop="28dp"
-                android:paddingBottom="24dp"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="14dp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
                 android:gravity="center_horizontal">
 
-                <!-- EduLock Logo — Rata Tengah, Tanpa Background Putih -->
+                <!-- EduLock Logo -->
                 <FrameLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal">
 
                     <ImageView
-                        android:layout_width="180dp"
-                        android:layout_height="40dp"
+                        android:layout_width="140dp"
+                        android:layout_height="32dp"
                         android:src="@drawable/img_wordmark_edulock"
                         android:scaleType="fitCenter"
                         android:adjustViewBounds="true"
@@ -54,8 +55,8 @@
                     <!-- Invisible touch target untuk admin login -->
                     <TextView
                         android:id="@+id/tvAppTitle"
-                        android:layout_width="180dp"
-                        android:layout_height="40dp"
+                        android:layout_width="140dp"
+                        android:layout_height="32dp"
                         android:alpha="0"
                         android:text="EduLock"
                         android:clickable="true"
@@ -64,11 +65,11 @@
 
                 <!-- Divider tipis -->
                 <View
-                    android:layout_width="60dp"
+                    android:layout_width="40dp"
                     android:layout_height="1dp"
-                    android:background="#55FFFFFF"
-                    android:layout_marginTop="14dp"
-                    android:layout_marginBottom="14dp" />
+                    android:background="#44FFFFFF"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp" />
 
                 <!-- Nama & Kelas -->
                 <TextView
@@ -76,10 +77,12 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Nama Siswa"
-                    android:textSize="17sp"
+                    android:textSize="15sp"
                     android:textStyle="bold"
                     android:textColor="#FFFFFF"
-                    android:gravity="center" />
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -94,39 +97,41 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Kelas"
-                        android:textSize="13sp"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
                         android:textColor="#CCE0FF"
                         android:background="@drawable/chip_trust_bg"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp" />
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp" />
                 </LinearLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <!-- ═══════════════════════════════════════════
-             STATUS MONITORING CARD — Teal to Blue Gradient
+             STATUS MONITORING CARD — Compact Teal-Blue Gradient
              ═══════════════════════════════════════════ -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cvStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="8dp"
-            app:strokeWidth="0dp">
+            android:layout_marginTop="10dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#1E2942">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/bg_status_card"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:paddingTop="18dp"
-                android:paddingBottom="18dp">
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
 
                 <!-- Section header -->
                 <LinearLayout
@@ -134,24 +139,24 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="0dp">
+                    android:layout_marginBottom="6dp">
 
                     <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:src="@drawable/ic_status_monitoring"
                         android:scaleType="fitCenter"
                         android:adjustViewBounds="true"
-                        android:layout_marginEnd="10dp" />
+                        android:layout_marginEnd="8dp" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="STATUS MONITORING"
-                        android:textSize="13sp"
+                        android:textSize="11sp"
                         android:textStyle="bold"
-                        android:letterSpacing="0.15"
+                        android:letterSpacing="0.12"
                         android:textColor="#FFFFFF" />
                 </LinearLayout>
 
@@ -159,8 +164,8 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#33FFFFFF"
-                    android:layout_marginBottom="14dp" />
+                    android:background="#22FFFFFF"
+                    android:layout_marginBottom="8dp" />
 
                 <!-- GPS Status -->
                 <LinearLayout
@@ -168,20 +173,20 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="10dp">
+                    android:layout_marginBottom="6dp">
 
                     <View
-                        android:layout_width="10dp"
-                        android:layout_height="10dp"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
                         android:background="@drawable/dot_red"
-                        android:layout_marginEnd="12dp" />
+                        android:layout_marginEnd="10dp" />
 
                     <TextView
                         android:id="@+id/tvGPSStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="GPS: Aktif"
-                        android:textSize="14sp"
+                        android:textSize="13sp"
                         android:textColor="#DDEEFF" />
                 </LinearLayout>
 
@@ -191,20 +196,20 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="10dp">
+                    android:layout_marginBottom="6dp">
 
                     <View
-                        android:layout_width="10dp"
-                        android:layout_height="10dp"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
                         android:background="@drawable/dot_green"
-                        android:layout_marginEnd="12dp" />
+                        android:layout_marginEnd="10dp" />
 
                     <TextView
                         android:id="@+id/tvLocationStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Lokasi: Menunggu GPS..."
-                        android:textSize="14sp"
+                        android:textSize="13sp"
                         android:textColor="#DDEEFF" />
                 </LinearLayout>
 
@@ -214,20 +219,20 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="14dp">
+                    android:layout_marginBottom="6dp">
 
                     <View
-                        android:layout_width="10dp"
-                        android:layout_height="10dp"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
                         android:background="@drawable/dot_green"
-                        android:layout_marginEnd="12dp" />
+                        android:layout_marginEnd="10dp" />
 
                     <TextView
                         android:id="@+id/tvInternetStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Internet: Memuat..."
-                        android:textSize="14sp"
+                        android:textSize="13sp"
                         android:textColor="#DDEEFF" />
                 </LinearLayout>
 
@@ -239,17 +244,17 @@
                     android:gravity="center_vertical">
 
                     <View
-                        android:layout_width="10dp"
-                        android:layout_height="10dp"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
                         android:background="@drawable/dot_green"
-                        android:layout_marginEnd="12dp" />
+                        android:layout_marginEnd="10dp" />
 
                     <TextView
                         android:id="@+id/tvDistance"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Jarak: --"
-                        android:textSize="14sp"
+                        android:textSize="13sp"
                         android:textColor="#DDEEFF" />
                 </LinearLayout>
 
@@ -257,26 +262,27 @@
         </com.google.android.material.card.MaterialCardView>
 
         <!-- ═══════════════════════════════════════════
-             JAM SEKOLAH CARD — Blue to Purple Gradient
+             JAM SEKOLAH CARD — Compact Blue-Purple Gradient
              ═══════════════════════════════════════════ -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cvSchoolHours"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="8dp"
-            app:strokeWidth="0dp">
+            android:layout_marginTop="10dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#1E2942">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/bg_time_card"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:paddingTop="18dp"
-                android:paddingBottom="18dp">
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
 
                 <!-- Section header -->
                 <LinearLayout
@@ -284,24 +290,24 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="14dp">
+                    android:layout_marginBottom="8dp">
 
                     <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:src="@drawable/ic_jam_sekolah"
                         android:scaleType="fitCenter"
                         android:adjustViewBounds="true"
-                        android:layout_marginEnd="10dp" />
+                        android:layout_marginEnd="8dp" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="JAM SEKOLAH"
-                        android:textSize="13sp"
+                        android:textSize="11sp"
                         android:textStyle="bold"
-                        android:letterSpacing="0.15"
+                        android:letterSpacing="0.12"
                         android:textColor="#FFFFFF" />
                 </LinearLayout>
 
@@ -309,8 +315,8 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#33FFFFFF"
-                    android:layout_marginBottom="14dp" />
+                    android:background="#22FFFFFF"
+                    android:layout_marginBottom="8dp" />
 
                 <!-- Time row -->
                 <LinearLayout
@@ -330,7 +336,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Waktu Saat Ini"
-                            android:textSize="11sp"
+                            android:textSize="10sp"
                             android:textColor="#CCE0FF"
                             android:letterSpacing="0.05" />
 
@@ -339,14 +345,14 @@
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginTop="4dp">
+                            android:layout_marginTop="2dp">
 
                             <TextView
                                 android:id="@+id/tvCurrentTime"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="00:00:00"
-                                android:textSize="22sp"
+                                android:textSize="18sp"
                                 android:textStyle="bold"
                                 android:textColor="#FFFFFF" />
                         </LinearLayout>
@@ -355,10 +361,10 @@
                     <!-- Vertical divider -->
                     <View
                         android:layout_width="1dp"
-                        android:layout_height="50dp"
-                        android:background="#44FFFFFF"
-                        android:layout_marginStart="14dp"
-                        android:layout_marginEnd="14dp" />
+                        android:layout_height="36dp"
+                        android:background="#33FFFFFF"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="10dp" />
 
                     <!-- Masuk & Pulang -->
                     <LinearLayout
@@ -372,20 +378,20 @@
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginBottom="8dp">
+                            android:layout_marginBottom="4dp">
 
                             <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
+                                android:layout_width="7dp"
+                                android:layout_height="7dp"
                                 android:background="@drawable/dot_red"
-                                android:layout_marginEnd="7dp" />
+                                android:layout_marginEnd="6dp" />
 
                             <TextView
                                 android:id="@+id/tvSchoolStartTime"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Masuk: --:--"
-                                android:textSize="14sp"
+                                android:textSize="12sp"
                                 android:textStyle="bold"
                                 android:textColor="#FFB3B3" />
                         </LinearLayout>
@@ -398,17 +404,17 @@
                             android:gravity="center_vertical">
 
                             <View
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
+                                android:layout_width="7dp"
+                                android:layout_height="7dp"
                                 android:background="@drawable/dot_green"
-                                android:layout_marginEnd="7dp" />
+                                android:layout_marginEnd="6dp" />
 
                             <TextView
                                 android:id="@+id/tvSchoolEndTime"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Pulang: --:--"
-                                android:textSize="14sp"
+                                android:textSize="12sp"
                                 android:textStyle="bold"
                                 android:textColor="#B3FFD9" />
                         </LinearLayout>
@@ -423,9 +429,9 @@
             android:id="@+id/cvPermissionStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="10dp"
             android:visibility="gone"
-            app:cardCornerRadius="20dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="6dp"
             app:strokeWidth="0dp"
             app:cardBackgroundColor="@color/success">
@@ -434,14 +440,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="18dp">
+                android:padding="14dp">
 
                 <TextView
                     android:id="@+id/tvPermissionStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="✅ Monitoring DI-PAUSE"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="#FFFFFF" />
 
@@ -450,9 +456,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Sisa waktu: 01:45"
-                    android:textSize="14sp"
+                    android:textSize="12sp"
                     android:textColor="#E0FFE0"
-                    android:layout_marginTop="4dp" />
+                    android:layout_marginTop="2dp" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -461,28 +467,28 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRequestPermission"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="18dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
             android:text="Minta Izin Penggunaan HP"
-            android:textSize="15sp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:backgroundTint="@color/success"
-            app:cornerRadius="16dp"
+            app:cornerRadius="14dp"
             app:icon="@drawable/ic_lock"
             app:iconGravity="textStart"
             app:iconTint="@color/white"
-            app:iconPadding="10dp" />
+            app:iconPadding="8dp" />
 
         <!-- Buka Aplikasi Sekolah Button -->
         <Button
             android:id="@+id/btnSchoolAppFallback"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="32dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
             android:text="BUKA APLIKASI SEKOLAH"
-            android:textSize="15sp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:background="@drawable/bg_btn_secondary"

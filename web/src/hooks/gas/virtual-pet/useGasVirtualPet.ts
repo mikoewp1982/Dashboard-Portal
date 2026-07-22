@@ -97,21 +97,6 @@ export function useGasVirtualPet(schoolId: string | undefined) {
     }
   };
 
-  const killPet = async (petId: string) => {
-    try {
-      await callAdminApi("/api/admin/virtual-pet", "POST", {
-        action: "kill",
-        petId,
-      });
-      await refresh();
-    } catch (error) {
-      if (!isSessionInactiveError(error)) {
-        console.error("Error killing pet:", error);
-      }
-      throw error;
-    }
-  };
-
   const resetPetLevel = async (petId: string) => {
     try {
       await callAdminApi("/api/admin/virtual-pet", "POST", {
@@ -150,7 +135,6 @@ export function useGasVirtualPet(schoolId: string | undefined) {
     loading,
     refresh,
     revivePet,
-    killPet,
     resetPetLevel,
     giveReward,
   };

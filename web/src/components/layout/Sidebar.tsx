@@ -97,7 +97,7 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
                 <Lock className="h-6 w-6 text-purple-400" />
               </div>
               <div>
-                <div className="text-sm font-bold text-white leading-tight">EduLock System</div>
+                <div className="text-sm font-bold text-white leading-tight">EduLock<br />System</div>
                 <div className="mt-1 text-xs text-slate-400">{isSuperAdmin ? "Super Admin" : "Admin Sekolah"}</div>
               </div>
             </div>
@@ -107,7 +107,7 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
                 <Image src="/PortalKita.png" alt="Dashboard PortalKita" width={48} height={48} className="object-contain drop-shadow-md" />
               </div>
               <div>
-                <div className="text-sm font-bold text-white leading-tight">Dashboard Portal Kita</div>
+                <div className="text-sm font-bold text-white leading-tight">Dashboard<br />PortalKita</div>
                 <div className="mt-1 text-xs text-slate-400">{isSuperAdmin ? "Super Admin" : "Admin Sekolah"}</div>
               </div>
             </div>
@@ -116,11 +116,12 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
 
         {/* User Info */}
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Logged In As:</div>
-          <div className="text-sm font-semibold uppercase text-blue-300">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Logged In As:</div>
+          <div className="mt-2 text-sm font-semibold text-white">{user?.name}</div>
+          <div className="text-xs font-semibold uppercase text-blue-300">
             {isSuperAdmin ? "SUPER ADMIN" : "ADMIN SEKOLAH"}
           </div>
-          {user?.schoolName ? <div className="mt-1 text-sm font-semibold text-white">{user.schoolName}</div> : null}
+          {user?.schoolName ? <div className="mt-1 text-xs text-slate-400">{user.schoolName}</div> : null}
         </div>
 
         {/* Dashboard Overview Main Link */}

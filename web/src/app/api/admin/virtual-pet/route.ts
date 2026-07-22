@@ -260,31 +260,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Pet revived successfully" });
     }
 
-    if (action === "kill") {
-      if (!petId) return NextResponse.json({ error: "petId missing" }, { status: 400 });
-
-      const petRef = adminDb.ref(`virtual_pets/${petId}`);
-      const petSnap = await petRef.get();
-      if (!petSnap.exists()) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
-
-      const deadStats = {
-        health: 0,
-        happiness: 0,
-        energy: 0,
-        hunger: 100,
-      };
-      
-      const now = Date.now();
-      await petRef.update({
-        status: "DEAD",
-        ...deadStats,
-        manualReviveUntil: 0,
-        updatedAt: now,
-      });
-
-      return NextResponse.json({ success: true, message: "Pet killed (simulated) successfully" });
-    }
-
     if (action === "reset-level") {
       if (!petId) return NextResponse.json({ error: "petId missing" }, { status: 400 });
 

@@ -10,60 +10,26 @@ android {
 
     defaultConfig {
         applicationId = "com.sekolah.edulock"
-        minSdk = 26
+        minSdk = 21
         targetSdk = 34
-        versionCode = 21
-        versionName = "1.2.7"
+        versionCode = 26
+        versionName = "1.3.0" // Clean up version
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Default to V2 Hybrid functionality
+        buildConfigField("boolean", "USE_MANUAL_LOCATION_POLLING", "true")
+        buildConfigField("boolean", "USE_GEOFENCING", "true")
     }
 
-    flavorDimensions += listOf("lockStack", "mode")
+    flavorDimensions += listOf("mode")
     productFlavors {
-        create("v1Manual") {
-            dimension = "lockStack"
-            versionCode = 21
-            versionNameSuffix = "-v1-manual"
-            buildConfigField("boolean", "USE_MANUAL_LOCATION_POLLING", "true")
-            buildConfigField("boolean", "USE_GEOFENCING", "false")
-            buildConfigField("String", "LOCK_STACK_LABEL", "\"V1 Manual\"")
-        }
-        create("v2Hybrid") {
-            dimension = "lockStack"
-            versionCode = 22
-            versionNameSuffix = "-v2-hybrid"
-            buildConfigField("boolean", "USE_MANUAL_LOCATION_POLLING", "true")
-            buildConfigField("boolean", "USE_GEOFENCING", "true")
-            buildConfigField("String", "LOCK_STACK_LABEL", "\"V2 Hybrid\"")
-        }
-        create("vokHybrid") {
-            dimension = "lockStack"
-            versionCode = 23
-            versionNameSuffix = "-vok-hybrid"
-            buildConfigField("boolean", "USE_MANUAL_LOCATION_POLLING", "true")
-            buildConfigField("boolean", "USE_GEOFENCING", "true")
-            buildConfigField("String", "LOCK_STACK_LABEL", "\"Vok Hybrid\"")
-        }
         create("student") {
             dimension = "mode"
             resValue("string", "app_name", "EduLock")
         }
         create("admin") {
             dimension = "mode"
-            resValue("string", "app_name", "EduLock Admin")
-        }
-        create("legacyStudent") {
-            dimension = "mode"
-            minSdk = 23
-            versionCode = 6
-            versionNameSuffix = "-legacy"
-            resValue("string", "app_name", "EduLock")
-        }
-        create("legacyAdmin") {
-            dimension = "mode"
-            minSdk = 23
-            versionCode = 6
-            versionNameSuffix = "-legacy"
             resValue("string", "app_name", "EduLock Admin")
         }
     }
@@ -77,12 +43,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-        }
-        create("legacyRelease") {
-            initWith(getByName("release"))
-            isMinifyEnabled = false
-            isShrinkResources = false
-            signingConfig = signingConfigs.getByName("debug")
         }
     }
 

@@ -93,6 +93,16 @@ export function LenteraSidebar() {
             <span>Statistik Siswa</span>
           </Link>
 
+          <div className="h-px bg-slate-800 my-4 mx-2"></div>
+          <div className="mt-2">
+            <button
+               onClick={handleLogout}
+               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white"
+            >
+               <LogOut className="w-4 h-4" />
+               <span>Keluar</span>
+            </button>
+          </div>
         </nav>
       </div>
     </aside>

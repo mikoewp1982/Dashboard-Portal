@@ -7,12 +7,16 @@ class LockEnforcer(private val context: Context) {
     private val metricsLogger = LockMetricsLogger()
 
     fun showLockScreen(message: String, traceId: String? = null) {
-        val intent = Intent(context, LockScreenActivity::class.java).apply {
-            putExtra("MESSAGE", message)
+        relaunchEduLock(traceId)
+        requestKiosk(traceId)
+    }
+
+    fun showPetDeadLock(traceId: String? = null) {
+        val intent = Intent(context, PetDeadLockActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
         context.startActivity(intent)
-        traceId?.let { metricsLogger.markOverlayShown(it, message) }
+        traceId?.let { metricsLogger.markOverlayShown(it, "PET_DEAD_LOCK") }
     }
 
     fun showRecoveryOverlay(message: String, target: String = "location", traceId: String? = null) {
@@ -26,9 +30,10 @@ class LockEnforcer(private val context: Context) {
     }
 
     fun relaunchEduLock(traceId: String? = null) {
-        val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
-        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        context.startActivity(launchIntent)
+        val intent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        context.startActivity(intent)
         traceId?.let { metricsLogger.markAppRelaunched(it, context.packageName) }
     }
 

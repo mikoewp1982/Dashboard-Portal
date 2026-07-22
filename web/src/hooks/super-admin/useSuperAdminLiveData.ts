@@ -461,10 +461,10 @@ export function useSuperAdminLiveData() {
     const activeSchools = visibleSchools.filter((row) => row.isActive).length;
     const paidSchools = visibleSchools.filter((row) => row.paymentStatus === "PAID").length;
     const unpaidSchools = Math.max(0, totalSchools - paidSchools);
-    const totalAdminSchools = visibleSchools.filter((row) => Boolean(row.authEmail || row.adminEmail || row.npsn)).length;
+    const totalAdminSchools = visibleSchools.filter((row) => Boolean(row.authEmail || row.adminEmail)).length;
     const totalPrincipalAccounts = visiblePrincipals.filter((row) => row.isActive).length;
     const tenantIssues =
-      visibleSchools.filter((row) => row.paymentStatus !== "PAID" || !row.isActive || !row.adminAccessActive || (!row.authEmail && !row.adminEmail && !row.npsn)).length +
+      visibleSchools.filter((row) => row.paymentStatus !== "PAID" || !row.isActive || !row.adminAccessActive || (!row.authEmail && !row.adminEmail)).length +
       visiblePrincipals.filter((row) => !row.isActive).length;
 
     return {

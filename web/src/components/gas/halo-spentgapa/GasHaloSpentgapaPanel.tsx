@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { ShieldAlert, RefreshCw, ArrowLeft } from "lucide-react";
+import { ShieldAlert, RefreshCw } from "lucide-react";
 import { useGasHaloSpentgapa, IncidentCategory, ReportStatus } from "@/hooks/gas/halo-spentgapa/useGasHaloSpentgapa";
 import { HaloSpentgapaReportList } from "./HaloSpentgapaReportList";
 import { exportToExcel } from "@/utils/export";
@@ -76,30 +76,26 @@ export const GasHaloSpentgapaPanel: React.FC<GasHaloSpentgapaPanelProps> = ({ sc
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-3">
             Layanan Aduan
+              <button
+              onClick={fetchReports}
+              disabled={isLoading}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Muat Ulang Data"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Muat Ulang
+            </button>
           </h1>
           <p className="text-sm text-slate-400">
             Laporan masuk dari siswa terkait bullying dan peristiwa lainnya.
           </p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <button
-            onClick={fetchReports}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed self-start sm:self-auto"
-            title="Muat Ulang Data"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Muat Ulang
-          </button>
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-white border border-white/10 hover:bg-white/10 transition-colors self-start sm:self-auto"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Kembali ke Dashboard Satu Pintu</span>
-          </Link>
-        </div>
+        <Link
+          href="/dashboard"
+          className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 self-start sm:self-auto"
+        >
+          Kembali ke Dashboard Satu Pintu
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

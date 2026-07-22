@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle, XCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useGasLibrary } from "@/hooks/gas/library/useGasLibrary";
 
@@ -49,9 +49,8 @@ export function LenteraTasksPanel() {
     try {
       await addTask({
         ...newTask,
-        assignedBy: user?.uid || user?.id || "unknown",
-        assignedByName: user?.name || "Guru",
         status: "CLOSED", // default to draft
+        assignedBy: user?.name || "Admin",
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });

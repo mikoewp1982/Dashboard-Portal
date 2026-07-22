@@ -1,14 +1,71 @@
 {
   "project_info": {
-    "project_number": "840983275298",
-    "firebase_url": "https://dashboard-portal-179f7-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "project_id": "dashboard-portal-179f7",
-    "storage_bucket": "dashboard-portal-179f7.firebasestorage.app"
+    "project_number": "562277218066",
+    "firebase_url": "https://kompas-5f0b4-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "kompas-5f0b4",
+    "storage_bucket": "kompas-5f0b4.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:840983275298:android:3bdc270e75c6715f63677b",
+        "mobilesdk_app_id": "1:562277218066:android:21020f9d680bbd8dcba5cb",
+        "android_client_info": {
+          "package_name": "com.satupintu.mobile.guru"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLbFZ_zUQdd8X2Qt7e0Eb6j-dT3NQYrnc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562277218066:android:1f961a0fa9d606decba5cb",
+        "android_client_info": {
+          "package_name": "com.satupintu.mobile.kepala"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLbFZ_zUQdd8X2Qt7e0Eb6j-dT3NQYrnc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562277218066:android:582b440def9b870bcba5cb",
+        "android_client_info": {
+          "package_name": "com.satupintu.mobile.siswa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLbFZ_zUQdd8X2Qt7e0Eb6j-dT3NQYrnc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562277218066:android:981528382e98a0f1cba5cb",
         "android_client_info": {
           "package_name": "com.sekolah.edulock"
         }
@@ -16,7 +73,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAmvc1rU0GAXP3a4jilcW-ZIj7f_Jk7X-w"
+          "current_key": "AIzaSyBLbFZ_zUQdd8X2Qt7e0Eb6j-dT3NQYrnc"
         }
       ],
       "services": {

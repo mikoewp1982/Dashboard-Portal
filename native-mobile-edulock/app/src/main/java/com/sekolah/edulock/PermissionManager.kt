@@ -217,7 +217,7 @@ class PermissionManager(private val context: Context) {
                      // Double check inside main thread
                      if (prefs.getBoolean(KEY_PERMISSION_GRANTED, false)) {
                          revokePermission()
-                         android.widget.Toast.makeText(context, "Izin dicabut oleh Guru!", android.widget.Toast.LENGTH_LONG).show()
+                         android.widget.Toast.makeText(context.applicationContext, "Izin dicabut oleh Guru!", android.widget.Toast.LENGTH_LONG).show()
                      }
                 }
             }

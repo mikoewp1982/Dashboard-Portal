@@ -769,6 +769,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        checkUninstallState()
+    }
+
+    private fun checkUninstallState() {
+        if (!prefsManager.isUninstallAuthorized) {
+            if (uninstallDialog?.isShowing == true) {
+                try {
+                    uninstallDialog?.dismiss()
+                } catch (_: Exception) {}
+                uninstallDialog = null
+            }
+            prefsManager.uninstallBypassUntil = 0L
+            prefsManager.settingsGraceUntil = 0L
+            prefsManager.isSettingsOpen = false
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         prefsManager.isUiForeground = true
@@ -793,6 +813,8 @@ class MainActivity : AppCompatActivity() {
              finish()
              return
         }
+
+        checkUninstallState()
 
         if (prefsManager.isUninstallAuthorized) {
             showUninstallModeUI()

@@ -70,7 +70,17 @@ class PreferencesManager(context: Context) {
         private const val KEY_DAILY_ATTENDANCE_STATUS = "daily_attendance_status"
         private const val KEY_LAST_GEOFENCE_TRANSITION = "last_geofence_transition"
         private const val KEY_LAST_GEOFENCE_TRANSITION_AT = "last_geofence_transition_at"
+        private const val KEY_IS_PET_DEAD = "is_pet_dead"
+        private const val KEY_LAST_PET_DEAD_ACK_AT = "last_pet_dead_ack_at"
     }
+
+    var isPetDead: Boolean
+        get() = prefs.getBoolean(KEY_IS_PET_DEAD, false)
+        set(value) = prefs.edit().putBoolean(KEY_IS_PET_DEAD, value).apply()
+
+    var lastPetDeadAckAt: Long
+        get() = prefs.getLong(KEY_LAST_PET_DEAD_ACK_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_LAST_PET_DEAD_ACK_AT, value).apply()
 
     var lockTaskCooldownUntil: Long
         get() = prefs.getLong(KEY_LOCKTASK_COOLDOWN_UNTIL, 0L)
@@ -213,8 +223,8 @@ class PreferencesManager(context: Context) {
         set(value) = prefs.edit().putLong(KEY_STUDENT_ID, value).apply()
 
     var nisn: String
-        get() = prefs.getString(KEY_NISN, "") ?: ""
-        set(value) = prefs.edit().putString(KEY_NISN, value).apply()
+        get() = prefs.getString(KEY_NISN, "")?.trim() ?: ""
+        set(value) = prefs.edit().putString(KEY_NISN, value.trim()).apply()
 
     var studentName: String
         get() = prefs.getString(KEY_STUDENT_NAME, "") ?: ""
@@ -225,12 +235,12 @@ class PreferencesManager(context: Context) {
         set(value) = prefs.edit().putString(KEY_CLASS, value).apply()
 
     var schoolId: String
-        get() = prefs.getString(KEY_SCHOOL_ID, "") ?: ""
-        set(value) = prefs.edit().putString(KEY_SCHOOL_ID, value).apply()
+        get() = prefs.getString(KEY_SCHOOL_ID, "")?.trim() ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_ID, value.trim()).apply()
 
     var schoolNpsn: String
-        get() = prefs.getString(KEY_SCHOOL_NPSN, "") ?: ""
-        set(value) = prefs.edit().putString(KEY_SCHOOL_NPSN, value).apply()
+        get() = prefs.getString(KEY_SCHOOL_NPSN, "")?.trim() ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_NPSN, value.trim()).apply()
 
     var deviceId: String
         get() = prefs.getString(KEY_DEVICE_ID, "") ?: ""

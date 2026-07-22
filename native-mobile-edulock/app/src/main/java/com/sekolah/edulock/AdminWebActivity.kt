@@ -81,6 +81,6 @@ class AdminWebActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val ADMIN_URL = "http://192.168.1.122:3000/dashboard/edulock"
+        private const val ADMIN_URL = "https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/dashboard/edulock"
     }
 }

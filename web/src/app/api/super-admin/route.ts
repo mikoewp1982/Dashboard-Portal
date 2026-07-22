@@ -472,10 +472,6 @@ async function handleCreateEduLockUninstallCode(
     .ref(`school_settings/${normalizedSchoolId}/system/edulock/uninstall_access`)
     .set(payload);
 
-  await adminDb
-    .ref(`schools/${normalizedSchoolId}/uninstallAccess`)
-    .set(payload);
-
   return NextResponse.json({
     success: true,
     message: "Kode uninstall EduLock berhasil dibuat.",
@@ -488,10 +484,6 @@ async function handleClearEduLockUninstallCode(body: SuperAdminRequestBody) {
 
   await adminDb
     .ref(`school_settings/${normalizedSchoolId}/system/edulock/uninstall_access`)
-    .remove();
-
-  await adminDb
-    .ref(`schools/${normalizedSchoolId}/uninstallAccess`)
     .remove();
 
   return NextResponse.json({

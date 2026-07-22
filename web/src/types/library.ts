@@ -4,7 +4,7 @@ export interface LibraryTask {
   description: string;
   className: string;
   bookId?: string;
-  assignedBy?: string;
+  assignedBy: string;
   assignedByName?: string;
   status: "ACTIVE" | "CLOSED";
   dueDate?: string;

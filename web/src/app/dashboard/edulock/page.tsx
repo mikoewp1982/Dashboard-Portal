@@ -206,6 +206,12 @@ export default function EduLockDashboardPage() {
           </nav>
         </div>
 
+        <div className="p-4 border-t border-white/10">
+          <button onClick={handleLogout} className="w-full flex items-center px-4 py-2.5 text-sm font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-colors">
+            <LogOut className="mr-3 h-5 w-5" />
+            Keluar
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
