@@ -294,9 +294,9 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
 
                 <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-6 flex flex-col justify-between">
                   <div>
-                    <h5 className="font-semibold text-white mb-2 text-lg">Kode Uninstall (Sekolah)</h5>
+                    <h5 className="font-semibold text-white mb-2 text-lg">Kode Uninstall Darurat (Offline)</h5>
                     <p className="text-sm text-slate-300 bg-white/5 p-3 rounded-lg border border-white/5">
-                      Kode ini dibuat oleh Super Admin dan hanya berlaku sebentar. Gunakan kode ini untuk mengakses proses Uninstall secara aman.
+                      Kode ini bersifat <strong>Darurat</strong> (Offline). Gunakan HANYA jika HP siswa kehabisan kuota atau bermasalah koneksi. Untuk penghapusan biasa, gunakan Tombol Uninstall di menu Data Siswa.
                     </p>
                     <div className="mt-6 flex flex-col items-center justify-center border border-dashed border-white/20 rounded-xl p-6 bg-slate-950/30">
                       <div className="text-3xl font-extrabold tracking-widest text-indigo-400 drop-shadow-md">
