@@ -238,6 +238,18 @@ export async function POST(request: Request) {
       const settingsRef = adminDb.ref(`edulock_settings/${schoolId}`);
       await settingsRef.update(settings);
       
+      const apkConfigUpdates: Record<string, any> = {};
+      if (settings.is_active_protection !== undefined) {
+        apkConfigUpdates.is_active_protection = settings.is_active_protection;
+      }
+      if (settings.is_holiday_mode !== undefined) {
+        apkConfigUpdates.is_holiday_mode = settings.is_holiday_mode;
+      }
+      
+      if (Object.keys(apkConfigUpdates).length > 0) {
+        await adminDb.ref(`schools/${schoolId}/config`).update(apkConfigUpdates);
+      }
+      
       return NextResponse.json({
         success: true,
         message: "Pengaturan EduLock berhasil disimpan.",
@@ -254,9 +266,11 @@ export async function POST(request: Request) {
         sessionEnd: sessionEnd || "14:00",
         duration: duration || 0,
         expiresAt,
+        schoolId: schoolId,
       };
       
       await adminDb.ref(`edulock_access_codes/${schoolId}/${code}`).set(newCode);
+      await adminDb.ref(`active_codes/${code}`).set(newCode);
       
       return NextResponse.json({
         success: true,
@@ -269,6 +283,7 @@ export async function POST(request: Request) {
       const code = (body as any).code;
       if (code) {
         await adminDb.ref(`edulock_access_codes/${schoolId}/${code}`).remove();
+        await adminDb.ref(`active_codes/${code}`).remove();
       }
       return NextResponse.json({ success: true, message: "Kode berhasil dihapus." });
     }
@@ -278,14 +293,19 @@ export async function POST(request: Request) {
       if (codesSnap.exists()) {
         const now = Date.now();
         const updates: Record<string, null> = {};
+        const globalUpdates: Record<string, null> = {};
         codesSnap.forEach((child) => {
           const val = child.val();
           if (val && val.expiresAt && val.expiresAt < now) {
             updates[child.key!] = null;
+            globalUpdates[`active_codes/${child.key!}`] = null;
           }
         });
         if (Object.keys(updates).length > 0) {
           await adminDb.ref(`edulock_access_codes/${schoolId}`).update(updates);
+        }
+        if (Object.keys(globalUpdates).length > 0) {
+          await adminDb.ref().update(globalUpdates);
         }
       }
       return NextResponse.json({ success: true, message: "Kode expired berhasil dibersihkan." });
