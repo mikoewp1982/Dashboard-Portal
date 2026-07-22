@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 
-type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes";
+type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "authorize-uninstall" | "authorize-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions";
 
 type EduLockRequestBody = {
   action?: EduLockAction;
   studentId?: string;
   schoolId?: string;
+  nisn?: string;
+  nisns?: string[];
 };
 
 type ActiveDeviceSnapshot = {
@@ -394,6 +396,53 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         message: "Seluruh izin aktif penggunaan HP berhasil dicabut.",
+      });
+    }
+
+    if (body.action === "authorize-uninstall") {
+      const rawNisn = String(body.nisn || "");
+      const nisn = rawNisn.trim();
+      if (!nisn) {
+        return NextResponse.json({ success: false, error: "NISN wajib diisi" }, { status: 400 });
+      }
+
+      const updates: Record<string, any> = {
+        [`students/${nisn}/uninstall_authorized`]: true,
+        [`students/${nisn}/uninstall_authorized_until`]: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+      };
+
+      await adminDb.ref().update(updates);
+
+      return NextResponse.json({
+        success: true,
+        message: `Mode Uninstall di HP untuk NISN ${nisn} berhasil diaktifkan.`,
+      });
+    }
+
+    if (body.action === "authorize-uninstall-mass") {
+      const nisns = body.nisns;
+      if (!Array.isArray(nisns) || nisns.length === 0) {
+        return NextResponse.json({ success: false, error: "Daftar NISN kosong" }, { status: 400 });
+      }
+
+      const updates: Record<string, any> = {};
+      const expiry = Date.now() + 24 * 60 * 60 * 1000;
+
+      for (const rawNisn of nisns) {
+        const nisn = String(rawNisn).trim();
+        if (nisn) {
+          updates[`students/${nisn}/uninstall_authorized`] = true;
+          updates[`students/${nisn}/uninstall_authorized_until`] = expiry;
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await adminDb.ref().update(updates);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Mode Uninstall massal untuk ${nisns.length} siswa berhasil diaktifkan.`,
       });
     }
 

@@ -106,10 +106,30 @@ export function useEduLockOverview(schoolId: string | undefined) {
     await refresh();
   };
 
+  const authorizeUninstall = async (nisn: string) => {
+    await callAdminApi("/api/admin/edulock", "POST", {
+      action: "authorize-uninstall",
+      schoolId,
+      nisn,
+    });
+    await refresh();
+  };
+
+  const authorizeUninstallMass = async (nisns: string[]) => {
+    await callAdminApi("/api/admin/edulock", "POST", {
+      action: "authorize-uninstall-mass",
+      schoolId,
+      nisns,
+    });
+    await refresh();
+  };
+
   return {
     overview,
     loading,
     refresh,
     resetStudentDevice,
+    authorizeUninstall,
+    authorizeUninstallMass,
   };
 }
