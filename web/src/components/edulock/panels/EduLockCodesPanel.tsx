@@ -18,11 +18,12 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
   const [startTimeInput, setStartTimeInput] = useState("07:00");
   const [endTimeInput, setEndTimeInput] = useState("14:00");
   const [validityInput, setValidityInput] = useState(30);
+  const [labelInput, setLabelInput] = useState("");
 
   const { codes, loading, saving, generateCode, deleteCode, deleteExpiredCodes } = useEduLockCodes(schoolId);
 
   const handleCreateCode = () => {
-    void generateCode(startTimeInput, endTimeInput, calculateDuration(startTimeInput, endTimeInput), validityInput);
+    void generateCode(startTimeInput, endTimeInput, calculateDuration(startTimeInput, endTimeInput), validityInput, labelInput);
   };
 
   const handleDeleteExpiredCodes = () => {
@@ -41,14 +42,24 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
     <div className="space-y-6">
       <div className="rounded-2xl border border-white/10 bg-[#1e293b]/50 overflow-hidden backdrop-blur-xl shadow-xl p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Generate Kode Baru</h3>
-        <div className="grid gap-4 md:grid-cols-4 items-end">
+        <div className="grid gap-4 md:grid-cols-5 items-end">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Catatan / Kelas (Opsional)</label>
+            <input 
+              type="text" 
+              placeholder="Misal: Kelas 7A (Jam 1-2)"
+              value={labelInput} 
+              onChange={(e) => setLabelInput(e.target.value)} 
+              className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white outline-none focus:border-indigo-500 text-sm" 
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">Jam Mulai Izin</label>
             <input 
               type="time" 
               value={startTimeInput} 
               onChange={(e) => setStartTimeInput(e.target.value)} 
-              className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white outline-none focus:border-indigo-500" 
+              className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white outline-none focus:border-indigo-500 text-sm" 
             />
           </div>
           <div>
@@ -57,7 +68,7 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
               type="time" 
               value={endTimeInput} 
               onChange={(e) => setEndTimeInput(e.target.value)} 
-              className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white outline-none focus:border-indigo-500" 
+              className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white outline-none focus:border-indigo-500 text-sm" 
             />
           </div>
           <div>
@@ -65,7 +76,7 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
             <select
               value={validityInput}
               onChange={(e) => setValidityInput(Number(e.target.value))}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white outline-none focus:border-indigo-500 text-sm"
             >
               <option value={15} className="bg-slate-900">15 Menit</option>
               <option value={30} className="bg-slate-900">30 Menit (Default)</option>
@@ -79,7 +90,7 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
               type="button" 
               onClick={handleCreateCode} 
               disabled={saving} 
-              className="flex-1 flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50"
+              className="flex-1 flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50 text-sm"
             >
               {saving ? "Memproses..." : (
                 <>
@@ -123,7 +134,14 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
                     <QRCode value={String(item.code)} size={88} />
                   </div>
                   <div>
-                    <div className="text-xl font-bold tracking-widest text-white">{item.code}</div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl font-bold tracking-widest text-white">{item.code}</span>
+                      {item.label && (
+                        <span className="rounded-md bg-indigo-500/20 border border-indigo-500/30 px-2.5 py-0.5 text-xs font-medium text-indigo-300">
+                          {item.label}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-sm text-slate-300 mt-1">
                       {item.sessionStart || "-"} - {item.sessionEnd || "-"} • {item.duration ? `${item.duration} menit` : "-"}
                     </div>

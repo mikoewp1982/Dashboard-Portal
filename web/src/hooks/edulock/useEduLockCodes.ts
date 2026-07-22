@@ -9,6 +9,7 @@ export interface EduLockAccessCode {
   sessionEnd: string;
   duration: number;
   expiresAt: number;
+  label?: string;
 }
 
 export function useEduLockCodes(schoolId: string) {
@@ -39,7 +40,7 @@ export function useEduLockCodes(schoolId: string) {
     return () => unsub();
   }, [schoolId]);
 
-  const generateCode = async (sessionStart: string, sessionEnd: string, duration: number, codeValidityMinutes: number = 30) => {
+  const generateCode = async (sessionStart: string, sessionEnd: string, duration: number, codeValidityMinutes: number = 30, label: string = "") => {
     setSaving(true);
     try {
       await callAdminApi("/api/admin/edulock", "POST", {
@@ -49,6 +50,7 @@ export function useEduLockCodes(schoolId: string) {
         sessionEnd,
         duration,
         codeValidityMinutes,
+        label,
       });
     } catch (error) {
       console.error("Gagal generate kode EduLock:", error);

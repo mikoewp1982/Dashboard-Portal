@@ -268,7 +268,7 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "generate-access-code") {
-      const { sessionStart, sessionEnd, duration, codeValidityMinutes } = body as any;
+      const { sessionStart, sessionEnd, duration, codeValidityMinutes, label } = body as any;
       const code = "EDULOCK-" + Math.floor(1000 + Math.random() * 9000);
       const validityMs = (typeof codeValidityMinutes === "number" && codeValidityMinutes > 0 ? codeValidityMinutes : 30) * 60 * 1000;
       const expiresAt = Date.now() + validityMs;
@@ -279,6 +279,7 @@ export async function POST(request: Request) {
         duration: duration || 0,
         expiresAt,
         schoolId: schoolId,
+        label: String(label || "").trim(),
       };
       
       await adminDb.ref(`edulock_access_codes/${schoolId}/${code}`).set(newCode);
