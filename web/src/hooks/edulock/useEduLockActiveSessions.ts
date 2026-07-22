@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDatabase, ref, onValue, off } from "firebase/database";
-import { app } from "@/lib/firebase";
+import { ref, onValue, off } from "firebase/database";
+import { rtdb } from "@/lib/firebase/client";
 
 export type EduLockActiveSession = {
   nisn: string;
@@ -27,8 +27,7 @@ export function useEduLockActiveSessions(schoolId: string) {
     }
 
     setLoading(true);
-    const db = getDatabase(app);
-    const sessionsRef = ref(db, `active_sessions_by_school/${schoolId}`);
+    const sessionsRef = ref(rtdb, `active_sessions_by_school/${schoolId}`);
 
     const handleSnapshot = (snapshot: any) => {
       if (snapshot.exists()) {
