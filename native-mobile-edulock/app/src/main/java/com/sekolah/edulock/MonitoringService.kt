@@ -79,6 +79,8 @@ class MonitoringService : Service() {
     private var flatDailyAttendanceStatusCache: String = ""
     private var schoolServiceStatusListener: ValueEventListener? = null
     private var schoolServiceStatusRef: com.google.firebase.database.DatabaseReference? = null
+    private var petStatusListener: ValueEventListener? = null
+    private var petStatusQuery: com.google.firebase.database.Query? = null
     private var overlayLockView: View? = null
     private lateinit var windowManager: WindowManager
     private var hasTriggeredSchoolServiceExit = false
@@ -138,6 +140,7 @@ class MonitoringService : Service() {
         startDailyAttendanceListener()
         startDeviceBindingListener()
         startSchoolServiceStatusListener()
+        startPetStatusListener()
         geofenceCoordinator.syncSchoolGeofence()
     }
 
@@ -157,6 +160,7 @@ class MonitoringService : Service() {
         startDailyAttendanceListener()
         startDeviceBindingListener()
         startSchoolServiceStatusListener()
+        startPetStatusListener()
         geofenceCoordinator.syncSchoolGeofence()
         return START_STICKY
     }
@@ -212,10 +216,20 @@ class MonitoringService : Service() {
         // Penting: Ini harus jalan MESKIPUN Silent Mode, agar status "Inside/Outside" selalu fresh.
         
         val now = System.currentTimeMillis()
+        val currentFgPkg = prefsManager.lastForegroundPackage.orEmpty()
+        val isSettingsPackage = currentFgPkg.startsWith("com.android.settings") ||
+                currentFgPkg.startsWith("com.samsung.accessibility") ||
+                currentFgPkg.contains("settings") ||
+                currentFgPkg == "android" ||
+                currentFgPkg.isEmpty()
+
+        if (!isSettingsPackage && (prefsManager.isSettingsOpen || now < prefsManager.settingsGraceUntil)) {
+            prefsManager.isSettingsOpen = false
+            prefsManager.settingsGraceUntil = 0L
+        }
+
         val isSettingsGrace =
-            prefsManager.isSettingsOpen ||
-            now < prefsManager.settingsGraceUntil ||
-            now < prefsManager.deviceAdminRequestUntil
+            (prefsManager.isSettingsOpen || now < prefsManager.settingsGraceUntil || now < prefsManager.deviceAdminRequestUntil) && isSettingsPackage
 
         if (currentLocation != null) {
             val isInsideNow = locationMonitor.isInsideSchoolArea()
@@ -312,7 +326,7 @@ class MonitoringService : Service() {
             }
             if (!isAccessibilityEnabled && !isSettingsGrace) {
                 if (isSchoolTime && prefsManager.isInsideSchoolZone && !prefsManager.isHolidayMode) {
-                    if (now - lastAccessibilityLockTime > 10_000) {
+                    if (now - lastAccessibilityLockTime > 1_500) {
                         lastAccessibilityLockTime = now
                         showLockScreen("PROTEKSI WAJIB AKTIF!\n\nBuka Aksesibilitas > Layanan Terinstall > EduLock Protection -> AKTIFKAN.")
                     }
@@ -329,6 +343,24 @@ class MonitoringService : Service() {
                 }
             }
         } catch (_: Exception) { }
+
+        // ==========================================
+        // 5.5 CEK KEMATIAN PET (HUKUMAN KEDISIPLINAN)
+        // ==========================================
+        if (prefsManager.isPetDead) {
+            val lastAck = prefsManager.lastPetDeadAckAt
+            // Tampilkan lagi setiap 30 menit (1800000 ms) jika Opsi A
+            val NAGGING_INTERVAL = 30 * 60 * 1000L
+            if (now - lastAck > NAGGING_INTERVAL) {
+                hideOverlayLock() // bersihkan lock lain
+                val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
+                intent.setPackage(packageName)
+                sendBroadcast(intent)
+                
+                lockEnforcer.showPetDeadLock()
+                return
+            }
+        }
 
         // ==========================================
         // 6. CEK JADWAL & STOP JIKA BUKAN WAKTU SEKOLAH / HARI TIDAK EFEKTIF
@@ -1528,5 +1560,62 @@ class MonitoringService : Service() {
         // Restart service jika dimatikan
         val broadcastIntent = Intent(this, ServiceRestarter::class.java)
         sendBroadcast(broadcastIntent)
+    }
+
+    private fun startPetStatusListener() {
+        if (petStatusListener != null) return
+
+        val studentId = prefsManager.studentId.toString()
+        if (studentId.isBlank() || studentId == "-1") return
+
+        val database = SchoolServiceGuard.database(this)
+        petStatusQuery = database.getReference("virtual_pets")
+            .orderByChild("studentId")
+            .equalTo(studentId)
+
+        petStatusListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!snapshot.exists()) return
+
+                var chosen: DataSnapshot? = null
+                var chosenScore = Long.MIN_VALUE
+
+                for (child in snapshot.children) {
+                    val updatedAt = child.child("updatedAt").getValue(Long::class.java) ?: 0L
+                    val lastQuestReset = child.child("lastQuestReset").getValue(Long::class.java) ?: 0L
+                    val lastPlayed = child.child("lastPlayed").getValue(Long::class.java) ?: 0L
+                    val lastFed = child.child("lastFed").getValue(Long::class.java) ?: 0L
+                    val score = maxOf(updatedAt, lastQuestReset, lastPlayed, lastFed)
+                    if (chosen == null || score > chosenScore) {
+                        chosen = child
+                        chosenScore = score
+                    }
+                }
+
+                val record = chosen ?: return
+                val status = record.child("status").getValue(String::class.java) ?: "HAPPY"
+                val health = record.child("health").getValue(Int::class.java) ?: 100
+                val happiness = record.child("happiness").getValue(Int::class.java) ?: 100
+                val energy = record.child("energy").getValue(Int::class.java) ?: 100
+                val hunger = record.child("hunger").getValue(Int::class.java) ?: 0
+                val manualReviveUntil = record.child("manualReviveUntil").getValue(Long::class.java) ?: 0L
+
+                val fullness = (100 - hunger).coerceIn(0, 100)
+                val lowestVital = minOf(health, happiness, energy, fullness)
+                val isGraceActive = manualReviveUntil > System.currentTimeMillis()
+                val isDead = !isGraceActive && (status == "DEAD" || health <= 0 || lowestVital <= 0)
+
+                val wasDead = prefsManager.isPetDead
+                if (isDead != wasDead) {
+                    prefsManager.isPetDead = isDead
+                    if (!isDead) {
+                        prefsManager.lastPetDeadAckAt = 0L // reset
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        petStatusQuery?.addValueEventListener(petStatusListener!!)
     }
 }
