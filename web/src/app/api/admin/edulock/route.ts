@@ -249,6 +249,17 @@ export async function POST(request: Request) {
       if (Object.keys(apkConfigUpdates).length > 0) {
         await adminDb.ref(`schools/${schoolId}/config`).update(apkConfigUpdates);
       }
+
+      const policyUpdates: Record<string, any> = {};
+      if (typeof settings.gpsWarnMinutes === "number") {
+        policyUpdates.gps_off_warn_ms = settings.gpsWarnMinutes * 60 * 1000;
+      }
+      if (typeof settings.gpsLockMinutes === "number") {
+        policyUpdates.gps_off_lock_ms = settings.gpsLockMinutes * 60 * 1000;
+      }
+      if (Object.keys(policyUpdates).length > 0) {
+        await adminDb.ref(`schools/${schoolId}/policy`).update(policyUpdates);
+      }
       
       return NextResponse.json({
         success: true,
@@ -337,6 +348,7 @@ export async function POST(request: Request) {
       if (nisn) {
         updates[`master_students/${nisn}/deviceId`] = null;
         updates[`master_students/${nisn}/device`] = null;
+        updates[`students/${nisn}/device_uuid`] = null;
       }
 
       await adminDb.ref().update(updates);
