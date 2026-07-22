@@ -562,18 +562,23 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                     updates["$teacherPath/device"] = deviceId
                 }
                 rootRef.updateChildren(updates)
-                if (!saveSession(
-                    role = "teacher",
-                    schoolId = schoolIdValue,
-                    npsn = npsnValue,
-                    schoolName = schoolNameValue,
-                    displayName = displayNameValue,
-                    loginKey = teacherIdentity,
-                    teacherId = teacherIdentity
-                )) {
-                    return@ensureSchoolServiceActive
-                }
-                onSuccess()
+                    .addOnSuccessListener {
+                        if (!saveSession(
+                            role = "teacher",
+                            schoolId = schoolIdValue,
+                            npsn = npsnValue,
+                            schoolName = schoolNameValue,
+                            displayName = displayNameValue,
+                            loginKey = teacherIdentity,
+                            teacherId = teacherIdentity
+                        )) {
+                            return@addOnSuccessListener
+                        }
+                        onSuccess()
+                    }
+                    .addOnFailureListener { e ->
+                        onError("Login Ditolak: Akun terkunci di perangkat lain atau gagal mendaftarkan perangkat.")
+                    }
             }
         }
 
