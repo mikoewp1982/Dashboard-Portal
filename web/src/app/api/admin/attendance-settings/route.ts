@@ -92,6 +92,13 @@ export async function POST(req: NextRequest) {
         longitude: location.longitude,
         radius: location.radius
       });
+
+      const gasRef = adminDb.ref(`gas/schools/${targetSchoolId}`);
+      await gasRef.update({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        radius: location.radius
+      });
       
       return NextResponse.json({ success: true });
     }
