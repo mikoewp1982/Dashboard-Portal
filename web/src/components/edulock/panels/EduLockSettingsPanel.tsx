@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { ShieldAlert, Clock, Activity, Save, Settings } from "lucide-react";
-import QRCode from "react-qr-code";
+import { useState, useEffect } from "react";
+import { Settings, ShieldAlert, Clock, Activity, Save } from "lucide-react";
 import { useGasSettings } from "@/hooks/gas/attendance/useGasSettings";
 import { useEduLockUninstallAccess } from "@/hooks/edulock/useEduLockUninstallAccess";
 import { useEduLockSettings } from "@/hooks/edulock/useEduLockSettings";
@@ -24,18 +23,6 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
   const { schedules, holidays, location } = useGasSettings(schoolId);
   const { access: uninstallAccess, loading: uninstallLoading } = useEduLockUninstallAccess(schoolId);
   const hasUninstallCode = hasActiveUninstallCode(uninstallAccess);
-
-  const uninstallQrValue = useMemo(() => {
-    if (!hasUninstallCode || !uninstallAccess?.code) return "";
-    return JSON.stringify({
-      type: "EDULOCK_UNINSTALL_ACCESS",
-      schoolId: schoolId,
-      schoolName: "",
-      code: uninstallAccess.code,
-      expiresAt: uninstallAccess.expiresAt || null,
-      updatedAt: uninstallAccess.updatedAt || null,
-    });
-  }, [schoolId, hasUninstallCode, uninstallAccess]);
 
   const { settings, loading: settingsLoading, saving, saveSettings } = useEduLockSettings(schoolId);
   const [gpsWarnMinutes, setGpsWarnMinutes] = useState(2);
@@ -307,9 +294,9 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
 
                 <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-6 flex flex-col justify-between">
                   <div>
-                    <h5 className="font-semibold text-white mb-2 text-lg">Kode Uninstall (Sekolah)</h5>
+                    <h5 className="font-semibold text-white mb-2 text-lg">Kode Uninstall Darurat (Offline)</h5>
                     <p className="text-sm text-slate-300 bg-white/5 p-3 rounded-lg border border-white/5">
-                      Kode ini dibuat oleh Super Admin dan hanya berlaku sebentar. Gunakan kode ini untuk mengakses proses Uninstall secara aman.
+                      Kode ini bersifat <strong>Darurat</strong> (Offline). Gunakan HANYA jika HP siswa kehabisan kuota atau bermasalah koneksi. Untuk penghapusan biasa, gunakan Tombol Uninstall di menu Data Siswa.
                     </p>
                     <div className="mt-6 flex flex-col items-center justify-center border border-dashed border-white/20 rounded-xl p-6 bg-slate-950/30">
                       <div className="text-3xl font-extrabold tracking-widest text-indigo-400 drop-shadow-md">
@@ -326,17 +313,6 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
                           ? `Berlaku sampai ${new Date(uninstallAccess?.expiresAt || 0).toLocaleString("id-ID")}`
                           : "Belum ada kode aktif. Minta Super Admin untuk membuat Kode Uninstall sekolah."}
                       </div>
-
-                      {hasUninstallCode && uninstallQrValue && (
-                        <div className="mt-6 flex flex-col items-center gap-3">
-                          <div className="rounded-2xl bg-white p-3 shadow-lg">
-                            <QRCode value={uninstallQrValue} size={140} />
-                          </div>
-                          <div className="text-[10px] text-slate-500 max-w-[200px] text-center">
-                            Scan barcode ini melalui aplikasi siswa untuk melakukan uninstall darurat.
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
