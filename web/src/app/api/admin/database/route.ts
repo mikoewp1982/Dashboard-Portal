@@ -3,9 +3,10 @@ import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 
 type AdminDatabaseRequestBody = {
-  action?: "create" | "update" | "delete" | "delete-all";
+  action?: "create" | "update" | "delete" | "delete-all" | "import-excel";
   tab?: string;
   data?: Record<string, unknown>;
+  bulkData?: Record<string, unknown>[];
   id?: string;
 };
 
@@ -48,36 +49,37 @@ export async function POST(request: Request) {
 
     const ref = adminDb.ref(path);
 
-    const normalizedData = (() => {
-      if (!data) return undefined;
-      const baseData = { ...data } as Record<string, unknown>;
+    const normalizeItem = (baseData: Record<string, unknown> | undefined) => {
+      if (!baseData) return undefined;
+      const d = { ...baseData } as Record<string, unknown>;
 
       if (tab === "Siswa") {
-        const classLabel = String(baseData.className || baseData.kelas || baseData.class || "").trim();
+        const classLabel = String(d.className || d.kelas || d.class || "").trim();
         return {
-          ...baseData,
+          ...d,
           schoolId,
           npsn: schoolContext.npsn,
-          schoolName: schoolContext.name || baseData.schoolName,
-          class: classLabel || baseData.class,
-          className: classLabel || baseData.className,
-          username: String(baseData.username || baseData.name || "").trim(),
+          schoolName: schoolContext.name || d.schoolName,
+          class: classLabel || d.class,
+          className: classLabel || d.className,
+          username: String(d.username || d.name || "").trim(),
         };
       }
 
       if (tab === "Guru/Wali Kelas" || tab === "Petugas OSIS" || tab === "Kelas Paralel") {
         return {
-          ...baseData,
+          ...d,
           schoolId,
           npsn: schoolContext.npsn,
-          schoolName: schoolContext.name || baseData.schoolName,
+          schoolName: schoolContext.name || d.schoolName,
         };
       }
 
-      return baseData;
-    })();
+      return d;
+    };
 
     if (action === "create") {
+      const normalizedData = normalizeItem(data);
       const newRef = ref.push();
       await newRef.set({
         ...normalizedData,
@@ -89,6 +91,7 @@ export async function POST(request: Request) {
     
     else if (action === "update") {
       if (!id) return NextResponse.json({ success: false, message: "ID tidak valid" }, { status: 400 });
+      const normalizedData = normalizeItem(data);
       await ref.child(id).update({
         ...normalizedData,
         updatedAt: Date.now()
@@ -105,6 +108,31 @@ export async function POST(request: Request) {
     else if (action === "delete-all") {
       await ref.remove();
       return NextResponse.json({ success: true, message: "Semua data berhasil dihapus" });
+    }
+
+    else if (action === "import-excel") {
+      if (!body.bulkData || !Array.isArray(body.bulkData)) {
+        return NextResponse.json({ success: false, message: "Data excel tidak valid" }, { status: 400 });
+      }
+      const updates: Record<string, unknown> = {};
+      const now = Date.now();
+      body.bulkData.forEach((item) => {
+        const normalizedItem = normalizeItem(item);
+        if (normalizedItem) {
+          const newRef = ref.push();
+          if (newRef.key) {
+            updates[newRef.key] = {
+              ...normalizedItem,
+              createdAt: now,
+              updatedAt: now,
+            };
+          }
+        }
+      });
+      if (Object.keys(updates).length > 0) {
+        await ref.update(updates);
+      }
+      return NextResponse.json({ success: true, message: `Berhasil mengimpor ${Object.keys(updates).length} data` });
     }
 
     return NextResponse.json({ success: false, message: "Aksi tidak dikenali" }, { status: 400 });

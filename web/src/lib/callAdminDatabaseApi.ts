@@ -1,12 +1,13 @@
 import { auth } from "./firebase/client";
 import { createSessionInactiveError, waitForClientUser } from "./firebase/waitForClientUser";
 
-type DatabaseAction = "create" | "update" | "delete" | "delete-all";
+type DatabaseAction = "create" | "update" | "delete" | "delete-all" | "import-excel";
 
 interface DatabasePayload {
   action: DatabaseAction;
   tab: string;
   data?: Record<string, unknown>;
+  bulkData?: Record<string, unknown>[];
   id?: string;
 }
 

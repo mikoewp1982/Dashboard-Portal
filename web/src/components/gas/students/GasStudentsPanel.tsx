@@ -69,8 +69,8 @@ export function GasStudentsPanel({ schoolId }: GasStudentsPanelProps) {
   };
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="flex-1 overflow-auto p-6 lg:p-8">
+    <div className="flex flex-1 flex-col min-h-0 h-full">
+      <div className="flex-1 overflow-y-auto p-6 lg:p-8">
         <div className="rounded-[28px] border border-white/10 bg-[#081634]/90 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">

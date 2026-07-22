@@ -68,11 +68,15 @@ class DisciplineRepository {
         val globalRef = db.child("discipline_rules")
         val scopedId = normalizeScope(schoolId)
         val scopedRef = if (scopedId.isNotBlank()) db.child(schoolRuleRoot).child(scopedId) else null
-        var globalRules: List<DisciplineRule> = emptyList()
+        val tenantRef = if (scopedId.isNotBlank()) db.child("gas/schools/$scopedId/settings/disciplineRules") else null
+
+        var tenantRules: List<DisciplineRule> = emptyList()
         var scopedRules: List<DisciplineRule> = emptyList()
+        var globalRules: List<DisciplineRule> = emptyList()
 
         fun emitRules() {
             val activeRules = when {
+                tenantRules.isNotEmpty() -> tenantRules
                 scopedRules.isNotEmpty() -> scopedRules
                 globalRules.isNotEmpty() -> globalRules
                 else -> fallbackRules
@@ -80,9 +84,9 @@ class DisciplineRepository {
             trySend(activeRules)
         }
 
-        val globalListener = object : ValueEventListener {
+        val tenantListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                globalRules = parseRules(snapshot)
+                tenantRules = parseRules(snapshot)
                 emitRules()
             }
 
@@ -102,13 +106,24 @@ class DisciplineRepository {
             }
         }
 
+        val globalListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                globalRules = parseRules(snapshot)
+                emitRules()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
         globalRef.addValueEventListener(globalListener)
         scopedRef?.addValueEventListener(scopedListener)
+        tenantRef?.addValueEventListener(tenantListener)
         awaitClose {
             globalRef.removeEventListener(globalListener)
-            if (scopedRef != null) {
-                scopedRef.removeEventListener(scopedListener)
-            }
+            if (scopedRef != null) scopedRef.removeEventListener(scopedListener)
+            if (tenantRef != null) tenantRef.removeEventListener(tenantListener)
         }
     }
 

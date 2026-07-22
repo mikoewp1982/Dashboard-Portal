@@ -272,7 +272,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
 
             fun parseActive(snapshot: DataSnapshot): Boolean {
                 val role = snapshot.child("role").getValue(String::class.java)?.trim()?.lowercase().orEmpty()
-                if (role.isNotEmpty() && role != "osis") return false
+                if (role.isNotEmpty() && role != "osis" && role != "petugas osis") return false
 
                 val boolActive = snapshot.child("isActive").getValue(Boolean::class.java)
                 if (boolActive != null) return boolActive
@@ -284,24 +284,74 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                 return true
             }
 
-            val staffRef = db.getReference("master_staff")
-            staffRef.child(key).addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!snapshot.exists()) {
-                        isOsis = false
-                        prefs.edit().putBoolean("user_is_osis_staff", false).apply()
-                        return
+            fun processStaffResult(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    val staffNode = if (snapshot.hasChildren() && !snapshot.hasChild("role") && !snapshot.hasChild("status") && !snapshot.hasChild("isActive") && !snapshot.hasChild("nisn")) {
+                        snapshot.children.first()
+                    } else {
+                        snapshot
                     }
-                    val active = parseActive(snapshot)
+                    val active = parseActive(staffNode)
                     isOsis = active
                     prefs.edit().putBoolean("user_is_osis_staff", active).apply()
-                }
-
-                override fun onCancelled(error: DatabaseError) {
+                } else {
                     isOsis = false
                     prefs.edit().putBoolean("user_is_osis_staff", false).apply()
                 }
-            })
+            }
+
+            fun searchMasterStaff() {
+                val masterStaffRef = db.getReference("master_staff")
+                masterStaffRef.orderByChild("nisn").equalTo(key)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            if (snapshot.exists()) {
+                                processStaffResult(snapshot)
+                            } else {
+                                masterStaffRef.child(key).addListenerForSingleValueEvent(object : ValueEventListener {
+                                    override fun onDataChange(directSnapshot: DataSnapshot) {
+                                        processStaffResult(directSnapshot)
+                                    }
+                                    override fun onCancelled(error: DatabaseError) { 
+                                        isOsis = false
+                                        prefs.edit().putBoolean("user_is_osis_staff", false).apply()
+                                    }
+                                })
+                            }
+                        }
+                        override fun onCancelled(error: DatabaseError) {
+                            isOsis = false
+                            prefs.edit().putBoolean("user_is_osis_staff", false).apply()
+                        }
+                    })
+            }
+
+            if (sessionSchoolId.isNotBlank()) {
+                val staffRef = db.getReference("gas/schools/$sessionSchoolId/staff")
+                staffRef.orderByChild("nisn").equalTo(key)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            if (snapshot.exists()) {
+                                processStaffResult(snapshot)
+                            } else {
+                                staffRef.orderByChild("username").equalTo(key)
+                                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                                        override fun onDataChange(unameSnapshot: DataSnapshot) {
+                                            if (unameSnapshot.exists()) {
+                                                processStaffResult(unameSnapshot)
+                                            } else {
+                                                searchMasterStaff()
+                                            }
+                                        }
+                                        override fun onCancelled(error: DatabaseError) { searchMasterStaff() }
+                                    })
+                            }
+                        }
+                        override fun onCancelled(error: DatabaseError) { searchMasterStaff() }
+                    })
+            } else {
+                searchMasterStaff()
+            }
         }
 
         fun loadTeacherAnnouncement() {

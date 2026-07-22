@@ -116,11 +116,12 @@ object SecurityUtils {
 
     fun normalizeAudienceFlavor(value: String?): String {
         return when (val normalized = normalizeScope(value)) {
-            "siswa", "guru", "kepala" -> normalized
+            "siswa", "guru", "kepala", "universal" -> normalized
             else -> when {
                 normalized.contains("siswa") -> "siswa"
                 normalized.contains("guru") -> "guru"
                 normalized.contains("kepala") -> "kepala"
+                normalized.contains("universal") -> "universal"
                 else -> normalized
             }
         }
@@ -164,11 +165,15 @@ object SecurityUtils {
 
     fun isRoleAllowedForFlavor(role: String, flavor: String): Boolean {
         val normalizedRole = normalizeScope(role)
-        return when (normalizeAudienceFlavor(flavor)) {
+        val audience = normalizeAudienceFlavor(flavor)
+        if (audience == "universal") {
+            return normalizedRole in schoolScopedRoles
+        }
+        return when (audience) {
             "siswa" -> normalizedRole == "student"
             "guru" -> normalizedRole == "teacher" || normalizedRole == "staff"
             "kepala" -> normalizedRole == "principal"
-            else -> false
+            else -> true
         }
     }
 
@@ -229,12 +234,26 @@ object SecurityUtils {
         val normalizedRole = role.trim().lowercase()
         val normalizedFlavor = normalizeAudienceFlavor(flavor)
         val osisEnabled = prefs?.let { isOsisStaffAccessEnabled(it) } == true
+        if (normalizedFlavor == "universal") {
+            return when (route) {
+                "home", "profile", "tasks" -> normalizedRole in schoolScopedRoles
+                "attendance", "library", "tools", "tools_english_dictionary", "tools_javanese_dictionary", "discipline", "virtual_pet", "seven_habits", "prayer", "halo_spentgapa", "notifications" ->
+                    normalizedRole == "student"
+                "osis_discipline" ->
+                    normalizedRole == "staff" || (normalizedRole == "student" && osisEnabled)
+                "teacher_student_list", "teacher_attendance", "teacher_prayer", "teacher_discipline", "teacher_literacy", "teacher_bullying_reports", "teacher_notifications", "teacher_seven_habits" ->
+                    normalizedRole == "teacher" || normalizedRole == "staff"
+                "principal_attendance", "principal_literacy", "principal_prayer", "principal_seven_habits", "principal_discipline", "principal_bullying" ->
+                    normalizedRole == "principal"
+                else -> true
+            }
+        }
         return when (route) {
             "home", "profile", "tasks" -> when (normalizedFlavor) {
                 "siswa" -> normalizedRole == "student"
                 "guru" -> normalizedRole == "teacher" || normalizedRole == "staff"
                 "kepala" -> normalizedRole == "principal"
-                else -> false
+                else -> true
             }
             "attendance", "library", "tools", "tools_english_dictionary", "tools_javanese_dictionary", "discipline", "virtual_pet", "seven_habits", "prayer", "halo_spentgapa", "notifications" ->
                 normalizedFlavor == "siswa" && normalizedRole == "student"

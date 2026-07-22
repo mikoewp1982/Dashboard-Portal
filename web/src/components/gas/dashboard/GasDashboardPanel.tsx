@@ -13,7 +13,7 @@ export function GasDashboardPanel({ schoolId }: { schoolId: string }) {
   const activeTeachers = useMemo(() => teachers.length, [teachers]);
 
   return (
-    <div className="flex h-full flex-col p-6 lg:p-8 overflow-y-auto">
+    <div className="flex h-full min-h-0 flex-col p-6 lg:p-8 overflow-y-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white">Beranda GAS</h1>
         <p className="mt-2 text-sm text-slate-400">

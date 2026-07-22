@@ -6,7 +6,7 @@ import { AlertCircle, Award, FileSpreadsheet, Pencil, Plus, RefreshCw, RotateCcw
 import { useGasDiscipline } from "@/hooks/gas/discipline/useGasDiscipline";
 import { useGasDisciplineRules } from "@/hooks/gas/discipline/useGasDisciplineRules";
 import { useAuthStore } from "@/store/useAuthStore";
-import { DisciplineRule } from "@/types/discipline";
+import { DisciplineRule, DEFAULT_DISCIPLINE_RULES } from "@/types/discipline";
 import { exportToExcel } from "@/utils/export";
 import { DisciplineRecordsSection } from "./DisciplineRecordsSection";
 import { DisciplineRulesManager } from "./DisciplineRulesManager";
@@ -181,7 +181,7 @@ export function GasDisciplinePanel({ schoolId }: { schoolId: string }) {
   };
 
   const resetSchoolRules = async () => {
-    setRuleError("Reset default hanya bisa dilakukan via API Backend. Silakan edit atau hapus rule satu persatu.");
+    await persistSchoolRules(DEFAULT_DISCIPLINE_RULES, "Aturan pelanggaran berhasil dikembalikan ke daftar default.");
   };
 
   return (

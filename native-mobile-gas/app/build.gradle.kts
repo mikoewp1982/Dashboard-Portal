@@ -76,6 +76,13 @@ android {
             applicationIdSuffix = ".kepala"
             versionNameSuffix = "-kepala-legacy"
         }
+        create("universal") {
+            dimension = "audience"
+            minSdk = 23
+            resValue("string", "app_name", "GAS Universal")
+            applicationIdSuffix = ".siswa"
+            versionNameSuffix = "-universal"
+        }
     }
 
     signingConfigs {

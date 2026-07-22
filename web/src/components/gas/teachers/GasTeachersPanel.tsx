@@ -35,7 +35,7 @@ export function GasTeachersPanel({ schoolId }: GasTeachersPanelProps) {
   const withoutClass = useMemo(() => data.filter((row) => !String(row.class || "").trim()).length, [data]);
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col min-h-0 h-full">
       <GasModuleHeader
         title="GAS Teachers"
         description="Workspace operasional guru untuk kebutuhan presensi, penilaian, dan kontrol kelas di modul GAS."

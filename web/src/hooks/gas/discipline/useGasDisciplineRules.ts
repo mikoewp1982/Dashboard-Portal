@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { rtdb } from "@/lib/firebase/client";
 import { ref as rtdbRef, onValue, set } from "firebase/database";
-import { DisciplineRule } from "@/types/discipline";
+import { DisciplineRule, DEFAULT_DISCIPLINE_RULES } from "@/types/discipline";
 
 export function useGasDisciplineRules(schoolId: string | undefined) {
-  const [rules, setRules] = useState<DisciplineRule[]>([]);
+  const [rules, setRules] = useState<DisciplineRule[]>(DEFAULT_DISCIPLINE_RULES);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,7 +15,7 @@ export function useGasDisciplineRules(schoolId: string | undefined) {
     const unsub = onValue(rulesRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
-        setRules([]);
+        setRules(DEFAULT_DISCIPLINE_RULES);
         setLoading(false);
         return;
       }
@@ -36,12 +36,19 @@ export function useGasDisciplineRules(schoolId: string | undefined) {
 
   const saveRules = useCallback(async (newRules: DisciplineRule[]) => {
     if (!schoolId) return;
-    const rulesRef = rtdbRef(rtdb, `gas/schools/${schoolId}/settings/disciplineRules`);
+    const normalizedSchoolId = schoolId.trim().toLowerCase();
+    const rulesRef1 = rtdbRef(rtdb, `gas/schools/${schoolId}/settings/disciplineRules`);
+    const rulesRef2 = rtdbRef(rtdb, `discipline_rules_by_school/${normalizedSchoolId}`);
+    
     const payload = newRules.reduce((acc, rule) => {
       acc[rule.id] = rule;
       return acc;
     }, {} as Record<number, DisciplineRule>);
-    await set(rulesRef, payload);
+    
+    await Promise.all([
+      set(rulesRef1, payload),
+      set(rulesRef2, payload)
+    ]);
   }, [schoolId]);
 
   return {
@@ -50,3 +57,4 @@ export function useGasDisciplineRules(schoolId: string | undefined) {
     saveRules
   };
 }
+
