@@ -797,8 +797,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 "$studentPath/device" to deviceId,
                 "$studentPath/lastLogin" to now,
                 "$studentPath/lastLoginAt" to now,
-                "master_students/$nisnValue/deviceId" to deviceId,
-                "master_students/$nisnValue/device" to deviceId,
             )
 
             fun finalizeStudentLogin() {
@@ -814,19 +812,11 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 )) {
                     return
                 }
-                // #region debug-point D:bind-student-success
-                debugReport(
-                    hypothesisId = "D",
-                    location = "LoginScreen.kt:bindStudent",
-                    msg = "bindStudent completed successfully",
-                    data = mapOf(
-                        "studentPath" to studentSnapshot.ref.path.toString(),
-                        "schoolIdValue" to schoolIdValue,
-                        "npsnValue" to npsnValue,
-                        "className" to className,
-                    )
-                )
-                // #endregion
+                // Update master_students asynchronously if available
+                runCatching {
+                    rootRef.child("master_students/$nisnValue/deviceId").setValue(deviceId)
+                    rootRef.child("master_students/$nisnValue/device").setValue(deviceId)
+                }
                 onSuccess()
             }
 
@@ -846,16 +836,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                     .addOnFailureListener { e ->
                         val rawMessage = e.message.orEmpty()
                         if (rawMessage.contains("Permission denied", ignoreCase = true)) {
-                            debugReport(
-                                hypothesisId = "D",
-                                location = "LoginScreen.kt:bindStudent",
-                                msg = "fallback to cloud function for device registration",
-                                data = mapOf(
-                                    "studentPath" to studentSnapshot.ref.path.toString(),
-                                    "schoolIdValue" to schoolIdValue,
-                                    "requestedSchoolId" to requestedSchoolId,
-                                )
-                            )
                             registerStudentDeviceViaCloudFunction(
                                 requestedSchoolId = requestedSchoolId,
                                 usernameInput = usernameInput,
@@ -863,16 +843,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                                 deviceId = deviceId,
                                 onSuccess = { finalizeStudentLogin() },
                                 onError = { message ->
-                                    debugReport(
-                                        hypothesisId = "D",
-                                        location = "LoginScreen.kt:bindStudent",
-                                        msg = "cloud function unavailable, continue with local-only session",
-                                        data = mapOf(
-                                            "studentPath" to studentSnapshot.ref.path.toString(),
-                                            "error" to message,
-                                        )
-                                    )
-                                    finalizeStudentLogin()
+                                    onError("Login Ditolak: Akun terkunci di perangkat lain. Minta Admin/Wali Kelas untuk Reset Device.")
                                 }
                             )
                         } else {

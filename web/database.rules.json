@@ -32,25 +32,45 @@
     "gas": {
       "schools": {
         "$schoolId": {
-          ".read": "auth != null",
+          ".read": true,
           ".write": "auth != null && (auth.token.role === 'admin' && auth.token.schoolId === $schoolId)",
           "students": {
             ".indexOn": ["nisn", "username"],
             "$studentId": {
-              ".write": "auth != null && (!data.child('device_uuid').exists() || data.child('device_uuid').val() == '' || data.child('device_uuid').val() == newData.child('device_uuid').val() || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val())"
+              ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
             }
           },
           "teachers": {
-            ".indexOn": ["nuptk", "username"]
+            ".indexOn": ["nuptk", "username"],
+            "$teacherId": {
+              ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
+            }
+          },
+          "staff": {
+            "$staffId": {
+              ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
+            }
           }
         }
+      }
+    },
+    "master_students": {
+      ".read": true,
+      "$nisn": {
+        ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
+      }
+    },
+    "master_teachers": {
+      ".read": true,
+      "$nuptk": {
+        ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
       }
     },
     "active_devices": {
       "$schoolId": {
         "$deviceId": {
-          ".read": "auth != null",
-          ".write": "auth != null"
+          ".read": true,
+          ".write": true
         }
       }
     },
@@ -58,6 +78,7 @@
       ".indexOn": ["schoolId"]
     },
     "schools": {
+      ".read": true,
       ".indexOn": ["npsn"]
     }
   }
