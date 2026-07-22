@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 
-type EduLockAction = "reset-student-device";
+type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes";
 
 type EduLockRequestBody = {
   action?: EduLockAction;
@@ -82,17 +82,16 @@ function parseActiveDevices(rawValue: unknown) {
         ? (rawRecord as Record<string, unknown>)
         : {};
 
-    const lastSeenAt = readNumber(record, "lastSeenAt", "lastSeen", "updatedAt", "timestamp");
-    const rawStatus = readString(record, "status", "state", "connectionStatus");
-    const insideSchool = readBoolean(record, "insideSchool", "isInsideSchool");
+    const lastSeenAt = readNumber(record, "lastSeenAt", "lastSeen", "lastUpdated", "updatedAt", "timestamp");
+    const rawStatus = readString(record, "status", "state", "connectionStatus", "deviceStatus");
+    const insideSchool = readBoolean(record, "insideSchool", "isInsideSchool", "isInsideZone");
     const isOutOfZoneExplicit = readBoolean(record, "isOutOfZone", "outOfZone");
     const isEmergencyUnlock = readBoolean(record, "isEmergencyUnlock", "emergencyUnlock", "emergencyUnlocked") === true;
     const isUninstallBypass = readBoolean(record, "isUninstallBypass", "uninstallBypass", "uninstallAuthorized") === true;
     const isPermissionActive = readBoolean(record, "isPermissionActive", "permissionActive", "tempPermissionActive") === true;
     const computedOnline =
       rawStatus.toUpperCase() === "ONLINE" ||
-      lastSeenAt === null ||
-      now - lastSeenAt <= ONLINE_WINDOW_MS;
+      (lastSeenAt !== null && now - lastSeenAt <= ONLINE_WINDOW_MS);
 
     return {
       deviceId,
@@ -238,6 +237,29 @@ export async function POST(request: Request) {
       const settingsRef = adminDb.ref(`edulock_settings/${schoolId}`);
       await settingsRef.update(settings);
       
+      const apkConfigUpdates: Record<string, any> = {};
+      if (settings.is_active_protection !== undefined) {
+        apkConfigUpdates.is_active_protection = settings.is_active_protection;
+      }
+      if (settings.is_holiday_mode !== undefined) {
+        apkConfigUpdates.is_holiday_mode = settings.is_holiday_mode;
+      }
+      
+      if (Object.keys(apkConfigUpdates).length > 0) {
+        await adminDb.ref(`schools/${schoolId}/config`).update(apkConfigUpdates);
+      }
+
+      const policyUpdates: Record<string, any> = {};
+      if (typeof settings.gpsWarnMinutes === "number") {
+        policyUpdates.gps_off_warn_ms = settings.gpsWarnMinutes * 60 * 1000;
+      }
+      if (typeof settings.gpsLockMinutes === "number") {
+        policyUpdates.gps_off_lock_ms = settings.gpsLockMinutes * 60 * 1000;
+      }
+      if (Object.keys(policyUpdates).length > 0) {
+        await adminDb.ref(`schools/${schoolId}/policy`).update(policyUpdates);
+      }
+      
       return NextResponse.json({
         success: true,
         message: "Pengaturan EduLock berhasil disimpan.",
@@ -245,18 +267,22 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "generate-access-code") {
-      const { sessionStart, sessionEnd, duration } = body as any;
+      const { sessionStart, sessionEnd, duration, codeValidityMinutes, label } = body as any;
       const code = "EDULOCK-" + Math.floor(1000 + Math.random() * 9000);
-      const expiresAt = Date.now() + 1000 * 60 * 60 * 24; // tomorrow
+      const validityMs = (typeof codeValidityMinutes === "number" && codeValidityMinutes > 0 ? codeValidityMinutes : 30) * 60 * 1000;
+      const expiresAt = Date.now() + validityMs;
       
       const newCode = {
         sessionStart: sessionStart || "07:00",
         sessionEnd: sessionEnd || "14:00",
         duration: duration || 0,
         expiresAt,
+        schoolId: schoolId,
+        label: String(label || "").trim(),
       };
       
       await adminDb.ref(`edulock_access_codes/${schoolId}/${code}`).set(newCode);
+      await adminDb.ref(`active_codes/${code}`).set(newCode);
       
       return NextResponse.json({
         success: true,
@@ -269,6 +295,7 @@ export async function POST(request: Request) {
       const code = (body as any).code;
       if (code) {
         await adminDb.ref(`edulock_access_codes/${schoolId}/${code}`).remove();
+        await adminDb.ref(`active_codes/${code}`).remove();
       }
       return NextResponse.json({ success: true, message: "Kode berhasil dihapus." });
     }
@@ -278,14 +305,19 @@ export async function POST(request: Request) {
       if (codesSnap.exists()) {
         const now = Date.now();
         const updates: Record<string, null> = {};
+        const globalUpdates: Record<string, null> = {};
         codesSnap.forEach((child) => {
           const val = child.val();
           if (val && val.expiresAt && val.expiresAt < now) {
             updates[child.key!] = null;
+            globalUpdates[`active_codes/${child.key!}`] = null;
           }
         });
         if (Object.keys(updates).length > 0) {
           await adminDb.ref(`edulock_access_codes/${schoolId}`).update(updates);
+        }
+        if (Object.keys(globalUpdates).length > 0) {
+          await adminDb.ref().update(globalUpdates);
         }
       }
       return NextResponse.json({ success: true, message: "Kode expired berhasil dibersihkan." });
@@ -317,6 +349,7 @@ export async function POST(request: Request) {
       if (nisn) {
         updates[`master_students/${nisn}/deviceId`] = null;
         updates[`master_students/${nisn}/device`] = null;
+        updates[`students/${nisn}/device_uuid`] = null;
       }
 
       await adminDb.ref().update(updates);
@@ -324,6 +357,42 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         message: "Binding device siswa berhasil direset.",
+      });
+    }
+
+    if (body.action === "revoke-student-permission") {
+      const rawNisn = String(body.nisn || "");
+      const nisn = rawNisn.trim();
+      if (!nisn) {
+        return NextResponse.json({ success: false, error: "NISN wajib diisi" }, { status: 400 });
+      }
+
+      await adminDb.ref(`active_sessions/${rawNisn}`).remove();
+      await adminDb.ref(`active_sessions_by_school/${schoolId}/${rawNisn}`).remove();
+
+      return NextResponse.json({
+        success: true,
+        message: `Izin penggunaan HP untuk NISN ${nisn} berhasil dicabut.`,
+      });
+    }
+
+    if (body.action === "revoke-all-permissions") {
+      const schoolSnap = await adminDb.ref(`active_sessions_by_school/${schoolId}`).get();
+      if (schoolSnap.exists() && schoolSnap.val()) {
+        const data = schoolSnap.val() as Record<string, unknown>;
+        const updates: Record<string, null> = {};
+        Object.keys(data).forEach((nisnKey) => {
+          updates[`active_sessions/${nisnKey}`] = null;
+          updates[`active_sessions_by_school/${schoolId}/${nisnKey}`] = null;
+        });
+        await adminDb.ref().update(updates);
+      } else {
+        await adminDb.ref(`active_sessions_by_school/${schoolId}`).remove();
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Seluruh izin aktif penggunaan HP berhasil dicabut.",
       });
     }
 
