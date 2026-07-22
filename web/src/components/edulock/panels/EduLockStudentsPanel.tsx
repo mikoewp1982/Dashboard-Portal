@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UserCog, Download, RefreshCw, Loader2 } from "lucide-react";
+import { UserCog, Download, RefreshCw, Loader2, Trash2 } from "lucide-react";
 import { useClassesRealtime } from "@/hooks/database/useClassesRealtime";
 import { useStudentsRealtime } from "@/hooks/database/useStudentsRealtime";
 import { useEduLockOverview } from "@/hooks/edulock/useEduLockOverview";
@@ -26,7 +26,7 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
   const [studentClassFilterKey, setStudentClassFilterKey] = useState("all");
   const { data: classesData, loading: classesLoading } = useClassesRealtime(schoolId);
   const { data: studentsData, loading: studentsLoading } = useStudentsRealtime(schoolId);
-  const { resetStudentDevice, loading: overviewLoading } = useEduLockOverview(schoolId);
+  const { resetStudentDevice, authorizeUninstall, authorizeUninstallMass, loading: overviewLoading } = useEduLockOverview(schoolId);
 
   const loading = classesLoading || studentsLoading || overviewLoading;
 
@@ -93,6 +93,44 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
     }
   };
 
+  const handleAuthorizeUninstall = async (nisn: string, name: string) => {
+    if (!window.confirm(`Apakah Anda yakin ingin memberikan izin UNINSTALL untuk siswa ${name} (${nisn})? \n\nAplikasi di HP siswa akan memunculkan tombol hapus secara otomatis.`)) {
+      return;
+    }
+
+    try {
+      await authorizeUninstall(nisn);
+      window.alert(`Izin uninstall untuk ${name} berhasil diaktifkan. Siswa sekarang bisa menghapus aplikasinya.`);
+    } catch (error) {
+      console.error("Gagal memberikan izin uninstall:", error);
+      window.alert(error instanceof Error ? error.message : "Gagal memberikan izin uninstall.");
+    }
+  };
+
+  const handleAuthorizeUninstallMass = async () => {
+    const studentsToUninstall = filteredStudents.filter(
+      (student) => studentClassFilterKey === "all" || student.classKey === studentClassFilterKey
+    );
+
+    if (studentsToUninstall.length === 0) {
+      window.alert("Tidak ada siswa yang dipilih berdasarkan filter kelas saat ini.");
+      return;
+    }
+
+    if (!window.confirm(`PERINGATAN: Anda akan memberikan izin UNINSTALL kepada ${studentsToUninstall.length} siswa secara massal. Lanjutkan?`)) {
+      return;
+    }
+
+    try {
+      const nisns = studentsToUninstall.map(s => s.nisn).filter(Boolean);
+      await authorizeUninstallMass(nisns);
+      window.alert(`Izin uninstall massal untuk ${nisns.length} siswa berhasil diaktifkan.`);
+    } catch (error) {
+      console.error("Gagal memberikan izin uninstall massal:", error);
+      window.alert(error instanceof Error ? error.message : "Gagal memberikan izin uninstall massal.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-sky-400/20 bg-sky-500/10 px-5 py-4 text-sm text-sky-100 shadow-inner">
@@ -114,6 +152,10 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
             <button onClick={handleExportData} className="flex items-center justify-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm font-semibold text-white border border-white/10 hover:bg-white/10 transition" title="Export Data Siswa ke Excel">
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export</span>
+            </button>
+            <button onClick={handleAuthorizeUninstallMass} className="flex items-center justify-center gap-2 rounded-lg bg-rose-500/20 px-3 py-2 text-sm font-semibold text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 transition" title="Berikan Izin Uninstall Sesuai Filter Kelas">
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Uninstall Massal</span>
             </button>
           </div>
         </div>
@@ -200,6 +242,13 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
                           className="p-2 text-amber-300 hover:bg-amber-500/20 rounded-xl transition-colors disabled:opacity-40"
                         >
                           <RefreshCw className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => void handleAuthorizeUninstall(student.nisn, student.name || student.nisn)}
+                          title="Beri Izin Uninstall"
+                          className="p-2 text-rose-300 hover:bg-rose-500/20 rounded-xl transition-colors ml-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
