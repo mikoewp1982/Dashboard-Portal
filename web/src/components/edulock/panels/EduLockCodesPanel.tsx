@@ -113,7 +113,7 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
                       {item.sessionStart || "-"} - {item.sessionEnd || "-"} • {item.duration ? `${item.duration} menit` : "-"}
                     </div>
                     <div className="text-xs text-slate-400 mt-1">
-                      Expired: {item.expiresAt ? new Date(item.expiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
+                      Expired: {item.expiresAt ? `${new Date(item.expiresAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}, ${new Date(item.expiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}` : "-"}
                     </div>
                     {isExpired(item.expiresAt) && <div className="text-xs text-rose-300 font-semibold mt-1">Expired</div>}
                   </div>
