@@ -35,18 +35,21 @@ android {
     productFlavors {
         create("siswa") {
             dimension = "audience"
+            minSdk = 23
             resValue("string", "app_name", "GAS Siswa")
             applicationIdSuffix = ".siswa"
             versionNameSuffix = "-siswa"
         }
         create("guru") {
             dimension = "audience"
+            minSdk = 23
             resValue("string", "app_name", "GAS Guru")
             applicationIdSuffix = ".guru"
             versionNameSuffix = "-guru"
         }
         create("kepala") {
             dimension = "audience"
+            minSdk = 23
             resValue("string", "app_name", "GAS Kepala Sekolah")
             applicationIdSuffix = ".kepala"
             versionNameSuffix = "-kepala"
