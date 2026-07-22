@@ -22,8 +22,11 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
 
   const { codes, loading, saving, generateCode, deleteCode, deleteExpiredCodes } = useEduLockCodes(schoolId);
 
-  const handleCreateCode = () => {
-    void generateCode(startTimeInput, endTimeInput, calculateDuration(startTimeInput, endTimeInput), validityInput, labelInput);
+  const handleCreateCode = async () => {
+    try {
+      await generateCode(startTimeInput, endTimeInput, calculateDuration(startTimeInput, endTimeInput), validityInput, labelInput);
+      setLabelInput("");
+    } catch (_e) {}
   };
 
   const handleDeleteExpiredCodes = () => {
