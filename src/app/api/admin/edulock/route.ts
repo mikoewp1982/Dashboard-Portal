@@ -344,6 +344,7 @@ export async function POST(request: Request) {
       const updates: Record<string, null> = {
         [`gas/schools/${schoolId}/students/${studentId}/deviceId`]: null,
         [`gas/schools/${schoolId}/students/${studentId}/device`]: null,
+        [`gas/schools/${schoolId}/students/${studentId}/device_uuid`]: null,
       };
 
       if (nisn) {
