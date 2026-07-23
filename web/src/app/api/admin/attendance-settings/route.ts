@@ -56,6 +56,14 @@ export async function POST(req: NextRequest) {
 
     if (action === "save-school-location") {
       await dbRef.child("school_location").set(location);
+      
+      // Mirror to legacy path for EduLock APK backward compatibility
+      await adminDb.ref(`gas/schools/${targetSchoolId}`).update({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        radius: location.radius
+      });
+      
       return NextResponse.json({ success: true });
     }
 
