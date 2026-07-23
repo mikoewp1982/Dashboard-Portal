@@ -4,6 +4,13 @@ import { collection, query, getDocs, doc, setDoc, deleteDoc } from "firebase/fir
 import { ref as rtdbRef, get } from "firebase/database";
 import { DisciplineRecord } from "@/types/discipline";
 
+const fetchWithTimeout = <T>(promise: Promise<T>, ms = 4000): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("RTDB Timeout")), ms))
+  ]);
+};
+
 export function useGasDiscipline(schoolId: string | undefined, selectedMonth: number, selectedYear: number) {
   const [records, setRecords] = useState<DisciplineRecord[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -18,22 +25,51 @@ export function useGasDiscipline(schoolId: string | undefined, selectedMonth: nu
     }
 
     setLoading(true);
-    // Kita simpan di firestore: schools/{schoolId}/discipline
-    // Karena PRD minta di schools/{schoolId}/discipline/{recordId}
-    const collRef = collection(db, `schools/${schoolId}/discipline`);
-    const q = query(collRef);
-
     try {
-      const snapshot = await getDocs(q);
+      const snapshot = await fetchWithTimeout(get(rtdbRef(rtdb, `discipline_records_by_school/${schoolId}`)));
       const result: DisciplineRecord[] = [];
-      snapshot.forEach(doc => {
-        const data = doc.data() as DisciplineRecord;
-        // Filter di sisi client untuk bulan & tahun
-        const d = new Date(data.date);
-        if (d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear) {
-          result.push({ ...data, id: doc.id });
-        }
-      });
+      const data = snapshot.val();
+      
+      if (data && typeof data === 'object') {
+        Object.keys(data).forEach((key) => {
+          try {
+            const val = data[key];
+            if (!val || typeof val !== 'object') return;
+            
+            let timestamp = val.createdAt || val.date || Date.now();
+            if (typeof timestamp === 'object' && timestamp['.sv']) {
+                timestamp = Date.now(); // Handle Firebase ServerValue
+            } else if (typeof timestamp === 'string') {
+                timestamp = parseInt(timestamp) || Date.now();
+            }
+            if (isNaN(timestamp)) timestamp = Date.now();
+            
+            const d = new Date(timestamp);
+            if (isNaN(d.getTime())) return; // Skip invalid dates
+            
+            if (d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear) {
+              result.push({
+                id: key,
+                studentId: String(val.studentId || ""),
+                studentNameSnapshot: String(val.studentName || val.studentNameSnapshot || "Unknown"),
+                classNameSnapshot: String(val.classNameSnapshot || ""), 
+                ruleId: Number(val.ruleId || 0),
+                ruleNameSnapshot: String(val.ruleName || val.ruleNameSnapshot || ""),
+                category: val.category === "ACHIEVEMENT" ? "ACHIEVEMENT" : "VIOLATION",
+                points: Number(val.points || 0),
+                date: timestamp,
+                note: val.description || val.note || null,
+                recordedBy: String(val.reporterId || val.recordedBy || ""),
+                recordedByName: String(val.reporterName || val.recordedByName || ""),
+                reportedByRole: val.reportedByRole || "teacher",
+                createdAt: timestamp
+              });
+            }
+          } catch (itemErr) {
+            console.error("Error parsing record:", key, itemErr);
+          }
+        });
+      }
       setRecords(result.sort((a, b) => b.date - a.date));
     } catch (error) {
       console.error("Error fetching discipline records:", error);
@@ -46,10 +82,10 @@ export function useGasDiscipline(schoolId: string | undefined, selectedMonth: nu
   const fetchReferences = useCallback(async () => {
     if (!schoolId) return;
     try {
-      const [studentsSnap, classesSnap] = await Promise.all([
+      const [studentsSnap, classesSnap] = await fetchWithTimeout(Promise.all([
         get(rtdbRef(rtdb, `gas/schools/${schoolId}/students`)),
         get(rtdbRef(rtdb, `gas/schools/${schoolId}/classes`))
-      ]);
+      ]));
       
       const sData = studentsSnap.val();
       const cData = classesSnap.val();
@@ -86,16 +122,48 @@ export function useGasDiscipline(schoolId: string | undefined, selectedMonth: nu
 
   const addRecord = async (record: Omit<DisciplineRecord, "id">) => {
     if (!schoolId) return;
-    const docRef = doc(collection(db, `schools/${schoolId}/discipline`));
-    const newRecord = { ...record, id: docRef.id };
-    await setDoc(docRef, newRecord);
-    setRecords(prev => [newRecord as DisciplineRecord, ...prev].sort((a, b) => b.date - a.date));
+    
+    const now = Date.now();
+    const newRecordId = Date.now().toString(); // simple ID generation
+    
+    // Format to Android app's expected structure
+    const androidRecord = {
+      id: newRecordId,
+      studentId: record.studentId,
+      studentName: record.studentNameSnapshot || "",
+      schoolId: schoolId,
+      ruleId: record.ruleId.toString(),
+      ruleName: record.ruleNameSnapshot || "",
+      points: record.points,
+      severity: "LOW", // default
+      category: record.category,
+      reporterId: record.recordedBy,
+      reporterName: record.recordedByName || "",
+      description: record.note || "",
+      status: "APPROVED",
+      createdAt: record.date || now,
+      updatedAt: now
+    };
+
+    const updates: Record<string, any> = {};
+    updates[`discipline_records/${newRecordId}`] = androidRecord;
+    updates[`discipline_records_by_school/${schoolId}/${newRecordId}`] = androidRecord;
+
+    const { update } = await import("firebase/database");
+    await update(rtdbRef(rtdb), updates);
+
+    setRecords(prev => [{...record, id: newRecordId} as DisciplineRecord, ...prev].sort((a, b) => b.date - a.date));
   };
 
   const deleteRecord = async (recordId: string) => {
     if (!schoolId) return;
-    const docRef = doc(db, `schools/${schoolId}/discipline/${recordId}`);
-    await deleteDoc(docRef);
+    const updates: Record<string, any> = {};
+    updates[`discipline_records/${recordId}`] = null;
+    updates[`discipline_records_by_school/${schoolId}/${recordId}`] = null;
+
+    const { update } = await import("firebase/database");
+    await update(rtdbRef(rtdb), updates);
+
     setRecords(prev => prev.filter(r => r.id !== recordId));
   };
 

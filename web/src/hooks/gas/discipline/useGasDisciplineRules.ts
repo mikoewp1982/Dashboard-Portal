@@ -8,11 +8,19 @@ export function useGasDisciplineRules(schoolId: string | undefined) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!schoolId) return;
+    if (!schoolId) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
+    const fallbackTimer = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
     const rulesRef = rtdbRef(rtdb, `gas/schools/${schoolId}/settings/disciplineRules`);
     const unsub = onValue(rulesRef, (snapshot) => {
+      clearTimeout(fallbackTimer);
       const data = snapshot.val();
       if (!data) {
         setRules(DEFAULT_DISCIPLINE_RULES);
@@ -27,11 +35,15 @@ export function useGasDisciplineRules(schoolId: string | undefined) {
       setRules(list.sort((a, b) => a.id - b.id));
       setLoading(false);
     }, (error) => {
+      clearTimeout(fallbackTimer);
       console.error("Error loading discipline rules:", error);
       setLoading(false);
     });
 
-    return () => unsub();
+    return () => {
+      clearTimeout(fallbackTimer);
+      unsub();
+    };
   }, [schoolId]);
 
   const saveRules = useCallback(async (newRules: DisciplineRule[]) => {

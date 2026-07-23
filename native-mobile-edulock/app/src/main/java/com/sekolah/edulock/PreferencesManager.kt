@@ -309,7 +309,27 @@ class PreferencesManager(context: Context) {
         return Settings.Secure.getString(
             context.contentResolver,
             Settings.Secure.ANDROID_ID
-        )
+        )?.trim().orEmpty()
+    }
+
+    fun getDeviceBindingId(context: Context): String {
+        val raw = listOf(
+            getAndroidDeviceId(context),
+            android.os.Build.BRAND.orEmpty(),
+            android.os.Build.DEVICE.orEmpty(),
+            android.os.Build.MODEL.orEmpty(),
+            android.os.Build.MANUFACTURER.orEmpty(),
+            android.os.Build.HARDWARE.orEmpty()
+        ).joinToString("|")
+        val bytes = java.security.MessageDigest.getInstance("SHA-256").digest(raw.toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    fun matchesStoredDeviceBinding(context: Context, storedDeviceId: String?): Boolean {
+        val stored = storedDeviceId?.trim().orEmpty()
+        if (stored.isBlank()) return true
+        val candidates = setOf(getDeviceBindingId(context), getAndroidDeviceId(context)).filter { it.isNotBlank() }
+        return candidates.contains(stored)
     }
 
     // Clear all data

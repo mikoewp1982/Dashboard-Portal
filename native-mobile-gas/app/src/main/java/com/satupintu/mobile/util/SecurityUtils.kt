@@ -145,8 +145,21 @@ object SecurityUtils {
         return prefs.getString("user_student_id", "").orEmpty().trim()
     }
 
+    fun getStoredNisn(prefs: SharedPreferences): String {
+        return prefs.getString("user_nisn", "").orEmpty().trim()
+    }
+
     fun getStoredStudentKey(prefs: SharedPreferences): String {
-        return getStoredStudentId(prefs).ifBlank { getStoredLoginKey(prefs) }
+        return getStoredStudentId(prefs).ifBlank { getStoredNisn(prefs) }.ifBlank { getStoredLoginKey(prefs) }
+    }
+
+    fun getStoredStudentAliases(prefs: SharedPreferences): Set<String> {
+        return linkedSetOf(
+            getStoredStudentId(prefs),
+            getStoredNisn(prefs),
+            getStoredLoginKey(prefs),
+            prefs.getString("user_username", "").orEmpty().trim()
+        ).filter { it.isNotBlank() }.toSet()
     }
 
     fun getStoredTeacherKey(prefs: SharedPreferences): String {

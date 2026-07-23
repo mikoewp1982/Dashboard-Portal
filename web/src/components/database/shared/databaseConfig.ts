@@ -25,6 +25,11 @@ export type DatabaseRecord = {
   gender?: string;
   religion?: string;
   device?: string;
+  deviceId?: string;
+  device_uuid?: string;
+  lastLoginAt?: number;
+  lastLoginEduLock?: number;
+  isRegistered?: boolean;
 };
 
 export type OverviewCounts = {

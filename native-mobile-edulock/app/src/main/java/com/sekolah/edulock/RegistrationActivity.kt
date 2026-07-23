@@ -88,11 +88,7 @@ class RegistrationActivity : AppCompatActivity() {
         btnRegister.text = "Memverifikasi..."
 
         val normalizedNisn = nisn.trim()
-        val deviceId = if (prefsManager.deviceId.isEmpty()) {
-            java.util.UUID.randomUUID().toString()
-        } else {
-            prefsManager.deviceId
-        }
+        val deviceId = prefsManager.getDeviceBindingId(this)
         prefsManager.deviceId = deviceId
 
         studentAuthService.requestToken(
@@ -255,7 +251,7 @@ class RegistrationActivity : AppCompatActivity() {
         val id = dbHelper.insertStudent(nisn, name, studentClass)
 
         if (id > 0) {
-            val deviceId = prefsManager.deviceId.ifEmpty { java.util.UUID.randomUUID().toString() }
+            val deviceId = prefsManager.getDeviceBindingId(this)
             prefsManager.deviceId = deviceId
 
             // Simpan ke Shared Preferences menggunakan helper method

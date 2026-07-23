@@ -20,6 +20,7 @@ import { GasHaloSpentgapaPanel } from "./halo-spentgapa/GasHaloSpentgapaPanel";
 import { GasNotificationsPanel } from "./notifications/GasNotificationsPanel";
 import { GasComingSoonPanel } from "./GasComingSoonPanel";
 import { GasDashboardPanel } from "./dashboard/GasDashboardPanel";
+import { ErrorBoundary } from "./discipline/ErrorBoundary";
 
 export default function GasWorkspace() {
   const { user } = useAuthStore();
@@ -77,7 +78,11 @@ export default function GasWorkspace() {
         {activeTab === "settings" && <GasSettingsPanel schoolId={user.schoolId || ""} />}
         {activeTab === "attendance-report" && <GasAttendanceReportPanel schoolId={user.schoolId || ""} />}
         {activeTab === "prayer-monitoring" && <GasPrayerReportPanel schoolId={user.schoolId || ""} />}
-        {activeTab === "discipline" && <GasDisciplinePanel schoolId={user.schoolId || ""} />}
+        {activeTab === "discipline" && (
+          <ErrorBoundary>
+            <GasDisciplinePanel schoolId={user.schoolId || ""} />
+          </ErrorBoundary>
+        )}
         {activeTab === "library" && <GasLibraryPanel schoolId={user.schoolId || ""} />}
         {activeTab === "virtual-pet" && <GasPetPanel schoolId={user.schoolId || ""} />}
         {activeTab === "seven-habits" && <Gas7HabitsPanel schoolId={user.schoolId || ""} />}

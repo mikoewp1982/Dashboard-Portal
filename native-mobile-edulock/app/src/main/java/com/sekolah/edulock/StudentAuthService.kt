@@ -154,12 +154,8 @@ class StudentAuthService {
         val className = studentSnapshot.child("class").getValue(String::class.java) ?: studentSnapshot.child("kelas").getValue(String::class.java) ?: ""
         val registeredDeviceId = studentSnapshot.child("device_uuid").getValue(String::class.java) ?: studentSnapshot.child("deviceId").getValue(String::class.java) ?: studentSnapshot.child("device").getValue(String::class.java)
 
-        // Binding verification (no strict check right here if it's first time, we let it bind, else we check if it matches)
-        // If it's already bound to another device, we should reject it unless it's empty
-        if (!registeredDeviceId.isNullOrEmpty() && registeredDeviceId != deviceId) {
-            // For now, to allow seamless testing, we just overwrite it, but PRD says we should reject.
-            // Let's adhere to PRD: reject second binding
-            callback(null, "Akun ini sudah aktif di perangkat lain. Hubungi Admin untuk mereset akun.")
+        if (!registeredDeviceId.isNullOrEmpty() && !registeredDeviceId.trim().equals(deviceId.trim(), ignoreCase = true)) {
+            callback(null, "Akun ini sudah aktif di perangkat lain. Hubungi Admin/Wali Kelas untuk mereset akun.")
             return
         }
 

@@ -1583,12 +1583,19 @@ class MonitoringService : Service() {
         if (petStatusListener != null) return
 
         val studentId = prefsManager.studentId.toString()
-        if (studentId.isBlank() || studentId == "-1") return
+        val nisn = prefsManager.nisn
+        val schoolId = prefsManager.schoolId.trim().lowercase()
 
         val database = SchoolServiceGuard.database(this)
-        petStatusQuery = database.getReference("virtual_pets")
-            .orderByChild("studentId")
-            .equalTo(studentId)
+        val aliases = linkedSetOf(studentId, nisn).filter { it.isNotBlank() && it != "-1" }.toSet()
+        if (aliases.isEmpty()) return
+
+        val ref = database.getReference("virtual_pets")
+        petStatusQuery = if (schoolId.isNotBlank()) {
+            ref.orderByChild("schoolId").equalTo(schoolId)
+        } else {
+            ref.orderByChild("studentId").equalTo(aliases.first())
+        }
 
         petStatusListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -1598,6 +1605,12 @@ class MonitoringService : Service() {
                 var chosenScore = Long.MIN_VALUE
 
                 for (child in snapshot.children) {
+                    val petStudentId = child.child("studentId").getValue(String::class.java).orEmpty().trim()
+                    val petNisn = child.child("nisn").getValue(String::class.java).orEmpty().trim()
+                    val petKey = child.key.orEmpty().trim()
+                    val matches = aliases.contains(petStudentId) || aliases.contains(petNisn) || aliases.contains(petKey)
+                    if (!matches && schoolId.isNotBlank()) continue
+
                     val updatedAt = child.child("updatedAt").getValue(Long::class.java) ?: 0L
                     val lastQuestReset = child.child("lastQuestReset").getValue(Long::class.java) ?: 0L
                     val lastPlayed = child.child("lastPlayed").getValue(Long::class.java) ?: 0L

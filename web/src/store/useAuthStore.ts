@@ -77,6 +77,7 @@ export const useAuthStore = create<AuthState>()(
           removeItem: () => {},
         };
       }),
+      partialize: (state) => ({ activeApp: state.activeApp }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

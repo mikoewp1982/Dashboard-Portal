@@ -3,7 +3,7 @@ import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 
 type AdminDatabaseRequestBody = {
-  action?: "create" | "update" | "delete" | "delete-all" | "import-excel";
+  action?: "create" | "update" | "delete" | "delete-all" | "import-excel" | "reset-device";
   tab?: string;
   data?: Record<string, unknown>;
   bulkData?: Record<string, unknown>[];
@@ -108,6 +108,20 @@ export async function POST(request: Request) {
     else if (action === "delete-all") {
       await ref.remove();
       return NextResponse.json({ success: true, message: "Semua data berhasil dihapus" });
+    }
+
+    else if (action === "reset-device") {
+      if (!id) return NextResponse.json({ success: false, message: "ID tidak valid" }, { status: 400 });
+      await ref.child(id).update({
+        deviceId: "",
+        device_uuid: "",
+        device: "",
+        lastLoginAt: null,
+        lastLoginEduLock: null,
+        isRegistered: false,
+        updatedAt: Date.now()
+      });
+      return NextResponse.json({ success: true, message: "Device binding berhasil di-reset" });
     }
 
     else if (action === "import-excel") {

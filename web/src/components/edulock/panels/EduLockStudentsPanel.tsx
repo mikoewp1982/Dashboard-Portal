@@ -145,9 +145,8 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-sky-400/20 bg-sky-500/10 px-5 py-4 text-sm text-sky-100 shadow-inner">
-        Seluruh data profil siswa (NISN, Nama, Kelas) dikelola secara terpusat melalui <strong>Database Satu Pintu (GAS)</strong>.
-        Di halaman EduLock ini, aksi yang sudah operasional adalah <strong>export data</strong> dan <strong>reset binding device</strong>.
-        Jalur izin uninstall belum diaktifkan karena backend mutasinya belum final.
+        Seluruh data profil siswa dikelola secara terpusat melalui <strong>Database Satu Pintu (GAS)</strong>.
+        Aksi <strong>Reset Device Binding</strong> dikelola secara 1 Pintu di menu <strong>Database Siswa</strong>. Di halaman EduLock ini, Anda dapat mengekspor data dan mengelola <strong>Izin Uninstall (Buka/Tutup Gembok)</strong>.
       </div>
       <div className="rounded-2xl border border-white/10 bg-[#1e293b]/50 overflow-hidden backdrop-blur-xl shadow-xl">
         <div className="px-6 py-4 border-b border-white/10 flex flex-col md:flex-row justify-between md:items-center bg-white/5 gap-4">
@@ -253,23 +252,16 @@ export function EduLockStudentsPanel({ schoolId }: { schoolId: string }) {
                     <td className="px-6 py-4">
                       <div className="flex justify-center">
                         <button
-                          onClick={() => void resetDevice(student.id, student.nisn, student.name || student.nisn)}
-                          title="Reset Device Binding"
-                          disabled={!student.device_uuid}
-                          className="p-2 text-amber-300 hover:bg-amber-500/20 rounded-xl transition-colors disabled:opacity-40"
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                        </button>
-                        <button
                           onClick={() => void handleToggleUninstall(student.id, student.nisn, student.name || student.nisn, student.uninstall_authorized)}
                           title={student.uninstall_authorized ? "Cabut Izin Uninstall (Kunci Kembali)" : "Beri Izin Uninstall (Buka Gembok)"}
-                          className={`p-2 rounded-xl transition-colors ml-1 ${
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium text-xs transition-colors ${
                             student.uninstall_authorized
-                              ? "text-rose-400 hover:bg-rose-500/20"
-                              : "text-slate-400 hover:bg-slate-500/20"
+                              ? "bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30"
+                              : "bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700"
                           }`}
                         >
-                          {student.uninstall_authorized ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                          {student.uninstall_authorized ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                          <span>{student.uninstall_authorized ? "Terbuka (Izin Uninstall)" : "Terkunci"}</span>
                         </button>
                       </div>
                     </td>

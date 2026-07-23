@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Filter, Search } from "lucide-react";
 import Link from "next/link";
 import { callAdminDatabaseApi } from "@/lib/callAdminDatabaseApi";
 import { useStudentsRealtime } from "@/hooks/database/useStudentsRealtime";
@@ -20,6 +20,7 @@ export function StudentsPanel({ schoolId }: StudentsPanelProps) {
   const { data, loading, lastSyncTime, setLoading } = useStudentsRealtime(schoolId);
   const { data: classOptionsSource } = useClassesRealtime(schoolId);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedClassFilter, setSelectedClassFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [selectedRow, setSelectedRow] = useState<DatabaseRecord | null>(null);
@@ -27,16 +28,28 @@ export function StudentsPanel({ schoolId }: StudentsPanelProps) {
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [formData, setFormData] = useState<DatabaseFormData>(defaultFormData);
 
+  const classOptions = useMemo(() => {
+    const fromClasses = (classOptionsSource || []).map((c: { className?: string; name?: string; id?: string }) => c.className || c.name || c.id).filter(Boolean);
+    const fromStudents = data.map((d) => d.class || d.className).filter(Boolean);
+    const combined = Array.from(new Set([...fromClasses, ...fromStudents])) as string[];
+    return combined.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  }, [classOptionsSource, data]);
+
   const filteredData = useMemo(() => {
-    const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
     return data.filter((row) => {
+      const rowClass = (row.class || row.className || "").trim();
+      if (selectedClassFilter !== "all" && rowClass !== selectedClassFilter) {
+        return false;
+      }
+      if (!query) return true;
       return (
         row.name?.toLowerCase().includes(query) ||
         row.nisn?.toLowerCase().includes(query) ||
-        row.class?.toLowerCase().includes(query)
+        rowClass.toLowerCase().includes(query)
       );
     });
-  }, [data, searchQuery]);
+  }, [data, searchQuery, selectedClassFilter]);
 
   const openAddModal = () => {
     setFormData(defaultFormData);
@@ -80,6 +93,22 @@ export function StudentsPanel({ schoolId }: StudentsPanelProps) {
       alert(error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan data siswa.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResetDevice = async (row: DatabaseRecord) => {
+    const studentName = row.name || row.nisn || row.id;
+    if (!confirm(`Reset binding device (GAS & EduLock) untuk siswa ${studentName}? Siswa dapat login ulang di perangkat baru.`)) return;
+
+    try {
+      await callAdminDatabaseApi({
+        action: "reset-device",
+        tab: "Siswa",
+        id: row.id,
+      });
+      alert(`Device binding untuk ${studentName} berhasil di-reset.`);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : "Terjadi kesalahan saat mereset device binding siswa.");
     }
   };
 
@@ -141,7 +170,7 @@ export function StudentsPanel({ schoolId }: StudentsPanelProps) {
             className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
-            Kembali
+            <span>Kembali ke Dashboard Satu Pintu</span>
           </Link>
         </div>
       </div>
@@ -149,18 +178,44 @@ export function StudentsPanel({ schoolId }: StudentsPanelProps) {
       <div className="flex-1 overflow-auto p-8">
         <DatabaseBanner activeTab="Siswa" />
 
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Cari nama, NISN/NIP, atau kelas..."
-            className="w-full rounded-xl border border-white/10 bg-slate-900/50 py-3 pl-12 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Cari nama, NISN/NIP, atau kelas..."
+              className="w-full rounded-xl border border-white/10 bg-slate-900/50 py-3 pl-12 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex items-center gap-2 sm:w-64">
+            <Filter className="h-4 w-4 text-blue-400 shrink-0" />
+            <select
+              value={selectedClassFilter}
+              onChange={(e) => setSelectedClassFilter(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-3.5 py-3 text-sm font-medium text-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="all">Semua Kelas ({data.length})</option>
+              {classOptions.map((className) => {
+                const count = data.filter((d) => (d.class || d.className) === className).length;
+                return (
+                  <option key={className} value={className}>
+                    Kelas {className} ({count})
+                  </option>
+                );
+              })}
+            </select>
+          </div>
         </div>
 
-        <StudentsTable rows={filteredData} loading={loading} onEdit={openEditModal} onDelete={handleDelete} />
+        <StudentsTable
+          rows={filteredData}
+          loading={loading}
+          onEdit={openEditModal}
+          onDelete={handleDelete}
+          onResetDevice={handleResetDevice}
+        />
       </div>
 
       <StudentFormModal

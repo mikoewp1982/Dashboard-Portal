@@ -764,14 +764,12 @@ private fun rememberStudentPetLockState(
     SecurityUtils.getStoredRole(prefs),
     SecurityUtils.getStoredSchoolId(prefs),
     SecurityUtils.getStoredStudentKey(prefs),
+    SecurityUtils.getStoredNisn(prefs),
     SecurityUtils.getStoredLoginKey(prefs)
 ) {
     val role = SecurityUtils.getStoredRole(prefs)
     val schoolId = SecurityUtils.getStoredSchoolId(prefs)
-    val aliases = linkedSetOf(
-        SecurityUtils.getStoredStudentKey(prefs).trim(),
-        SecurityUtils.getStoredLoginKey(prefs).trim()
-    ).filter { it.isNotBlank() }.toSet()
+    val aliases = SecurityUtils.getStoredStudentAliases(prefs)
 
     if (role != "student" || aliases.isEmpty()) {
         value = StudentPetLockState(isChecking = false)

@@ -153,7 +153,7 @@ export default function LoginPage() {
               />
             </div>
             <p className="text-center text-sm font-semibold text-slate-200">
-              SELAMAT DATANG DI PORTALKITA
+              SELAMAT DATANG DI PORTAL KITA
             </p>
             <h1 className="text-center text-2xl font-bold tracking-tight text-white">Login Portal</h1>
           </div>

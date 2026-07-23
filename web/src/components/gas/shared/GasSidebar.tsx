@@ -96,8 +96,8 @@ export function GasSidebar({ activeTab, onTabChange }: GasSidebarProps) {
               <Image src="/Icon_GAS.png" alt="GAS" width={72} height={72} className="object-contain drop-shadow-md" />
             </div>
             <div>
-              <div className="text-sm font-bold text-white leading-tight">
-                Gerbang Aplikasi<br />Sekolah
+              <div className="text-xs sm:text-sm font-bold text-white whitespace-nowrap">
+                Gerbang Aplikasi Sekolah
               </div>
               <div className="mt-1 text-xs text-slate-400">Admin Sekolah</div>
             </div>
@@ -106,8 +106,10 @@ export function GasSidebar({ activeTab, onTabChange }: GasSidebarProps) {
 
         <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Logged In As:</div>
-          <div className="mt-2 text-sm font-semibold text-white">{user?.schoolId || user?.name || "-"}</div>
-          <div className="text-xs font-semibold uppercase text-blue-300">Admin Sekolah</div>
+          {user?.name && !user.name.endsWith("@edulock.local") && !user.name.includes("@") ? (
+            <div className="mt-2 text-sm font-semibold text-white">{user.name}</div>
+          ) : null}
+          <div className="mt-1 text-xs font-semibold uppercase text-blue-300">Admin Sekolah</div>
           {user?.schoolName ? <div className="mt-1 text-xs text-slate-400">{user.schoolName}</div> : null}
         </div>
 

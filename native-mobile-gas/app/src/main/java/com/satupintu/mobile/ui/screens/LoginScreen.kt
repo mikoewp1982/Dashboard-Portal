@@ -296,7 +296,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             studentId: String = "",
             studentClass: String = "",
             loginKey: String = "",
-            teacherId: String = ""
+            teacherId: String = "",
+            nisn: String = "",
+            username: String = ""
         ): Boolean {
             val normalizedSchoolId = normalizeScope(schoolId)
             if (requestedTenantAliases.isEmpty()) {
@@ -316,6 +318,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 putString("user_school_name", schoolName)
                 putString("user_display_name", displayName)
                 putString("user_student_id", studentId)
+                putString("user_nisn", nisn.trim())
+                putString("user_username", username.trim())
                 putString("user_student_name", displayName)
                 putString("user_student_class", studentClass)
                 putString("user_teacher_id", teacherId)
@@ -811,9 +815,11 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                     npsn = npsnValue,
                     schoolName = schoolNameValue,
                     displayName = displayName,
-                    studentId = nisnValue,
+                    studentId = studentSnapshot.key ?: "",
                     studentClass = className,
-                    loginKey = nisnValue
+                    loginKey = nisnValue,
+                    nisn = nisnValue,
+                    username = readString(studentSnapshot, "username")
                 )) {
                     return
                 }

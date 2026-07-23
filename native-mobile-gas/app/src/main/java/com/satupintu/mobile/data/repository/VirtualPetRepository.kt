@@ -161,7 +161,7 @@ class VirtualPetRepository {
                         initializedCount++
                     }
                     
-                    if (initializedCount == identityAliases.size) {
+                    if (initializedCount >= identityAliases.size) {
                         emitBestPet()
                     }
                 }
@@ -172,6 +172,28 @@ class VirtualPetRepository {
             }
             query.addValueEventListener(listener)
             queries += query to listener
+        }
+
+        if (normalizedSchoolId.isNotBlank()) {
+            val schoolQuery = db.child("virtual_pets").orderByChild("schoolId").equalTo(normalizedSchoolId)
+            val schoolListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (child in snapshot.children) {
+                        if (snapshotMatchesStudent(child, identityAliases)) {
+                            val parsedPet = parsePet(child) ?: continue
+                            val currentBest = petsByAlias["school_match"]
+                            if (currentBest == null || isBetterPetCandidate(parsedPet, currentBest)) {
+                                petsByAlias["school_match"] = parsedPet
+                            }
+                        }
+                    }
+                    emitBestPet()
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            }
+            schoolQuery.addValueEventListener(schoolListener)
+            queries += schoolQuery to schoolListener
         }
 
         awaitClose { 

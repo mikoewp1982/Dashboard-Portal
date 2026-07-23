@@ -85,8 +85,8 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
                 <Image src="/Icon_GAS.png" alt="GAS" width={72} height={72} className="object-contain drop-shadow-md" />
               </div>
               <div>
-                <div className="text-sm font-bold text-white leading-tight">
-                  Gerbang Aplikasi<br />Sekolah
+                <div className="text-xs sm:text-sm font-bold text-white whitespace-nowrap">
+                  Gerbang Aplikasi Sekolah
                 </div>
                 <div className="mt-1 text-xs text-slate-400">{isSuperAdmin ? "Super Admin" : "Admin Sekolah"}</div>
               </div>
@@ -104,10 +104,10 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
           ) : (
             <div className="flex flex-col items-center text-center gap-3">
               <div className="flex items-center justify-center">
-                <Image src="/PortalKita.png" alt="Dashboard PortalKita" width={48} height={48} className="object-contain drop-shadow-md" />
+                <Image src="/PortalKita.png" alt="Dashboard PortalKita" width={76} height={76} className="object-contain drop-shadow-md" />
               </div>
               <div>
-                <div className="text-sm font-bold text-white leading-tight">Dashboard<br />PortalKita</div>
+                <div className="text-xs sm:text-sm font-bold text-white whitespace-nowrap">Dashboard Portal Kita</div>
                 <div className="mt-1 text-xs text-slate-400">{isSuperAdmin ? "Super Admin" : "Admin Sekolah"}</div>
               </div>
             </div>
@@ -117,8 +117,10 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
         {/* User Info */}
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Logged In As:</div>
-          <div className="mt-2 text-sm font-semibold text-white">{user?.name}</div>
-          <div className="text-xs font-semibold uppercase text-blue-300">
+          {user?.name && !user.name.endsWith("@edulock.local") && !user.name.includes("@") ? (
+            <div className="mt-2 text-sm font-semibold text-white">{user.name}</div>
+          ) : null}
+          <div className="mt-1 text-xs font-semibold uppercase text-blue-300">
             {isSuperAdmin ? "SUPER ADMIN" : "ADMIN SEKOLAH"}
           </div>
           {user?.schoolName ? <div className="mt-1 text-xs text-slate-400">{user.schoolName}</div> : null}

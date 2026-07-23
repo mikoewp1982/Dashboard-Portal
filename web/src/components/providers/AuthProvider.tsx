@@ -12,39 +12,70 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const pathname = usePathname();
 
   useEffect(() => {
+    let mounted = true;
+    const fallbackTimer = setTimeout(() => {
+      if (mounted) {
+        setLoading(false);
+      }
+    }, 3000);
+
     const unsubscribe = onIdTokenChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        try {
-          const token = await currentUser.getIdTokenResult();
-          const roleClaim = typeof token.claims.role === "string" ? token.claims.role : "admin";
-          const role: PortalUserRole =
-            roleClaim === "super_admin" || roleClaim === "teacher" || roleClaim === "student" ? roleClaim : "admin";
-          const schoolId = token.claims.schoolId as string | undefined;
-          const npsn = token.claims.npsn as string | undefined;
-          const schoolName = token.claims.schoolName as string | undefined;
-          const mustChangePassword = token.claims.mustChangePassword === true;
-          
-          const portalUser: PortalUser = {
-            id: currentUser.uid,
-            name: currentUser.displayName || currentUser.email || 'User',
-            email: currentUser.email || '',
-            role: role,
-            schoolId: schoolId,
-            npsn,
-            schoolName,
-            mustChangePassword,
-          };
+      if (!currentUser) {
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        // Race token fetch against 2.5s timeout
+        const token: any = await Promise.race([
+          currentUser.getIdTokenResult(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Auth Token Timeout")), 2500))
+        ]).catch(() => null);
+
+        const claims = token?.claims || {};
+        const roleClaim = typeof claims.role === "string" ? claims.role : "admin";
+        const role: PortalUserRole =
+          roleClaim === "super_admin" || roleClaim === "teacher" || roleClaim === "student" ? roleClaim : "admin";
+        const schoolId = claims.schoolId as string | undefined;
+        const npsn = claims.npsn as string | undefined;
+        const schoolName = claims.schoolName as string | undefined;
+        const mustChangePassword = claims.mustChangePassword === true;
+        
+        const portalUser: PortalUser = {
+          id: currentUser.uid,
+          name: currentUser.displayName || currentUser.email || 'User',
+          email: currentUser.email || '',
+          role: role,
+          schoolId: schoolId,
+          npsn,
+          schoolName,
+          mustChangePassword,
+        };
+
+        if (mounted) {
           setUser(portalUser);
-        } catch {
+        }
+      } catch (err) {
+        console.error("Auth error:", err);
+        if (mounted) {
           setUser(null);
         }
-      } else {
-        setUser(null);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          clearTimeout(fallbackTimer);
+        }
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      mounted = false;
+      clearTimeout(fallbackTimer);
+      unsubscribe();
+    };
   }, [setUser, setLoading]);
 
   useEffect(() => {

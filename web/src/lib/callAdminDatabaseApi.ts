@@ -1,7 +1,7 @@
 import { auth } from "./firebase/client";
 import { createSessionInactiveError, waitForClientUser } from "./firebase/waitForClientUser";
 
-type DatabaseAction = "create" | "update" | "delete" | "delete-all" | "import-excel";
+type DatabaseAction = "create" | "update" | "delete" | "delete-all" | "import-excel" | "reset-device";
 
 interface DatabasePayload {
   action: DatabaseAction;

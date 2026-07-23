@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const schoolId = url.searchParams.get("schoolId");
-    const targetSchoolId = normalizeSchoolId(role === "super_admin" ? schoolId : userSchoolId);
+    const targetSchoolId = normalizeSchoolId(schoolId || userSchoolId);
     if (!targetSchoolId) {
       return NextResponse.json({ error: "School ID is required" }, { status: 400 });
     }
@@ -122,21 +122,38 @@ export async function GET(req: NextRequest) {
     const rawStudents = studentsSnap.exists() ? (studentsSnap.val() as Record<string, StudentRow>) : {};
     const { aliasSet, aliasMap } = buildStudentAliasIndex(rawStudents);
 
-    const petsSnap = await adminDb.ref("virtual_pets").orderByChild("schoolId").equalTo(targetSchoolId).once("value");
-    let rawPets = petsSnap.val() || {};
+    const rawPetsMap: Record<string, any> = {};
 
-    // Fallback for legacy pet rows whose schoolId was not stored consistently.
-    if (!Object.keys(rawPets).length && aliasSet.size > 0) {
-      const legacyPetsSnap = await adminDb.ref("virtual_pets").get();
-      const legacyEntries = Object.entries<any>(legacyPetsSnap.val() || {}).filter(([petKey, rawPet]) => {
-        const petSchoolId = normalizeSchoolId(rawPet?.schoolId);
-        if (petSchoolId && petSchoolId !== targetSchoolId) return false;
-        return matchesStudentAlias(petKey, rawPet, aliasSet);
-      });
-      rawPets = Object.fromEntries(legacyEntries);
+    // 1. Primary query by exact schoolId
+    const petsSnap = await adminDb.ref("virtual_pets").orderByChild("schoolId").equalTo(targetSchoolId).once("value");
+    if (petsSnap.exists()) {
+      Object.assign(rawPetsMap, petsSnap.val());
     }
 
-    const pets = Object.entries<any>(rawPets).map(([petKey, rawPet]) => ({
+    // 2. Query by alternate schoolId formatting (e.g., smpn3_pacet <-> smpn_3_pacet)
+    const altSchoolId = targetSchoolId.includes("_")
+      ? targetSchoolId.replace(/_/g, "")
+      : targetSchoolId.replace("smpn", "smpn_");
+    if (altSchoolId !== targetSchoolId) {
+      const altSnap = await adminDb.ref("virtual_pets").orderByChild("schoolId").equalTo(altSchoolId).once("value");
+      if (altSnap.exists()) {
+        Object.assign(rawPetsMap, altSnap.val());
+      }
+    }
+
+    // 3. Fallback/supplement: Match any pet by student alias (NISN, username, studentId, pushKey)
+    if (aliasSet.size > 0) {
+      const allPetsSnap = await adminDb.ref("virtual_pets").get();
+      if (allPetsSnap.exists()) {
+        for (const [petKey, rawPet] of Object.entries<any>(allPetsSnap.val() || {})) {
+          if (!rawPetsMap[petKey] && matchesStudentAlias(petKey, rawPet, aliasSet)) {
+            rawPetsMap[petKey] = rawPet;
+          }
+        }
+      }
+    }
+
+    const pets = Object.entries<any>(rawPetsMap).map(([petKey, rawPet]) => ({
       ...(resolveStudentMeta(petKey, rawPet, aliasMap) || {}),
       id: String(rawPet?.id || petKey || ""),
       studentId: String(rawPet?.studentId || "").trim(),
