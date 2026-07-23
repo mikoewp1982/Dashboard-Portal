@@ -7,7 +7,8 @@ import { useEduLockUninstallAccess } from "@/hooks/edulock/useEduLockUninstallAc
 import { useEduLockSettings } from "@/hooks/edulock/useEduLockSettings";
 
 function hasActiveUninstallCode(access: { code: string; expiresAt: number | null } | null) {
-  return Boolean(access?.code && access.expiresAt);
+  if (!access?.code || !access.expiresAt) return false;
+  return access.expiresAt > Date.now();
 }
 
 function getHolidayNote(holiday: unknown) {

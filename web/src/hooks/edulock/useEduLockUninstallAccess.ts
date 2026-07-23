@@ -22,10 +22,7 @@ export function useEduLockUninstallAccess(schoolId: string | undefined) {
     if (!normalizedSchoolId) {
       return;
     }
-    const uninstallRef = ref(
-      rtdb,
-      `school_settings/${normalizedSchoolId}/system/edulock/uninstall_access`
-    );
+    const uninstallRef = ref(rtdb, `edulock_access_codes/${normalizedSchoolId}`);
 
     const unsubscribe = onValue(uninstallRef, (snapshot) => {
       const data = snapshot.val();
@@ -34,14 +31,27 @@ export function useEduLockUninstallAccess(schoolId: string | undefined) {
         return;
       }
 
+      // Find the first active code that hasn't expired
+      const now = Date.now();
+      let activeAccess: EduLockUninstallAccess | null = null;
+      
+      for (const [codeKey, codeData] of Object.entries(data)) {
+        const record = codeData as any;
+        const expiresAt = record.expiresAt || null;
+        if (expiresAt && expiresAt > now) {
+          activeAccess = {
+            code: codeKey,
+            expiresAt: expiresAt,
+            updatedAt: null,
+            createdByUid: "",
+          };
+          break; // just show the first active one
+        }
+      }
+
       setState({
         schoolId: normalizedSchoolId,
-        access: {
-          code: String(data.code || "").trim(),
-          expiresAt: typeof data.expiresAt === "number" ? data.expiresAt : null,
-          updatedAt: typeof data.updatedAt === "number" ? data.updatedAt : null,
-          createdByUid: String(data.createdByUid || "").trim(),
-        },
+        access: activeAccess,
       });
     });
 
