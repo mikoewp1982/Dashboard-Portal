@@ -58,12 +58,7 @@ export function EduLockDashboardPanel({ schoolId }: { schoolId: string }) {
         </div>
       </div>
 
-      {!overview.tenantRegistered && (
-        <div className="mb-6 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-100">
-          Tenant EduLock untuk sekolah ini belum tercatat pada `tenant_registry`. Strict mode belum boleh dianggap aktif
-          penuh sampai registry dan APK siswa benar-benar tersambung.
-        </div>
-      )}
+
 
       {overview.activeDevicesCount === 0 && !loading && (
         <div className="mb-6 rounded-2xl border border-sky-400/20 bg-sky-500/10 px-5 py-4 text-sm text-sky-100">
@@ -113,12 +108,7 @@ export function EduLockDashboardPanel({ schoolId }: { schoolId: string }) {
                 {overview.strictModeEnabled ? "Siap" : "Belum Aktif"}
               </span>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/30 px-4 py-3">
-              <span>Registry Tenant</span>
-              <span className={overview.tenantRegistered ? "font-semibold text-emerald-300" : "font-semibold text-amber-300"}>
-                {overview.tenantRegistered ? "Terdaftar" : "Belum Ada"}
-              </span>
-            </div>
+
             <div className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/30 px-4 py-3">
               <span>Heartbeat Terakhir</span>
               <span className="font-semibold text-slate-100">
