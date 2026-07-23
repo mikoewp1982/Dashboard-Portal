@@ -49,8 +49,8 @@ export function EduLockDashboardPanel({ schoolId }: { schoolId: string }) {
         <div className="relative z-10">
           <h2 className="mb-2 text-2xl font-bold">Selamat Datang, {adminDisplayName}</h2>
           <p className="text-white/75">
-            Dashboard ini sekarang membaca snapshot runtime EduLock yang memang tersedia: binding siswa, tenant registry,
-            mirror presensi, dan heartbeat perangkat bila node `active_devices` sudah hidup.
+            Dashboard ini menampilkan snapshot operasional EduLock secara aktual: data binding siswa, riwayat mirror presensi, 
+            dan status pemantauan (heartbeat) perangkat secara real-time.
           </p>
         </div>
         <div className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 opacity-10">
