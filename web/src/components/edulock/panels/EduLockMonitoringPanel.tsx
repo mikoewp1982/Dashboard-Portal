@@ -137,8 +137,7 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
             </div>
             
             <div className="w-full lg:col-span-2 rounded-xl border border-sky-400/20 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
-              Monitoring sekarang membaca binding siswa dari GAS dan heartbeat perangkat dari `active_devices` bila tersedia.
-              Aksi cabut izin massal belum ditampilkan di sini karena backend mutasinya belum final.
+              Monitoring sekarang membaca data binding siswa dari GAS dan status heartbeat perangkat dari `active_devices` secara real-time bila terhubung.
             </div>
           </div>
         </div>
