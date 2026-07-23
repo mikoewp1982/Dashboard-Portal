@@ -999,6 +999,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkAndEnforceAccessibilityService() {
          if (prefsManager.isUninstallBypassActive()) return
+         
+         // Jika proteksi mati (Mode Senyap) dan onboarding (setup) sudah selesai, tidak usah paksa aksesibilitas
+         if (!prefsManager.isProtectionActive && prefsManager.isSetupCompleted) {
+             // AUTO-DISMISS jika dialog aksesibilitas sempat terbuka
+             if (accessibilityDialog?.isShowing == true) {
+                 accessibilityDialog?.dismiss()
+             }
+             return
+         }
 
          if (!isAccessibilityServiceEnabled()) {
              val isSchoolTime = scheduleManager.isSchoolTime()

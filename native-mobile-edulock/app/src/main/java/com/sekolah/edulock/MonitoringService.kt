@@ -300,6 +300,9 @@ class MonitoringService : Service() {
              val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
              sendBroadcast(intent)
              
+             // Pastikan kotak merah (SetupProtectionService) juga dimatikan
+             try { stopService(Intent(this, SetupProtectionService::class.java)) } catch (_: Exception) {}
+             
              // Update notifikasi agar tidak mencurigakan
              updateNotification("Mode Senyap", "Monitoring Dinonaktifkan oleh Admin", true)
              
@@ -349,8 +352,8 @@ class MonitoringService : Service() {
         // ==========================================
         if (prefsManager.isPetDead) {
             val lastAck = prefsManager.lastPetDeadAckAt
-            // Tampilkan lagi setiap 30 menit (1800000 ms) jika Opsi A
-            val NAGGING_INTERVAL = 30 * 60 * 1000L
+            // Tampilkan lagi setiap 10 menit (600000 ms)
+            val NAGGING_INTERVAL = 10 * 60 * 1000L
             if (now - lastAck > NAGGING_INTERVAL) {
                 hideOverlayLock() // bersihkan lock lain
                 val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")

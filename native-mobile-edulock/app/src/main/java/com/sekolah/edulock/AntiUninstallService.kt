@@ -55,8 +55,8 @@ class AntiUninstallService : AccessibilityService() {
             }
         }
 
-        if (uninstallBypass || !prefsManager.isSetupCompleted || prefsManager.isHolidayMode || isSettingsGrace) {
-            // Setup Mode: Izinkan akses ke Settings agar user bisa mengaktifkan permission
+        if (!prefsManager.isProtectionActive || uninstallBypass || !prefsManager.isSetupCompleted || prefsManager.isHolidayMode || isSettingsGrace) {
+            // Setup Mode / Protection OFF: Izinkan akses ke Settings agar user bisa mengaktifkan permission / mengelola aplikasi
             return 
         }
 
@@ -83,15 +83,10 @@ class AntiUninstallService : AccessibilityService() {
                 
                 Toast.makeText(this, "⛔ DILARANG! Minta Izin Uninstall dari Admin Sekolah dulu.", Toast.LENGTH_LONG).show()
                 
-                // Buka kembali aplikasi EduLock (BUKAN package settings!)
-                val intent = packageManager.getLaunchIntentForPackage("com.sekolah.edulock")
-                if (intent != null) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    startActivity(intent)
-                } else {
-                    // Fallback jika intent null
-                     performGlobalAction(GLOBAL_ACTION_HOME)
-                }
+                // Buka kembali aplikasi EduLock (langsung ke MainActivity agar tidak mampir ke halaman login)
+                val intent = Intent(this, MainActivity::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                startActivity(intent)
             }
         }
     }
