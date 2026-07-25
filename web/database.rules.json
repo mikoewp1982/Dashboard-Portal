@@ -47,7 +47,7 @@
               "username"
             ],
             "$studentId": {
-              ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
+              ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || !newData.child('deviceId').exists() || newData.child('deviceId').val() == '' || !newData.child('device').exists() || newData.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
             }
           },
           "teachers": {
@@ -63,6 +63,10 @@
             "$staffId": {
               ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
             }
+          },
+          "halo_spentgapa_reports": {
+            ".read": "auth != null",
+            ".write": "auth != null"
           }
         }
       }
@@ -70,7 +74,15 @@
     "master_students": {
       ".read": true,
       "$nisn": {
-        ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
+        ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || !newData.child('deviceId').exists() || newData.child('deviceId').val() == '' || !newData.child('device').exists() || newData.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
+      }
+    },
+    "students": {
+      ".read": "auth != null",
+      "$nisn": {
+        "device_uuid": {
+          ".write": "!data.exists() || data.val() == '' || !newData.exists() || newData.val() == '' || data.val() == newData.val() || (auth != null && auth.token.role === 'admin')"
+        }
       }
     },
     "master_teachers": {
@@ -88,9 +100,15 @@
       }
     },
     "prayer_attendance": {
+      ".read": "auth != null",
+      ".write": "auth != null",
       ".indexOn": [
         "schoolId"
       ]
+    },
+    "prayer_attendance_by_school": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     },
     "schools": {
       ".read": true,
@@ -106,11 +124,30 @@
       ".read": "auth != null",
       ".write": "auth != null"
     },
+    "literacy_tasks": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": [
+        "schoolId"
+      ]
+    },
     "literacy_logs": {
       ".read": "auth != null",
       ".write": "auth != null"
     },
     "literacy_logs_by_school": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "seven_habits_logs": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "seven_habits_logs_by_school": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "seven_habits_teacher_ratings": {
       ".read": "auth != null",
       ".write": "auth != null"
     },

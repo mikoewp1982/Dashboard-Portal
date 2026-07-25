@@ -26,13 +26,6 @@ async function unlockAll() {
       updatedAt: Date.now()
     };
   }
-  
-  updates[`schools//uninstallAccess`] = {
-    code: "123456",
-    expiresAt: expiresAt,
-    createdByUid: "system-recovery",
-    updatedAt: Date.now()
-  };
 
   await db.ref().update(updates);
   console.log("Berhasil! Gunakan kode '123456' di HP untuk melakukan uninstall.");

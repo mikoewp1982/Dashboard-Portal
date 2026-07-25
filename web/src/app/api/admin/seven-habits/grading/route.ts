@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
         .map(([dateStr, rawLog]: [string, any]) => {
           const [y, m, d] = dateStr.split("-").map(Number);
           return {
+            date: dateStr,
             week: Math.ceil(d / 7),
             month: m,
             year: y,
@@ -78,7 +79,7 @@ export async function GET(req: NextRequest) {
         })
         .filter((log) => log.month === month && log.year === year);
 
-      const result = calculateHabitGrades(studentLogs, teacherRating);
+      const result = calculateHabitGrades(studentLogs, teacherRating, { month, year });
 
       return {
         studentId: sid,

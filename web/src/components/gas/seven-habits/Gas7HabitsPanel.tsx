@@ -87,7 +87,10 @@ export function Gas7HabitsPanel({ schoolId }: { schoolId: string }) {
       return {
         student,
         rubric: storedRubric || null,
-        ...calculateHabitGrades(studentLogs, teacherRating),
+        ...calculateHabitGrades(studentLogs, teacherRating, {
+          month: selectedMonth,
+          year: selectedYear,
+        }),
       };
     });
   }, [classStudents, logs, selectedMonth, selectedYear, teacherRatings]);

@@ -33,6 +33,8 @@ export function LibraryTaskModal({ isOpen, onClose, classes, onSave, userName }:
       assignedBy: "admin",
       assignedByName: userName,
       status,
+      points: Number(poin) || 30,
+      durationMinutes: Number(durasi) || 45,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });

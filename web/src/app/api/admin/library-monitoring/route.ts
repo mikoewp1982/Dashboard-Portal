@@ -23,13 +23,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "School ID is required" }, { status: 400 });
     }
 
-    const logsSnap = await adminDb.ref("literacy_logs").orderByChild("schoolId").equalTo(targetSchoolId).once("value");
-    const rawLogs = logsSnap.val() || {};
+    const normalizedSchoolId = targetSchoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+    
+    let rawLogs: Record<string, any> = {};
+    try {
+      const logsSnap = await adminDb.ref("literacy_logs").orderByChild("schoolId").equalTo(normalizedSchoolId).once("value");
+      rawLogs = logsSnap.val() || {};
+    } catch (queryErr) {
+      const logsSnap = await adminDb.ref("literacy_logs").once("value");
+      rawLogs = logsSnap.val() || {};
+    }
+
     const literacyLogs = Object.entries<any>(rawLogs)
       .map(([id, rawLog]) => ({
         id,
         ...rawLog,
       }))
+      .filter((log) => {
+        const scope = String(log.schoolId || "").trim().toLowerCase().replace(/[\s\-]+/g, "_");
+        return scope === normalizedSchoolId || scope === targetSchoolId.trim().toLowerCase();
+      })
       .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
 
     return NextResponse.json({ success: true, literacyLogs });

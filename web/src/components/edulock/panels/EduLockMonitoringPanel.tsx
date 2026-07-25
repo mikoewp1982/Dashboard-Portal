@@ -31,6 +31,7 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
   const { overview, loading: overviewLoading, refresh } = useEduLockOverview(schoolId);
 
   const loading = classesLoading || studentsLoading || overviewLoading;
+  const latestMasterSwitchCommand = overview.latestMasterSwitchCommand;
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowTs(Date.now()), 60_000);
@@ -93,16 +94,40 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
           name: String(student.name || "-"),
           class: String(student.className || student.class || "-"),
           classKey: String(student.className || student.class || ""),
+          deviceId,
           status,
           battery: runtime?.battery ?? null,
           trustScore,
           lastUpdated: runtime?.lastSeenAt ?? null,
           isOutOfZone: runtime?.isOutOfZone ?? false,
           hasBinding: Boolean(deviceId),
+          hasFcmToken: runtime?.hasFcmToken ?? false,
+          masterSwitchAcked:
+            Boolean(latestMasterSwitchCommand?.commandId) &&
+            runtime?.lastMasterSwitchCommandId === latestMasterSwitchCommand?.commandId &&
+            runtime?.lastMasterSwitchAppliedState === latestMasterSwitchCommand?.requestedState,
+          masterSwitchAckAt: runtime?.lastMasterSwitchAppliedAt ?? null,
+          masterSwitchAckSource: runtime?.lastMasterSwitchAckSource ?? "",
         };
       }),
-    [studentsData, runtimeByDeviceId, runtimeByIdentity]
+    [studentsData, runtimeByDeviceId, runtimeByIdentity, latestMasterSwitchCommand]
   );
+
+  const duplicateBindingMap = useMemo(() => {
+    const deviceToStudents = new Map<string, string[]>();
+
+    monitoringStudents.forEach((student) => {
+      const key = String(student.deviceId || "").trim();
+      if (!key) return;
+      const current = deviceToStudents.get(key) || [];
+      current.push(student.name);
+      deviceToStudents.set(key, current);
+    });
+
+    return new Map(
+      Array.from(deviceToStudents.entries()).filter(([, studentNames]) => studentNames.length > 1)
+    );
+  }, [monitoringStudents]);
 
   return (
     <>
@@ -140,6 +165,34 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
               Monitoring sekarang membaca data binding siswa dari GAS dan status heartbeat perangkat dari `active_devices` secara real-time bila terhubung.
             </div>
           </div>
+          {latestMasterSwitchCommand && (
+            <div className="mt-4 rounded-xl border border-indigo-400/20 bg-indigo-500/10 px-4 py-3 text-sm text-indigo-100">
+              <div className="font-semibold text-white">
+                Command Master Switch Terakhir: {latestMasterSwitchCommand.requestedState ? "ON" : "OFF"}
+              </div>
+              <div className="mt-1 text-xs text-indigo-100/90">
+                {latestMasterSwitchCommand.requestedAt
+                  ? `Dikirim ${new Date(latestMasterSwitchCommand.requestedAt).toLocaleString("id-ID")}`
+                  : "Waktu kirim tidak tersedia"}
+                {" • "}ACK {latestMasterSwitchCommand.ackedDeviceCount}/{latestMasterSwitchCommand.targetedDeviceCount}
+                {" • "}FCM sukses {latestMasterSwitchCommand.fcmSuccessCount}/{latestMasterSwitchCommand.targetedTokenCount}
+                {latestMasterSwitchCommand.pendingDeviceCount > 0
+                  ? ` • Pending ${latestMasterSwitchCommand.pendingDeviceCount}`
+                  : " • Semua device tertarget sudah ACK"}
+              </div>
+              <div className="mt-2 text-[11px] text-indigo-100/70">
+                Ringkasan ACK/Pending dihitung per-device yang menerima command, bukan per-jumlah baris siswa.
+              </div>
+            </div>
+          )}
+          {duplicateBindingMap.size > 0 && (
+            <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+              <div className="font-semibold text-white">Peringatan Konflik Binding</div>
+              <div className="mt-1 text-xs text-amber-100/90">
+                Terdeteksi {duplicateBindingMap.size} device yang terhubung ke lebih dari satu baris siswa. Tabel siswa bisa tampak ganda, tetapi command ACK tetap dihitung per-device.
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -151,19 +204,20 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                 <th className="px-6 py-4 font-semibold">Lokasi</th>
                 <th className="px-6 py-4 font-semibold">Trust Score</th>
                 <th className="px-6 py-4 font-semibold">Last Update</th>
+                <th className="px-6 py-4 font-semibold">Command ACK</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-400" />
                     Memuat snapshot runtime EduLock...
                   </td>
                 </tr>
               ) : monitoringStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
                     Tidak ada data siswa ditemukan
                   </td>
                 </tr>
@@ -172,6 +226,8 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                   .filter((s) => monitoringClassFilterKey === "all" || s.classKey === monitoringClassFilterKey)
                   .map((student) => {
                   const isOnline = student.status === "ONLINE";
+                  const duplicateBindingStudents = duplicateBindingMap.get(String(student.deviceId || "").trim()) || [];
+                  const hasBindingConflict = duplicateBindingStudents.length > 1;
                   return (
                     <tr key={student.id || student.nisn} className="hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
                       <td className="px-6 py-4">
@@ -179,6 +235,11 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                         <div className="text-xs text-slate-400 mt-1">
                           {student.class} • <span className="font-mono">{student.nisn}</span>
                         </div>
+                        {hasBindingConflict && (
+                          <div className="mt-2 text-[11px] font-medium text-amber-300">
+                            Konflik binding: device ini juga dipakai {duplicateBindingStudents.length - 1} siswa lain
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
@@ -236,6 +297,38 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                             </span>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {!latestMasterSwitchCommand ? (
+                          <span className="text-xs text-slate-500">Belum ada command</span>
+                        ) : !student.hasFcmToken ? (
+                          <span className="text-xs text-amber-300">Token FCM belum sinkron</span>
+                        ) : hasBindingConflict && student.masterSwitchAcked ? (
+                          <div className="text-xs text-amber-300 font-medium">
+                            ACK device bersama
+                            <div className="text-slate-400 font-normal">
+                              Command dihitung 1 device untuk {duplicateBindingStudents.length} baris siswa
+                            </div>
+                          </div>
+                        ) : hasBindingConflict ? (
+                          <div className="text-xs text-amber-300 font-medium">
+                            Pending pada device bersama
+                            <div className="text-slate-400 font-normal">
+                              Command dihitung 1 device untuk {duplicateBindingStudents.length} baris siswa
+                            </div>
+                          </div>
+                        ) : student.masterSwitchAcked ? (
+                          <div className="text-xs text-emerald-400 font-medium">
+                            ACK via {student.masterSwitchAckSource || "runtime"}
+                            <div className="text-slate-400 font-normal">
+                              {student.masterSwitchAckAt
+                                ? new Date(student.masterSwitchAckAt).toLocaleTimeString("id-ID")
+                                : "Waktu ACK tidak tersedia"}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-amber-300">Pending ACK</span>
+                        )}
                       </td>
                     </tr>
                   )

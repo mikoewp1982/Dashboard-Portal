@@ -4,6 +4,7 @@ import { initializeApp, cert, getApps, type ServiceAccount } from 'firebase-admi
 import { getAuth } from 'firebase-admin/auth';
 import { getDatabase } from 'firebase-admin/database';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getMessaging } from 'firebase-admin/messaging';
 
 const DEFAULT_DATABASE_URL =
   'https://kompas-5f0b4-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -56,23 +57,21 @@ function ensureFirebaseAdminInitialized() {
   initialized = true;
 }
 
-export const adminAuth = new Proxy({}, {
-  get(target, prop) {
-    ensureFirebaseAdminInitialized();
-    return getAuth()[prop as keyof ReturnType<typeof getAuth>];
-  }
-}) as ReturnType<typeof getAuth>;
+function createBoundAdminProxy<T extends object>(getInstance: () => T) {
+  return new Proxy({} as T, {
+    get(_target, prop) {
+      ensureFirebaseAdminInitialized();
+      const instance = getInstance();
+      const value = instance[prop as keyof T];
+      return typeof value === "function" ? value.bind(instance) : value;
+    },
+  });
+}
 
-export const adminDb = new Proxy({}, {
-  get(target, prop) {
-    ensureFirebaseAdminInitialized();
-    return getDatabase()[prop as keyof ReturnType<typeof getDatabase>];
-  }
-}) as ReturnType<typeof getDatabase>;
+export const adminAuth = createBoundAdminProxy(() => getAuth()) as ReturnType<typeof getAuth>;
 
-export const adminFirestore = new Proxy({}, {
-  get(target, prop) {
-    ensureFirebaseAdminInitialized();
-    return getFirestore()[prop as keyof ReturnType<typeof getFirestore>];
-  }
-}) as ReturnType<typeof getFirestore>;
+export const adminDb = createBoundAdminProxy(() => getDatabase()) as ReturnType<typeof getDatabase>;
+
+export const adminFirestore = createBoundAdminProxy(() => getFirestore()) as ReturnType<typeof getFirestore>;
+
+export const adminMessaging = createBoundAdminProxy(() => getMessaging()) as ReturnType<typeof getMessaging>;

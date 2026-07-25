@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
+import { dispatchMasterSwitchCommand } from "@/lib/admin/edulockMasterSwitch";
 
 type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "authorize-uninstall" | "authorize-uninstall-mass" | "toggle-uninstall" | "toggle-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions";
 
@@ -29,6 +30,23 @@ type ActiveDeviceSnapshot = {
   isEmergencyUnlock: boolean;
   isUninstallBypass: boolean;
   isPermissionActive: boolean;
+  hasFcmToken: boolean;
+  lastMasterSwitchCommandId: string;
+  lastMasterSwitchAppliedAt: number | null;
+  lastMasterSwitchAppliedState: boolean | null;
+  lastMasterSwitchAckSource: string;
+};
+
+type LatestMasterSwitchCommandSnapshot = {
+  commandId: string;
+  requestedState: boolean;
+  requestedAt: number | null;
+  targetedDeviceCount: number;
+  targetedTokenCount: number;
+  fcmSuccessCount: number;
+  fcmFailureCount: number;
+  ackedDeviceCount: number;
+  pendingDeviceCount: number;
 };
 
 const ONLINE_WINDOW_MS = 15 * 60 * 1000;
@@ -91,6 +109,7 @@ function parseActiveDevices(rawValue: unknown) {
     const isEmergencyUnlock = readBoolean(record, "isEmergencyUnlock", "emergencyUnlock", "emergencyUnlocked") === true;
     const isUninstallBypass = readBoolean(record, "isUninstallBypass", "uninstallBypass", "uninstallAuthorized") === true;
     const isPermissionActive = readBoolean(record, "isPermissionActive", "permissionActive", "tempPermissionActive") === true;
+      const lastMasterSwitchAppliedState = readBoolean(record, "lastMasterSwitchAppliedState");
     const computedOnline =
       rawStatus.toUpperCase() === "ONLINE" ||
       (lastSeenAt !== null && now - lastSeenAt <= ONLINE_WINDOW_MS);
@@ -114,8 +133,46 @@ function parseActiveDevices(rawValue: unknown) {
       isEmergencyUnlock,
       isUninstallBypass,
       isPermissionActive,
+        hasFcmToken: Boolean(readString(record, "fcmToken")),
+        lastMasterSwitchCommandId: readString(record, "lastMasterSwitchCommandId"),
+        lastMasterSwitchAppliedAt: readNumber(record, "lastMasterSwitchAppliedAt"),
+        lastMasterSwitchAppliedState,
+        lastMasterSwitchAckSource: readString(record, "lastMasterSwitchAckSource"),
     };
   });
+}
+
+function parseLatestMasterSwitchCommand(rawValue: unknown, activeDevices: ActiveDeviceSnapshot[]) {
+  if (!rawValue || typeof rawValue !== "object") return null;
+
+  const record = rawValue as Record<string, unknown>;
+  const delivery =
+    record.delivery && typeof record.delivery === "object"
+      ? (record.delivery as Record<string, unknown>)
+      : {};
+
+  const commandId = readString(record, "commandId");
+  if (!commandId) return null;
+
+  const requestedState = readBoolean(record, "requestedState") === true;
+  const targetedDeviceCount = readNumber(delivery, "targetedDeviceCount") ?? 0;
+  const ackedDeviceCount = activeDevices.filter(
+    (device) =>
+      device.lastMasterSwitchCommandId === commandId &&
+      device.lastMasterSwitchAppliedState === requestedState
+  ).length;
+
+  return {
+    commandId,
+    requestedState,
+    requestedAt: readNumber(record, "requestedAt"),
+    targetedDeviceCount,
+    targetedTokenCount: readNumber(delivery, "targetedTokenCount") ?? 0,
+    fcmSuccessCount: readNumber(delivery, "fcmSuccessCount") ?? 0,
+    fcmFailureCount: readNumber(delivery, "fcmFailureCount") ?? 0,
+    ackedDeviceCount,
+    pendingDeviceCount: Math.max(targetedDeviceCount - ackedDeviceCount, 0),
+  } satisfies LatestMasterSwitchCommandSnapshot;
 }
 
 async function resolveAuthorizedSchoolId(request: Request, requestedSchoolId?: string) {
@@ -140,7 +197,10 @@ async function resolveAuthorizedSchoolId(request: Request, requestedSchoolId?: s
     throw new Error("School ID tidak ditemukan");
   }
 
-  return schoolContext;
+      return {
+        ...schoolContext,
+        decodedToken,
+      };
 }
 
 export async function GET(request: Request) {
@@ -150,11 +210,12 @@ export async function GET(request: Request) {
     const schoolContext = await resolveAuthorizedSchoolId(request, schoolIdParam);
     const schoolId = schoolContext.schoolId;
 
-    const [studentsSnap, tenantRegistrySnap, activeDevicesSnap, mirrorRootSnap] = await Promise.all([
+        const [studentsSnap, tenantRegistrySnap, activeDevicesSnap, mirrorRootSnap, latestMasterSwitchCommandSnap] = await Promise.all([
       adminDb.ref(`gas/schools/${schoolId}/students`).get(),
       adminDb.ref(`tenant_registry/${schoolId}`).get(),
       adminDb.ref(`active_devices/${schoolId}`).get(),
       adminDb.ref(`daily_attendance_mirror/${schoolId}`).limitToLast(7).get(),
+          adminDb.ref(`schools/${schoolId}/commands/master_switch/latest`).get(),
     ]);
 
     const studentsValue = studentsSnap.val() as Record<string, Record<string, unknown>> | null;
@@ -174,6 +235,10 @@ export async function GET(request: Request) {
 
     const activeDevices = parseActiveDevices(activeDevicesSnap.val())
       .sort((a, b) => (b.lastSeenAt || 0) - (a.lastSeenAt || 0));
+        const latestMasterSwitchCommand = parseLatestMasterSwitchCommand(
+          latestMasterSwitchCommandSnap.val(),
+          activeDevices
+        );
     const onlineDevices = activeDevices.filter((device) => device.isOnline);
     const outsideZoneCount = onlineDevices.filter((device) => device.isOutOfZone).length;
     const latestHeartbeatAt = onlineDevices.reduce<number | null>((latest, device) => {
@@ -210,6 +275,7 @@ export async function GET(request: Request) {
         latestMirrorDate,
         latestMirrorCount: latestMirrorEntries.length,
         activeDevices,
+            latestMasterSwitchCommand,
       },
     });
   } catch (error: unknown) {
@@ -228,7 +294,8 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as EduLockRequestBody;
     const schoolContext = await resolveAuthorizedSchoolId(request, body.schoolId);
-    const schoolId = schoolContext.schoolId;
+        const schoolId = schoolContext.schoolId;
+        const decodedToken = schoolContext.decodedToken;
 
     if (body.action === "save-settings") {
       const settings = (body as any).settings;
@@ -247,7 +314,7 @@ export async function POST(request: Request) {
         apkConfigUpdates.is_holiday_mode = settings.is_holiday_mode;
       }
       
-      if (Object.keys(apkConfigUpdates).length > 0) {
+          if (Object.keys(apkConfigUpdates).length > 0) {
         await adminDb.ref(`schools/${schoolId}/config`).update(apkConfigUpdates);
       }
 
@@ -262,9 +329,20 @@ export async function POST(request: Request) {
         await adminDb.ref(`schools/${schoolId}/policy`).update(policyUpdates);
       }
       
-      return NextResponse.json({
+          const latestMasterSwitchCommand =
+            settings.is_active_protection !== undefined
+              ? await dispatchMasterSwitchCommand({
+                  schoolId,
+                  requestedState: Boolean(settings.is_active_protection),
+                  requestedByUid: String(decodedToken.uid || ""),
+                  requestedByEmail: String(decodedToken.email || ""),
+                })
+              : null;
+
+          return NextResponse.json({
         success: true,
         message: "Pengaturan EduLock berhasil disimpan.",
+            latestMasterSwitchCommand,
       });
     }
 

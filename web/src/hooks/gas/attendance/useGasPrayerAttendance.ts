@@ -88,14 +88,15 @@ export function useGasPrayerAttendance(schoolId: string | undefined, selectedMon
       return;
     }
 
+    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
     setLoading(true);
     // Kita gunakan get() alih-alih onValue() agar tidak meload seluruh histori data sepanjang masa
     // dan menjaganya tetap di memori secara realtime, sesuai Pedoman Hemat Data.
-    const prayerRef = query(rtdbRef(rtdb, "prayer_attendance"), orderByChild("schoolId"), equalTo(schoolId));
+    const prayerRef = query(rtdbRef(rtdb, "prayer_attendance"), orderByChild("schoolId"), equalTo(normalizedSchoolId));
 
     try {
       const snapshot = await get(prayerRef);
-      setLogs(normalizePrayerLogs(snapshot.val(), schoolId, selectedMonth, selectedYear));
+      setLogs(normalizePrayerLogs(snapshot.val(), normalizedSchoolId, selectedMonth, selectedYear));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
@@ -104,7 +105,7 @@ export function useGasPrayerAttendance(schoolId: string | undefined, selectedMon
         // Jalur utama tetap query terindeks berbasis schoolId agar hemat data.
         try {
           const fallbackSnapshot = await get(rtdbRef(rtdb, "prayer_attendance"));
-          setLogs(normalizePrayerLogs(fallbackSnapshot.val(), schoolId, selectedMonth, selectedYear));
+          setLogs(normalizePrayerLogs(fallbackSnapshot.val(), normalizedSchoolId, selectedMonth, selectedYear));
           console.warn("RTDB index schoolId untuk prayer_attendance belum aktif. Menggunakan fallback sementara.");
           return;
         } catch (fallbackError) {

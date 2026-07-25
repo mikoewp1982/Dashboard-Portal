@@ -55,7 +55,7 @@
     "singleProjectMode": true
   },
   "apphosting": {
-    "backendId": "dashboard-portal",
+    "backendId": "gerbang-aplikasi-sekolah",
     "rootDir": ".",
     "ignore": [
       "node_modules",

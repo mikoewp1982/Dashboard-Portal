@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { db, rtdb } from "@/lib/firebase/client";
-import { collection, query, getDocs, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
-import { ref as rtdbRef, get, update } from "firebase/database";
+import { collection, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { ref as rtdbRef, get, update, push, set, remove } from "firebase/database";
 import { LibraryTask } from "@/types/library";
 import { callAdminApi } from "@/lib/callAdminApi";
 import { isSessionInactiveError } from "@/lib/firebase/waitForClientUser";
@@ -59,21 +59,38 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     }
 
     setLoading(true);
-    const collRef = collection(db, `schools/${schoolId}/library_tasks`);
-    const q = query(collRef);
+    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
 
     try {
-      const snapshot = await getDocs(q);
+      const snapshot = await get(rtdbRef(rtdb, "literacy_tasks"));
       const result: LibraryTask[] = [];
-      snapshot.forEach(doc => {
-        const data = doc.data() as LibraryTask;
-        if (!selectedClass || data.className === selectedClass) {
-          result.push({ ...data, id: doc.id });
-        }
-      });
+      const val = snapshot.val();
+      if (val) {
+        Object.entries<any>(val).forEach(([id, item]) => {
+          const itemScope = String(item.schoolId || "").trim().toLowerCase().replace(/[\s\-]+/g, "_");
+          if (itemScope === normalizedSchoolId || itemScope === schoolId.trim().toLowerCase()) {
+            const taskClassName = item.className || "Semua Kelas";
+            if (!selectedClass || taskClassName === selectedClass) {
+              result.push({
+                id,
+                title: item.title || "",
+                description: item.description || "",
+                className: taskClassName,
+                assignedBy: item.assignedBy || "admin",
+                assignedByName: item.assignedByName || "",
+                status: item.isActive === false || item.status === "CLOSED" ? "CLOSED" : "ACTIVE",
+                points: item.points || 30,
+                durationMinutes: item.durationMinutes || 45,
+                createdAt: item.createdAt || Date.now(),
+                updatedAt: item.updatedAt || item.createdAt || Date.now(),
+              });
+            }
+          }
+        });
+      }
       setTasks(result.sort((a, b) => b.createdAt - a.createdAt));
     } catch (error) {
-      console.error("Error fetching library tasks:", error);
+      console.error("Error fetching literacy tasks from RTDB:", error);
     } finally {
       setLoading(false);
     }
@@ -144,23 +161,68 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
 
   const addTask = async (task: Omit<LibraryTask, "id">) => {
     if (!schoolId) return;
-    const docRef = doc(collection(db, `schools/${schoolId}/library_tasks`));
-    const newTask = { ...task, id: docRef.id };
-    await setDoc(docRef, newTask);
-    setTasks(prev => [newTask as LibraryTask, ...prev]);
+    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+    
+    // Write to RTDB literacy_tasks (Primary source of truth for Mobile & Web)
+    const newTaskRef = push(rtdbRef(rtdb, "literacy_tasks"));
+    const taskId = newTaskRef.key || Date.now().toString();
+
+    const rtdbPayload = {
+      id: taskId,
+      title: task.title,
+      description: task.description,
+      points: task.points || 30,
+      durationMinutes: task.durationMinutes || 45,
+      isActive: task.status === "ACTIVE",
+      status: task.status,
+      schoolId: normalizedSchoolId,
+      className: task.className || "Semua Kelas",
+      assignedBy: task.assignedBy || "admin",
+      assignedByName: task.assignedByName || "",
+      createdAt: task.createdAt || Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    await set(newTaskRef, rtdbPayload);
+
+    // Mirror to Firestore for web backwards compatibility
+    try {
+      const docRef = doc(db, `schools/${schoolId}/library_tasks/${taskId}`);
+      await setDoc(docRef, { ...task, id: taskId, schoolId: normalizedSchoolId });
+    } catch (e) {
+      console.warn("Firestore mirror failed for library task:", e);
+    }
+
+    const createdTask: LibraryTask = {
+      ...task,
+      id: taskId,
+    };
+    setTasks(prev => [createdTask, ...prev]);
   };
 
   const updateTaskStatus = async (taskId: string, newStatus: "ACTIVE" | "CLOSED") => {
     if (!schoolId) return;
-    const docRef = doc(db, `schools/${schoolId}/library_tasks/${taskId}`);
-    await updateDoc(docRef, { status: newStatus, updatedAt: Date.now() });
+    const taskRef = rtdbRef(rtdb, `literacy_tasks/${taskId}`);
+    await update(taskRef, { status: newStatus, isActive: newStatus === "ACTIVE", updatedAt: Date.now() });
+
+    try {
+      const docRef = doc(db, `schools/${schoolId}/library_tasks/${taskId}`);
+      await updateDoc(docRef, { status: newStatus, updatedAt: Date.now() });
+    } catch (e) {}
+
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus, updatedAt: Date.now() } : t));
   };
 
   const deleteTask = async (taskId: string) => {
     if (!schoolId) return;
-    const docRef = doc(db, `schools/${schoolId}/library_tasks/${taskId}`);
-    await deleteDoc(docRef);
+    const taskRef = rtdbRef(rtdb, `literacy_tasks/${taskId}`);
+    await remove(taskRef);
+
+    try {
+      const docRef = doc(db, `schools/${schoolId}/library_tasks/${taskId}`);
+      await deleteDoc(docRef);
+    } catch (e) {}
+
     setTasks(prev => prev.filter(t => t.id !== taskId));
   };
 

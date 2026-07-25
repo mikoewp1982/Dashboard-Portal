@@ -31,26 +31,62 @@ export async function POST(req: NextRequest) {
 
     if (action === "save-attendance-schedules") {
       const formatted: Record<string, any> = {};
+      const legacyFormatted: Record<string, any> = {};
+      const dayMapping: Record<number, string> = {
+        1: "mon", 2: "tue", 3: "wed", 4: "thu", 5: "fri", 6: "sat", 0: "sun"
+      };
+
       schedules.forEach((s: any) => {
         formatted[String(s.dayId + 1)] = {
           startTime: s.entryTime,
           endTime: s.exitTime,
           isHoliday: !s.isEnabled
         };
+        const legacyKey = dayMapping[s.dayId];
+        if (legacyKey) {
+          legacyFormatted[legacyKey] = {
+            enabled: s.isEnabled,
+            start: s.entryTime,
+            end: s.exitTime
+          };
+        }
       });
       await dbRef.child("schedules").set(formatted);
+      
+      // Mirror to legacy path for EduLock APK backward compatibility
+      await adminDb.ref(`schools/${targetSchoolId}/schedule/weekdays`).set(legacyFormatted);
+      
       return NextResponse.json({ success: true });
     }
 
     if (action === "add-holiday") {
       const newRef = dbRef.child("holidays").push();
       await newRef.set(holiday);
+      
+      // Mirror to legacy path for EduLock APK
+      if (holiday?.date) {
+        await adminDb.ref(`schools/${targetSchoolId}/holidays/${holiday.date}`).set({
+          note: holiday.description || ""
+        });
+      }
+      
       return NextResponse.json({ success: true, id: newRef.key });
     }
 
     if (action === "remove-holiday") {
       if (!holiday?.id) throw new Error("Holiday ID missing");
+      
+      // Fetch the holiday first to get the date for legacy mirror deletion
+      const snap = await dbRef.child("holidays").child(holiday.id).once("value");
+      const holData = snap.val();
+      
       await dbRef.child("holidays").child(holiday.id).remove();
+      
+      // Remove from legacy path for EduLock APK
+      if (holData?.date) {
+        await adminDb.ref(`schools/${targetSchoolId}/holidays/${holData.date}`).remove();
+      }
+      
       return NextResponse.json({ success: true });
     }
 
@@ -59,6 +95,21 @@ export async function POST(req: NextRequest) {
       
       // Mirror to legacy path for EduLock APK backward compatibility
       await adminDb.ref(`gas/schools/${targetSchoolId}`).update({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        radius: location.radius
+      });
+      
+      return NextResponse.json({ success: true });
+    }
+
+      if (action === "save-musholla-location") {
+        const normalizedTarget = targetSchoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+        const prayerRef = adminDb.ref(`school_settings/${normalizedTarget}/prayer`);
+      await prayerRef.child("musholla_location").set(location);
+      
+      // Mirror to legacy root path for older APK versions
+      await adminDb.ref("musholla_location").set({
         latitude: location.latitude,
         longitude: location.longitude,
         radius: location.radius

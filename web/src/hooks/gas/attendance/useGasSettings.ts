@@ -17,6 +17,7 @@ export function useGasSettings(schoolId: string) {
   ]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [location, setLocation] = useState<SchoolLocation>({ latitude: -7.6698, longitude: 112.5432, radius: 50 });
+  const [mushollaLocation, setMushollaLocation] = useState<SchoolLocation>({ latitude: -7.6698, longitude: 112.5432, radius: 25 });
 
   useEffect(() => {
     if (!schoolId) return;
@@ -24,6 +25,8 @@ export function useGasSettings(schoolId: string) {
     const schedulesRef = ref(rtdb, `${pathBase}/schedules`);
     const holidaysRef = ref(rtdb, `${pathBase}/holidays`);
     const locationRef = ref(rtdb, `${pathBase}/school_location`);
+    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+    const mushollaLocRef = ref(rtdb, `school_settings/${normalizedSchoolId}/prayer/musholla_location`);
 
     const unsubSchedules = onValue(schedulesRef, (snap) => {
       const data = snap.val();
@@ -65,10 +68,22 @@ export function useGasSettings(schoolId: string) {
       }
     });
 
+    const unsubMushollaLoc = onValue(mushollaLocRef, (snap) => {
+      const data = snap.val();
+      if (data) {
+        setMushollaLocation({
+          latitude: data.latitude,
+          longitude: data.longitude,
+          radius: data.radius || 25,
+        });
+      }
+    });
+
     return () => {
       unsubSchedules();
       unsubHolidays();
       unsubLoc();
+      unsubMushollaLoc();
     };
   }, [schoolId]);
 
@@ -121,14 +136,24 @@ export function useGasSettings(schoolId: string) {
     });
   };
 
+  const saveMushollaLocation = async (loc: SchoolLocation) => {
+    await callApi({
+      action: "save-musholla-location",
+      schoolId,
+      location: loc,
+    });
+  };
+
   return {
     schedules,
     holidays,
     location,
+    mushollaLocation,
     saveSchedules,
     addHoliday,
     removeHoliday,
     saveLocation,
+    saveMushollaLocation,
   };
 }
 

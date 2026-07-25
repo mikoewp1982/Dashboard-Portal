@@ -1,4 +1,5 @@
 export interface HabitLogForGrading {
+  date?: string;
   month?: number;
   year?: number;
   week: number;
@@ -24,11 +25,19 @@ export interface GradingResult {
   description: string;
 }
 
+interface GradingPeriod {
+  month?: number;
+  year?: number;
+}
+
 export function calculateHabitGrades(
   logs: HabitLogForGrading[],
-  teacherRating = 0
+  teacherRating = 0,
+  period: GradingPeriod = {}
 ): GradingResult {
-  if (logs.length === 0) {
+  const uniqueLogs = dedupeLogsByDate(logs);
+
+  if (uniqueLogs.length === 0) {
     return {
       dailyConsistency: 0,
       weeklyProgress: 0,
@@ -42,30 +51,39 @@ export function calculateHabitGrades(
   }
 
   let totalDailyScore = 0;
-  logs.forEach((log) => {
+  uniqueLogs.forEach((log) => {
     const completedCount = Object.values(log.habits).filter(Boolean).length;
     totalDailyScore += (completedCount / 7) * 100;
   });
-  const dailyConsistency = Math.min(100, totalDailyScore / logs.length);
+  const dailyConsistency = Math.min(100, totalDailyScore / uniqueLogs.length);
 
   const weeklyTicks: Record<number, number> = {};
-  logs.forEach((log) => {
+  uniqueLogs.forEach((log) => {
     const completedCount = Object.values(log.habits).filter(Boolean).length;
     weeklyTicks[log.week] = (weeklyTicks[log.week] || 0) + completedCount;
   });
 
-  let totalWeeklyScore = 0;
-  const weeks = Object.keys(weeklyTicks).length;
-  Object.values(weeklyTicks).forEach((ticks) => {
-    totalWeeklyScore += (ticks / 49) * 100;
-  });
-  const weeklyProgress = weeks > 0 ? Math.min(100, totalWeeklyScore / weeks) : 0;
+  const resolvedYear = period.year ?? uniqueLogs[0]?.year;
+  const resolvedMonth = period.month ?? uniqueLogs[0]?.month;
+  const weeklyScores = Array.from({ length: 5 }, (_, index) => index + 1)
+    .map((week) => {
+      const daysInWeek = countDaysInWeek(resolvedYear, resolvedMonth, week);
+      if (daysInWeek <= 0) return null;
+      const ticks = weeklyTicks[week] || 0;
+      const denom = Math.max(daysInWeek * 7, 1);
+      return Math.min(100, (ticks / denom) * 100);
+    })
+    .filter((value): value is number => value !== null);
+  const weeklyProgress = weeklyScores.length > 0
+    ? weeklyScores.reduce((sum, value) => sum + value, 0) / weeklyScores.length
+    : 0;
 
   let totalMonthlyTicks = 0;
-  logs.forEach((log) => {
+  uniqueLogs.forEach((log) => {
     totalMonthlyTicks += Object.values(log.habits).filter(Boolean).length;
   });
-  const monthlyAchievement = Math.min(100, (totalMonthlyTicks / 196) * 100);
+  const monthDays = Math.max(countDaysInMonth(resolvedYear, resolvedMonth), 1);
+  const monthlyAchievement = Math.min(100, (totalMonthlyTicks / (monthDays * 7)) * 100);
 
   const finalScore = (
     (dailyConsistency * 0.4) +
@@ -106,4 +124,26 @@ export function calculateHabitGrades(
     category,
     description,
   };
+}
+
+function dedupeLogsByDate(logs: HabitLogForGrading[]) {
+  const map = new Map<string, HabitLogForGrading>();
+  logs.forEach((log, index) => {
+    const key = log.date || `${log.year || 0}-${log.month || 0}-${log.week}-${index}`;
+    map.set(key, log);
+  });
+  return Array.from(map.values());
+}
+
+function countDaysInWeek(year?: number, month?: number, week?: number) {
+  if (!year || !month || !week) return 0;
+  const maxDays = new Date(year, month, 0).getDate();
+  const startDay = ((week - 1) * 7) + 1;
+  const endDay = Math.min(startDay + 6, maxDays);
+  return startDay > maxDays ? 0 : (endDay - startDay + 1);
+}
+
+function countDaysInMonth(year?: number, month?: number) {
+  if (!year || !month) return 28;
+  return new Date(year, month, 0).getDate();
 }

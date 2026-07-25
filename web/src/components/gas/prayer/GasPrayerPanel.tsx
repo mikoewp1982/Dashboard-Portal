@@ -133,7 +133,7 @@ export function GasPrayerPanel({ schoolId }: Props) {
             holidays={holidays}
           />
         ) : (
-          <AttendanceSettingsPanel />
+          <AttendanceSettingsPanel mode="prayer" />
         )}
       </div>
     </div>

@@ -19,6 +19,23 @@ export interface EduLockActiveDevice {
   isEmergencyUnlock: boolean;
   isUninstallBypass: boolean;
   isPermissionActive: boolean;
+  hasFcmToken: boolean;
+  lastMasterSwitchCommandId: string;
+  lastMasterSwitchAppliedAt: number | null;
+  lastMasterSwitchAppliedState: boolean | null;
+  lastMasterSwitchAckSource: string;
+}
+
+export interface EduLockLatestMasterSwitchCommand {
+  commandId: string;
+  requestedState: boolean;
+  requestedAt: number | null;
+  targetedDeviceCount: number;
+  targetedTokenCount: number;
+  fcmSuccessCount: number;
+  fcmFailureCount: number;
+  ackedDeviceCount: number;
+  pendingDeviceCount: number;
 }
 
 export interface EduLockOverview {
@@ -34,6 +51,7 @@ export interface EduLockOverview {
   latestMirrorDate: string | null;
   latestMirrorCount: number;
   activeDevices: EduLockActiveDevice[];
+  latestMasterSwitchCommand: EduLockLatestMasterSwitchCommand | null;
 }
 
 const emptyOverview: EduLockOverview = {
@@ -49,6 +67,7 @@ const emptyOverview: EduLockOverview = {
   latestMirrorDate: null,
   latestMirrorCount: 0,
   activeDevices: [],
+  latestMasterSwitchCommand: null,
 };
 
 export function useEduLockOverview(schoolId: string | undefined) {

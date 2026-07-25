@@ -6,7 +6,11 @@ import { EffectiveDaysCard } from "./settings/EffectiveDaysCard";
 import { HolidaySettingsCard } from "./settings/HolidaySettingsCard";
 import { LocationSettingsCard } from "./settings/LocationSettingsCard";
 
-export function AttendanceSettingsPanel() {
+interface Props {
+  mode?: "school" | "prayer" | "all";
+}
+
+export function AttendanceSettingsPanel({ mode = "all" }: Props) {
   const { user } = useAuthStore();
   const schoolId = user?.schoolId || "";
 
@@ -14,10 +18,12 @@ export function AttendanceSettingsPanel() {
     schedules,
     holidays,
     location,
+    mushollaLocation,
     saveSchedules,
     addHoliday,
     removeHoliday,
     saveLocation,
+    saveMushollaLocation,
   } = useGasSettings(schoolId);
 
   return (
@@ -28,7 +34,13 @@ export function AttendanceSettingsPanel() {
         </div>
         <div className="space-y-6">
           <HolidaySettingsCard holidays={holidays} addHoliday={addHoliday} removeHoliday={removeHoliday} />
-          <LocationSettingsCard location={location} saveLocation={saveLocation} />
+          <LocationSettingsCard
+            location={location}
+            saveLocation={saveLocation}
+            mushollaLocation={mushollaLocation}
+            saveMushollaLocation={saveMushollaLocation}
+            mode={mode}
+          />
         </div>
       </div>
     </div>

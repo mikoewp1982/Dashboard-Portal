@@ -5,6 +5,7 @@ import { Settings, ShieldAlert, Clock, Activity, Save } from "lucide-react";
 import { useGasSettings } from "@/hooks/gas/attendance/useGasSettings";
 import { useEduLockUninstallAccess } from "@/hooks/edulock/useEduLockUninstallAccess";
 import { useEduLockSettings } from "@/hooks/edulock/useEduLockSettings";
+import { useEduLockOverview } from "@/hooks/edulock/useEduLockOverview";
 
 function hasActiveUninstallCode(access: { code: string; expiresAt: number | null } | null) {
   if (!access?.code || !access.expiresAt) return false;
@@ -24,6 +25,7 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
   const { schedules, holidays, location } = useGasSettings(schoolId);
   const { access: uninstallAccess, loading: uninstallLoading } = useEduLockUninstallAccess(schoolId);
   const hasUninstallCode = hasActiveUninstallCode(uninstallAccess);
+  const { overview } = useEduLockOverview(schoolId);
 
   const { settings, loading: settingsLoading, saving, saveSettings } = useEduLockSettings(schoolId);
   const [gpsWarnMinutes, setGpsWarnMinutes] = useState(2);
@@ -96,6 +98,20 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
                   <div className="w-14 h-7 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600 border border-white/10"></div>
                 </label>
               </div>
+              {overview.latestMasterSwitchCommand && (
+                <div className="mb-6 rounded-2xl border border-indigo-400/20 bg-slate-900/60 p-4 text-sm text-indigo-100">
+                  <div className="font-semibold text-white">
+                    Status Command Terakhir: {overview.latestMasterSwitchCommand.requestedState ? "ON" : "OFF"}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-300">
+                    ACK {overview.latestMasterSwitchCommand.ackedDeviceCount}/{overview.latestMasterSwitchCommand.targetedDeviceCount}
+                    {" • "}FCM sukses {overview.latestMasterSwitchCommand.fcmSuccessCount}/{overview.latestMasterSwitchCommand.targetedTokenCount}
+                    {overview.latestMasterSwitchCommand.pendingDeviceCount > 0
+                      ? ` • Pending ${overview.latestMasterSwitchCommand.pendingDeviceCount}`
+                      : " • Semua device tertarget sudah ACK"}
+                  </div>
+                </div>
+              )}
 
               <div className="mb-6 bg-fuchsia-500/10 p-5 rounded-2xl border border-fuchsia-500/20 flex items-center justify-between">
                 <div>
