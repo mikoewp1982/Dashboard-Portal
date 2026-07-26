@@ -6,6 +6,8 @@ type SchoolRegistryRow = {
   name?: string;
   authEmail?: string;
   adminEmail?: string;
+  isActive?: boolean;
+  adminAccessActive?: boolean;
 };
 
 export type CanonicalSchoolContext = {
@@ -22,6 +24,7 @@ function normalizeValue(value: unknown) {
 
 function toContext(key: string, row: SchoolRegistryRow | null | undefined): CanonicalSchoolContext | null {
   if (!row) return null;
+  if (row.isActive === false || row.adminAccessActive === false) return null;
 
   const schoolId = normalizeValue(row.schoolId || key);
   if (!schoolId) return null;

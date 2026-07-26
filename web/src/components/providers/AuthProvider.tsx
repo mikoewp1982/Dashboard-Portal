@@ -2,8 +2,9 @@
 
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { onIdTokenChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase/client';
+import { onIdTokenChanged, signOut } from 'firebase/auth';
+import { auth, rtdb } from '@/lib/firebase/client';
+import { ref, onValue } from 'firebase/database';
 import { useAuthStore, PortalUser, PortalUserRole } from '@/store/useAuthStore';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -98,6 +99,24 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
     }
   }, [user, loading, pathname, router]);
+
+  // Realtime Tenant Deactivation Listener
+  useEffect(() => {
+    if (!user || user.role !== 'admin' || !user.schoolId) return;
+
+    const schoolRef = ref(rtdb, `schools/${user.schoolId}`);
+    const unsubscribe = onValue(schoolRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        if (data.isActive === false || data.adminAccessActive === false) {
+          console.warn("Tenant deactivated by Super Admin. Forcing logout.");
+          signOut(auth).catch(console.error);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   if (loading) {
     return (

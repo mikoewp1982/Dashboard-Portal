@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { signInWithEmailAndPassword, updatePassword } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { signInWithEmailAndPassword, updatePassword, signOut } from "firebase/auth";
+import { ref, get } from "firebase/database";
+import { auth, rtdb } from "@/lib/firebase/client";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -51,6 +52,20 @@ export default function LoginPage() {
       if (auth.currentUser) {
         const tokenResult = await auth.currentUser.getIdTokenResult(true);
         const token = tokenResult.token;
+
+        // Tenant Deactivation Check
+        const schoolId = tokenResult.claims.schoolId as string | undefined;
+        if (schoolId) {
+          const schoolSnap = await get(ref(rtdb, `schools/${schoolId}`));
+          if (schoolSnap.exists()) {
+            const schoolData = schoolSnap.val();
+            if (schoolData.isActive === false || schoolData.adminAccessActive === false) {
+              await signOut(auth);
+              throw new Error("Layanan sekolah Anda sedang dinonaktifkan oleh Super Admin.");
+            }
+          }
+        }
+
         // Record login time
         fetch("/api/auth/record-login", {
           method: "POST",
