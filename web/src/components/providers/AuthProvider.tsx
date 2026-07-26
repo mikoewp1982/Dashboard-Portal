@@ -36,9 +36,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         ]).catch(() => null);
 
         const claims = token?.claims || {};
-        const roleClaim = typeof claims.role === "string" ? claims.role : "admin";
-        const role: PortalUserRole =
-          roleClaim === "super_admin" || roleClaim === "teacher" || roleClaim === "student" ? roleClaim : "admin";
+        const roleClaim = typeof claims.role === "string" ? claims.role : "";
+        if (!["super_admin", "admin", "teacher", "student"].includes(roleClaim)) {
+          throw new Error(`Invalid or missing role claim: ${roleClaim}`);
+        }
+        const role = roleClaim as PortalUserRole;
         const schoolId = claims.schoolId as string | undefined;
         const npsn = claims.npsn as string | undefined;
         const schoolName = claims.schoolName as string | undefined;

@@ -92,13 +92,5 @@ export async function resolveCanonicalSchoolContext(input: {
     }
   }
 
-  if (!normalizedSchoolId) return null;
-
-  return {
-    schoolId: normalizedSchoolId,
-    npsn: String(input.npsn || "").trim(),
-    name: "",
-    authEmail: normalizedEmail,
-    adminEmail: normalizedEmail,
-  } satisfies CanonicalSchoolContext;
+  return null;
 }
