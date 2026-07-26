@@ -22,9 +22,13 @@ function normalizeValue(value: unknown) {
   return String(value || "").trim().toLowerCase();
 }
 
-function toContext(key: string, row: SchoolRegistryRow | null | undefined): CanonicalSchoolContext | null {
+function toContext(
+  key: string,
+  row: SchoolRegistryRow | null | undefined,
+  options?: { allowInactive?: boolean }
+): CanonicalSchoolContext | null {
   if (!row) return null;
-  if (row.isActive === false || row.adminAccessActive === false) return null;
+  if (!options?.allowInactive && (row.isActive === false || row.adminAccessActive === false)) return null;
 
   const schoolId = normalizeValue(row.schoolId || key);
   if (!schoolId) return null;
@@ -65,6 +69,7 @@ export async function resolveCanonicalSchoolContext(input: {
   schoolId?: unknown;
   npsn?: unknown;
   email?: unknown;
+  allowInactive?: boolean;
 }) {
   const normalizedSchoolId = normalizeValue(input.schoolId);
   const normalizedNpsn = normalizeValue(input.npsn);
@@ -77,7 +82,9 @@ export async function resolveCanonicalSchoolContext(input: {
       const entries = Object.entries(byNpsn.val() as Record<string, SchoolRegistryRow>);
       const firstMatch = entries[0];
       if (firstMatch) {
-        const context = toContext(firstMatch[0], firstMatch[1]);
+        const context = toContext(firstMatch[0], firstMatch[1], {
+          allowInactive: input.allowInactive,
+        });
         if (context) return context;
       }
     }
@@ -89,7 +96,9 @@ export async function resolveCanonicalSchoolContext(input: {
   for (const candidate of candidateOrder) {
     for (const [key, row] of Object.entries(schools)) {
       if (matchesCandidate(key, row, candidate)) {
-        const context = toContext(key, row);
+        const context = toContext(key, row, {
+          allowInactive: input.allowInactive,
+        });
         if (context) return context;
       }
     }

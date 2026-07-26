@@ -23,7 +23,10 @@ export async function POST(req: NextRequest) {
     const { npsn, mode = "bootstrap" } = (await req.json()) as BootstrapRequestBody;
     if (!npsn) return NextResponse.json({ error: "NPSN required" }, { status: 400 });
 
-    const schoolContext = await resolveCanonicalSchoolContext({ npsn });
+    const schoolContext = await resolveCanonicalSchoolContext({
+      npsn,
+      allowInactive: true,
+    });
     if (!schoolContext?.schoolId) {
       return NextResponse.json({ error: "NPSN tidak terdaftar di database." }, { status: 404 });
     }
