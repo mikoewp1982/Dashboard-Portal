@@ -24,6 +24,13 @@ export interface EduLockActiveDevice {
   lastMasterSwitchAppliedAt: number | null;
   lastMasterSwitchAppliedState: boolean | null;
   lastMasterSwitchAckSource: string;
+  isAccessibilityEnabled: boolean | null;
+  isDeviceAdminEnabled: boolean | null;
+  isProtectionActive: boolean | null;
+  protectionHealth: string;
+  complianceStatus: string;
+  lastProtectionCheckAt: number | null;
+  appVersionCode: number | null;
 }
 
 export interface EduLockLatestMasterSwitchCommand {
@@ -93,19 +100,24 @@ export function useEduLockOverview(schoolId: string | undefined) {
   useEffect(() => {
     let cancelled = false;
 
-    const run = async () => {
-      setLoading(true);
+    const run = async (showLoading: boolean) => {
+      if (showLoading) setLoading(true);
       const nextOverview = await fetchOverview();
       if (!cancelled) {
         setOverview(nextOverview);
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
     };
 
-    void run();
+    void run(true);
+    // Status proteksi harus cepat berubah merah tanpa menunggu refresh manual.
+    const timer = window.setInterval(() => {
+      void run(false);
+    }, 15_000);
 
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
   }, [fetchOverview]);
 

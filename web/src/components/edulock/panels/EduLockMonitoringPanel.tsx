@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MapPin, Loader2, Battery, Wifi, WifiOff } from "lucide-react";
+import { MapPin, Loader2, Battery, Wifi, WifiOff, ShieldAlert, ShieldCheck, ShieldOff } from "lucide-react";
 import { useClassesRealtime } from "@/hooks/database/useClassesRealtime";
 import { useStudentsRealtime } from "@/hooks/database/useStudentsRealtime";
 import { useEduLockOverview, type EduLockActiveDevice } from "@/hooks/edulock/useEduLockOverview";
@@ -108,6 +108,11 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
             runtime?.lastMasterSwitchAppliedState === latestMasterSwitchCommand?.requestedState,
           masterSwitchAckAt: runtime?.lastMasterSwitchAppliedAt ?? null,
           masterSwitchAckSource: runtime?.lastMasterSwitchAckSource ?? "",
+          complianceStatus: String(runtime?.complianceStatus || "").toUpperCase(),
+          protectionHealth: String(runtime?.protectionHealth || "").toUpperCase(),
+          isAccessibilityEnabled: runtime?.isAccessibilityEnabled ?? null,
+          isDeviceAdminEnabled: runtime?.isDeviceAdminEnabled ?? null,
+          lastProtectionCheckAt: runtime?.lastProtectionCheckAt ?? null,
         };
       }),
     [studentsData, runtimeByDeviceId, runtimeByIdentity, latestMasterSwitchCommand]
@@ -201,6 +206,7 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
               <tr>
                 <th className="px-6 py-4 font-semibold">Siswa</th>
                 <th className="px-6 py-4 font-semibold">Status Monitoring</th>
+                <th className="px-6 py-4 font-semibold">Proteksi EduLock</th>
                 <th className="px-6 py-4 font-semibold">Lokasi</th>
                 <th className="px-6 py-4 font-semibold">Trust Score</th>
                 <th className="px-6 py-4 font-semibold">Last Update</th>
@@ -258,6 +264,35 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {student.complianceStatus === "NON_COMPLIANT" ? (
+                          <div className="space-y-1">
+                            <span className="inline-flex items-center rounded-full border border-rose-400/40 bg-rose-500/20 px-2.5 py-1 text-xs font-bold text-rose-300">
+                              <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
+                              MERAH — PROTEKSI MATI
+                            </span>
+                            <div className="text-xs text-rose-300">
+                              {student.protectionHealth === "ACCESSIBILITY_OFF"
+                                ? "Accessibility OFF"
+                                : student.protectionHealth === "DEVICE_ADMIN_OFF"
+                                  ? "Device Admin OFF"
+                                  : "Proteksi tidak sehat"}
+                            </div>
+                          </div>
+                        ) : student.complianceStatus === "COMPLIANT" ? (
+                          <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                            <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
+                            Proteksi Aktif
+                          </span>
+                        ) : student.complianceStatus === "PAUSED" ? (
+                          <span className="inline-flex items-center rounded-full border border-sky-400/30 bg-sky-500/10 px-2.5 py-1 text-xs font-semibold text-sky-300">
+                            <ShieldOff className="mr-1.5 h-3.5 w-3.5" />
+                            Dijeda Admin
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-500">Belum ada telemetry proteksi</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         {student.lastUpdated ? (

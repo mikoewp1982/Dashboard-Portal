@@ -35,6 +35,13 @@ type ActiveDeviceSnapshot = {
   lastMasterSwitchAppliedAt: number | null;
   lastMasterSwitchAppliedState: boolean | null;
   lastMasterSwitchAckSource: string;
+  isAccessibilityEnabled: boolean | null;
+  isDeviceAdminEnabled: boolean | null;
+  isProtectionActive: boolean | null;
+  protectionHealth: string;
+  complianceStatus: string;
+  lastProtectionCheckAt: number | null;
+  appVersionCode: number | null;
 };
 
 type LatestMasterSwitchCommandSnapshot = {
@@ -110,6 +117,9 @@ function parseActiveDevices(rawValue: unknown) {
     const isUninstallBypass = readBoolean(record, "isUninstallBypass", "uninstallBypass", "uninstallAuthorized") === true;
     const isPermissionActive = readBoolean(record, "isPermissionActive", "permissionActive", "tempPermissionActive") === true;
       const lastMasterSwitchAppliedState = readBoolean(record, "lastMasterSwitchAppliedState");
+    const isAccessibilityEnabled = readBoolean(record, "isAccessibilityEnabled");
+    const isDeviceAdminEnabled = readBoolean(record, "isDeviceAdminEnabled");
+    const isProtectionActive = readBoolean(record, "isProtectionActive");
     const computedOnline =
       rawStatus.toUpperCase() === "ONLINE" ||
       (lastSeenAt !== null && now - lastSeenAt <= ONLINE_WINDOW_MS);
@@ -138,6 +148,13 @@ function parseActiveDevices(rawValue: unknown) {
         lastMasterSwitchAppliedAt: readNumber(record, "lastMasterSwitchAppliedAt"),
         lastMasterSwitchAppliedState,
         lastMasterSwitchAckSource: readString(record, "lastMasterSwitchAckSource"),
+      isAccessibilityEnabled,
+      isDeviceAdminEnabled,
+      isProtectionActive,
+      protectionHealth: readString(record, "protectionHealth"),
+      complianceStatus: readString(record, "complianceStatus"),
+      lastProtectionCheckAt: readNumber(record, "lastProtectionCheckAt"),
+      appVersionCode: readNumber(record, "appVersionCode"),
     };
   });
 }
