@@ -2,6 +2,18 @@
   "rules": {
     ".read": "auth != null",
     ".write": "auth != null && auth.token.role === 'super_admin'",
+    "app_settings": {
+      ".read": true,
+      ".write": "auth != null && auth.token.role === 'super_admin'"
+    },
+    "active_sessions": {
+      ".read": true,
+      ".write": true
+    },
+    "active_sessions_by_school": {
+      ".read": true,
+      ".write": true
+    },
     "principals": {
       "$username": {
         ".read": "auth != null",
