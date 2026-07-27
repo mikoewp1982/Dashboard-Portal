@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  Database, Rocket, Lock, Activity, ArrowRight, LayoutDashboard, Settings, Bell, Clock, School, FileText, Monitor, Users, Map, Key, ShieldAlert, BookOpen
+  Database, Rocket, Lock, Activity, ArrowRight, LayoutDashboard, Settings, Bell, Clock, School, FileText, Monitor, Users, Map, Key, ShieldAlert, BookOpen, Smartphone
 } from "lucide-react";
 
 interface SidebarProps {
@@ -36,6 +36,7 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
     { href: "/super-admin/database", label: "Database Induk", icon: Database },
     { href: "/super-admin/monitoring", label: "Monitoring", icon: Monitor },
     { href: "/super-admin/service-status", label: "Status Layanan Sekolah", icon: Activity },
+    { href: "/super-admin/mobile-apps", label: "Kontrol Aplikasi Mobile", icon: Smartphone },
     { href: "/super-admin/uninstall-access", label: "EduLock Uninstall Access", icon: Key },
   ];
 
