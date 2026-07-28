@@ -73,6 +73,8 @@ class AttendanceViewModel : ViewModel() {
     private var currentStudentId: String? = null
     private var currentStudentName: String = ""
     private var currentStudentClass: String = ""
+    private var currentStudentNisn: String = ""
+    private var currentStudentUsername: String = ""
     private var currentSchoolId: String = ""
     private var currentSchoolName: String = ""
     private var currentEntryTime: String = "07:00" // Default entry time
@@ -132,8 +134,11 @@ class AttendanceViewModel : ViewModel() {
                 currentStudentClass = (
                     studentSnapshot.child("class").getValue(String::class.java)
                         ?: studentSnapshot.child("kelas").getValue(String::class.java)
+                        ?: studentSnapshot.child("className").getValue(String::class.java)
                         ?: ""
                     ).trim()
+                currentStudentNisn = resolvedNisn.ifBlank { normalizedNisn }
+                currentStudentUsername = resolvedUsername.ifBlank { normalizedUsername }
                 currentSchoolId = normalizeScope(studentSnapshot.child("schoolId").getValue(String::class.java))
                 currentSchoolName = studentSnapshot.child("schoolName").getValue(String::class.java).orEmpty().trim()
 
@@ -787,21 +792,40 @@ class AttendanceViewModel : ViewModel() {
             locationAccuracyMeters = accuracyMeters,
             locationProvider = locationProvider,
             isMockLocation = isMockLocation,
-            deviceTimeTrusted = deviceTimeTrusted
+            deviceTimeTrusted = deviceTimeTrusted,
+            nisn = currentStudentNisn,
+            username = currentStudentUsername,
+            studentName = currentStudentName,
+            className = currentStudentClass
         )
 
         val updates = mapOf<String, Any?>(
             "attendance/$attendanceId" to attendance,
             "attendance_by_school/$normalizedSchoolId/$attendanceId" to attendance
         )
-        db.reference.updateChildren(updates).addOnFailureListener {
-            val currentState = _uiState.value
-            if (currentState is AttendanceUiState.Success) {
-                _uiState.value = currentState.copy(errorMessage = "Gagal check-in: ${it.message}")
-            } else {
-                _uiState.value = AttendanceUiState.Error("Gagal check-in: ${it.message}")
+        db.reference.updateChildren(updates)
+            .addOnSuccessListener {
+                // Listener RTDB akan menyegarkan todayAttendance; pastikan UI tidak tertahan error lama.
+                val currentState = _uiState.value
+                if (currentState is AttendanceUiState.Success) {
+                    _uiState.value = currentState.copy(errorMessage = null)
+                }
             }
-        }
+            .addOnFailureListener {
+                val detail = it.message.orEmpty()
+                val friendly = when {
+                    detail.contains("Permission denied", ignoreCase = true) ->
+                        "Gagal check-in: izin database ditolak. Minta admin deploy rules absensi Firebase."
+                    detail.isBlank() -> "Gagal check-in: koneksi/database gagal"
+                    else -> "Gagal check-in: $detail"
+                }
+                val currentState = _uiState.value
+                if (currentState is AttendanceUiState.Success) {
+                    _uiState.value = currentState.copy(errorMessage = friendly)
+                } else {
+                    _uiState.value = AttendanceUiState.Error(friendly)
+                }
+            }
     }
 
     private fun performCheckOut(attendance: Attendance) {

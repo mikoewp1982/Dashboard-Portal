@@ -3,13 +3,13 @@ package com.satupintu.mobile.data.repository
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.satupintu.mobile.data.model.Attendance
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
 
 class AttendanceRepository {
     private val db = FirebaseDatabase.getInstance().reference
@@ -18,27 +18,61 @@ class AttendanceRepository {
         return value?.trim()?.lowercase().orEmpty()
     }
 
+    private fun asLong(value: Any?): Long {
+        return when (value) {
+            is Long -> value
+            is Int -> value.toLong()
+            is Double -> value.toLong()
+            is Float -> value.toLong()
+            is Number -> value.toLong()
+            is String -> value.toLongOrNull() ?: 0L
+            else -> 0L
+        }
+    }
+
+    private fun asDouble(value: Any?): Double? {
+        return when (value) {
+            null -> null
+            is Double -> value
+            is Float -> value.toDouble()
+            is Long -> value.toDouble()
+            is Int -> value.toDouble()
+            is Number -> value.toDouble()
+            is String -> value.toDoubleOrNull()
+            else -> null
+        }
+    }
+
+    private fun asFloat(value: Any?): Float? {
+        return asDouble(value)?.toFloat()
+    }
+
     private fun parseAttendance(snapshot: DataSnapshot): Attendance? {
         return try {
             val id = snapshot.key ?: return null
+            val raw = snapshot.value as? Map<*, *> ?: emptyMap<Any, Any>()
             Attendance(
                 id = id,
-                studentId = snapshot.child("studentId").getValue(String::class.java) ?: "",
-                schoolId = snapshot.child("schoolId").getValue(String::class.java) ?: "",
-                date = snapshot.child("date").getValue(Long::class.java) ?: 0L,
-                status = snapshot.child("status").getValue(String::class.java) ?: "ABSENT",
-                checkInTime = snapshot.child("checkInTime").getValue(String::class.java) ?: "",
-                checkOutTime = snapshot.child("checkOutTime").getValue(String::class.java),
-                checkInMethod = snapshot.child("checkInMethod").getValue(String::class.java) ?: "MANUAL",
-                notes = snapshot.child("notes").getValue(String::class.java),
-                proofDocument = snapshot.child("proofDocument").getValue(String::class.java),
-                recordedBy = snapshot.child("recordedBy").getValue(String::class.java),
-                latitude = snapshot.child("latitude").getValue(Double::class.java),
-                longitude = snapshot.child("longitude").getValue(Double::class.java),
-                locationAccuracyMeters = snapshot.child("locationAccuracyMeters").getValue(Float::class.java),
-                locationProvider = snapshot.child("locationProvider").getValue(String::class.java),
-                isMockLocation = snapshot.child("isMockLocation").getValue(Boolean::class.java) ?: false,
-                deviceTimeTrusted = snapshot.child("deviceTimeTrusted").getValue(Boolean::class.java) ?: true
+                studentId = raw["studentId"]?.toString().orEmpty(),
+                schoolId = raw["schoolId"]?.toString().orEmpty(),
+                date = asLong(raw["date"]),
+                status = raw["status"]?.toString() ?: "ABSENT",
+                checkInTime = raw["checkInTime"]?.toString().orEmpty(),
+                checkOutTime = raw["checkOutTime"]?.toString(),
+                checkInMethod = raw["checkInMethod"]?.toString() ?: "MANUAL",
+                notes = raw["notes"]?.toString(),
+                proofDocument = raw["proofDocument"]?.toString(),
+                recordedBy = raw["recordedBy"]?.toString(),
+                latitude = asDouble(raw["latitude"]),
+                longitude = asDouble(raw["longitude"]),
+                locationAccuracyMeters = asFloat(raw["locationAccuracyMeters"]),
+                locationProvider = raw["locationProvider"]?.toString(),
+                isMockLocation = raw["isMockLocation"] as? Boolean ?: false,
+                deviceTimeTrusted = raw["deviceTimeTrusted"] as? Boolean ?: true,
+                nisn = raw["nisn"]?.toString().orEmpty(),
+                username = raw["username"]?.toString().orEmpty(),
+                studentName = raw["studentName"]?.toString().orEmpty(),
+                className = raw["className"]?.toString().orEmpty()
             )
         } catch (e: Exception) {
             e.printStackTrace()
@@ -46,18 +80,22 @@ class AttendanceRepository {
         }
     }
 
+    private fun attendanceQuery(schoolId: String, start: Long, end: Long): Query {
+        val normalizedSchoolId = normalizeScope(schoolId)
+        return if (normalizedSchoolId.isNotBlank()) {
+            db.child("attendance_by_school").child(normalizedSchoolId)
+                .orderByChild("date")
+                .startAt(start.toDouble())
+                .endAt(end.toDouble())
+        } else {
+            db.child("attendance")
+                .orderByChild("date")
+                .startAt(start.toDouble())
+                .endAt(end.toDouble())
+        }
+    }
+
     fun getAttendanceByDate(dateMillis: Long, schoolId: String = ""): Flow<List<Attendance>> = callbackFlow {
-        // Format date to YYYY-MM-DD for simpler querying if node structure supports it
-        // Or query by timestamp range.
-        // Let's assume a structure: attendance -> YYYY-MM-DD -> studentId -> AttendanceRecord
-        // OR attendance -> autoId (with timestamp field).
-        
-        // Let's use a flat structure with query for simplicity and flexibility
-        // attendance -> list of records
-        
-        val ref = db.child("attendance")
-        
-        // Create start and end of day timestamps
         val calendar = Calendar.getInstance()
         calendar.timeInMillis = dateMillis
         calendar.set(Calendar.HOUR_OF_DAY, 0)
@@ -65,16 +103,14 @@ class AttendanceRepository {
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
         val startOfDay = calendar.timeInMillis
-        
+
         calendar.set(Calendar.HOUR_OF_DAY, 23)
         calendar.set(Calendar.MINUTE, 59)
         calendar.set(Calendar.SECOND, 59)
         val endOfDay = calendar.timeInMillis
 
-        // Query by date field
-        val query = ref.orderByChild("date").startAt(startOfDay.toDouble()).endAt(endOfDay.toDouble())
-
         val normalizedSchoolId = normalizeScope(schoolId)
+        val query = attendanceQuery(normalizedSchoolId, startOfDay, endOfDay)
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val records = snapshot.children.mapNotNull(::parseAttendance).filter { attendance ->
@@ -93,8 +129,6 @@ class AttendanceRepository {
     }
 
     fun getAttendanceByMonth(month: Int, year: Int, schoolId: String = ""): Flow<List<Attendance>> = callbackFlow {
-        val ref = db.child("attendance")
-
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.YEAR, year)
         calendar.set(Calendar.MONTH, month)
@@ -105,14 +139,12 @@ class AttendanceRepository {
         calendar.set(Calendar.MILLISECOND, 0)
         val startOfMonth = calendar.timeInMillis
 
-        // Set to last day of month
         calendar.add(Calendar.MONTH, 1)
         calendar.add(Calendar.MILLISECOND, -1)
         val endOfMonth = calendar.timeInMillis
 
-        val query = ref.orderByChild("date").startAt(startOfMonth.toDouble()).endAt(endOfMonth.toDouble())
-
         val normalizedSchoolId = normalizeScope(schoolId)
+        val query = attendanceQuery(normalizedSchoolId, startOfMonth, endOfMonth)
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val records = snapshot.children.mapNotNull(::parseAttendance).filter { attendance ->
@@ -171,4 +203,3 @@ class AttendanceRepository {
         }
     }
 }
-

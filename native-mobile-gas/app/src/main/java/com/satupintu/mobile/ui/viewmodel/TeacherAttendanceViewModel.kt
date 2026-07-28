@@ -108,7 +108,7 @@ class TeacherAttendanceViewModel : ViewModel() {
             combine(studentsFlow, monthlyAttendanceFlow, _schedules, _holidays) { students, records, schedules, holidays ->
                 val targetClass = _teacher.value?.homeroomClass ?: ""
                 val classStudents = students.filter {
-                    it.className == targetClass &&
+                    matchesHomeroomClass(it.className, targetClass) &&
                         (teacherSchoolScope.isBlank() || normalizeScope(it.schoolId) == teacherSchoolScope)
                 }
 
@@ -126,11 +126,7 @@ class TeacherAttendanceViewModel : ViewModel() {
                     if (!matchesAttendanceScope(attendance, teacherSchoolScope)) return@forEach
                     val dayCalendar = Calendar.getInstance().apply { timeInMillis = attendance.date }
                     val dayOfMonth = dayCalendar.get(Calendar.DAY_OF_MONTH)
-                    val identityCandidates = listOf(attendance.studentId)
-                    identityCandidates
-                        .map { normalizeIdentity(it) }
-                        .filter { it.isNotBlank() }
-                        .distinct()
+                    attendanceIdentityCandidates(attendance)
                         .forEach { identity ->
                             val byDay = recordsByStudentAndDay.getOrPut(identity) { mutableMapOf() }
                             val current = byDay[dayOfMonth]
@@ -323,16 +319,16 @@ class TeacherAttendanceViewModel : ViewModel() {
 
                 attendances.forEach { attendance ->
                     if (!matchesAttendanceScope(attendance, teacherSchoolScope)) return@forEach
-                    val identity = normalizeIdentity(attendance.studentId)
-                    if (identity.isBlank()) return@forEach
-                    val current = attendanceByIdentity[identity]
-                    if (current == null || attendance.date > current.date) {
-                        attendanceByIdentity[identity] = attendance
+                    attendanceIdentityCandidates(attendance).forEach { identity ->
+                        val current = attendanceByIdentity[identity]
+                        if (current == null || attendance.date > current.date) {
+                            attendanceByIdentity[identity] = attendance
+                        }
                     }
                 }
                 students
                     .filter {
-                        it.className == targetClass &&
+                        matchesHomeroomClass(it.className, targetClass) &&
                             (teacherSchoolScope.isBlank() || normalizeScope(it.schoolId) == teacherSchoolScope)
                     }
                     .map { student ->
@@ -377,7 +373,11 @@ class TeacherAttendanceViewModel : ViewModel() {
             date = _selectedDate.value,
             status = currentItem.status, // Keep existing status
             checkInTime = System.currentTimeMillis().toString(),
-            notes = note
+            notes = note,
+            nisn = currentItem.student.nisn,
+            username = currentItem.student.username,
+            studentName = currentItem.student.name,
+            className = currentItem.student.className
         )
         attendanceRepository.saveAttendance(newRecord) { success ->
             // If new record created, we might want to reload to get the new ID, 
@@ -406,7 +406,11 @@ class TeacherAttendanceViewModel : ViewModel() {
                 date = _selectedDate.value,
                 status = "PRESENT",
                 checkInTime = System.currentTimeMillis().toString(),
-                notes = item.notes
+                notes = item.notes,
+                nisn = item.student.nisn,
+                username = item.student.username,
+                studentName = item.student.name,
+                className = item.student.className
             )
             attendanceRepository.saveAttendance(newRecord) { }
         }
@@ -423,7 +427,11 @@ class TeacherAttendanceViewModel : ViewModel() {
             date = _selectedDate.value,
             status = status,
             checkInTime = System.currentTimeMillis().toString(),
-            notes = currentItem.notes
+            notes = currentItem.notes,
+            nisn = currentItem.student.nisn,
+            username = currentItem.student.username,
+            studentName = currentItem.student.name,
+            className = currentItem.student.className
         )
         
         // Optimistic update
@@ -490,7 +498,11 @@ class TeacherAttendanceViewModel : ViewModel() {
                 date = _selectedDate.value,
                 status = status,
                 checkInTime = System.currentTimeMillis().toString(),
-                notes = currentItem.notes
+                notes = currentItem.notes,
+                nisn = currentItem.student.nisn,
+                username = currentItem.student.username,
+                studentName = currentItem.student.name,
+                className = currentItem.student.className
             )
 
             attendanceRepository.saveAttendance(newRecord) { success ->
@@ -511,10 +523,40 @@ class TeacherAttendanceViewModel : ViewModel() {
         return value?.trim().orEmpty()
     }
 
+    private fun normalizeClassName(value: String?): String {
+        var normalized = value.orEmpty().uppercase().replace("KELAS", "").trim()
+        normalized = normalized.replace("VIII", "8")
+        normalized = normalized.replace("VII", "7")
+        normalized = normalized.replace("IX", "9")
+        normalized = normalized.replace("III", "3")
+        normalized = normalized.replace("II", "2")
+        normalized = normalized.replace("IV", "4")
+        normalized = normalized.replace("VI", "6")
+        normalized = normalized.replace("V", "5")
+        return normalized.replace("\\s".toRegex(), "").trim()
+    }
+
+    private fun matchesHomeroomClass(studentClass: String?, targetClass: String?): Boolean {
+        val left = normalizeClassName(studentClass)
+        val right = normalizeClassName(targetClass)
+        if (left.isBlank() || right.isBlank()) return false
+        return left == right
+    }
+
     private fun studentIdentityCandidates(student: Student): List<String> {
         return listOf(
+            normalizeIdentity(student.recordId),
+            normalizeIdentity(student.nisn),
             normalizeIdentity(student.id),
-            normalizeIdentity(student.nisn)
+            normalizeIdentity(student.username)
+        ).filter { it.isNotBlank() }.distinct()
+    }
+
+    private fun attendanceIdentityCandidates(attendance: Attendance): List<String> {
+        return listOf(
+            normalizeIdentity(attendance.studentId),
+            normalizeIdentity(attendance.nisn),
+            normalizeIdentity(attendance.username)
         ).filter { it.isNotBlank() }.distinct()
     }
 
@@ -523,9 +565,9 @@ class TeacherAttendanceViewModel : ViewModel() {
     }
 
     private fun matchesStudent(attendance: Attendance, student: Student): Boolean {
-        val attendanceId = normalizeIdentity(attendance.studentId)
-        if (attendanceId.isBlank()) return false
-        return studentIdentityCandidates(student).contains(attendanceId)
+        val attendanceIds = attendanceIdentityCandidates(attendance).toSet()
+        if (attendanceIds.isEmpty()) return false
+        return studentIdentityCandidates(student).any { attendanceIds.contains(it) }
     }
 
     private fun matchesAttendanceScope(attendance: Attendance, scopeKey: String): Boolean {

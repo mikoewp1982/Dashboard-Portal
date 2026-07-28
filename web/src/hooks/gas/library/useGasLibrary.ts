@@ -102,7 +102,21 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
       return;
     }
 
+    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+
     try {
+      const snap = await get(rtdbRef(rtdb, `literacy_logs_by_school/${normalizedSchoolId}`));
+      const logsMap = snap.val();
+      if (logsMap) {
+        const logsList: LiteracyLog[] = Object.entries<any>(logsMap).map(([id, val]) => ({
+          id,
+          ...val
+        })).sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
+        setLiteracyLogs(logsList);
+        return;
+      }
+
+      // Fallback via Admin API if node by school is not populated yet
       const result = await callAdminApi(`/api/admin/library-monitoring?schoolId=${schoolId}`, "GET");
       setLiteracyLogs(Array.isArray(result?.literacyLogs) ? result.literacyLogs as LiteracyLog[] : []);
     } catch (error) {
@@ -228,9 +242,20 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
 
   const updateLiteracyLogStatus = async (logId: string, status: "GRADED" | "REJECTED", grade: string, feedback: string) => {
     if (!schoolId) return;
+    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
     try {
-      const logRef = rtdbRef(rtdb, `literacy_logs/${logId}`);
-      await update(logRef, { status, grade, feedback, gradedAt: Date.now() });
+      const updates: Record<string, any> = {};
+      updates[`literacy_logs/${logId}/status`] = status;
+      updates[`literacy_logs/${logId}/grade`] = grade;
+      updates[`literacy_logs/${logId}/feedback`] = feedback;
+      updates[`literacy_logs/${logId}/gradedAt`] = Date.now();
+
+      updates[`literacy_logs_by_school/${normalizedSchoolId}/${logId}/status`] = status;
+      updates[`literacy_logs_by_school/${normalizedSchoolId}/${logId}/grade`] = grade;
+      updates[`literacy_logs_by_school/${normalizedSchoolId}/${logId}/feedback`] = feedback;
+      updates[`literacy_logs_by_school/${normalizedSchoolId}/${logId}/gradedAt`] = Date.now();
+
+      await update(rtdbRef(rtdb), updates);
       setLiteracyLogs(prev => prev.map(l => l.id === logId ? { ...l, status, grade, feedback } : l));
     } catch(e) {
       console.error("Gagal menilai laporan literasi:", e);

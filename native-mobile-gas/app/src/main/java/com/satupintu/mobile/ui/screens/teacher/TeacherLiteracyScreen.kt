@@ -348,7 +348,7 @@ fun formatDate(timestamp: Long): String {
 }
 
 private fun isReviewedStatus(status: String): Boolean {
-    return status.equals("reviewed", ignoreCase = true) ||
-        status.equals("corrected", ignoreCase = true)
+    val s = status.trim().uppercase()
+    return s == "GRADED" || s == "REVIEWED" || s == "CORRECTED" || s == "REJECTED"
 }
 

@@ -210,7 +210,7 @@ class StudentLibraryViewModel : ViewModel() {
                         bookTitle = bookTitle.trim(),
                         author = author.trim(),
                         summary = summary.trim(),
-                        status = "pending",
+                        status = "PENDING",
                         timestamp = System.currentTimeMillis()
                      )
                  ) { success ->

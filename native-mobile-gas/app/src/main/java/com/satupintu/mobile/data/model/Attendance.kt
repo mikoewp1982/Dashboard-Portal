@@ -17,10 +17,14 @@ data class Attendance(
     val locationAccuracyMeters: Float? = null,
     val locationProvider: String? = null,
     val isMockLocation: Boolean = false,
-    val deviceTimeTrusted: Boolean = true
+    val deviceTimeTrusted: Boolean = true,
+    /** Alias identitas agar guru/web bisa join meski studentId pakai push-key. */
+    val nisn: String = "",
+    val username: String = "",
+    val studentName: String = "",
+    val className: String = ""
 )
 
 enum class AttendanceStatus {
     PRESENT, ABSENT, LATE, SICK, PERMIT
 }
-

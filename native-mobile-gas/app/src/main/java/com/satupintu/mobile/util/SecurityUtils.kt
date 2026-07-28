@@ -168,6 +168,15 @@ object SecurityUtils {
         }
     }
 
+    fun getStoredTeacherAliases(prefs: SharedPreferences): Set<String> {
+        return setOf(
+            prefs.getString("user_teacher_id", "").orEmpty().trim(),
+            getStoredLoginKey(prefs),
+            prefs.getString("user_username", "").orEmpty().trim(),
+            prefs.getString("user_nuptk", "").orEmpty().trim()
+        ).filter { it.isNotBlank() }.toSet()
+    }
+
     fun getStoredBoundary(prefs: SharedPreferences): String {
         return normalizeScope(prefs.getString("user_boundary", ""))
     }

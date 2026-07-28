@@ -574,7 +574,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                             schoolName = schoolNameValue,
                             displayName = displayNameValue,
                             loginKey = teacherIdentity,
-                            teacherId = teacherIdentity
+                            teacherId = snapshot.key.orEmpty().ifBlank { teacherIdentity }
                         )) {
                             return@addOnSuccessListener
                         }

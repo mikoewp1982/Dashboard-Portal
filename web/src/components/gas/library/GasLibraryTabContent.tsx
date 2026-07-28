@@ -336,11 +336,127 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
       {loading ? (
         <div className="py-20 text-center text-slate-400 font-semibold">Memuat tugas literasi...</div>
       ) : taskSubTab === "needs-grading" ? (
-        <div className="glass-effect-dark-card rounded-xl border border-slate-700 p-8 text-center">
-          <FileText className="mx-auto h-10 w-10 text-slate-500 mb-3" />
-          <p className="text-sm font-semibold text-slate-300">Belum ada laporan yang perlu dinilai.</p>
-          <p className="text-xs text-slate-500 mt-1">Laporan siswa yang menunggu penilaian akan muncul di sini.</p>
-        </div>
+        (() => {
+          const pendingLogs = filteredLiteracyLogs.filter(
+            (log) => !log.status || log.status.toString().toUpperCase() === "PENDING" || log.status.toString().toUpperCase() === "SUBMITTED" || log.status.toString().toLowerCase() === "pending"
+          );
+          if (pendingLogs.length === 0) {
+            return (
+              <div className="glass-effect-dark-card rounded-xl border border-slate-700 p-8 text-center">
+                <FileText className="mx-auto h-10 w-10 text-slate-500 mb-3" />
+                <p className="text-sm font-semibold text-slate-300">Belum ada laporan yang perlu dinilai.</p>
+                <p className="text-xs text-slate-500 mt-1">Laporan siswa yang menunggu penilaian akan muncul di sini.</p>
+              </div>
+            );
+          }
+          return (
+            <div className="glass-effect-dark-card rounded-lg shadow-sm overflow-hidden border border-slate-700">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-700/40">
+                  <thead className="bg-slate-900/50">
+                    <tr>
+                      {["Siswa", "Buku / Tugas", "Ringkasan", "Tanggal", "Status"].map((header) => (
+                        <th key={header} className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{header}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/30">
+                    {pendingLogs.map((log) => (
+                      <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-semibold text-slate-100">{log.studentName || log.studentId}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">Kelas: {log.studentClass || "-"}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-semibold text-blue-400">{log.bookTitle || "-"}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">{log.taskTitle || "Baca Bebas"}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-300 max-w-[300px] truncate">
+                          {log.summary || "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                          {log.timestamp ? new Date(log.timestamp).toLocaleDateString("id-ID") : "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-900/40 text-amber-400 border border-amber-700/40">
+                            Menunggu Penilaian
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()
+      ) : taskSubTab === "history" ? (
+        (() => {
+          const historyLogs = filteredLiteracyLogs.filter(
+            (log) => log.status && (
+              log.status.toString().toUpperCase() === "GRADED" ||
+              log.status.toString().toUpperCase() === "REJECTED" ||
+              log.status.toString().toLowerCase() === "reviewed" ||
+              log.status.toString().toLowerCase() === "corrected"
+            )
+          );
+          if (historyLogs.length === 0) {
+            return (
+              <div className="glass-effect-dark-card rounded-xl border border-slate-700 p-8 text-center">
+                <FileText className="mx-auto h-10 w-10 text-slate-500 mb-3" />
+                <p className="text-sm font-semibold text-slate-300">Belum ada riwayat penilaian tugas.</p>
+                <p className="text-xs text-slate-500 mt-1">Laporan siswa yang selesai dinilai oleh guru/admin akan muncul di sini.</p>
+              </div>
+            );
+          }
+          return (
+            <div className="glass-effect-dark-card rounded-lg shadow-sm overflow-hidden border border-slate-700">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-700/40">
+                  <thead className="bg-slate-900/50">
+                    <tr>
+                      {["Siswa", "Buku / Tugas", "Ringkasan", "Nilai", "Tanggal", "Status"].map((header) => (
+                        <th key={header} className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{header}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/30">
+                    {historyLogs.map((log) => (
+                      <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-semibold text-slate-100">{log.studentName || log.studentId}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">Kelas: {log.studentClass || "-"}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-semibold text-blue-400">{log.bookTitle || "-"}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">{log.taskTitle || "Baca Bebas"}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-300 max-w-[250px] truncate">
+                          {log.summary || "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-base font-bold text-amber-400">{log.grade || "-"}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                          {log.timestamp ? new Date(log.timestamp).toLocaleDateString("id-ID") : "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            log.status?.toString().toUpperCase() === "REJECTED"
+                              ? "bg-rose-900/40 text-rose-400 border border-rose-700/40"
+                              : "bg-emerald-900/40 text-emerald-400 border border-emerald-700/40"
+                          }`}>
+                            {log.status?.toString().toUpperCase() === "REJECTED" ? "Ditolak" : "Dinilai"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()
       ) : displayedTasks.length === 0 ? (
         <div className="glass-effect-dark-card rounded-xl border border-slate-700 p-8 text-center">
           <Book className="mx-auto h-10 w-10 text-slate-500 mb-3" />

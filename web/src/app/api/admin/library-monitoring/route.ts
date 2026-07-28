@@ -27,8 +27,13 @@ export async function GET(req: NextRequest) {
     
     let rawLogs: Record<string, any> = {};
     try {
-      const logsSnap = await adminDb.ref("literacy_logs").orderByChild("schoolId").equalTo(normalizedSchoolId).once("value");
-      rawLogs = logsSnap.val() || {};
+      const bySchoolSnap = await adminDb.ref(`literacy_logs_by_school/${normalizedSchoolId}`).once("value");
+      if (bySchoolSnap.exists()) {
+        rawLogs = bySchoolSnap.val() || {};
+      } else {
+        const logsSnap = await adminDb.ref("literacy_logs").orderByChild("schoolId").equalTo(normalizedSchoolId).once("value");
+        rawLogs = logsSnap.val() || {};
+      }
     } catch (queryErr) {
       const logsSnap = await adminDb.ref("literacy_logs").once("value");
       rawLogs = logsSnap.val() || {};

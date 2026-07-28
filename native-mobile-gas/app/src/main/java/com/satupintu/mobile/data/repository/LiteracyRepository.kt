@@ -100,7 +100,7 @@ class LiteracyRepository {
         val ref = if (schoolScope.isBlank()) {
             db.child("literacy_logs")
         } else {
-            db.child("literacy_logs").orderByChild("schoolId").equalTo(schoolScope)
+            db.child("literacy_logs_by_school").child(schoolScope)
         }
         
         val listener = object : ValueEventListener {
@@ -117,7 +117,8 @@ class LiteracyRepository {
                         val studentName = child.child("studentName").getValue(String::class.java) 
                             ?: child.child("name").getValue(String::class.java) ?: "Unknown"
                         
-                        val studentClass = child.child("class").getValue(String::class.java)
+                        val studentClass = child.child("studentClass").getValue(String::class.java)
+                            ?: child.child("class").getValue(String::class.java)
                             ?: child.child("kelas").getValue(String::class.java) ?: ""
                         val schoolId = child.child("schoolId").getValue(String::class.java) ?: ""
                             
@@ -127,17 +128,16 @@ class LiteracyRepository {
                         val bookTitle = child.child("bookTitle").getValue(String::class.java) ?: ""
                         val author = child.child("author").getValue(String::class.java) ?: ""
                         val summary = child.child("summary").getValue(String::class.java) ?: ""
-                        val status = child.child("status").getValue(String::class.java) ?: "pending"
+                        val status = child.child("status").getValue(String::class.java) ?: "PENDING"
                         val grade = child.child("grade").getValue(String::class.java)
                         val feedback = child.child("feedback").getValue(String::class.java)
                         val timestamp = child.child("timestamp").getValue(Long::class.java) 
                             ?: child.child("submittedAt").getValue(String::class.java)?.let { 
-                                // Simple fallback if timestamp is missing but submittedAt string exists
                                 System.currentTimeMillis() 
                             } ?: System.currentTimeMillis()
 
                         val logSchoolScope = normalizeScope(schoolId)
-                        val matchesSchool = schoolScope.isBlank() || logSchoolScope == schoolScope
+                        val matchesSchool = schoolScope.isBlank() || logSchoolScope == schoolScope || ref.key == schoolScope
                         val matchesStudent = studentAliases.isEmpty() || matchesStudentIdentity(child, studentAliases)
                         if (!matchesSchool || !matchesStudent) {
                             continue
@@ -185,8 +185,9 @@ class LiteracyRepository {
         }
 
         val ref = db.child("literacy_logs").push()
+        val pushKey = ref.key ?: System.currentTimeMillis().toString()
         val logWithId = log.copy(
-            id = ref.key ?: "",
+            id = pushKey,
             studentId = normalizedStudentId,
             studentName = log.studentName.trim(),
             studentClass = log.studentClass.trim(),
@@ -195,22 +196,35 @@ class LiteracyRepository {
             taskTitle = log.taskTitle.trim(),
             bookTitle = log.bookTitle.trim(),
             author = log.author.trim(),
-            summary = log.summary.trim()
+            summary = log.summary.trim(),
+            status = "PENDING"
         )
         
-        ref.setValue(logWithId)
+        val updates = HashMap<String, Any>()
+        updates["literacy_logs/$pushKey"] = logWithId
+        updates["literacy_logs_by_school/$normalizedSchoolId/$pushKey"] = logWithId
+
+        db.updateChildren(updates)
             .addOnSuccessListener { onComplete(true) }
             .addOnFailureListener { onComplete(false) }
     }
 
-    fun updateLogGrade(logId: String, grade: String, feedback: String, onComplete: (Boolean) -> Unit) {
-        val updates = mapOf(
-            "grade" to grade,
-            "feedback" to feedback,
-            "status" to "reviewed"
-        )
-        
-        db.child("literacy_logs").child(logId).updateChildren(updates)
+    fun updateLogGrade(schoolId: String = "", logId: String, grade: String, feedback: String, onComplete: (Boolean) -> Unit) {
+        val updates = HashMap<String, Any>()
+        updates["literacy_logs/$logId/grade"] = grade
+        updates["literacy_logs/$logId/feedback"] = feedback
+        updates["literacy_logs/$logId/status"] = "GRADED"
+        updates["literacy_logs/$logId/gradedAt"] = System.currentTimeMillis()
+
+        val normalizedSchoolId = normalizeScope(schoolId)
+        if (normalizedSchoolId.isNotBlank()) {
+            updates["literacy_logs_by_school/$normalizedSchoolId/$logId/grade"] = grade
+            updates["literacy_logs_by_school/$normalizedSchoolId/$logId/feedback"] = feedback
+            updates["literacy_logs_by_school/$normalizedSchoolId/$logId/status"] = "GRADED"
+            updates["literacy_logs_by_school/$normalizedSchoolId/$logId/gradedAt"] = System.currentTimeMillis()
+        }
+
+        db.updateChildren(updates)
             .addOnSuccessListener { onComplete(true) }
             .addOnFailureListener { onComplete(false) }
     }

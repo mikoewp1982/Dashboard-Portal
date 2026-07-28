@@ -145,11 +145,23 @@
     },
     "literacy_logs": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null",
+      ".indexOn": [
+        "schoolId",
+        "studentId",
+        "status"
+      ]
     },
     "literacy_logs_by_school": {
-      ".read": "auth != null",
-      ".write": "auth != null"
+      "$schoolId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": [
+          "studentId",
+          "status",
+          "timestamp"
+        ]
+      }
     },
     "seven_habits_logs": {
       ".read": "auth != null",
@@ -173,11 +185,27 @@
     },
     "attendance_records": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null",
+      ".indexOn": ["schoolId", "date", "studentId", "status"]
     },
     "attendance_records_by_school": {
+      "$schoolId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["date", "studentId", "status"]
+      }
+    },
+    "attendance": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "auth != null",
+      ".indexOn": ["schoolId", "date", "studentId", "nisn", "status"]
+    },
+    "attendance_by_school": {
+      "$schoolId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["date", "studentId", "nisn", "status"]
+      }
     }
   }
 }

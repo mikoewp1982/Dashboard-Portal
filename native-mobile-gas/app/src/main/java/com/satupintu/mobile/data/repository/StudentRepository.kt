@@ -134,6 +134,7 @@ class StudentRepository {
                 ?: snapshot.child("agama").getValue(String::class.java)
                 ?: ""
             val username = snapshot.child("username").getValue(String::class.java) ?: ""
+            val recordId = snapshot.key.orEmpty().trim()
 
             return Student(
                 id = id,
@@ -146,7 +147,8 @@ class StudentRepository {
                 parentPhone = parentPhone,
                 deviceId = deviceId,
                 religion = religion.trim(),
-                username = username.trim()
+                username = username.trim(),
+                recordId = recordId
             )
         } catch (e: Exception) {
             e.printStackTrace()

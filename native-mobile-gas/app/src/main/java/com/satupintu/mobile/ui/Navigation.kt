@@ -4,7 +4,9 @@ import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.background
@@ -46,6 +48,8 @@ import com.satupintu.mobile.BuildConfig
 import com.satupintu.mobile.data.model.VirtualPet
 import com.satupintu.mobile.data.model.isDeadByRule
 import com.satupintu.mobile.data.repository.VirtualPetRepository
+import com.satupintu.mobile.data.service.ForceUpdatePolicy
+import com.satupintu.mobile.data.service.VersionCheckService
 import com.satupintu.mobile.util.SecurityUtils
 import com.satupintu.mobile.utils.SecurePreferences
 import com.satupintu.mobile.ui.screens.*
@@ -203,6 +207,23 @@ fun AppNavigation(
     }
 
     val petLockState = rememberStudentPetLockState(prefs).value
+    val eduLockAliases = remember(
+        sessionRole,
+        sessionSchoolId,
+        SecurityUtils.getStoredStudentKey(prefs),
+        SecurityUtils.getStoredNisn(prefs),
+        SecurityUtils.getStoredLoginKey(prefs)
+    ) {
+        SecurityUtils.getStoredStudentAliases(prefs)
+    }
+    val eduLockComplianceState = rememberEduLockComplianceState(
+        context = context,
+        schoolId = sessionSchoolId,
+        aliases = eduLockAliases,
+        enabled = sessionRole == "student"
+    ).value
+    // Force update berlaku untuk semua flavor GAS (siswa/guru/kepala).
+    val forceUpdatePolicy = rememberForceUpdatePolicy(BuildConfig.VERSION_CODE).value
 
     Box(modifier = Modifier.fillMaxSize()) {
     NavHost(navController = navController, startDestination = startDestination) {
@@ -744,7 +765,55 @@ fun AppNavigation(
                 }
             )
         }
+
+        if (sessionRole == "student" &&
+            (eduLockComplianceState.isChecking || eduLockComplianceState.isBlocked)
+        ) {
+            EduLockComplianceOverlay(
+                state = eduLockComplianceState,
+                onOpenEduLock = {
+                    if (!openEduLock(context)) {
+                        Toast.makeText(
+                            context,
+                            "EduLock belum terpasang. Hubungi Admin Sekolah untuk mendapatkan APK.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                },
+                onLogout = {
+                    prefs.edit().clear().apply()
+                    runCatching { FirebaseAuth.getInstance().signOut() }
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Prioritas tertinggi: force update dari Super Admin.
+        if (forceUpdatePolicy.updateRequired) {
+            ForceUpdateScreen(customMessage = forceUpdatePolicy.message)
+        }
     }
+}
+
+@Composable
+private fun rememberForceUpdatePolicy(currentVersionCode: Int): State<ForceUpdatePolicy> {
+    val state = remember(currentVersionCode) {
+        mutableStateOf(ForceUpdatePolicy(updateRequired = false))
+    }
+
+    DisposableEffect(currentVersionCode) {
+        val service = VersionCheckService()
+        val listener = service.observeVersionPolicy(currentVersionCode, continuous = true) { policy ->
+            state.value = policy
+        }
+        onDispose {
+            service.stopObserving(listener)
+        }
+    }
+
+    return state
 }
 
 private data class StudentPetLockState(

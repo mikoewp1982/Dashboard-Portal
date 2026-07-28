@@ -11,5 +11,7 @@ data class Student(
     val parentPhone: String? = null,
     val deviceId: String? = null,
     val religion: String = "",
-    val username: String = ""
+    val username: String = "",
+    /** Firebase push key di gas/schools/.../students (boleh beda dari nisn). */
+    val recordId: String = ""
 )

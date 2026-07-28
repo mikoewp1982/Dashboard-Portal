@@ -100,11 +100,13 @@ class MainActivity : ComponentActivity() {
 
         when (role) {
             "teacher", "staff" -> {
-                listener.startListening("Guru", loginKey, schoolId)
+                val aliases = SecurityUtils.getStoredTeacherAliases(prefs)
+                listener.startListening("Guru", aliases, schoolId)
                 presence.startListening(loginKey, schoolId, role)
             }
             "student" -> {
-                listener.startListening("Siswa", loginKey, schoolId)
+                val aliases = SecurityUtils.getStoredStudentAliases(prefs)
+                listener.startListening("Siswa", aliases, schoolId)
                 presence.startListening(loginKey, schoolId, role)
             }
         }

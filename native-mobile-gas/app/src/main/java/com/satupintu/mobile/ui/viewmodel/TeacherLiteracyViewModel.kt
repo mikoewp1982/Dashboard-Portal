@@ -36,7 +36,8 @@ class TeacherLiteracyViewModel : ViewModel() {
         viewModelScope.launch {
             combine(_allLogs, _teacher, _students) { logs, teacher, allStudents ->
                 val schoolScope = normalizeScope(teacher?.schoolId)
-                val classScope = normalizeClassName(teacher?.homeroomClass.orEmpty())
+                val rawClass = teacher?.homeroomClass.orEmpty()
+                val classScope = normalizeClassName(rawClass)
 
                 val classStudents = allStudents.filter { student ->
                     val matchesClass = classScope.isBlank() || normalizeClassName(student.className) == classScope
@@ -55,16 +56,19 @@ class TeacherLiteracyViewModel : ViewModel() {
                     .toSet()
 
                 logs.filter { log ->
-                    val logStudentId = normalizeIdentity(log.studentId)
-                    val logStudentName = normalizeName(log.studentName)
-                    val matchesRoster = (logStudentId.isNotBlank() && allowedStudentIds.contains(logStudentId)) ||
-                        (logStudentId.isBlank() && logStudentName.isNotBlank() && allowedStudentNames.contains(logStudentName))
-
-                    if (!matchesRoster) return@filter false
-
                     val logScope = normalizeScope(log.schoolId)
                     val matchesSchool = schoolScope.isBlank() || logScope == schoolScope || logScope.isBlank()
-                    matchesSchool
+                    if (!matchesSchool) return@filter false
+
+                    if (classScope.isBlank()) return@filter true
+
+                    val logStudentId = normalizeIdentity(log.studentId)
+                    val logStudentName = normalizeName(log.studentName)
+                    val logClass = normalizeClassName(log.studentClass)
+
+                    (logStudentId.isNotBlank() && allowedStudentIds.contains(logStudentId)) ||
+                        (logStudentName.isNotBlank() && allowedStudentNames.contains(logStudentName)) ||
+                        (logClass.isNotBlank() && logClass == classScope)
                 }.sortedByDescending { it.timestamp }
             }.collect { filtered ->
                 _logs.value = filtered
@@ -107,8 +111,9 @@ class TeacherLiteracyViewModel : ViewModel() {
     }
 
     fun submitGrade(logId: String, grade: String, feedback: String) {
-        repository.updateLogGrade(logId, grade, feedback) { success ->
-            // Optionally handle success/failure toast here or rely on real-time update
+        val schoolId = _teacher.value?.schoolId.orEmpty()
+        repository.updateLogGrade(schoolId, logId, grade, feedback) { success ->
+            // Real-time listener will automatically move the item to 'Sudah Dinilai'
         }
     }
 

@@ -85,7 +85,8 @@ class TeacherNotificationViewModel : ViewModel() {
             }
             if (teacher != null) {
                 _teacher.value = teacher
-                loadData(teacher.homeroomClass, teacher.schoolId)
+                val effectiveSchoolId = normalizeScope(teacher.schoolId).ifBlank { normalizeScope(schoolId) }
+                loadData(teacher.homeroomClass, effectiveSchoolId)
             } else {
                 _teacher.value = null
                 _notifications.value = emptyList()
@@ -181,47 +182,70 @@ class TeacherNotificationViewModel : ViewModel() {
 
     private fun getTeacherAnnouncements(schoolId: String): Flow<List<NotificationItem>> = callbackFlow {
         val normalizedSchoolId = normalizeScope(schoolId)
+        val teacher = _teacher.value
         
-        if (normalizedSchoolId.isBlank() || _teacher.value == null) {
+        if (normalizedSchoolId.isBlank() || teacher == null) {
             trySend(emptyList())
             close()
             return@callbackFlow
         }
 
-        val teacherId = normalizeIdentity(_teacher.value!!.id)
-        val ref = db.child("gas/schools/$normalizedSchoolId/notification_inbox/teacher/$teacherId")
+        val identityCandidates = linkedSetOf(
+            normalizeIdentity(teacher.id),
+            normalizeIdentity(teacher.nuptk),
+            normalizeIdentity(teacher.email)
+        ).filter { it.isNotBlank() }.toSet()
 
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val list = mutableListOf<NotificationItem>()
-                for (child in snapshot.children) {
-                    val title = child.child("title").getValue(String::class.java)?.trim() ?: "Pengumuman Guru"
-                    val content = child.child("message").getValue(String::class.java)?.trim() ?: ""
-                    val date = child.child("sentAt").getValue(Long::class.java) ?: System.currentTimeMillis()
-                    
-                    if (content.isNotBlank()) {
-                        list.add(
-                            NotificationItem(
-                                id = "A-${child.key.orEmpty()}",
+        if (identityCandidates.isEmpty()) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
+
+        val listeners = mutableListOf<Pair<com.google.firebase.database.DatabaseReference, ValueEventListener>>()
+        val notificationsMap = linkedMapOf<String, NotificationItem>()
+
+        fun emitData() {
+            trySend(notificationsMap.values.sortedByDescending { it.timestamp })
+        }
+
+        identityCandidates.forEach { identity ->
+            val ref = db.child("gas/schools/$normalizedSchoolId/notification_inbox/teacher/$identity")
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (child in snapshot.children) {
+                        val title = child.child("title").getValue(String::class.java)?.trim() ?: "Pengumuman Guru"
+                        val content = child.child("message").getValue(String::class.java)?.trim() ?: ""
+                        val date = child.child("sentAt").getValue(Long::class.java) ?: System.currentTimeMillis()
+                        val id = child.key.orEmpty()
+
+                        if (content.isNotBlank() && id.isNotBlank()) {
+                            notificationsMap[id] = NotificationItem(
+                                id = "A-$id",
                                 type = NotificationType.ANNOUNCEMENT,
                                 title = title.ifBlank { "Pengumuman Guru" },
                                 description = content,
                                 timestamp = date,
-                                relatedId = child.key.orEmpty()
+                                relatedId = id
                             )
-                        )
+                        }
                     }
+                    emitData()
                 }
-                trySend(list)
-            }
 
-            override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                override fun onCancelled(error: DatabaseError) {
+                    close(error.toException())
+                }
             }
+            ref.addValueEventListener(listener)
+            listeners.add(ref to listener)
         }
 
-        ref.addValueEventListener(listener)
-        awaitClose { ref.removeEventListener(listener) }
+        awaitClose {
+            listeners.forEach { (ref, listener) ->
+                ref.removeEventListener(listener)
+            }
+        }
     }
 
     override fun onCleared() {

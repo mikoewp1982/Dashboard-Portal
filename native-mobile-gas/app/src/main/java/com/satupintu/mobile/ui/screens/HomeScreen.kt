@@ -208,58 +208,57 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
         fun normalizeScope(value: String?): String = value?.trim()?.lowercase().orEmpty()
         fun normalizeSchoolName(value: String?): String = value?.trim().orEmpty()
 
-        fun loadStudentAnnouncement(studentClassName: String) {
-            db.getReference("system_announcements/student").addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(annoSnapshot: DataSnapshot) {
-                    try {
-                        if (annoSnapshot.exists()) {
-                            if (annoSnapshot.value is String) {
-                                announcementText = annoSnapshot.getValue(String::class.java) ?: "Tidak ada pengumuman terbaru."
-                            } else {
-                                val normalizedClass = normalizeIdentity(studentClassName.ifBlank { userClass.ifBlank { studentSessionClass } })
-                                val normalizedSchoolId = normalizeScope(sessionSchoolId)
-                                val identityCandidates = setOf(
-                                    normalizeIdentity(credential),
-                                    normalizeIdentity(studentSessionId)
-                                ).filter { it.isNotBlank() }.toSet()
+        fun loadInboxAnnouncement(rolePath: String, identityCandidates: Set<String>) {
+            val normalizedSchoolId = normalizeScope(sessionSchoolId)
+            val candidates = identityCandidates.map { normalizeIdentity(it) }.filter { it.isNotBlank() }.toSet()
+            if (normalizedSchoolId.isBlank() || candidates.isEmpty()) {
+                announcementText = "Tidak ada pengumuman terbaru."
+                return
+            }
 
-                                val lastChild = annoSnapshot.children
-                                    .filter { child ->
-                                        val targetType = child.child("targetType").getValue(String::class.java)?.trim().orEmpty()
-                                        val targetValue = child.child("targetValue").getValue(String::class.java)?.trim().orEmpty()
-                                        val itemSchoolId = normalizeScope(child.child("schoolId").getValue(String::class.java))
-                                        val matchesSchool = if (normalizedSchoolId.isBlank()) {
-                                            true
-                                        } else {
-                                            itemSchoolId == normalizedSchoolId
-                                        }
-                                        val matchesTarget = when (targetType) {
-                                            "", "STUDENTS", "ALL_CLASSES" -> true
-                                            "CLASS" -> normalizeIdentity(targetValue) == normalizedClass
-                                            "SPECIFIC_STUDENT" -> identityCandidates.contains(normalizeIdentity(targetValue))
-                                            else -> false
-                                        }
-                                        matchesSchool && matchesTarget
-                                    }
-                                    .maxByOrNull { child ->
-                                        child.child("date").getValue(Long::class.java) ?: Long.MIN_VALUE
-                                    }
-                                val content = lastChild?.child("content")?.value?.toString()
-                                announcementText = content ?: "Tidak ada pengumuman terbaru."
+            val latestById = linkedMapOf<String, Pair<Long, String>>()
+            fun refreshAnnouncement() {
+                val best = latestById.values.maxByOrNull { it.first }
+                announcementText = best?.second?.takeIf { it.isNotBlank() } ?: "Tidak ada pengumuman terbaru."
+            }
+
+            candidates.forEach { identity ->
+                db.getReference("gas/schools/$normalizedSchoolId/notification_inbox/$rolePath/$identity")
+                    .addValueEventListener(object : ValueEventListener {
+                        override fun onDataChange(annoSnapshot: DataSnapshot) {
+                            try {
+                                for (child in annoSnapshot.children) {
+                                    val id = child.key.orEmpty()
+                                    if (id.isBlank()) continue
+                                    val content = child.child("message").getValue(String::class.java)?.trim().orEmpty()
+                                        .ifBlank { child.child("content").getValue(String::class.java)?.trim().orEmpty() }
+                                    if (content.isBlank()) continue
+                                    val sentAt = child.child("sentAt").getValue(Long::class.java)
+                                        ?: child.child("deliveredAt").getValue(Long::class.java)
+                                        ?: child.child("date").getValue(Long::class.java)
+                                        ?: 0L
+                                    latestById[id] = sentAt to content
+                                }
+                                refreshAnnouncement()
+                            } catch (e: Exception) {
+                                announcementText = "Gagal memuat pengumuman."
+                                e.printStackTrace()
                             }
-                        } else {
-                            announcementText = "Tidak ada pengumuman terbaru."
                         }
-                    } catch (e: Exception) {
-                        announcementText = "Gagal memuat pengumuman."
-                        e.printStackTrace()
-                    }
-                }
 
-                override fun onCancelled(error: DatabaseError) {
-                    announcementText = "Gagal memuat pengumuman."
-                }
-            })
+                        override fun onCancelled(error: DatabaseError) {
+                            announcementText = "Gagal memuat pengumuman."
+                        }
+                    })
+            }
+        }
+
+        fun loadStudentAnnouncement(studentClassName: String) {
+            val candidates = SecurityUtils.getStoredStudentAliases(prefs) + setOf(
+                normalizeIdentity(credential),
+                normalizeIdentity(studentSessionId)
+            )
+            loadInboxAnnouncement("student", candidates)
         }
 
         fun checkOsisMembership(nisn: String) {
@@ -355,42 +354,11 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
         }
 
         fun loadTeacherAnnouncement() {
-            db.getReference("system_announcements/teacher").addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(annoSnapshot: DataSnapshot) {
-                    try {
-                        if (annoSnapshot.exists()) {
-                            if (annoSnapshot.value is String) {
-                                announcementText = annoSnapshot.getValue(String::class.java) ?: "Tidak ada pengumuman terbaru."
-                            } else {
-                                val normalizedSchoolId = normalizeScope(sessionSchoolId)
-                                val lastChild = annoSnapshot.children
-                                    .filter { child ->
-                                        val itemSchoolId = normalizeScope(child.child("schoolId").getValue(String::class.java))
-                                        if (normalizedSchoolId.isBlank()) {
-                                            true
-                                        } else {
-                                            itemSchoolId == normalizedSchoolId
-                                        }
-                                    }
-                                    .maxByOrNull { child ->
-                                        child.child("date").getValue(Long::class.java) ?: Long.MIN_VALUE
-                                    }
-                                val content = lastChild?.child("content")?.value?.toString()
-                                announcementText = content ?: "Tidak ada pengumuman terbaru."
-                            }
-                        } else {
-                            announcementText = "Tidak ada pengumuman terbaru."
-                        }
-                    } catch (e: Exception) {
-                        announcementText = "Gagal memuat pengumuman."
-                        e.printStackTrace()
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    announcementText = "Gagal memuat pengumuman."
-                }
-            })
+            val candidates = setOf(
+                SecurityUtils.getStoredTeacherKey(prefs),
+                normalizeIdentity(credential)
+            )
+            loadInboxAnnouncement("teacher", candidates)
         }
 
         fun checkStudentAndTeacher() {

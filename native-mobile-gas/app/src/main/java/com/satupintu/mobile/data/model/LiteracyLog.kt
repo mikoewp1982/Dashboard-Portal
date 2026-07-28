@@ -1,4 +1,4 @@
-﻿package com.satupintu.mobile.data.model
+package com.satupintu.mobile.data.model
 
 data class LiteracyLog(
     val id: String = "",
@@ -11,7 +11,7 @@ data class LiteracyLog(
     val bookTitle: String = "",
     val author: String = "",
     val summary: String = "",
-    val status: String = "pending", // pending, reviewed
+    val status: String = "PENDING", // PENDING, GRADED, REJECTED
     val grade: String? = null,
     val feedback: String? = null,
     val timestamp: Long = System.currentTimeMillis()

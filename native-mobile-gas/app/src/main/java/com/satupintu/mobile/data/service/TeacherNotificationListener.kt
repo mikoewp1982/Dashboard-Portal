@@ -33,30 +33,38 @@ class TeacherNotificationListener(private val context: Context) {
     private var lastPetState: String = "HEALTHY" // HEALTHY, SICK, DEAD
 
     fun startListening(userRole: String, userCredential: String = "", schoolId: String = "") {
+        startListening(userRole, setOf(userCredential).filter { it.isNotBlank() }.toSet(), schoolId)
+    }
+
+    fun startListening(userRole: String, identityAliases: Set<String>, schoolId: String = "") {
         // Stop any existing listeners first to avoid duplicates or wrong role data
         stopListening()
+
+        val aliases = identityAliases.map { it.trim() }.filter { it.isNotBlank() }.toSet()
         
         if (userRole == "Guru") {
             listenForTeacherSpecifics(schoolId)
-            listenForTeacherAnnouncements(schoolId, userCredential)
+            listenForTeacherAnnouncements(schoolId, aliases)
         } else if (userRole == "Siswa") {
-            listenForStudentAnnouncements(schoolId, userCredential)
-            if (userCredential.isNotEmpty()) {
-                listenForStudentPet(userCredential)
-            }
+            listenForStudentAnnouncements(schoolId, aliases)
+            aliases.firstOrNull()?.let { listenForStudentPet(it) }
         }
     }
     
     fun stopListening() {
         literacyListener?.let { db.getReference("literacy_logs").removeEventListener(it) }
-        bullyingListener?.let { db.getReference("bullying_reports").removeEventListener(it) }
+        bullyingListener?.let {
+            activeBullyingRef?.removeEventListener(it)
+        }
         
-        if (teacherAnnouncementListener != null && activeTeacherAnnouncementRef != null) {
-            activeTeacherAnnouncementRef?.removeEventListener(teacherAnnouncementListener!!)
+        teacherAnnouncementListeners.forEach { (ref, listener) ->
+            ref.removeEventListener(listener)
         }
-        if (studentAnnouncementListener != null && activeStudentAnnouncementRef != null) {
-            activeStudentAnnouncementRef?.removeEventListener(studentAnnouncementListener!!)
+        studentAnnouncementListeners.forEach { (ref, listener) ->
+            ref.removeEventListener(listener)
         }
+        teacherAnnouncementListeners.clear()
+        studentAnnouncementListeners.clear()
         
         // Remove Pet Listener
         if (studentPetListener != null && activePetRef != null) {
@@ -69,14 +77,20 @@ class TeacherNotificationListener(private val context: Context) {
         studentAnnouncementListener = null
         studentPetListener = null
         activePetRef = null
+        activeBullyingRef = null
         activeTeacherAnnouncementRef = null
         activeStudentAnnouncementRef = null
     }
     
     // Helper to remove pet listener properly
     private var activePetRef: com.google.firebase.database.Query? = null
+    private var activeBullyingRef: com.google.firebase.database.Query? = null
     private var activeTeacherAnnouncementRef: com.google.firebase.database.Query? = null
     private var activeStudentAnnouncementRef: com.google.firebase.database.Query? = null
+    private val teacherAnnouncementListeners =
+        mutableListOf<Pair<com.google.firebase.database.DatabaseReference, ValueEventListener>>()
+    private val studentAnnouncementListeners =
+        mutableListOf<Pair<com.google.firebase.database.DatabaseReference, ValueEventListener>>()
     
     private fun listenForStudentPet(nisn: String) {
         // 1. Find Student ID from NISN
@@ -243,69 +257,73 @@ class TeacherNotificationListener(private val context: Context) {
 
             override fun onCancelled(error: DatabaseError) {}
         }
-        db.getReference("gas/schools/${normalizedSchoolId}/halo_spentgapa_reports").addValueEventListener(bListener)
+        db.getReference("gas/schools/${normalizedSchoolId}/halo_spentgapa_reports").also { ref ->
+            activeBullyingRef = ref
+            ref.addValueEventListener(bListener)
+        }
         bullyingListener = bListener
     }
     
-    private fun listenForTeacherAnnouncements(schoolId: String, teacherCredential: String) {
+    private fun listenForTeacherAnnouncements(schoolId: String, identityAliases: Set<String>) {
         val normalizedSchoolId = normalizeSchoolScope(schoolId)
-        if (normalizedSchoolId.isBlank() || teacherCredential.isBlank()) return
+        if (normalizedSchoolId.isBlank() || identityAliases.isEmpty()) return
 
-        val ref = db.getReference("gas/schools/$normalizedSchoolId/notification_inbox/teacher/$teacherCredential").limitToLast(1)
-        activeTeacherAnnouncementRef = ref
-        val tListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (!snapshot.exists()) return
-                
-                // Get latest announcement
-                val lastChild = snapshot.children.lastOrNull()
-                val id = lastChild?.key ?: return
-                val content = lastChild.child("message").value?.toString() ?: "Pengumuman Baru"
-                val title = lastChild.child("title").value?.toString() ?: "Pengumuman Guru"
-                
-                if (lastAnnouncementId != null && lastAnnouncementId != id) {
-                     notificationHelper.showNotification(
-                        title,
-                        content
-                    )
+        identityAliases.forEach { alias ->
+            val ref = db.getReference("gas/schools/$normalizedSchoolId/notification_inbox/teacher/$alias")
+            val tListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) return
+
+                    val lastChild = snapshot.children.maxByOrNull { child ->
+                        child.child("sentAt").getValue(Long::class.java) ?: Long.MIN_VALUE
+                    } ?: return
+                    val id = lastChild.key ?: return
+                    val content = lastChild.child("message").value?.toString() ?: "Pengumuman Baru"
+                    val title = lastChild.child("title").value?.toString() ?: "Pengumuman Guru"
+
+                    if (lastAnnouncementId != null && lastAnnouncementId != id) {
+                        notificationHelper.showNotification(title, content)
+                    }
+                    lastAnnouncementId = id
                 }
-                lastAnnouncementId = id
+                override fun onCancelled(error: DatabaseError) {}
             }
-             override fun onCancelled(error: DatabaseError) {}
+            ref.addValueEventListener(tListener)
+            teacherAnnouncementListeners.add(ref to tListener)
+            teacherAnnouncementListener = tListener
+            activeTeacherAnnouncementRef = ref
         }
-        ref.addValueEventListener(tListener)
-        teacherAnnouncementListener = tListener
     }
 
-    private fun listenForStudentAnnouncements(schoolId: String, studentCredential: String) {
+    private fun listenForStudentAnnouncements(schoolId: String, identityAliases: Set<String>) {
         val normalizedSchoolId = normalizeSchoolScope(schoolId)
-        if (normalizedSchoolId.isBlank() || studentCredential.isBlank()) return
-        
-        val ref = db.getReference("gas/schools/$normalizedSchoolId/notification_inbox/student/$studentCredential").limitToLast(1)
-        activeStudentAnnouncementRef = ref
+        if (normalizedSchoolId.isBlank() || identityAliases.isEmpty()) return
 
-        val sListener = object : ValueEventListener {
-             override fun onDataChange(snapshot: DataSnapshot) {
-                if (!snapshot.exists()) return
-                
-                // Get latest announcement
-                val lastChild = snapshot.children.lastOrNull()
-                val id = lastChild?.key ?: return
-                val content = lastChild.child("message").value?.toString() ?: "Pengumuman Baru"
-                val title = lastChild.child("title").value?.toString() ?: "Pengumuman Siswa"
-                
-                if (lastAnnouncementId != null && lastAnnouncementId != id) {
-                     notificationHelper.showNotification(
-                        title,
-                        content
-                    )
+        identityAliases.forEach { alias ->
+            val ref = db.getReference("gas/schools/$normalizedSchoolId/notification_inbox/student/$alias")
+            val sListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) return
+
+                    val lastChild = snapshot.children.maxByOrNull { child ->
+                        child.child("sentAt").getValue(Long::class.java) ?: Long.MIN_VALUE
+                    } ?: return
+                    val id = lastChild.key ?: return
+                    val content = lastChild.child("message").value?.toString() ?: "Pengumuman Baru"
+                    val title = lastChild.child("title").value?.toString() ?: "Pengumuman Siswa"
+
+                    if (lastAnnouncementId != null && lastAnnouncementId != id) {
+                        notificationHelper.showNotification(title, content)
+                    }
+                    lastAnnouncementId = id
                 }
-                lastAnnouncementId = id
+                override fun onCancelled(error: DatabaseError) {}
             }
-             override fun onCancelled(error: DatabaseError) {}
+            ref.addValueEventListener(sListener)
+            studentAnnouncementListeners.add(ref to sListener)
+            studentAnnouncementListener = sListener
+            activeStudentAnnouncementRef = ref
         }
-        ref.addValueEventListener(sListener)
-        studentAnnouncementListener = sListener
     }
     private fun normalizeSchoolScope(value: String?): String {
         return value?.trim()?.lowercase().orEmpty()

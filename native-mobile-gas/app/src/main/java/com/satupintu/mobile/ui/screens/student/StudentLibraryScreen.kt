@@ -1132,8 +1132,9 @@ fun LibraryTasksView(
                                             )
                                             
                                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                                val statusColor = if (log.status == "reviewed" || log.status == "corrected") LenteraAccentStrong else LenteraAccent
-                                                val statusText = if (log.status == "reviewed" || log.status == "corrected") "Dinilai" else "Pending"
+                                                 val isGraded = log.status.equals("GRADED", ignoreCase = true) || log.status.equals("reviewed", ignoreCase = true) || log.status.equals("corrected", ignoreCase = true)
+                                                 val statusColor = if (isGraded) LenteraAccentStrong else LenteraAccent
+                                                 val statusText = if (isGraded) "Dinilai" else "Pending"
                                                 
                                                 Surface(
                                                     color = statusColor.copy(alpha = 0.1f),

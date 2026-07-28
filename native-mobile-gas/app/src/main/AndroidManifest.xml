@@ -8,6 +8,10 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <queries>
+        <package android:name="com.sekolah.edulock" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:usesCleartextTraffic="false"
