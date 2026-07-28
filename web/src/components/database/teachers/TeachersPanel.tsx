@@ -93,6 +93,28 @@ export function TeachersPanel({ schoolId }: TeachersPanelProps) {
     }
   };
 
+  const handleResetDevice = async (row: DatabaseRecord) => {
+    const teacherName = row.name || row.nuptk || row.id;
+    if (
+      !confirm(
+        `Reset binding device untuk guru/wali kelas ${teacherName}? Setelah di-reset, akun bisa login di perangkat baru.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await callAdminDatabaseApi({
+        action: "reset-device",
+        tab: "Guru/Wali Kelas",
+        id: row.id,
+      });
+      alert(`Device binding untuk ${teacherName} berhasil di-reset.`);
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : "Terjadi kesalahan saat mereset device binding guru.");
+    }
+  };
+
   return (
     <>
       <div className="flex items-center justify-between border-b border-white/10 bg-[#0b1228] px-8 py-6">
@@ -135,7 +157,13 @@ export function TeachersPanel({ schoolId }: TeachersPanelProps) {
           />
         </div>
 
-        <TeachersTable rows={filteredData} loading={loading} onEdit={openEditModal} onDelete={handleDelete} />
+        <TeachersTable
+          rows={filteredData}
+          loading={loading}
+          onEdit={openEditModal}
+          onDelete={handleDelete}
+          onResetDevice={handleResetDevice}
+        />
       </div>
 
       <TeacherFormModal
