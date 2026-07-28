@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 
 type NotificationTargetType = "ALL_CLASSES" | "CLASS" | "STUDENTS" | "SPECIFIC_STUDENT" | "TEACHERS";
 
@@ -8,14 +9,26 @@ type RecipientInfo = {
   type: "student" | "teacher";
   name: string;
   className?: string;
+  /** Semua kunci identitas yang mungkin dipakai APK untuk membaca inbox. */
+  aliases: string[];
 };
 
 function normalizeIdentity(value: unknown) {
   return String(value || "").trim();
 }
 
+function normalizeSchoolId(value: unknown) {
+  return String(value || "").trim().toLowerCase();
+}
+
 function getClassLabel(row: Record<string, unknown>) {
   return String(row.className || row.kelas || row.class || "").trim();
+}
+
+function uniqueAliases(...values: unknown[]) {
+  return Array.from(
+    new Set(values.map((value) => normalizeIdentity(value)).filter((value) => value.length > 0))
+  );
 }
 
 async function resolveRecipients(
@@ -24,9 +37,10 @@ async function resolveRecipients(
   targetValue?: string
 ) {
   const normalizedTarget = normalizeIdentity(targetValue);
+  const normalizedSchoolId = normalizeSchoolId(schoolId);
 
   if (targetType === "TEACHERS") {
-    const teachersSnap = await adminDb.ref(`gas/schools/${schoolId}/teachers`).get();
+    const teachersSnap = await adminDb.ref(`gas/schools/${normalizedSchoolId}/teachers`).get();
     if (!teachersSnap.exists()) return [] as RecipientInfo[];
 
     return Object.entries(teachersSnap.val() as Record<string, Record<string, unknown>>).map(([id, row]) => ({
@@ -34,10 +48,11 @@ async function resolveRecipients(
       type: "teacher" as const,
       name: String(row.name || "Guru"),
       className: getClassLabel(row),
+      aliases: uniqueAliases(id, row.nuptk, row.credential, row.username, row.name),
     }));
   }
 
-  const studentsSnap = await adminDb.ref(`gas/schools/${schoolId}/students`).get();
+  const studentsSnap = await adminDb.ref(`gas/schools/${normalizedSchoolId}/students`).get();
   if (!studentsSnap.exists()) return [] as RecipientInfo[];
 
   const students = Object.entries(studentsSnap.val() as Record<string, Record<string, unknown>>).map(([id, row]) => ({
@@ -46,6 +61,7 @@ async function resolveRecipients(
     name: String(row.name || "Siswa"),
     className: getClassLabel(row),
     nisn: normalizeIdentity(row.nisn),
+    aliases: uniqueAliases(id, row.nisn, row.username, row.credential),
   }));
 
   if (targetType === "ALL_CLASSES" || targetType === "STUDENTS") {
@@ -58,11 +74,34 @@ async function resolveRecipients(
 
   if (targetType === "SPECIFIC_STUDENT") {
     return students.filter(
-      (student) => normalizeIdentity(student.id) === normalizedTarget || student.nisn === normalizedTarget
+      (student) =>
+        normalizeIdentity(student.id) === normalizedTarget ||
+        student.nisn === normalizedTarget ||
+        student.aliases.includes(normalizedTarget)
     );
   }
 
   return [];
+}
+
+async function authorizeSchoolAccess(decodedToken: { role?: string; schoolId?: string; email?: string }, schoolId: string) {
+  const canonical = await resolveCanonicalSchoolContext({
+    schoolId,
+    email: decodedToken.email,
+  });
+  const canonicalSchoolId = canonical?.schoolId || normalizeSchoolId(schoolId);
+  if (!canonicalSchoolId) {
+    return { ok: false as const, status: 400, message: "School ID tidak valid", schoolId: "" };
+  }
+
+  if (decodedToken.role !== "super_admin") {
+    const tokenSchoolId = normalizeSchoolId(decodedToken.schoolId);
+    if (!tokenSchoolId || tokenSchoolId !== canonicalSchoolId) {
+      return { ok: false as const, status: 403, message: "Forbidden: School mismatch", schoolId: "" };
+    }
+  }
+
+  return { ok: true as const, schoolId: canonicalSchoolId };
 }
 
 export async function GET(req: NextRequest) {
@@ -79,13 +118,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Missing schoolId" }, { status: 400 });
     }
 
-    if (decodedToken.role !== "super_admin" && decodedToken.schoolId !== schoolId) {
-      return NextResponse.json({ success: false, message: "Forbidden: School mismatch" }, { status: 403 });
+    const access = await authorizeSchoolAccess(decodedToken, schoolId);
+    if (!access.ok) {
+      return NextResponse.json({ success: false, message: access.message }, { status: access.status });
     }
 
-    const notifRef = adminDb.ref(`gas/schools/${schoolId}/notifications`);
+    const notifRef = adminDb.ref(`gas/schools/${access.schoolId}/notifications`);
     const snapshot = await notifRef.get();
-    
+
     if (!snapshot.exists()) {
       return NextResponse.json({ success: true, data: {} });
     }
@@ -129,11 +169,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
     }
 
-    if (decodedToken.role !== "super_admin" && decodedToken.schoolId !== schoolId) {
-      return NextResponse.json({ success: false, message: "Forbidden: School mismatch" }, { status: 403 });
+    const access = await authorizeSchoolAccess(decodedToken, schoolId);
+    if (!access.ok) {
+      return NextResponse.json({ success: false, message: access.message }, { status: access.status });
     }
 
-    const recipients = await resolveRecipients(schoolId, targetType, targetValue);
+    const recipients = await resolveRecipients(access.schoolId, targetType, targetValue);
     if (recipients.length === 0) {
       return NextResponse.json(
         { success: false, message: "Tidak ada penerima yang cocok untuk target yang dipilih." },
@@ -141,7 +182,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const notifRef = adminDb.ref(`gas/schools/${schoolId}/notifications`).push();
+    const notifRef = adminDb.ref(`gas/schools/${access.schoolId}/notifications`).push();
     const notificationId = notifRef.key;
     if (!notificationId) {
       return NextResponse.json({ success: false, message: "Gagal membuat ID notifikasi." }, { status: 500 });
@@ -160,20 +201,18 @@ export async function POST(req: NextRequest) {
       targetName: targetName || "",
       senderId: decodedToken.uid,
       senderName: senderName || "Admin",
-      schoolId,
+      schoolId: access.schoolId,
       recipientCount: recipients.length,
       recipientSummary,
       sentAt: Date.now(),
     };
 
     const fanoutUpdates: Record<string, unknown> = {
-      [`gas/schools/${schoolId}/notifications/${notificationId}`]: notificationData,
+      [`gas/schools/${access.schoolId}/notifications/${notificationId}`]: notificationData,
     };
 
     for (const recipient of recipients) {
-      fanoutUpdates[
-        `gas/schools/${schoolId}/notification_inbox/${recipient.type}/${recipient.id}/${notificationId}`
-      ] = {
+      const inboxPayload = {
         ...notificationData,
         notificationId,
         recipientId: recipient.id,
@@ -183,6 +222,13 @@ export async function POST(req: NextRequest) {
         isRead: false,
         deliveredAt: notificationData.sentAt,
       };
+
+      // Tulis ke semua alias identitas agar APK (push-key / nisn / nuptk) bisa membaca.
+      for (const alias of recipient.aliases) {
+        fanoutUpdates[
+          `gas/schools/${access.schoolId}/notification_inbox/${recipient.type}/${alias}/${notificationId}`
+        ] = inboxPayload;
+      }
     }
 
     await adminDb.ref().update(fanoutUpdates);
@@ -215,15 +261,16 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Missing schoolId" }, { status: 400 });
     }
 
-    if (decodedToken.role !== "super_admin" && decodedToken.schoolId !== schoolId) {
-      return NextResponse.json({ success: false, message: "Forbidden: School mismatch" }, { status: 403 });
+    const access = await authorizeSchoolAccess(decodedToken, schoolId);
+    if (!access.ok) {
+      return NextResponse.json({ success: false, message: access.message }, { status: access.status });
     }
 
     if (clearAll) {
-      await adminDb.ref(`gas/schools/${schoolId}/notifications`).remove();
+      await adminDb.ref(`gas/schools/${access.schoolId}/notifications`).remove();
       return NextResponse.json({ success: true, message: "All notifications cleared" });
     } else if (id) {
-      await adminDb.ref(`gas/schools/${schoolId}/notifications/${id}`).remove();
+      await adminDb.ref(`gas/schools/${access.schoolId}/notifications/${id}`).remove();
       return NextResponse.json({ success: true, message: "Notification deleted" });
     }
 
