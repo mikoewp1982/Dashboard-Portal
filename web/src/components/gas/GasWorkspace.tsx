@@ -69,7 +69,7 @@ export default function GasWorkspace() {
     <div className="flex min-h-screen flex-col bg-[#0b1228] text-slate-200 lg:h-screen lg:overflow-hidden lg:flex-row">
       <GasSidebar activeTab={activeTab} onTabChange={handleTabChange} />
 
-      <div className="flex flex-1 flex-col lg:min-h-0">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {activeTab === "dashboard" && <GasDashboardPanel schoolId={user.schoolId || ""} />}
         {activeTab === "students" && <GasStudentsPanel schoolId={user.schoolId} />}
         {activeTab === "teachers" && <GasTeachersPanel schoolId={user.schoolId} />}

@@ -34,7 +34,6 @@ export function Gas7HabitsPanel({ schoolId }: { schoolId: string }) {
   );
   const [viewMode, setViewMode] = useState<'monitoring' | 'grading'>('monitoring');
 
-  const [selectedGrade, setSelectedGrade] = useState<"VII" | "VIII" | "IX">("VII");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
 
@@ -47,25 +46,27 @@ export function Gas7HabitsPanel({ schoolId }: { schoolId: string }) {
     return Array.from(new Set(students.map((s: any) => s.kelas || s.class || "Unknown").filter(c => c !== "Unknown")));
   }, [students]);
 
-  const gradeClasses = useMemo(() => {
-    return uniqueClasses.filter(c => {
-      return getClassGradeBucket(c) === selectedGrade;
-    }).sort((a, b) => (a as string).localeCompare(b as string));
-  }, [uniqueClasses, selectedGrade]);
+  const sortedClasses = useMemo(() => {
+    return [...uniqueClasses].sort((a, b) => (a as string).localeCompare(b as string));
+  }, [uniqueClasses]);
 
   useEffect(() => {
-    if (gradeClasses.length > 0 && !gradeClasses.includes(selectedClassName)) {
-      setSelectedClassName(gradeClasses[0] as string);
-    } else if (gradeClasses.length === 0) {
+    if (selectedClassName && !sortedClasses.includes(selectedClassName)) {
       setSelectedClassName("");
     }
-  }, [gradeClasses, selectedClassName]);
+  }, [sortedClasses, selectedClassName]);
 
   useEffect(() => {
     setSelectedStudentId("");
   }, [selectedClassName]);
 
   const classStudents = useMemo(() => {
+    if (!selectedClassName) {
+      return [...students].sort((a: any, b: any) =>
+        String(a.name || "").localeCompare(String(b.name || ""))
+      );
+    }
+
     return students.filter((s: any) => (s.kelas || s.class) === selectedClassName);
   }, [students, selectedClassName]);
 
@@ -227,7 +228,7 @@ export function Gas7HabitsPanel({ schoolId }: { schoolId: string }) {
   }
 
   return (
-    <div className="flex h-full flex-col p-6 space-y-6 overflow-y-auto bg-[#0b1221]">
+    <div className="min-h-0 flex-1 overflow-y-auto bg-[#0b1221] p-6 space-y-6">
       <SevenHabitsControls
         viewMode={viewMode}
         habitsLoading={habitsLoading}
@@ -235,10 +236,8 @@ export function Gas7HabitsPanel({ schoolId }: { schoolId: string }) {
         selectedMonth={selectedMonth}
         selectedWeek={selectedWeek}
         selectedDayName={selectedDayName}
-        selectedGrade={selectedGrade}
-        gradeClasses={gradeClasses}
+        availableClasses={sortedClasses}
         selectedClassName={selectedClassName}
-        classStudents={classStudents}
         selectedStudentId={selectedStudentId}
         onViewModeChange={setViewMode}
         onRefresh={() => void refresh()}
@@ -248,9 +247,7 @@ export function Gas7HabitsPanel({ schoolId }: { schoolId: string }) {
         onMonthChange={setSelectedMonth}
         onWeekChange={setSelectedWeek}
         onDayChange={setSelectedDayName}
-        onGradeChange={setSelectedGrade}
         onClassChange={setSelectedClassName}
-        onStudentChange={setSelectedStudentId}
       />
 
       <SevenHabitsContent
@@ -259,7 +256,7 @@ export function Gas7HabitsPanel({ schoolId }: { schoolId: string }) {
         selectedStudent={selectedStudent}
         selectedStudentGrading={selectedStudentGrading}
         selectedClassName={selectedClassName}
-        selectedGrade={selectedGrade}
+        selectedGrade={getClassGradeBucket(selectedClassName) || "VII"}
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
         selectedWeek={selectedWeek}
