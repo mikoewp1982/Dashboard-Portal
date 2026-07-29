@@ -28,6 +28,7 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
   const { overview } = useEduLockOverview(schoolId);
 
   const { settings, loading: settingsLoading, saving, saveSettings } = useEduLockSettings(schoolId);
+  const edulockLocation = settings.geofence ?? location;
   const [gpsWarnMinutes, setGpsWarnMinutes] = useState(2);
   const [gpsLockMinutes, setGpsLockMinutes] = useState(5);
 
@@ -288,24 +289,24 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
                 <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-6 space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1">Latitude</label>
-                    <input value={String(location?.latitude || "")} readOnly disabled className="w-full rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white opacity-80 cursor-not-allowed" />
+                    <input value={String(edulockLocation?.latitude || "")} readOnly disabled className="w-full rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white opacity-80 cursor-not-allowed" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1">Longitude</label>
-                    <input value={String(location?.longitude || "")} readOnly disabled className="w-full rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white opacity-80 cursor-not-allowed" />
+                    <input value={String(edulockLocation?.longitude || "")} readOnly disabled className="w-full rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white opacity-80 cursor-not-allowed" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1">Radius (meter)</label>
                     <input
                       type="number"
-                      value={String(location?.radius ?? 0)}
+                      value={String(edulockLocation?.radius ?? 0)}
                       readOnly
                       disabled
                       className="w-full rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2.5 text-white opacity-80 cursor-not-allowed"
                     />
                   </div>
                   <div className="w-full rounded-xl border border-sky-400/20 bg-sky-500/10 px-4 py-3 text-sm text-sky-200 mt-2">
-                    Koordinat zona mengikuti GAS Presensi Sekolah dan tidak dapat diedit dari workspace EduLock.
+                    Zona ini khusus EduLock. Untuk mengubahnya, buka menu Geofencing EduLock.
                   </div>
                 </div>
 

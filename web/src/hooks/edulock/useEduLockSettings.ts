@@ -3,11 +3,18 @@ import { rtdb } from "@/lib/firebase/client";
 import { ref, onValue } from "firebase/database";
 import { callAdminApi } from "@/lib/callAdminApi";
 
+export interface EduLockGeofence {
+  latitude: number;
+  longitude: number;
+  radius: number;
+}
+
 export interface EduLockSettings {
   is_active_protection: boolean;
   is_holiday_mode: boolean;
   gpsWarnMinutes: number;
   gpsLockMinutes: number;
+  geofence: EduLockGeofence | null;
 }
 
 export function useEduLockSettings(schoolId: string) {
@@ -16,6 +23,7 @@ export function useEduLockSettings(schoolId: string) {
     is_holiday_mode: false,
     gpsWarnMinutes: 2,
     gpsLockMinutes: 5,
+    geofence: null,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,6 +40,17 @@ export function useEduLockSettings(schoolId: string) {
           is_holiday_mode: data.is_holiday_mode ?? false,
           gpsWarnMinutes: data.gpsWarnMinutes ?? 2,
           gpsLockMinutes: data.gpsLockMinutes ?? 5,
+          geofence:
+            data.geofence &&
+            typeof data.geofence.latitude === "number" &&
+            typeof data.geofence.longitude === "number" &&
+            typeof data.geofence.radius === "number"
+              ? {
+                  latitude: data.geofence.latitude,
+                  longitude: data.geofence.longitude,
+                  radius: data.geofence.radius,
+                }
+              : null,
         });
       }
       setLoading(false);

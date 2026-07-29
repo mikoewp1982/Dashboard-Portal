@@ -1,11 +1,59 @@
 "use client";
 
-import Link from "next/link";
-import { MapIcon, MapPin } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { MapIcon, Save } from "lucide-react";
 import { useGasSettings } from "@/hooks/gas/attendance/useGasSettings";
+import { useEduLockSettings } from "@/hooks/edulock/useEduLockSettings";
 
 export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
-  const { location: schoolConfig } = useGasSettings(schoolId);
+  const { location: attendanceLocation } = useGasSettings(schoolId);
+  const { settings, loading, saving, saveSettings } = useEduLockSettings(schoolId);
+  const fallbackLocation = useMemo(
+    () => settings.geofence ?? attendanceLocation,
+    [attendanceLocation, settings.geofence]
+  );
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+  const [radius, setRadius] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setLatitude(String(fallbackLocation.latitude ?? ""));
+    setLongitude(String(fallbackLocation.longitude ?? ""));
+    setRadius(String(fallbackLocation.radius ?? ""));
+  }, [fallbackLocation.latitude, fallbackLocation.longitude, fallbackLocation.radius]);
+
+  const handleSave = async () => {
+    const parsedLatitude = Number(latitude);
+    const parsedLongitude = Number(longitude);
+    const parsedRadius = Number(radius);
+
+    if (!Number.isFinite(parsedLatitude) || parsedLatitude < -90 || parsedLatitude > 90) {
+      setMessage("Latitude harus berupa angka antara -90 dan 90.");
+      return;
+    }
+    if (!Number.isFinite(parsedLongitude) || parsedLongitude < -180 || parsedLongitude > 180) {
+      setMessage("Longitude harus berupa angka antara -180 dan 180.");
+      return;
+    }
+    if (!Number.isFinite(parsedRadius) || parsedRadius < 50 || parsedRadius > 5000) {
+      setMessage("Radius EduLock harus antara 50 dan 5.000 meter.");
+      return;
+    }
+
+    try {
+      await saveSettings({
+        geofence: {
+          latitude: parsedLatitude,
+          longitude: parsedLongitude,
+          radius: parsedRadius,
+        },
+      });
+      setMessage("Zona EduLock berhasil disimpan dan berdiri sendiri dari lokasi absensi.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Gagal menyimpan zona EduLock.");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -18,8 +66,8 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
         </div>
         <div className="p-6">
           <div className="mb-6 rounded-2xl border border-sky-400/20 bg-sky-500/10 px-5 py-4 text-sm text-sky-100 shadow-inner">
-            Koordinat zona EduLock mengikuti sumber resmi dari `GAS &gt; Manajemen Presensi &gt; Presensi Sekolah &gt; Pengaturan Sistem`.
-            Admin EduLock tidak dapat mengubah titik lokasi secara manual dari halaman ini.
+            Lokasi dan radius pada halaman ini khusus untuk zona EduLock. Perubahan lokasi absensi di GAS
+            tidak akan mengubah zona EduLock yang sudah disimpan.
           </div>
           
           <div className="max-w-2xl space-y-6">
@@ -31,10 +79,10 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
                     type="number"
                     step="any"
                     placeholder="Latitude (contoh: -6.200000)"
-                    className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-white opacity-80 cursor-not-allowed"
-                    value={String(schoolConfig.latitude ?? "")}
-                    readOnly
-                    disabled
+                    className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+                    value={latitude}
+                    onChange={(event) => setLatitude(event.target.value)}
+                    disabled={loading || saving}
                   />
                 </div>
                 <div>
@@ -42,15 +90,15 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
                     type="number"
                     step="any"
                     placeholder="Longitude (contoh: 106.816666)"
-                    className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-white opacity-80 cursor-not-allowed"
-                    value={String(schoolConfig.longitude ?? "")}
-                    readOnly
-                    disabled
+                    className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+                    value={longitude}
+                    onChange={(event) => setLongitude(event.target.value)}
+                    disabled={loading || saving}
                   />
                 </div>
               </div>
               <div className="text-xs text-slate-400 bg-white/5 p-2 rounded-lg border border-white/5">
-                Data ini dibaca otomatis dari pengaturan lokasi presensi di GAS.
+                Tentukan titik pusat area sekolah untuk EduLock, bukan titik gerbang absensi.
               </div>
             </div>
 
@@ -58,14 +106,35 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
               <label className="block text-sm font-semibold tracking-wide text-slate-300 mb-2">Radius Aman (Meter)</label>
               <input
                 type="number"
-                className="w-full max-w-[200px] rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-white mb-2 opacity-80 cursor-not-allowed"
-                value={String(schoolConfig.radius ?? "")}
-                readOnly
-                disabled
+                min={50}
+                max={5000}
+                className="w-full max-w-[200px] rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-white mb-2 outline-none focus:border-indigo-500"
+                value={radius}
+                onChange={(event) => setRadius(event.target.value)}
+                disabled={loading || saving}
               />
               <div className="text-xs text-slate-400 bg-white/5 p-2 rounded-lg border border-white/5">
-                Radius aman mengikuti nilai radius absensi sekolah di GAS agar tidak terjadi mismatch operasional.
+                Minimal 50 meter. Atur agar seluruh area sekolah tercakup tanpa memperluas zona secara berlebihan.
               </div>
+            </div>
+
+            {!settings.geofence && (
+              <div className="rounded-xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                Belum ada zona EduLock khusus. Nilai awal diambil dari lokasi absensi dan baru dipisahkan setelah disimpan.
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={loading || saving}
+                className="inline-flex items-center rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {saving ? "Menyimpan..." : "Simpan Zona EduLock"}
+              </button>
+              {message && <div className="text-sm text-slate-200">{message}</div>}
             </div>
           </div>
         </div>

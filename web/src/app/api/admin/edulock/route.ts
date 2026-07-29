@@ -1,3 +1,4 @@
+export const dynamic = 'force-static';
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
@@ -319,6 +320,30 @@ export async function POST(request: Request) {
       if (!settings || typeof settings !== "object") {
         return NextResponse.json({ success: false, error: "Settings tidak valid" }, { status: 400 });
       }
+
+      if (settings.geofence !== undefined) {
+        const geofence = settings.geofence;
+        const latitude = Number(geofence?.latitude);
+        const longitude = Number(geofence?.longitude);
+        const radius = Number(geofence?.radius);
+        if (
+          !Number.isFinite(latitude) ||
+          latitude < -90 ||
+          latitude > 90 ||
+          !Number.isFinite(longitude) ||
+          longitude < -180 ||
+          longitude > 180 ||
+          !Number.isFinite(radius) ||
+          radius < 50 ||
+          radius > 5000
+        ) {
+          return NextResponse.json(
+            { success: false, error: "Koordinat atau radius zona EduLock tidak valid" },
+            { status: 400 }
+          );
+        }
+        settings.geofence = { latitude, longitude, radius };
+      }
       
       const settingsRef = adminDb.ref(`edulock_settings/${schoolId}`);
       await settingsRef.update(settings);
@@ -329,6 +354,17 @@ export async function POST(request: Request) {
       }
       if (settings.is_holiday_mode !== undefined) {
         apkConfigUpdates.is_holiday_mode = settings.is_holiday_mode;
+      }
+      if (settings.geofence !== undefined) {
+        apkConfigUpdates.edulock_geofence = {
+          ...settings.geofence,
+          updatedAt: Date.now(),
+        };
+        // Keep the established APK listener contract while the dedicated
+        // nested config becomes the authoritative source for newer builds.
+        apkConfigUpdates.latitude = settings.geofence.latitude;
+        apkConfigUpdates.longitude = settings.geofence.longitude;
+        apkConfigUpdates.radius = settings.geofence.radius;
       }
       
           if (Object.keys(apkConfigUpdates).length > 0) {
