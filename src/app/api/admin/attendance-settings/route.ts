@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, schoolId: requestedSchoolId, schedules, holiday, location, startDate } = body;
+    const { action, schoolId: requestedSchoolId, schedules, holiday, location } = body;
 
     const targetSchoolId = role === "super_admin" ? (requestedSchoolId || userSchoolId) : userSchoolId;
     if (!targetSchoolId) {
@@ -100,16 +100,6 @@ export async function POST(req: NextRequest) {
         radius: location.radius
       });
       
-      return NextResponse.json({ success: true });
-    }
-
-    if (action === "save-system-usage-start-date") {
-      const normalizedStartDate = String(startDate || "").trim();
-      if (!normalizedStartDate) {
-        throw new Error("Tanggal mulai penggunaan sistem wajib diisi");
-      }
-
-      await dbRef.child("system_usage_start_date").set(normalizedStartDate);
       return NextResponse.json({ success: true });
     }
 

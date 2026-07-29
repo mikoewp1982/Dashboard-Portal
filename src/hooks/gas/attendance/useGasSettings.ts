@@ -18,7 +18,6 @@ export function useGasSettings(schoolId: string) {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [location, setLocation] = useState<SchoolLocation>({ latitude: -7.6698, longitude: 112.5432, radius: 50 });
   const [mushollaLocation, setMushollaLocation] = useState<SchoolLocation>({ latitude: -7.6698, longitude: 112.5432, radius: 25 });
-  const [systemUsageStartDate, setSystemUsageStartDate] = useState("");
 
   useEffect(() => {
     if (!schoolId) return;
@@ -26,7 +25,6 @@ export function useGasSettings(schoolId: string) {
     const schedulesRef = ref(rtdb, `${pathBase}/schedules`);
     const holidaysRef = ref(rtdb, `${pathBase}/holidays`);
     const locationRef = ref(rtdb, `${pathBase}/school_location`);
-    const systemUsageStartDateRef = ref(rtdb, `${pathBase}/system_usage_start_date`);
     const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
     const mushollaLocRef = ref(rtdb, `school_settings/${normalizedSchoolId}/prayer/musholla_location`);
 
@@ -70,10 +68,6 @@ export function useGasSettings(schoolId: string) {
       }
     });
 
-    const unsubSystemUsageStartDate = onValue(systemUsageStartDateRef, (snap) => {
-      setSystemUsageStartDate(String(snap.val() || "").trim());
-    });
-
     const unsubMushollaLoc = onValue(mushollaLocRef, (snap) => {
       const data = snap.val();
       if (data) {
@@ -89,7 +83,6 @@ export function useGasSettings(schoolId: string) {
       unsubSchedules();
       unsubHolidays();
       unsubLoc();
-      unsubSystemUsageStartDate();
       unsubMushollaLoc();
     };
   }, [schoolId]);
@@ -151,26 +144,16 @@ export function useGasSettings(schoolId: string) {
     });
   };
 
-  const saveSystemUsageStartDate = async (startDate: string) => {
-    await callApi({
-      action: "save-system-usage-start-date",
-      schoolId,
-      startDate,
-    });
-  };
-
   return {
     schedules,
     holidays,
     location,
     mushollaLocation,
-    systemUsageStartDate,
     saveSchedules,
     addHoliday,
     removeHoliday,
     saveLocation,
     saveMushollaLocation,
-    saveSystemUsageStartDate,
   };
 }
 

@@ -30,7 +30,6 @@ interface Props {
   setSelectedClassName: (v: string) => void;
   schedules: any[];
   holidays: any[];
-  systemUsageStartDate?: string;
 }
 
 export function AttendanceStatisticsPanel({
@@ -44,8 +43,7 @@ export function AttendanceStatisticsPanel({
   selectedClassName,
   setSelectedClassName,
   schedules,
-  holidays,
-  systemUsageStartDate
+  holidays
 }: Props) {
   const dropdownClassName =
     "px-3 py-2 rounded-md border border-slate-500/70 bg-slate-950/90 text-sm font-medium text-slate-50 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/60";
@@ -56,8 +54,8 @@ export function AttendanceStatisticsPanel({
   }, [students, selectedClassName]);
 
   const validDates = useMemo(
-    () => getValidDatesInMonth({ year: selectedYear, month: selectedMonth, schedules, holidays, startDate: systemUsageStartDate }),
-    [selectedMonth, selectedYear, schedules, holidays, systemUsageStartDate]
+    () => getValidDatesInMonth({ year: selectedYear, month: selectedMonth, schedules, holidays }),
+    [selectedMonth, selectedYear, schedules, holidays]
   );
 
   const filteredLogs = useMemo(() => {
@@ -226,12 +224,6 @@ export function AttendanceStatisticsPanel({
           </select>
         </div>
       </div>
-
-      {systemUsageStartDate && (
-        <div className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
-          Statistik hanya menghitung hari aktif mulai <span className="font-semibold">{new Date(systemUsageStartDate).toLocaleDateString("id-ID")}</span>.
-        </div>
-      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatsMiniCard title="Siswa Aktif" value={summary.totals.activeStudents} description="Siswa aktif dalam filter statistik" icon={UserCheck} accent="cyan" />

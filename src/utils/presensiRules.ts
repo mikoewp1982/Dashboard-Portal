@@ -7,16 +7,6 @@ export interface PresensiHolidayLike {
   date: string;
 }
 
-function normalizeDateInputToDateKey(value: string | null | undefined) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (match) return raw;
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return toDateKey(parsed);
-}
-
 export function normalizeText(value: unknown) {
   return String(value || "").trim().toLowerCase();
 }
@@ -71,13 +61,11 @@ export function getValidDatesInMonth(options: {
   month: number;
   schedules: PresensiScheduleLike[];
   holidays: PresensiHolidayLike[];
-  startDate?: string | null;
   today?: Date;
 }) {
-  const { year, month, schedules, holidays, startDate, today = new Date() } = options;
+  const { year, month, schedules, holidays, today = new Date() } = options;
   const daysInMonth = new Date(year, month, 0).getDate();
   const holidaySet = buildHolidaySet(holidays || []);
-  const normalizedStartDate = normalizeDateInputToDateKey(startDate);
   
   // Jika schedules kosong, kita asumsikan hari Senin (1) sampai Jumat (5) aktif (sebagai fallback default)
   const defaultSchedules = [1, 2, 3, 4, 5];
@@ -98,8 +86,6 @@ export function getValidDatesInMonth(options: {
     if (!enabledDayIds.has(date.getDay())) continue;
     // Jika libur
     if (holidaySet.has(toDateKey(date))) continue;
-    // Jika sebelum tanggal mulai penggunaan sistem
-    if (normalizedStartDate && toDateKey(date) < normalizedStartDate) continue;
     
     result.push(date);
   }

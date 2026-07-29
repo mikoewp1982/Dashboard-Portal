@@ -5,7 +5,6 @@ import { useGasSettings } from "@/hooks/gas/attendance/useGasSettings";
 import { EffectiveDaysCard } from "./settings/EffectiveDaysCard";
 import { HolidaySettingsCard } from "./settings/HolidaySettingsCard";
 import { LocationSettingsCard } from "./settings/LocationSettingsCard";
-import { SystemUsageStartCard } from "./settings/SystemUsageStartCard";
 
 interface Props {
   mode?: "school" | "prayer" | "all";
@@ -20,13 +19,11 @@ export function AttendanceSettingsPanel({ mode = "all" }: Props) {
     holidays,
     location,
     mushollaLocation,
-    systemUsageStartDate,
     saveSchedules,
     addHoliday,
     removeHoliday,
     saveLocation,
     saveMushollaLocation,
-    saveSystemUsageStartDate,
   } = useGasSettings(schoolId);
 
   return (
@@ -36,7 +33,6 @@ export function AttendanceSettingsPanel({ mode = "all" }: Props) {
           <EffectiveDaysCard schedules={schedules} saveSchedules={saveSchedules} />
         </div>
         <div className="space-y-6">
-          <SystemUsageStartCard startDate={systemUsageStartDate} saveStartDate={saveSystemUsageStartDate} />
           <HolidaySettingsCard holidays={holidays} addHoliday={addHoliday} removeHoliday={removeHoliday} />
           <LocationSettingsCard
             location={location}

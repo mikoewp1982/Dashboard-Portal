@@ -15,7 +15,7 @@ export default function GasAttendanceReportPanel({ schoolId }: GasAttendanceRepo
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
-  const { schedules, holidays, systemUsageStartDate } = useGasSettings(schoolId);
+  const { schedules, holidays } = useGasSettings(schoolId);
   const { classes, students, attendances, loading, refresh } = useGasAttendance(schoolId, selectedMonth, selectedYear);
 
   return (
@@ -53,7 +53,6 @@ export default function GasAttendanceReportPanel({ schoolId }: GasAttendanceRepo
         setSelectedYear={setSelectedYear}
         schedules={schedules} 
         holidays={holidays} 
-        systemUsageStartDate={systemUsageStartDate}
       />
     </div>
   );

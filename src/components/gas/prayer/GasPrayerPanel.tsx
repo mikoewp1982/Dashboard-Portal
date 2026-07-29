@@ -22,7 +22,7 @@ export function GasPrayerPanel({ schoolId }: Props) {
   const [selectedClassName, setSelectedClassName] = useState<string>("");
 
   const { classes, students, logs, loading, refresh } = useGasPrayerAttendance(schoolId, selectedMonth, selectedYear);
-  const { schedules, holidays, systemUsageStartDate } = useGasSettings(schoolId);
+  const { schedules, holidays } = useGasSettings(schoolId);
   const { user } = useAuthStore();
   const canViewStatistics = user?.role === "admin" || user?.role === "super_admin";
   const canManageSettings = user?.role === "admin";
@@ -117,7 +117,6 @@ export function GasPrayerPanel({ schoolId }: Props) {
             setSelectedClassName={setSelectedClassName}
             schedules={schedules}
             holidays={holidays}
-            systemUsageStartDate={systemUsageStartDate}
           />
         ) : activeTab === "statistics" ? (
           <PrayerStatisticsPanel
@@ -132,7 +131,6 @@ export function GasPrayerPanel({ schoolId }: Props) {
             setSelectedClassName={setSelectedClassName}
             schedules={schedules}
             holidays={holidays}
-            systemUsageStartDate={systemUsageStartDate}
           />
         ) : (
           <AttendanceSettingsPanel mode="prayer" />

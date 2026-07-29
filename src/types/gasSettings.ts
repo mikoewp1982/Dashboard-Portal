@@ -17,7 +17,3 @@ export interface SchoolLocation {
   longitude: number;
   radius: number;
 }
-
-export interface SystemUsageStartSetting {
-  startDate: string;
-}

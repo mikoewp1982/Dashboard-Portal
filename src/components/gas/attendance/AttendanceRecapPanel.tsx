@@ -56,7 +56,6 @@ interface Props {
   setSelectedYear: (v: number) => void;
   schedules: any[];
   holidays: any[];
-  systemUsageStartDate?: string;
 }
 
 export function AttendanceRecapPanel({
@@ -68,8 +67,7 @@ export function AttendanceRecapPanel({
   selectedYear,
   setSelectedYear,
   schedules,
-  holidays,
-  systemUsageStartDate
+  holidays
 }: Props) {
   const dropdownClassName =
     "px-3 py-2 rounded-md border border-slate-500/70 bg-slate-950/90 text-sm font-medium text-slate-50 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/60";
@@ -94,8 +92,8 @@ export function AttendanceRecapPanel({
   }, [students, searchQuery, selectedClassName]);
 
   const validDates = useMemo(
-    () => getValidDatesInMonth({ year: selectedYear, month: selectedMonth, schedules, holidays, startDate: systemUsageStartDate }),
-    [selectedMonth, selectedYear, schedules, holidays, systemUsageStartDate]
+    () => getValidDatesInMonth({ year: selectedYear, month: selectedMonth, schedules, holidays }),
+    [selectedMonth, selectedYear, schedules, holidays]
   );
 
   const validDateSet = useMemo(() => {
@@ -354,13 +352,6 @@ export function AttendanceRecapPanel({
           Cetak
         </button>
       </div>
-
-      {systemUsageStartDate && (
-        <div className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm text-sky-100 no-print">
-          Rekap sistem hanya menghitung data mulai <span className="font-semibold">{new Date(systemUsageStartDate).toLocaleDateString("id-ID")}</span>.
-          Hari sebelum tanggal ini tetap berada di luar domain aplikasi.
-        </div>
-      )}
 
       <div className="flex w-fit space-x-1 rounded-lg bg-slate-800/30 p-1 no-print border border-slate-700/60">
         <button

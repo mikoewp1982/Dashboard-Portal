@@ -16,7 +16,7 @@ export default function GasPrayerReportPanel({ schoolId }: GasPrayerReportPanelP
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedClassName, setSelectedClassName] = useState<string>("");
 
-  const { schedules, holidays, systemUsageStartDate } = useGasSettings(schoolId);
+  const { schedules, holidays } = useGasSettings(schoolId);
   const { classes, students, logs, loading, refresh } = useGasPrayerAttendance(schoolId, selectedMonth, selectedYear);
 
   return (
@@ -60,7 +60,6 @@ export default function GasPrayerReportPanel({ schoolId }: GasPrayerReportPanelP
         setSelectedClassName={setSelectedClassName}
         schedules={schedules} 
         holidays={holidays} 
-        systemUsageStartDate={systemUsageStartDate}
       />
     </div>
   );

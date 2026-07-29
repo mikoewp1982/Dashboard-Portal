@@ -22,7 +22,7 @@ export function GasAttendancePanel({ schoolId }: Props) {
   const [selectedClassName, setSelectedClassName] = useState<string>("");
 
   const { classes, students, attendances, loading, refresh } = useGasAttendance(schoolId, selectedMonth, selectedYear);
-  const { schedules, holidays, systemUsageStartDate } = useGasSettings(schoolId);
+  const { schedules, holidays } = useGasSettings(schoolId);
   
   const { user } = useAuthStore();
   const canViewStatistics = user?.role === "admin";
@@ -116,7 +116,6 @@ export function GasAttendancePanel({ schoolId }: Props) {
             setSelectedYear={setSelectedYear}
             schedules={schedules}
             holidays={holidays}
-            systemUsageStartDate={systemUsageStartDate}
           />
         ) : activeTab === "statistics" ? (
           <AttendanceStatisticsPanel
@@ -131,7 +130,6 @@ export function GasAttendancePanel({ schoolId }: Props) {
             setSelectedClassName={setSelectedClassName}
             schedules={schedules}
             holidays={holidays}
-            systemUsageStartDate={systemUsageStartDate}
           />
         ) : (
           <AttendanceSettingsPanel mode="school" />

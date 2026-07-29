@@ -61,7 +61,6 @@ interface Props {
   setSelectedClassName: (v: string) => void;
   schedules?: any[];
   holidays?: any[];
-  systemUsageStartDate?: string;
 }
 
 export function PrayerRecapPanel({
@@ -75,8 +74,7 @@ export function PrayerRecapPanel({
   selectedClassName,
   setSelectedClassName,
   schedules = [],
-  holidays = [],
-  systemUsageStartDate
+  holidays = []
 }: Props) {
   const dropdownClassName =
     "px-3 py-2 rounded-md border border-slate-500/70 bg-slate-950/90 text-sm font-medium text-slate-50 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/60";
@@ -109,9 +107,8 @@ export function PrayerRecapPanel({
       month: selectedMonth,
       schedules,
       holidays,
-      startDate: systemUsageStartDate,
     });
-  }, [selectedMonth, selectedYear, schedules, holidays, systemUsageStartDate]);
+  }, [selectedMonth, selectedYear, schedules, holidays]);
 
   const validDateSet = useMemo(() => {
     return new Set(validDates.map((date) => toDateKey(date)));
@@ -358,12 +355,6 @@ export function PrayerRecapPanel({
           </button>
         </div>
       </div>
-
-      {systemUsageStartDate && (
-        <div className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm text-sky-100 no-print">
-          Rekap sholat sistem hanya menghitung data mulai <span className="font-semibold">{new Date(systemUsageStartDate).toLocaleDateString("id-ID")}</span>.
-        </div>
-      )}
 
       <div className="flex w-fit space-x-1 rounded-lg bg-slate-800/30 p-1 no-print border border-slate-700/60">
         <button
