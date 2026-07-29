@@ -16,12 +16,14 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
   const [longitude, setLongitude] = useState("");
   const [radius, setRadius] = useState("");
   const [message, setMessage] = useState("");
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
+    if (isDirty) return;
     setLatitude(String(fallbackLocation.latitude ?? ""));
     setLongitude(String(fallbackLocation.longitude ?? ""));
     setRadius(String(fallbackLocation.radius ?? ""));
-  }, [fallbackLocation.latitude, fallbackLocation.longitude, fallbackLocation.radius]);
+  }, [fallbackLocation.latitude, fallbackLocation.longitude, fallbackLocation.radius, isDirty]);
 
   const handleSave = async () => {
     const parsedLatitude = Number(latitude);
@@ -29,15 +31,21 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
     const parsedRadius = Number(radius);
 
     if (!Number.isFinite(parsedLatitude) || parsedLatitude < -90 || parsedLatitude > 90) {
-      setMessage("Latitude harus berupa angka antara -90 dan 90.");
+      const text = "Latitude harus berupa angka antara -90 dan 90.";
+      setMessage(text);
+      window.alert(text);
       return;
     }
     if (!Number.isFinite(parsedLongitude) || parsedLongitude < -180 || parsedLongitude > 180) {
-      setMessage("Longitude harus berupa angka antara -180 dan 180.");
+      const text = "Longitude harus berupa angka antara -180 dan 180.";
+      setMessage(text);
+      window.alert(text);
       return;
     }
     if (!Number.isFinite(parsedRadius) || parsedRadius < 50 || parsedRadius > 5000) {
-      setMessage("Radius EduLock harus antara 50 dan 5.000 meter.");
+      const text = "Radius EduLock harus antara 50 dan 5.000 meter.";
+      setMessage(text);
+      window.alert(text);
       return;
     }
 
@@ -49,9 +57,14 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
           radius: parsedRadius,
         },
       });
-      setMessage("Zona EduLock berhasil disimpan dan berdiri sendiri dari lokasi absensi.");
+      setIsDirty(false);
+      const text = `Zona EduLock tersimpan. Radius sekarang ${parsedRadius} meter.`;
+      setMessage(text);
+      window.alert(text);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Gagal menyimpan zona EduLock.");
+      const text = error instanceof Error ? error.message : "Gagal menyimpan zona EduLock.";
+      setMessage(text);
+      window.alert(text);
     }
   };
 
@@ -67,9 +80,10 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
         <div className="p-6">
           <div className="mb-6 rounded-2xl border border-sky-400/20 bg-sky-500/10 px-5 py-4 text-sm text-sky-100 shadow-inner">
             Lokasi dan radius pada halaman ini khusus untuk zona EduLock. Perubahan lokasi absensi di GAS
-            tidak akan mengubah zona EduLock yang sudah disimpan.
+            tidak akan mengubah zona EduLock yang sudah disimpan. Setelah mengubah angka, wajib klik
+            tombol Simpan Zona EduLock.
           </div>
-          
+
           <div className="max-w-2xl space-y-6">
             <div>
               <label className="block text-sm font-semibold tracking-wide text-slate-300 mb-2">Koordinat Sekolah (Latitude, Longitude)</label>
@@ -81,7 +95,10 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
                     placeholder="Latitude (contoh: -6.200000)"
                     className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-white outline-none focus:border-indigo-500"
                     value={latitude}
-                    onChange={(event) => setLatitude(event.target.value)}
+                    onChange={(event) => {
+                      setIsDirty(true);
+                      setLatitude(event.target.value);
+                    }}
                     disabled={loading || saving}
                   />
                 </div>
@@ -92,7 +109,10 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
                     placeholder="Longitude (contoh: 106.816666)"
                     className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-white outline-none focus:border-indigo-500"
                     value={longitude}
-                    onChange={(event) => setLongitude(event.target.value)}
+                    onChange={(event) => {
+                      setIsDirty(true);
+                      setLongitude(event.target.value);
+                    }}
                     disabled={loading || saving}
                   />
                 </div>
@@ -110,7 +130,10 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
                 max={5000}
                 className="w-full max-w-[200px] rounded-xl border border-white/10 bg-slate-900/80 px-4 py-2.5 text-white mb-2 outline-none focus:border-indigo-500"
                 value={radius}
-                onChange={(event) => setRadius(event.target.value)}
+                onChange={(event) => {
+                  setIsDirty(true);
+                  setRadius(event.target.value);
+                }}
                 disabled={loading || saving}
               />
               <div className="text-xs text-slate-400 bg-white/5 p-2 rounded-lg border border-white/5">
@@ -128,13 +151,13 @@ export function EduLockGeofencingPanel({ schoolId }: { schoolId: string }) {
               <button
                 type="button"
                 onClick={() => void handleSave()}
-                disabled={loading || saving}
+                disabled={loading || saving || !schoolId}
                 className="inline-flex items-center rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Save className="mr-2 h-4 w-4" />
                 {saving ? "Menyimpan..." : "Simpan Zona EduLock"}
               </button>
-              {message && <div className="text-sm text-slate-200">{message}</div>}
+              {message && <div className="text-sm text-emerald-300">{message}</div>}
             </div>
           </div>
         </div>

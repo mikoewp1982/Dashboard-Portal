@@ -42,13 +42,13 @@ export function useEduLockSettings(schoolId: string) {
           gpsLockMinutes: data.gpsLockMinutes ?? 5,
           geofence:
             data.geofence &&
-            typeof data.geofence.latitude === "number" &&
-            typeof data.geofence.longitude === "number" &&
-            typeof data.geofence.radius === "number"
+            Number.isFinite(Number(data.geofence.latitude)) &&
+            Number.isFinite(Number(data.geofence.longitude)) &&
+            Number.isFinite(Number(data.geofence.radius))
               ? {
-                  latitude: data.geofence.latitude,
-                  longitude: data.geofence.longitude,
-                  radius: data.geofence.radius,
+                  latitude: Number(data.geofence.latitude),
+                  longitude: Number(data.geofence.longitude),
+                  radius: Number(data.geofence.radius),
                 }
               : null,
         });

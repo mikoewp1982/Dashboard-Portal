@@ -344,10 +344,35 @@ export async function POST(request: Request) {
         }
         settings.geofence = { latitude, longitude, radius };
       }
-      
-      const settingsRef = adminDb.ref(`edulock_settings/${schoolId}`);
-      await settingsRef.update(settings);
-      
+
+      const settingsUpdates: Record<string, unknown> = { ...settings };
+      const geofence = settings.geofence;
+      if (geofence) {
+        // Prefer multi-path writes so nested geofence never fails as a partial blob.
+        delete settingsUpdates.geofence;
+        settingsUpdates["geofence/latitude"] = geofence.latitude;
+        settingsUpdates["geofence/longitude"] = geofence.longitude;
+        settingsUpdates["geofence/radius"] = geofence.radius;
+      }
+
+      if (Object.keys(settingsUpdates).length > 0) {
+        await adminDb.ref(`edulock_settings/${schoolId}`).update(settingsUpdates);
+      }
+
+      if (geofence) {
+        const now = Date.now();
+        await adminDb.ref().update({
+          [`schools/${schoolId}/config/edulock_geofence`]: {
+            ...geofence,
+            updatedAt: now,
+          },
+          [`schools/${schoolId}/config/latitude`]: geofence.latitude,
+          [`schools/${schoolId}/config/longitude`]: geofence.longitude,
+          [`schools/${schoolId}/config/radius`]: geofence.radius,
+          [`school_settings/${schoolId}/edulock/geofence`]: geofence,
+        });
+      }
+
       const apkConfigUpdates: Record<string, any> = {};
       if (settings.is_active_protection !== undefined) {
         apkConfigUpdates.is_active_protection = settings.is_active_protection;
@@ -355,19 +380,8 @@ export async function POST(request: Request) {
       if (settings.is_holiday_mode !== undefined) {
         apkConfigUpdates.is_holiday_mode = settings.is_holiday_mode;
       }
-      if (settings.geofence !== undefined) {
-        apkConfigUpdates.edulock_geofence = {
-          ...settings.geofence,
-          updatedAt: Date.now(),
-        };
-        // Keep the established APK listener contract while the dedicated
-        // nested config becomes the authoritative source for newer builds.
-        apkConfigUpdates.latitude = settings.geofence.latitude;
-        apkConfigUpdates.longitude = settings.geofence.longitude;
-        apkConfigUpdates.radius = settings.geofence.radius;
-      }
-      
-          if (Object.keys(apkConfigUpdates).length > 0) {
+
+      if (Object.keys(apkConfigUpdates).length > 0) {
         await adminDb.ref(`schools/${schoolId}/config`).update(apkConfigUpdates);
       }
 
