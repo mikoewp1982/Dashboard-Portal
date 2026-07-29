@@ -1,4 +1,4 @@
-export const dynamic = 'force-static';
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
