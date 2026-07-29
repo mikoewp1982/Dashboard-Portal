@@ -3,11 +3,16 @@
 import { useEffect, useState } from "react";
 import { ref, onValue, off } from "firebase/database";
 import { rtdb } from "@/lib/firebase/client";
+import { callAdminApi } from "@/lib/callAdminApi";
 
 export type EduLockActiveSession = {
   nisn: string;
   name?: string;
   class?: string;
+  activationSource?: string;
+  activationLabel?: string;
+  sessionStart?: string;
+  sessionEnd?: string;
   startTime?: number;
   endTime?: number;
   duration?: number;
@@ -53,15 +58,11 @@ export function useEduLockActiveSessions(schoolId: string) {
   const revokeSession = async (nisn: string) => {
     setRevoking(true);
     try {
-      const res = await fetch("/api/admin/edulock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revoke-student-permission", schoolId, nisn }),
+      await callAdminApi("/api/admin/edulock", "POST", {
+        action: "revoke-student-permission",
+        schoolId,
+        nisn,
       });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.error || "Gagal mencabut izin.");
-      }
     } finally {
       setRevoking(false);
     }
@@ -70,15 +71,10 @@ export function useEduLockActiveSessions(schoolId: string) {
   const revokeAllSessions = async () => {
     setRevoking(true);
     try {
-      const res = await fetch("/api/admin/edulock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revoke-all-permissions", schoolId }),
+      await callAdminApi("/api/admin/edulock", "POST", {
+        action: "revoke-all-permissions",
+        schoolId,
       });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.error || "Gagal mencabut seluruh izin.");
-      }
     } finally {
       setRevoking(false);
     }

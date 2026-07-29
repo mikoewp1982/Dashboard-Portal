@@ -107,6 +107,7 @@ class MonitoringService : Service() {
         super.onCreate()
         prefsManager = PreferencesManager(this)
         permissionManager = PermissionManager(this)
+        prefsManager.nisn.takeIf { it.isNotEmpty() }?.let { permissionManager.resumeSession(it) }
         offlineMonitor = OfflineMonitor(this, prefsManager)
         locationMonitor = LocationMonitor(this, prefsManager)
         trustScoreManager = TrustScoreManager(this, prefsManager)
@@ -148,6 +149,8 @@ class MonitoringService : Service() {
         if (intent?.action == "com.sekolah.edulock.ACTION_UI_FOREGROUND") {
             hideOverlayLock()
         }
+
+        prefsManager.nisn.takeIf { it.isNotEmpty() }?.let { permissionManager.resumeSession(it) }
 
         // Pastikan listener berjalan, terutama jika service di-restart atau baru login
         startUninstallAuthorizationListener()

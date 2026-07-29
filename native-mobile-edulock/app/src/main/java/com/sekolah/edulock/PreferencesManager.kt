@@ -66,6 +66,8 @@ class PreferencesManager(context: Context) {
         private const val KEY_APP_SWITCH_TIMESTAMP = "app_switch_timestamp"
         private const val KEY_LOCKTASK_COOLDOWN_UNTIL = "locktask_cooldown_until"
         private const val KEY_LOCKTASK_LAST_ATTEMPT_AT = "locktask_last_attempt_at"
+        private const val KEY_FORCE_UPDATE_REQUIRED = "force_update_required"
+        private const val KEY_FORCE_UPDATE_MESSAGE = "force_update_message"
         private const val KEY_DAILY_ATTENDANCE_DATE_KEY = "daily_attendance_date_key"
         private const val KEY_DAILY_ATTENDANCE_STATUS = "daily_attendance_status"
         private const val KEY_LAST_GEOFENCE_TRANSITION = "last_geofence_transition"
@@ -73,6 +75,14 @@ class PreferencesManager(context: Context) {
         private const val KEY_IS_PET_DEAD = "is_pet_dead"
         private const val KEY_LAST_PET_DEAD_ACK_AT = "last_pet_dead_ack_at"
     }
+
+    var isForceUpdateRequired: Boolean
+        get() = prefs.getBoolean(KEY_FORCE_UPDATE_REQUIRED, false)
+        set(value) = prefs.edit().putBoolean(KEY_FORCE_UPDATE_REQUIRED, value).apply()
+
+    var forceUpdateMessage: String
+        get() = prefs.getString(KEY_FORCE_UPDATE_MESSAGE, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_FORCE_UPDATE_MESSAGE, value).apply()
 
     var isPetDead: Boolean
         get() = prefs.getBoolean(KEY_IS_PET_DEAD, false)

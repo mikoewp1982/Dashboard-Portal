@@ -867,13 +867,13 @@ class MainActivity : AppCompatActivity() {
         // 3. Cek Battery Optimization (Wajib agar tidak sleep kill)
         checkAndEnforceBatteryOptimization()
 
-        // 4. Resume session monitoring if active
+        // 4. Resume session monitoring from server state
         val isSchoolTime = scheduleManager.isSchoolTime()
+        val nisn = prefsManager.nisn
+        if (nisn.isNotEmpty()) {
+            permissionManager.resumeSession(nisn)
+        }
         if (prefsManager.isHolidayMode || !prefsManager.isProtectionActive || permissionManager.isPermissionActive() || !isSchoolTime) {
-            val nisn = prefsManager.nisn
-            if (nisn.isNotEmpty() && permissionManager.isPermissionActive()) {
-                permissionManager.resumeSession(nisn)
-            }
             stopKioskMode()
         }
         

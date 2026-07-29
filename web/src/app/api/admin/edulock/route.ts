@@ -4,7 +4,7 @@ import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 import { dispatchMasterSwitchCommand } from "@/lib/admin/edulockMasterSwitch";
 
-type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "authorize-uninstall" | "authorize-uninstall-mass" | "toggle-uninstall" | "toggle-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions";
+type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "grant-class-permission" | "revoke-class-permission" | "authorize-uninstall" | "authorize-uninstall-mass" | "toggle-uninstall" | "toggle-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions";
 
 type EduLockRequestBody = {
   action?: EduLockAction;
@@ -58,6 +58,83 @@ type LatestMasterSwitchCommandSnapshot = {
 };
 
 const ONLINE_WINDOW_MS = 15 * 60 * 1000;
+
+function parseClockTime(rawValue: string) {
+  const value = String(rawValue || "").trim();
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  return {
+    hour,
+    minute,
+    totalMinutes: hour * 60 + minute,
+    normalized: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+  };
+}
+
+function getDateWithMinutes(baseDate: Date, dayOffset: number, totalMinutes: number) {
+  const result = new Date(baseDate);
+  result.setHours(0, 0, 0, 0);
+  result.setDate(result.getDate() + dayOffset);
+  result.setMinutes(totalMinutes);
+  return result;
+}
+
+function normalizeClassName(value: unknown) {
+  return String(value || "").trim();
+}
+
+function resolveAccessCodeWindow(sessionStartRaw: string, sessionEndRaw: string, now = new Date()) {
+  const sessionStart = parseClockTime(sessionStartRaw);
+  const sessionEnd = parseClockTime(sessionEndRaw);
+  if (!sessionStart || !sessionEnd) return null;
+
+  if (sessionEnd.totalMinutes === sessionStart.totalMinutes) return null;
+
+  const crossesMidnight = sessionEnd.totalMinutes < sessionStart.totalMinutes;
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const totalDurationMinutes = crossesMidnight
+    ? (24 * 60 - sessionStart.totalMinutes) + sessionEnd.totalMinutes
+    : sessionEnd.totalMinutes - sessionStart.totalMinutes;
+
+  if (totalDurationMinutes <= 0) return null;
+
+  if (!crossesMidnight) {
+    const useTomorrow = currentMinutes > sessionEnd.totalMinutes;
+    const dayOffset = useTomorrow ? 1 : 0;
+    return {
+      sessionStart: sessionStart.normalized,
+      sessionEnd: sessionEnd.normalized,
+      duration: totalDurationMinutes,
+      windowStartAt: getDateWithMinutes(now, dayOffset, sessionStart.totalMinutes).getTime(),
+      windowEndAt: getDateWithMinutes(now, dayOffset, sessionEnd.totalMinutes).getTime(),
+    };
+  }
+
+  if (currentMinutes < sessionEnd.totalMinutes) {
+    return {
+      sessionStart: sessionStart.normalized,
+      sessionEnd: sessionEnd.normalized,
+      duration: totalDurationMinutes,
+      windowStartAt: getDateWithMinutes(now, -1, sessionStart.totalMinutes).getTime(),
+      windowEndAt: getDateWithMinutes(now, 0, sessionEnd.totalMinutes).getTime(),
+    };
+  }
+
+  return {
+    sessionStart: sessionStart.normalized,
+    sessionEnd: sessionEnd.normalized,
+    duration: totalDurationMinutes,
+    windowStartAt: getDateWithMinutes(now, 0, sessionStart.totalMinutes).getTime(),
+    windowEndAt: getDateWithMinutes(now, 1, sessionEnd.totalMinutes).getTime(),
+  };
+}
 
 function readString(record: Record<string, unknown>, ...keys: string[]) {
   for (const key of keys) {
@@ -414,16 +491,20 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "generate-access-code") {
-      const { sessionStart, sessionEnd, duration, codeValidityMinutes, label } = body as any;
+      const { sessionStart, sessionEnd, label } = body as any;
+      const resolvedWindow = resolveAccessCodeWindow(String(sessionStart || "07:00"), String(sessionEnd || "14:00"));
+      if (!resolvedWindow) {
+        return NextResponse.json({ success: false, error: "Jam mulai atau jam akhir kode EduLock tidak valid" }, { status: 400 });
+      }
+
       const code = "EDULOCK-" + Math.floor(1000 + Math.random() * 9000);
-      const validityMs = (typeof codeValidityMinutes === "number" && codeValidityMinutes > 0 ? codeValidityMinutes : 30) * 60 * 1000;
-      const expiresAt = Date.now() + validityMs;
       
       const newCode = {
-        sessionStart: sessionStart || "07:00",
-        sessionEnd: sessionEnd || "14:00",
-        duration: duration || 0,
-        expiresAt,
+        sessionStart: resolvedWindow.sessionStart,
+        sessionEnd: resolvedWindow.sessionEnd,
+        duration: resolvedWindow.duration,
+        expiresAt: resolvedWindow.windowEndAt,
+        validFrom: resolvedWindow.windowStartAt,
         schoolId: schoolId,
         label: String(label || "").trim(),
       };
@@ -468,6 +549,108 @@ export async function POST(request: Request) {
         }
       }
       return NextResponse.json({ success: true, message: "Kode expired berhasil dibersihkan." });
+    }
+
+    if (body.action === "grant-class-permission") {
+      const selectedClassName = normalizeClassName((body as any).className);
+      const sessionStart = String((body as any).sessionStart || "07:00");
+      const sessionEnd = String((body as any).sessionEnd || "14:00");
+      if (!selectedClassName) {
+        return NextResponse.json({ success: false, error: "Kelas wajib dipilih" }, { status: 400 });
+      }
+
+      const resolvedWindow = resolveAccessCodeWindow(sessionStart, sessionEnd);
+      if (!resolvedWindow) {
+        return NextResponse.json({ success: false, error: "Jam mulai atau jam akhir izin kelas tidak valid" }, { status: 400 });
+      }
+
+      const studentsSnap = await adminDb.ref(`gas/schools/${schoolId}/students`).get();
+      const studentsValue = studentsSnap.val() as Record<string, Record<string, unknown>> | null;
+      const matchedStudents = Object.entries(studentsValue || {})
+        .map(([id, value]) => ({ id, ...(value || {}) }))
+        .filter((student) => normalizeClassName(readString(student as Record<string, unknown>, "kelas", "class", "className")) === selectedClassName)
+        .map((student) => ({
+          id: String(student.id || "").trim(),
+          nisn: readString(student as Record<string, unknown>, "nisn"),
+          name: readString(student as Record<string, unknown>, "name", "nama", "studentName"),
+          className: normalizeClassName(readString(student as Record<string, unknown>, "kelas", "class", "className")),
+          deviceId: readString(student as Record<string, unknown>, "deviceId", "device", "device_uuid"),
+        }))
+        .filter((student) => student.nisn);
+
+      if (matchedStudents.length === 0) {
+        return NextResponse.json({ success: false, error: `Tidak ada siswa ditemukan di kelas ${selectedClassName}` }, { status: 404 });
+      }
+
+      const updates: Record<string, unknown> = {};
+      const requestedAt = Date.now();
+      const requestedBy = String(decodedToken.email || decodedToken.uid || "").trim();
+
+      matchedStudents.forEach((student) => {
+        const sessionData = {
+          nisn: student.nisn,
+          name: student.name || student.nisn,
+          class: student.className,
+          schoolId,
+          startTime: resolvedWindow.windowStartAt,
+          endTime: resolvedWindow.windowEndAt,
+          duration: resolvedWindow.duration,
+          sessionStart: resolvedWindow.sessionStart,
+          sessionEnd: resolvedWindow.sessionEnd,
+          deviceId: student.deviceId || "",
+          activationSource: "admin-class",
+          activationLabel: selectedClassName,
+          requestedAt,
+          requestedBy,
+        };
+
+        updates[`active_sessions/${student.nisn}`] = sessionData;
+        updates[`active_sessions_by_school/${schoolId}/${student.nisn}`] = sessionData;
+      });
+
+      await adminDb.ref().update(updates);
+
+      return NextResponse.json({
+        success: true,
+        message: `Izin penggunaan HP untuk kelas ${selectedClassName} berhasil diaktifkan.`,
+        affectedStudents: matchedStudents.length,
+      });
+    }
+
+    if (body.action === "revoke-class-permission") {
+      const selectedClassName = normalizeClassName((body as any).className);
+      if (!selectedClassName) {
+        return NextResponse.json({ success: false, error: "Kelas wajib dipilih" }, { status: 400 });
+      }
+
+      const sessionsSnap = await adminDb.ref(`active_sessions_by_school/${schoolId}`).get();
+      const sessionsValue = sessionsSnap.val() as Record<string, Record<string, unknown>> | null;
+      const matchedNisns = Object.entries(sessionsValue || {})
+        .filter(([, value]) => normalizeClassName(readString(value || {}, "class", "className", "activationLabel")) === selectedClassName)
+        .map(([nisn]) => nisn)
+        .filter(Boolean);
+
+      if (matchedNisns.length === 0) {
+        return NextResponse.json({
+          success: true,
+          message: `Tidak ada izin aktif yang perlu dicabut untuk kelas ${selectedClassName}.`,
+          affectedStudents: 0,
+        });
+      }
+
+      const updates: Record<string, null> = {};
+      matchedNisns.forEach((nisn) => {
+        updates[`active_sessions/${nisn}`] = null;
+        updates[`active_sessions_by_school/${schoolId}/${nisn}`] = null;
+      });
+
+      await adminDb.ref().update(updates);
+
+      return NextResponse.json({
+        success: true,
+        message: `Izin penggunaan HP untuk kelas ${selectedClassName} berhasil dicabut.`,
+        affectedStudents: matchedNisns.length,
+      });
     }
 
     if (body.action === "reset-student-device") {

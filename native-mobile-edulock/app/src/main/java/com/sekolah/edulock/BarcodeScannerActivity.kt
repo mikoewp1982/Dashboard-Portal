@@ -83,7 +83,9 @@ class BarcodeScannerActivity : AppCompatActivity() {
         Toast.makeText(this, "Memvalidasi kode...", Toast.LENGTH_SHORT).show()
 
         // Validate dengan PermissionManager (Firebase)
-        permissionManager.validateCode(code) { duration ->
+        permissionManager.validateCode(code) { validation ->
+            val duration = validation.durationMinutes
+
             if (duration != null) {
                 // Kode valid
                 permissionManager.grantPermission(code, duration)
@@ -113,10 +115,9 @@ class BarcodeScannerActivity : AppCompatActivity() {
                 finish()
 
             } else {
-                // Kode invalid atau expired
                 Toast.makeText(
                     this,
-                    "❌ QR Code tidak valid atau sudah kedaluwarsa!\nSilakan scan QR code terbaru dari guru.",
+                    "❌ ${validation.errorMessage ?: "QR Code tidak valid atau sudah kedaluwarsa!\nSilakan scan QR code terbaru dari guru."}",
                     Toast.LENGTH_LONG
                 ).show()
 
@@ -125,7 +126,7 @@ class BarcodeScannerActivity : AppCompatActivity() {
                 permissionManager.logViolation(
                     nisn,
                     "INVALID_PERMISSION_CODE",
-                    "Mencoba scan QR code tidak valid: $code"
+                    "Mencoba scan QR code tidak valid: $code | alasan: ${validation.errorMessage ?: "tidak diketahui"}"
                 )
 
                 // Resume scanning

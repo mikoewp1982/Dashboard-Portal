@@ -69,7 +69,9 @@ class PermissionCodeActivity : AppCompatActivity() {
         btnSubmitCode.text = "Memvalidasi..."
 
         // Validate code dari Firebase
-        permissionManager.validateCode(code) { duration ->
+        permissionManager.validateCode(code) { validation ->
+            val duration = validation.durationMinutes
+
             if (duration != null) {
                 // Kode valid
                 permissionManager.grantPermission(code, duration)
@@ -99,10 +101,9 @@ class PermissionCodeActivity : AppCompatActivity() {
                 finish()
 
             } else {
-                // Kode invalid atau expired
                 Toast.makeText(
                     this,
-                    "❌ Kode tidak valid atau sudah kedaluwarsa!\nMinta kode baru dari guru.",
+                    "❌ ${validation.errorMessage ?: "Kode tidak valid atau sudah kedaluwarsa!\nMinta kode baru dari guru."}",
                     Toast.LENGTH_LONG
                 ).show()
 
@@ -111,7 +112,7 @@ class PermissionCodeActivity : AppCompatActivity() {
                 permissionManager.logViolation(
                     nisn,
                     "INVALID_PERMISSION_CODE",
-                    "Mencoba input kode tidak valid: $code"
+                    "Mencoba input kode tidak valid: $code | alasan: ${validation.errorMessage ?: "tidak diketahui"}"
                 )
 
                 // Re-enable button & clear input

@@ -2,6 +2,9 @@ package com.sekolah.edulock
 
 import android.content.Context
 import android.content.SharedPreferences
+import java.util.Calendar
+import kotlin.math.abs
+import kotlin.math.ceil
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -20,6 +23,8 @@ class PermissionManager(private val context: Context) {
 
     private var revocationListener: ValueEventListener? = null
     private var currentNisn: String? = null
+    private var remoteActivationHandler: android.os.Handler? = null
+    private var remoteActivationRunnable: Runnable? = null
 
     companion object {
         private const val KEY_PERMISSION_GRANTED = "permission_granted"
@@ -28,11 +33,47 @@ class PermissionManager(private val context: Context) {
         private const val KEY_PERMISSION_CODE_USED = "permission_code_used"
     }
 
+    data class CodeValidationResult(
+        val durationMinutes: Int? = null,
+        val errorMessage: String? = null
+    )
+
+    private fun parseTimeToMinutes(rawValue: String?): Int? {
+        val value = rawValue?.trim().orEmpty()
+        if (value.isEmpty()) return null
+
+        val parts = value.split(":")
+        if (parts.size != 2) return null
+
+        val hour = parts[0].toIntOrNull() ?: return null
+        val minute = parts[1].toIntOrNull() ?: return null
+
+        if (hour !in 0..23 || minute !in 0..59) return null
+
+        return (hour * 60) + minute
+    }
+
+    private fun calculateRemainingSessionMinutes(currentMinutes: Int, startMinutes: Int, endMinutes: Int): Int? {
+        return if (endMinutes >= startMinutes) {
+            if (currentMinutes < startMinutes || currentMinutes >= endMinutes) {
+                null
+            } else {
+                endMinutes - currentMinutes
+            }
+        } else {
+            when {
+                currentMinutes >= startMinutes -> (24 * 60 - currentMinutes) + endMinutes
+                currentMinutes < endMinutes -> endMinutes - currentMinutes
+                else -> null
+            }
+        }
+    }
+
     /**
      * Validasi kode dari Firebase (Dynamic Code)
      * Kode hanya valid jika ada di Firebase dan belum expired
      */
-    fun validateCode(code: String, callback: (Int?) -> Unit) {
+    fun validateCode(code: String, callback: (CodeValidationResult) -> Unit) {
         activeCodesRef.child(code.uppercase().trim()).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
@@ -44,28 +85,61 @@ class PermissionManager(private val context: Context) {
                         .orEmpty()
                     val expiresAt = snapshot.child("expiresAt").getValue(Long::class.java) ?: 0
                     val duration = snapshot.child("duration").getValue(Int::class.java) ?: 0
+                    val sessionStart = snapshot.child("sessionStart").getValue(String::class.java)
+                    val sessionEnd = snapshot.child("sessionEnd").getValue(String::class.java)
                     val currentTime = System.currentTimeMillis()
+                    val now = Calendar.getInstance()
+                    val currentMinutes = (now.get(Calendar.HOUR_OF_DAY) * 60) + now.get(Calendar.MINUTE)
+                    val startMinutes = parseTimeToMinutes(sessionStart)
+                    val endMinutes = parseTimeToMinutes(sessionEnd)
 
                     if (codeSchoolId.isNotEmpty() && localSchoolId.isNotEmpty() && codeSchoolId != localSchoolId) {
-                        callback(null)
+                        callback(CodeValidationResult(errorMessage = "Kode izin bukan untuk sekolah ini."))
                         return
                     }
 
-                    // Check if code is still valid (not expired)
-                    if (currentTime < expiresAt && duration > 0) {
-                        callback(duration)
-                    } else {
-                        // Code expired
-                        callback(null)
+                    if (currentTime >= expiresAt) {
+                        callback(CodeValidationResult(errorMessage = "Kode izin sudah kedaluwarsa. Minta kode baru dari guru."))
+                        return
                     }
+
+                    if (duration <= 0) {
+                        callback(CodeValidationResult(errorMessage = "Durasi izin pada kode tidak valid."))
+                        return
+                    }
+
+                    if (startMinutes != null && endMinutes != null) {
+                        val remainingSessionMinutes = calculateRemainingSessionMinutes(
+                            currentMinutes = currentMinutes,
+                            startMinutes = startMinutes,
+                            endMinutes = endMinutes
+                        )
+
+                        if (remainingSessionMinutes == null || remainingSessionMinutes <= 0) {
+                            callback(
+                                CodeValidationResult(
+                                    errorMessage = "Kode izin hanya bisa dipakai pukul ${sessionStart ?: "-"} - ${sessionEnd ?: "-"}."
+                                )
+                            )
+                            return
+                        }
+
+                        callback(
+                            CodeValidationResult(
+                                durationMinutes = minOf(duration, remainingSessionMinutes)
+                            )
+                        )
+                        return
+                    }
+
+                    callback(CodeValidationResult(durationMinutes = duration))
                 } else {
-                    // Code not found
-                    callback(null)
+                    callback(CodeValidationResult(errorMessage = "Kode izin tidak ditemukan."))
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                callback(null)
+                callback(CodeValidationResult(errorMessage = "Gagal memvalidasi kode izin."))
             }
         })
     }
@@ -106,12 +180,7 @@ class PermissionManager(private val context: Context) {
      * Menghapus siswa dari Dashboard Guru
      */
     fun endSession(nisn: String) {
-        activeSessionsRef.child(nisn).removeValue()
-        val schoolId = PreferencesManager(context).schoolId.trim().lowercase()
-        if (schoolId.isNotEmpty()) {
-            activeSessionsBySchoolRef.child(schoolId).child(nisn).removeValue()
-        }
-        stopListeningForRevocation()
+        clearRemoteSessionRecord(nisn)
     }
 
     /**
@@ -155,7 +224,7 @@ class PermissionManager(private val context: Context) {
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                checkSessionExistence(snapshot.exists(), "Realtime")
+                handleSessionSnapshot(nisn, snapshot, "Realtime")
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -183,10 +252,7 @@ class PermissionManager(private val context: Context) {
 
                 // Cek manual ke database
                 activeSessionsRef.child(nisn).get().addOnSuccessListener { snapshot ->
-                    // Debug Toast hasil
-                    // android.widget.Toast.makeText(context, "Status di server: ${if (snapshot.exists()) "Masih Aktif" else "DIBATALKAN"}", android.widget.Toast.LENGTH_SHORT).show()
-                    
-                    checkSessionExistence(snapshot.exists(), "Polling")
+                    handleSessionSnapshot(nisn, snapshot, "Polling")
                 }.addOnFailureListener {
                     // Ignore error silently in production
                 }
@@ -204,27 +270,110 @@ class PermissionManager(private val context: Context) {
         pollingRunnable = null
     }
 
-    private fun checkSessionExistence(exists: Boolean, source: String) {
-        if (!exists) {
+    private fun clearRemoteSessionRecord(nisn: String) {
+        activeSessionsRef.child(nisn).removeValue()
+        val schoolId = PreferencesManager(context).schoolId.trim().lowercase()
+        if (schoolId.isNotEmpty()) {
+            activeSessionsBySchoolRef.child(schoolId).child(nisn).removeValue()
+        }
+    }
+
+    private fun cancelScheduledRemoteActivation() {
+        remoteActivationRunnable?.let { runnable ->
+            remoteActivationHandler?.removeCallbacks(runnable)
+        }
+        remoteActivationRunnable = null
+        remoteActivationHandler = null
+    }
+
+    private fun scheduleRemoteActivationCheck(nisn: String, delayMs: Long) {
+        cancelScheduledRemoteActivation()
+
+        if (delayMs <= 0L) return
+
+        val safeDelay = delayMs.coerceAtMost(12 * 60 * 60 * 1000L)
+        remoteActivationHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        remoteActivationRunnable = Runnable {
+            activeSessionsRef.child(nisn).get().addOnSuccessListener { snapshot ->
+                handleSessionSnapshot(nisn, snapshot, "Scheduled")
+            }
+        }
+        remoteActivationHandler?.postDelayed(remoteActivationRunnable!!, safeDelay)
+    }
+
+    private fun getLocalPermissionEndTime(): Long {
+        if (!prefs.getBoolean(KEY_PERMISSION_GRANTED, false)) {
+            return 0L
+        }
+
+        val startTime = prefs.getLong(KEY_PERMISSION_START_TIME, 0L)
+        val duration = prefs.getInt(KEY_PERMISSION_DURATION, 0)
+        return startTime + (duration * 60 * 1000L)
+    }
+
+    private fun buildRemotePermissionLabel(snapshot: DataSnapshot): String {
+        val activationSource = snapshot.child("activationSource").getValue(String::class.java)?.trim().orEmpty()
+        val activationLabel = snapshot.child("activationLabel").getValue(String::class.java)?.trim().orEmpty()
+        return if (activationSource == "admin-class" && activationLabel.isNotEmpty()) {
+            "ADMIN-KELAS-$activationLabel"
+        } else {
+            snapshot.child("code").getValue(String::class.java)?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: "REMOTE-SESSION"
+        }
+    }
+
+    private fun handleSessionSnapshot(nisn: String, snapshot: DataSnapshot, source: String) {
+        val isGranted = prefs.getBoolean(KEY_PERMISSION_GRANTED, false)
+
+        if (!snapshot.exists()) {
+            cancelScheduledRemoteActivation()
             android.util.Log.d("PermissionManager", "Session missing detected via $source")
-            
-            // Cek apakah permission aktif di preferences
-            val isGranted = prefs.getBoolean(KEY_PERMISSION_GRANTED, false)
             
             if (isGranted) {
                 val handler = android.os.Handler(android.os.Looper.getMainLooper())
                 handler.post {
-                     // Double check inside main thread
-                     if (prefs.getBoolean(KEY_PERMISSION_GRANTED, false)) {
-                         revokePermission()
-                         android.widget.Toast.makeText(context.applicationContext, "Izin dicabut oleh Guru!", android.widget.Toast.LENGTH_LONG).show()
-                     }
+                    if (prefs.getBoolean(KEY_PERMISSION_GRANTED, false)) {
+                        revokePermission(removeRemoteSession = false, keepListening = true)
+                        android.widget.Toast.makeText(context.applicationContext, "Izin dicabut oleh Guru!", android.widget.Toast.LENGTH_LONG).show()
+                    }
                 }
             }
+            return
+        }
+
+        val startTime = snapshot.child("startTime").getValue(Long::class.java) ?: 0L
+        val endTime = snapshot.child("endTime").getValue(Long::class.java) ?: 0L
+        val duration = snapshot.child("duration").getValue(Int::class.java) ?: 0
+        val now = System.currentTimeMillis()
+
+        if (startTime > now) {
+            scheduleRemoteActivationCheck(nisn, startTime - now)
+            return
+        }
+
+        cancelScheduledRemoteActivation()
+
+        val remainingMinutes = when {
+            endTime > now -> maxOf(1, ceil((endTime - now).toDouble() / 60000.0).toInt())
+            duration > 0 -> duration
+            else -> 0
+        }
+
+        if (remainingMinutes <= 0) {
+            revokePermission(removeRemoteSession = true, keepListening = true, showReturnToMain = isGranted)
+            return
+        }
+
+        val localEndTime = getLocalPermissionEndTime()
+        if (!isGranted || abs(localEndTime - endTime) > 60_000L) {
+            grantPermission(buildRemotePermissionLabel(snapshot), remainingMinutes)
+            startPolling(nisn)
         }
     }
 
     private fun stopListeningForRevocation() {
+        cancelScheduledRemoteActivation()
         currentNisn?.let { nisn ->
             revocationListener?.let { listener ->
                 activeSessionsRef.child(nisn).removeEventListener(listener)
@@ -260,6 +409,8 @@ class PermissionManager(private val context: Context) {
             context.sendBroadcast(intent)
         } catch (_: Exception) {
         }
+
+        currentNisn?.let { startPolling(it) }
     }
 
     /**
@@ -278,7 +429,7 @@ class PermissionManager(private val context: Context) {
 
         // Jika sudah lewat durasi, revoke permission
         if (elapsedMinutes >= duration) {
-            revokePermission()
+            revokePermission(removeRemoteSession = true, keepListening = true)
             return false
         }
 
@@ -316,13 +467,12 @@ class PermissionManager(private val context: Context) {
     /**
      * Revoke permission
      */
-    fun revokePermission() {
-        // Remove from Firebase active sessions
-        val prefsManager = PreferencesManager(context)
-        val nisn = prefsManager.nisn
-        if (nisn.isNotEmpty()) {
-            endSession(nisn)
-        }
+    fun revokePermission(
+        removeRemoteSession: Boolean = true,
+        keepListening: Boolean = false,
+        showReturnToMain: Boolean = true
+    ) {
+        val wasGranted = prefs.getBoolean(KEY_PERMISSION_GRANTED, false)
 
         prefs.edit().apply {
             putBoolean(KEY_PERMISSION_GRANTED, false)
@@ -332,13 +482,25 @@ class PermissionManager(private val context: Context) {
             apply()
         }
 
+        val prefsManager = PreferencesManager(context)
+        val nisn = prefsManager.nisn
+        if (removeRemoteSession && nisn.isNotEmpty()) {
+            clearRemoteSessionRecord(nisn)
+        }
+
+        if (!keepListening) {
+            stopListeningForRevocation()
+        }
+
         // Force user back to MainActivity (Lock Screen)
-        try {
-            val intent = android.content.Intent(context, MainActivity::class.java)
-            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            android.util.Log.e("PermissionManager", "Failed to launch MainActivity: ${e.message}")
+        if (showReturnToMain && wasGranted) {
+            try {
+                val intent = android.content.Intent(context, MainActivity::class.java)
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                android.util.Log.e("PermissionManager", "Failed to launch MainActivity: ${e.message}")
+            }
         }
     }
 
