@@ -17,7 +17,12 @@ export interface EduLockSettings {
   geofence: EduLockGeofence | null;
 }
 
+function normalizeSchoolId(value: string) {
+  return String(value || "").trim().toLowerCase().replace(/[\s\-]+/g, "_");
+}
+
 export function useEduLockSettings(schoolId: string) {
+  const normalizedSchoolId = normalizeSchoolId(schoolId);
   const [settings, setSettings] = useState<EduLockSettings>({
     is_active_protection: false,
     is_holiday_mode: false,
@@ -29,8 +34,11 @@ export function useEduLockSettings(schoolId: string) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!schoolId) return;
-    const settingsRef = ref(rtdb, `edulock_settings/${schoolId}`);
+    if (!normalizedSchoolId) {
+      setLoading(false);
+      return;
+    }
+    const settingsRef = ref(rtdb, `edulock_settings/${normalizedSchoolId}`);
 
     const unsub = onValue(settingsRef, (snap) => {
       const data = snap.val();
@@ -57,14 +65,14 @@ export function useEduLockSettings(schoolId: string) {
     });
 
     return () => unsub();
-  }, [schoolId]);
+  }, [normalizedSchoolId]);
 
   const saveSettings = async (newSettings: Partial<EduLockSettings>) => {
     setSaving(true);
     try {
       await callAdminApi("/api/admin/edulock", "POST", {
         action: "save-settings",
-        schoolId,
+        schoolId: normalizedSchoolId,
         settings: newSettings,
       });
       // Optimistic update
