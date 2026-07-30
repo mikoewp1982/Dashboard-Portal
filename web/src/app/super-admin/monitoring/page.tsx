@@ -33,7 +33,7 @@ export default function SuperAdminMonitoringPage() {
 
   const activeUserRows = useMemo(() => {
     const adminRows = schools
-      .filter((row) => Boolean(row.authEmail || row.adminEmail))
+      .filter((row) => Boolean(row.npsn || row.authEmail || row.adminEmail))
       .map((row) => ({
         id: `admin-${row.schoolId}`,
         name: row.name || row.schoolId,

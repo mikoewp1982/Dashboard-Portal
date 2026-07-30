@@ -370,7 +370,7 @@ export default function StandaloneDatabasePage() {
                                 </span>
                               </td>
                               <td className="px-5 py-4">
-                                {s.authEmail && s.adminAccessActive ? (
+                                {((s.npsn || s.authEmail || s.adminEmail) && s.adminAccessActive) ? (
                                   <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
                                     Login Siap
                                   </span>
@@ -379,8 +379,8 @@ export default function StandaloneDatabasePage() {
                                     Login Belum Siap
                                   </span>
                                 )}
-                                <span className={`ml-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${s.isActive && s.authEmail ? "bg-cyan-500/10 text-cyan-200 ring-cyan-500/30" : "bg-slate-800 text-slate-300 ring-slate-600"}`}>
-                                  {s.isActive && s.authEmail ? "Live" : "Belum Live"}
+                                <span className={`ml-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${s.isActive && (s.npsn || s.authEmail || s.adminEmail) ? "bg-cyan-500/10 text-cyan-200 ring-cyan-500/30" : "bg-slate-800 text-slate-300 ring-slate-600"}`}>
+                                  {s.isActive && (s.npsn || s.authEmail || s.adminEmail) ? "Live" : "Belum Live"}
                                 </span>
                               </td>
                               <td className="px-5 py-4 space-y-1.5">

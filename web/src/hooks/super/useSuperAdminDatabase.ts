@@ -38,6 +38,13 @@ export type SecurityLog = {
   activity: string;
 };
 
+type RuntimeAdminRow = {
+  uid: string;
+  schoolId: string;
+  email: string;
+  lastLoginAt: number | null;
+};
+
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
@@ -79,6 +86,15 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
   });
 
   const [securityLogs, setSecurityLogs] = useState<SecurityLog[]>([]);
+  const [runtimeAdminBySchool, setRuntimeAdminBySchool] = useState<Record<string, RuntimeAdminRow>>({});
+
+  const hasAdminLoginChannel = (school: Pick<SuperSchoolRow, "npsn" | "authEmail" | "adminEmail">, runtime?: RuntimeAdminRow | null) =>
+    Boolean(
+      String(school.npsn || "").trim() ||
+      String(school.authEmail || "").trim() ||
+      String(school.adminEmail || "").trim() ||
+      String(runtime?.email || "").trim()
+    );
 
   const [adminSchoolForm, setAdminSchoolForm] = useState({
     schoolId: "",
@@ -97,13 +113,14 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
       schoolName: s.name,
       npsn: s.npsn,
       loginIdentifier: s.npsn || s.authEmail || s.adminEmail || "",
-      runtimeEmail: s.authEmail || s.adminEmail || (s.npsn ? `${s.npsn}@edulock.local` : ""),
+      runtimeEmail: runtimeAdminBySchool[s.schoolId]?.email || s.authEmail || s.adminEmail || (s.npsn ? `${s.npsn}@edulock.local` : ""),
       schoolActive: s.isActive,
       accessActive: s.adminAccessActive,
-      runtimeLastLoginAt: s.lastLoginAt || null,
+      runtimeLastLoginAt: runtimeAdminBySchool[s.schoolId]?.lastLoginAt || s.lastLoginAt || null,
+      hasLoginChannel: hasAdminLoginChannel(s, runtimeAdminBySchool[s.schoolId]),
       runtimeMustChangePassword: false
     }));
-  }, [superSchools]);
+  }, [runtimeAdminBySchool, superSchools]);
 
   const openAdminSchoolEditor = (school: SuperSchoolRow) => {
     setAdminSchoolForm({
@@ -216,6 +233,53 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
       }
     );
 
+    const unsubRuntimeAdmins = onValue(
+      ref(db, "admin_profiles"),
+      (snapshot) => {
+        const data = snapshot.val();
+        if (!data || typeof data !== "object") {
+          setRuntimeAdminBySchool({});
+          return;
+        }
+
+        const latestBySchool = Object.entries(data as Record<string, unknown>).reduce<Record<string, RuntimeAdminRow>>(
+          (acc, [key, value]) => {
+            const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+            const role = String(record.role || "").trim().toLowerCase();
+            if (role && role !== "admin") {
+              return acc;
+            }
+
+            const schoolId = String(record.schoolId || "").trim().toLowerCase();
+            if (!schoolId) {
+              return acc;
+            }
+
+            const candidate: RuntimeAdminRow = {
+              uid: String(record.uid || key).trim(),
+              schoolId,
+              email: String(record.email || "").trim().toLowerCase(),
+              lastLoginAt: typeof record.lastLoginAt === "number" ? record.lastLoginAt : null,
+            };
+
+            const existing = acc[schoolId];
+            const currentTs = Number(candidate.lastLoginAt || 0) || 0;
+            const previousTs = Number(existing?.lastLoginAt || 0) || 0;
+            if (!existing || currentTs >= previousTs) {
+              acc[schoolId] = candidate;
+            }
+            return acc;
+          },
+          {}
+        );
+
+        setRuntimeAdminBySchool(latestBySchool);
+      },
+      (error) => {
+        console.error("RTDB error admin_profiles:", error);
+      }
+    );
+
     const unsubSecurityLogs = onValue(
       query(ref(db, "super/security_logs"), limitToLast(200)),
       (snapshot) => {
@@ -242,6 +306,7 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
     return () => {
       unsub();
       unsubPrincipals();
+      unsubRuntimeAdmins();
       unsubSecurityLogs();
     };
   }, [isAuthLoading]);
@@ -335,8 +400,8 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
   };
 
   const schoolsWithoutAdmin = useMemo(() => {
-    return superSchools.filter(s => s.isActive && !s.authEmail && !s.adminEmail);
-  }, [superSchools]);
+    return superSchools.filter(s => s.isActive && !hasAdminLoginChannel(s, runtimeAdminBySchool[s.schoolId]));
+  }, [runtimeAdminBySchool, superSchools]);
 
   const schoolsWithoutPrincipal = useMemo(() => {
     return superSchools.filter(s => s.isActive && !superPrincipals.find(p => p.schoolId === s.schoolId));
@@ -345,11 +410,14 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
   const superStats = useMemo(() => {
     const tenantsTotal = superSchools.length;
     const tenantsActive = superSchools.filter((s) => s.isActive).length;
-    const adminsActive = superSchools.filter((s) => s.adminAccessActive && (s.authEmail || s.adminEmail)).length;
+    const adminsActive = superSchools.filter((s) => s.adminAccessActive && hasAdminLoginChannel(s, runtimeAdminBySchool[s.schoolId])).length;
     const tenantsMissingAdmin = Math.max(0, tenantsTotal - adminsActive);
     const principalsActive = superPrincipals.filter(p => p.isActive).length; 
     const schoolsMissingPrincipalCount = tenantsActive - principalsActive;
-    const tenantsLive = superSchools.filter((s) => s.isActive && s.adminAccessActive && !!s.lastLoginAt).length;
+    const tenantsLive = superSchools.filter((s) => {
+      const runtimeLastLoginAt = runtimeAdminBySchool[s.schoolId]?.lastLoginAt || null;
+      return s.isActive && s.adminAccessActive && !!(runtimeLastLoginAt || s.lastLoginAt);
+    }).length;
     const securityLogsCount = securityLogs.length;
     
     return {
@@ -362,7 +430,7 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
       tenantsLive,
       securityLogsCount,
     };
-  }, [superSchools, superPrincipals, securityLogs]);
+  }, [runtimeAdminBySchool, superPrincipals, superSchools, securityLogs]);
 
   const saveSuperSchool = async () => {
     if (!superSchoolForm.schoolId) {

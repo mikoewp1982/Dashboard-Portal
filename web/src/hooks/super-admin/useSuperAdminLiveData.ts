@@ -92,6 +92,15 @@ type ActiveDeviceAggregate = {
 
 const ONLINE_WINDOW_MS = 15 * 60 * 1000;
 
+function hasAdminLoginChannel(row: Pick<SuperAdminSchoolRow, "npsn" | "authEmail" | "adminEmail">, runtime?: RuntimeAdminRow | null) {
+  return Boolean(
+    String(row.npsn || "").trim() ||
+      String(row.authEmail || "").trim() ||
+      String(row.adminEmail || "").trim() ||
+      String(runtime?.email || "").trim()
+  );
+}
+
 function readString(record: Record<string, unknown>, ...keys: string[]) {
   for (const key of keys) {
     const value = record[key];
@@ -525,10 +534,13 @@ export function useSuperAdminLiveData() {
     const activeSchools = visibleSchools.filter((row) => row.isActive).length;
     const paidSchools = visibleSchools.filter((row) => row.paymentStatus === "PAID").length;
     const unpaidSchools = Math.max(0, totalSchools - paidSchools);
-    const totalAdminSchools = visibleSchools.filter((row) => Boolean(row.authEmail || row.adminEmail)).length;
+    const totalAdminSchools = visibleSchools.filter((row) => hasAdminLoginChannel(row, runtimeAdminBySchool[row.schoolId])).length;
     const totalPrincipalAccounts = visiblePrincipals.filter((row) => row.isActive).length;
     const tenantIssues =
-      visibleSchools.filter((row) => row.paymentStatus !== "PAID" || !row.isActive || !row.adminAccessActive || (!row.authEmail && !row.adminEmail)).length +
+      visibleSchools.filter((row) => {
+        const runtime = runtimeAdminBySchool[row.schoolId];
+        return row.paymentStatus !== "PAID" || !row.isActive || !row.adminAccessActive || !hasAdminLoginChannel(row, runtime);
+      }).length +
       visiblePrincipals.filter((row) => !row.isActive).length;
 
     return {
@@ -544,7 +556,7 @@ export function useSuperAdminLiveData() {
       syncFailed: visibleSyncJobs.filter((row) => row.status === "FAILED").length,
       auditLogs: visibleSecurityLogs.length,
     };
-  }, [visiblePrincipals, visibleSchools, visibleSecurityLogs, visibleSupportRequests, visibleSyncJobs]);
+  }, [runtimeAdminBySchool, visiblePrincipals, visibleSchools, visibleSecurityLogs, visibleSupportRequests, visibleSyncJobs]);
 
   return {
     loading: authLoading ? true : canAccess ? loading : false,

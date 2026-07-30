@@ -67,13 +67,21 @@ export default function LoginPage() {
         }
 
         // Record login time
-        fetch("/api/auth/record-login", {
+        const recordLoginResponse = await fetch("/api/auth/record-login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
-          }
-        }).catch(err => console.error("Failed to record login", err));
+          },
+          keepalive: true,
+        }).catch(err => {
+          console.error("Failed to record login", err);
+          return null;
+        });
+
+        if (recordLoginResponse && !recordLoginResponse.ok) {
+          console.error("Failed to record login", await recordLoginResponse.text().catch(() => ""));
+        }
 
         const shouldForcePasswordChange =
           tokenResult.claims.mustChangePassword === true ||
@@ -141,6 +149,16 @@ export default function LoginPage() {
       }
 
       await auth.currentUser.getIdToken(true);
+
+      const refreshedToken = await auth.currentUser.getIdToken();
+      await fetch("/api/auth/record-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${refreshedToken}`,
+        },
+        keepalive: true,
+      }).catch((err) => console.error("Failed to record login after password change", err));
       
       setMustChangeGate(false);
       setNewPassword("");
