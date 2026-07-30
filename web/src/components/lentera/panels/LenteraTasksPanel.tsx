@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Edit, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Trash2, CheckCircle, XCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useGasLibrary } from "@/hooks/gas/library/useGasLibrary";
 
 export function LenteraTasksPanel() {
   const { user } = useAuthStore();
   const schoolId = user?.schoolId || "";
-  const { tasks, classes, literacyLogs, loading, updateTaskStatus, deleteTask, addTask, updateLiteracyLogStatus } = useGasLibrary(schoolId, "");
+  const { tasks, classes, literacyLogs, loading, updateTaskStatus, deleteTask, addTask, updateLiteracyLogStatus, deleteLiteracyLog } = useGasLibrary(schoolId, "");
   
   const [taskView, setTaskView] = useState<"tasks" | "needs-grading" | "history">("tasks");
 
@@ -26,7 +26,7 @@ export function LenteraTasksPanel() {
     try {
       await updateTaskStatus(taskId, newIsActive ? "ACTIVE" : "CLOSED");
       alert(newIsActive ? "Tugas diterbitkan" : "Tugas ditarik ke draft");
-    } catch (error) {
+    } catch {
       alert("Gagal mengubah status tugas");
     }
   };
@@ -36,7 +36,7 @@ export function LenteraTasksPanel() {
       try {
         await deleteTask(taskId);
         alert("Tugas berhasil dihapus");
-      } catch (error) {
+      } catch {
         alert("Gagal menghapus tugas");
       }
     }
@@ -56,7 +56,7 @@ export function LenteraTasksPanel() {
       });
       setIsAddTaskModalOpen(false);
       setNewTask({ title: "", description: "", points: 10, durationMinutes: 60, className: "", dueDate: "" });
-    } catch (error) {
+    } catch {
       alert("Gagal membuat tugas");
     } finally {
       setIsSubmitting(false);
@@ -70,7 +70,7 @@ export function LenteraTasksPanel() {
     try {
       await updateLiteracyLogStatus(gradingLog.id, "GRADED", gradeInput, feedbackInput);
       setGradingLog(null);
-    } catch (error) {
+    } catch {
       alert("Gagal menyimpan nilai");
     } finally {
       setIsSubmitting(false);
@@ -81,8 +81,20 @@ export function LenteraTasksPanel() {
     if (confirm(`Tolak laporan membaca dari ${log.studentName}?`)) {
       try {
         await updateLiteracyLogStatus(log.id, "REJECTED", "E", "Laporan ditolak. Silakan buat ulang.");
-      } catch (error) {
+      } catch {
         alert("Gagal menolak laporan");
+      }
+    }
+  };
+
+  const handleDeleteHistoryLog = async (log: any) => {
+    const targetName = log.studentName || log.studentId || "siswa ini";
+    if (confirm(`Apakah Anda yakin ingin menghapus riwayat laporan ${targetName} secara permanen?`)) {
+      try {
+        await deleteLiteracyLog(log.id, log.schoolId);
+        alert("Riwayat laporan berhasil dihapus");
+      } catch {
+        alert("Gagal menghapus riwayat laporan");
       }
     }
   };
@@ -285,6 +297,7 @@ export function LenteraTasksPanel() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Nilai</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Tanggal</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/50 bg-transparent">
@@ -313,11 +326,19 @@ export function LenteraTasksPanel() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                       {new Date(log.timestamp || 0).toLocaleDateString('id-ID')}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => handleDeleteHistoryLog(log)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 rounded-md border border-slate-700 hover:text-rose-400 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Hapus
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {historyLogs.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-sm text-slate-400">
+                    <td colSpan={6} className="px-6 py-12 text-center text-sm text-slate-400">
                       Belum ada riwayat penilaian.
                     </td>
                   </tr>

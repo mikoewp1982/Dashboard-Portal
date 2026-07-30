@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { db, rtdb } from "@/lib/firebase/client";
-import { collection, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
 import { ref as rtdbRef, get, update, push, set, remove } from "firebase/database";
 import { LibraryTask } from "@/types/library";
 import { callAdminApi } from "@/lib/callAdminApi";
@@ -235,7 +235,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     try {
       const docRef = doc(db, `schools/${normalizeSchoolId(schoolId)}/library_tasks/${taskId}`);
       await updateDoc(docRef, { status: newStatus, updatedAt: Date.now() });
-    } catch (e) {}
+    } catch {}
 
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus, updatedAt: Date.now() } : t));
   };
@@ -248,7 +248,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     try {
       const docRef = doc(db, `schools/${normalizeSchoolId(schoolId)}/library_tasks/${taskId}`);
       await deleteDoc(docRef);
-    } catch (e) {}
+    } catch {}
 
     setTasks(prev => prev.filter(t => t.id !== taskId));
   };
@@ -278,6 +278,30 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     }
   };
 
+  const deleteLiteracyLog = async (logId: string, logSchoolId?: string) => {
+    if (!schoolId) return;
+    const variants = new Set([
+      ...getSchoolIdVariants(schoolId),
+      ...getSchoolIdVariants(logSchoolId),
+    ]);
+
+    try {
+      const updates: Record<string, null> = {
+        [`literacy_logs/${logId}`]: null,
+      };
+
+      for (const variant of variants) {
+        updates[`literacy_logs_by_school/${variant}/${logId}`] = null;
+      }
+
+      await update(rtdbRef(rtdb), updates);
+      setLiteracyLogs(prev => prev.filter((log) => log.id !== logId));
+    } catch (e) {
+      console.error("Gagal menghapus laporan literasi:", e);
+      throw e;
+    }
+  };
+
   return {
     tasks,
     classes,
@@ -289,6 +313,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     addTask,
     updateTaskStatus,
     deleteTask,
-    updateLiteracyLogStatus
+    updateLiteracyLogStatus,
+    deleteLiteracyLog
   };
 }
