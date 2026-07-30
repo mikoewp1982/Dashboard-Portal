@@ -15,6 +15,8 @@ interface GasLibraryTabContentProps {
   classes: any[];
   filteredLiteracyLogs: any[];
   literacyStudentStats: { completed: any[]; incomplete: any[]; total: number };
+  tasks: any[];
+  borrowRecords: any[];
   loading: boolean;
   displayedTasks: any[];
   onClassChange: (value: string) => void;
@@ -23,6 +25,7 @@ interface GasLibraryTabContentProps {
   onOpenModal: () => void;
   onUpdateTaskStatus: (taskId: string, status: "ACTIVE" | "CLOSED") => void;
   onDeleteTask: (taskId: string) => void;
+  onDeleteHistoryLog: (logId: string, schoolId?: string) => Promise<void>;
 }
 
 export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
@@ -34,6 +37,8 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
     classes,
     filteredLiteracyLogs,
     literacyStudentStats,
+    tasks,
+    borrowRecords,
     loading,
     displayedTasks,
     onClassChange,
@@ -42,7 +47,82 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
     onOpenModal,
     onUpdateTaskStatus,
     onDeleteTask,
+    onDeleteHistoryLog,
   } = props;
+  const classOptions = classes.map((item) => ({
+    value: item.id,
+    label: item.className || item.name || item.id,
+  }));
+  const dropdownClassName =
+    "w-full px-4 py-3 rounded-2xl border border-slate-500/70 bg-slate-950/90 text-sm font-medium text-slate-50 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/60";
+  const dropdownStyle = { backgroundColor: "#020617", color: "#f8fafc" };
+  const normalizedStatus = (status: string | undefined) => String(status || "").toUpperCase();
+  const gradedLogs = filteredLiteracyLogs.filter((log) => ["GRADED", "REVIEWED", "CORRECTED"].includes(normalizedStatus(log.status)));
+  const pendingLogs = filteredLiteracyLogs.filter((log) => ["PENDING", "SUBMITTED", "WAITING_REVIEW", ""].includes(normalizedStatus(log.status)));
+  const rejectedLogs = filteredLiteracyLogs.filter((log) => normalizedStatus(log.status) === "REJECTED");
+  const activeTasksCount = tasks.filter((task) => task.status === "ACTIVE").length;
+  const borrowActiveCount = borrowRecords.filter((record) => record.status === "BORROWED").length;
+  const completionRate = literacyStudentStats.total > 0
+    ? Math.round((literacyStudentStats.completed.length / literacyStudentStats.total) * 100)
+    : 0;
+  const statusCards = [
+    {
+      label: "Total Laporan",
+      value: filteredLiteracyLogs.length,
+      helper: selectedClass ? "Sesuai kelas terpilih" : "Semua kelas",
+      accent: "border-blue-500 text-blue-400",
+    },
+    {
+      label: "Sudah Dinilai",
+      value: gradedLogs.length,
+      helper: "Laporan yang sudah selesai ditinjau",
+      accent: "border-emerald-500 text-emerald-400",
+    },
+    {
+      label: "Menunggu Review",
+      value: pendingLogs.length,
+      helper: "Butuh tindak lanjut guru/admin",
+      accent: "border-amber-500 text-amber-400",
+    },
+    {
+      label: "Siswa Aktif Literasi",
+      value: `${literacyStudentStats.completed.length}/${literacyStudentStats.total}`,
+      helper: `${completionRate}% dari total siswa`,
+      accent: "border-fuchsia-500 text-fuchsia-400",
+    },
+  ];
+  const statusBreakdown = [
+    { label: "Dinilai", value: gradedLogs.length, color: "bg-emerald-500" },
+    { label: "Menunggu", value: pendingLogs.length, color: "bg-amber-500" },
+    { label: "Ditolak", value: rejectedLogs.length, color: "bg-rose-500" },
+  ];
+  const maxStatusValue = Math.max(...statusBreakdown.map((item) => item.value), 1);
+  const classActivity = Object.entries(
+    filteredLiteracyLogs.reduce<Record<string, number>>((acc, log) => {
+      const className = String(log.studentClass || "Tanpa Kelas").trim() || "Tanpa Kelas";
+      acc[className] = (acc[className] || 0) + 1;
+      return acc;
+    }, {})
+  )
+    .map(([name, total]) => ({ name, total }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  const topStudents = Object.values(
+    filteredLiteracyLogs.reduce<Record<string, { name: string; className: string; total: number }>>((acc, log) => {
+      const key = String(log.studentId || log.nisn || log.studentName || "").trim() || `unknown-${log.id}`;
+      if (!acc[key]) {
+        acc[key] = {
+          name: log.studentName || log.studentId || "-",
+          className: log.studentClass || "-",
+          total: 0,
+        };
+      }
+      acc[key].total += 1;
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
 
   if (activeTab === "loans") {
     return (
@@ -121,17 +201,21 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
             <h3 className="text-lg font-semibold text-slate-100">Laporan Literasi Siswa</h3>
             <p className="text-sm text-slate-400">Rekap laporan literasi yang dikirim melalui Lentera Digital.</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-            <select
-              value={selectedClass}
-              onChange={(e) => onClassChange(e.target.value)}
-              className="px-3 py-2 rounded-md border border-slate-700 bg-slate-900 text-sm font-medium text-slate-300 shadow-sm outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
-            >
-              <option value="">Semua Kelas</option>
-              {classes.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>
-              ))}
-            </select>
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+            <div className="space-y-2 min-w-[190px]">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kelas</p>
+              <select
+                value={selectedClass}
+                onChange={(e) => onClassChange(e.target.value)}
+                className={dropdownClassName}
+                style={dropdownStyle}
+              >
+                <option value="">Semua Kelas</option>
+                {classOptions.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            </div>
             <button
               onClick={() =>
                 exportToExcel(
@@ -289,10 +373,137 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
 
   if (activeTab === "stats") {
     return (
-      <div className="glass-effect-dark-card rounded-xl border border-slate-700 p-8 text-center">
-        <BarChart3 className="mx-auto h-12 w-12 text-slate-500 mb-3" />
-        <p className="text-slate-300 font-bold">Statistik Literasi</p>
-        <p className="text-sm text-slate-500 mt-1">Fitur statistik akan tersedia setelah integrasi data Lentera Digital.</p>
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-100">Statistik Literasi</h3>
+          <p className="text-sm text-slate-400">Ringkasan aktivitas Lentera Digital berdasarkan data tugas, laporan siswa, dan progres literasi saat ini.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {statusCards.map((card) => (
+            <div key={card.label} className={`glass-effect-dark-card rounded-2xl border p-5 shadow-sm ${card.accent}`}>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{card.label}</p>
+              <p className="mt-3 text-3xl font-black text-slate-100">{card.value}</p>
+              <p className="mt-2 text-xs text-slate-400">{card.helper}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="glass-effect-dark-card rounded-3xl border border-slate-700 p-6 space-y-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-bold text-slate-100">Distribusi Status Laporan</h4>
+                <p className="text-xs text-slate-400 mt-1">Memudahkan melihat antrean review dibanding laporan yang sudah selesai.</p>
+              </div>
+              <BarChart3 className="h-5 w-5 text-slate-500" />
+            </div>
+            <div className="space-y-4">
+              {statusBreakdown.map((item) => (
+                <div key={item.label} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-300">{item.label}</span>
+                    <span className="font-bold text-slate-100">{item.value}</span>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${item.color}`}
+                      style={{ width: `${Math.max((item.value / maxStatusValue) * 100, item.value > 0 ? 10 : 0)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="glass-effect-dark-card rounded-3xl border border-slate-700 p-6">
+            <h4 className="text-sm font-bold text-slate-100">Ringkasan Operasional</h4>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Tugas Aktif</p>
+                <p className="mt-2 text-2xl font-black text-slate-100">{activeTasksCount}</p>
+                <p className="mt-1 text-xs text-slate-500">Tugas yang masih terbuka untuk siswa.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Peminjaman Aktif</p>
+                <p className="mt-2 text-2xl font-black text-slate-100">{borrowActiveCount}</p>
+                <p className="mt-1 text-xs text-slate-500">Buku yang saat ini masih dipinjam.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Tingkat Aktivasi</p>
+                <p className="mt-2 text-2xl font-black text-slate-100">{completionRate}%</p>
+                <p className="mt-1 text-xs text-slate-500">Persentase siswa yang sudah pernah mengirim log literasi.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Riwayat</p>
+                <p className="mt-2 text-2xl font-black text-slate-100">{gradedLogs.length + rejectedLogs.length}</p>
+                <p className="mt-1 text-xs text-slate-500">Laporan yang sudah memiliki keputusan review.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="glass-effect-dark-card rounded-3xl border border-slate-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-700">
+              <h4 className="text-sm font-bold text-slate-100">Kelas Teraktif</h4>
+              <p className="text-xs text-slate-400 mt-1">Diurutkan berdasarkan jumlah laporan literasi yang masuk.</p>
+            </div>
+            <div className="divide-y divide-slate-800">
+              {classActivity.length === 0 ? (
+                <div className="px-6 py-10 text-sm text-slate-500 text-center">Belum ada data aktivitas kelas.</div>
+              ) : (
+                classActivity.map((item, index) => (
+                  <div key={item.name} className="px-6 py-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/15 text-xs font-bold text-blue-300">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-100">{item.name}</p>
+                        <p className="text-xs text-slate-500">Jumlah laporan masuk</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-slate-100">{item.total}</p>
+                      <p className="text-xs text-slate-500">laporan</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="glass-effect-dark-card rounded-3xl border border-slate-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-700">
+              <h4 className="text-sm font-bold text-slate-100">Siswa Paling Aktif</h4>
+              <p className="text-xs text-slate-400 mt-1">Top 5 siswa berdasarkan jumlah laporan literasi yang terkirim.</p>
+            </div>
+            <div className="divide-y divide-slate-800">
+              {topStudents.length === 0 ? (
+                <div className="px-6 py-10 text-sm text-slate-500 text-center">Belum ada data aktivitas siswa.</div>
+              ) : (
+                topStudents.map((student, index) => (
+                  <div key={`${student.name}-${student.className}-${index}`} className="px-6 py-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-fuchsia-500/15 text-xs font-bold text-fuchsia-300">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-100">{student.name}</p>
+                        <p className="text-xs text-slate-500">Kelas {student.className}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-slate-100">{student.total}</p>
+                      <p className="text-xs text-slate-500">laporan</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -415,7 +626,7 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
                 <table className="min-w-full divide-y divide-slate-700/40">
                   <thead className="bg-slate-900/50">
                     <tr>
-                      {["Siswa", "Buku / Tugas", "Ringkasan", "Nilai", "Tanggal", "Status"].map((header) => (
+                      {["Siswa", "Buku / Tugas", "Ringkasan", "Nilai", "Tanggal", "Status", "Aksi"].map((header) => (
                         <th key={header} className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{header}</th>
                       ))}
                     </tr>
@@ -448,6 +659,28 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
                           }`}>
                             {log.status?.toString().toUpperCase() === "REJECTED" ? "Ditolak" : "Dinilai"}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const targetName = log.studentName || log.studentId || "siswa ini";
+                              if (!window.confirm(`Apakah Anda yakin ingin menghapus riwayat laporan ${targetName} secara permanen?`)) {
+                                return;
+                              }
+
+                              try {
+                                await onDeleteHistoryLog(log.id, log.schoolId);
+                                window.alert("Riwayat laporan berhasil dihapus");
+                              } catch {
+                                window.alert("Gagal menghapus riwayat laporan");
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:text-rose-400"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Hapus
+                          </button>
                         </td>
                       </tr>
                     ))}
