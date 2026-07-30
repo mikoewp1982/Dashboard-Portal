@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { get, ref } from "firebase/database";
 import { rtdb } from "@/lib/firebase/client";
 import type { GasRecord } from "@/components/gas/shared/gasConfig";
+import { normalizeSchoolId } from "@/lib/gas/schoolId";
 
 export interface NotificationClassOption {
   id: string;
@@ -35,13 +36,14 @@ export function useNotificationRecipients(schoolId?: string) {
       return;
     }
 
+    const canonicalSchoolId = normalizeSchoolId(schoolId);
     setIsLoading(true);
     setError(null);
 
     try {
       const [classesSnap, studentsSnap] = await Promise.all([
-        get(ref(rtdb, `gas/schools/${schoolId}/classes`)),
-        get(ref(rtdb, `gas/schools/${schoolId}/students`)),
+        get(ref(rtdb, `gas/schools/${canonicalSchoolId}/classes`)),
+        get(ref(rtdb, `gas/schools/${canonicalSchoolId}/students`)),
       ]);
 
       const nextClasses = classesSnap.exists()

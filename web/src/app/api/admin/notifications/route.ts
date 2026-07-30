@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
+import { normalizeSchoolId } from "@/lib/gas/schoolId";
 
 type NotificationTargetType = "ALL_CLASSES" | "CLASS" | "STUDENTS" | "SPECIFIC_STUDENT" | "TEACHERS";
 
@@ -15,10 +16,6 @@ type RecipientInfo = {
 
 function normalizeIdentity(value: unknown) {
   return String(value || "").trim();
-}
-
-function normalizeSchoolId(value: unknown) {
-  return String(value || "").trim().toLowerCase();
 }
 
 function getClassLabel(row: Record<string, unknown>) {

@@ -167,7 +167,7 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
             </div>
             
             <div className="w-full lg:col-span-2 rounded-xl border border-sky-400/20 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
-              Monitoring sekarang membaca data binding siswa dari GAS dan status heartbeat perangkat dari `active_devices` secara real-time bila terhubung.
+              Monitoring membaca binding siswa dari GAS dan heartbeat perangkat dari `active_devices`, lalu refresh otomatis tiap 5 detik agar status HP siswa lebih cepat terlihat.
             </div>
           </div>
           {latestMasterSwitchCommand && (
@@ -216,14 +216,14 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
             <tbody className="divide-y divide-white/10">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
+                      <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-400" />
                     Memuat snapshot runtime EduLock...
                   </td>
                 </tr>
               ) : monitoringStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
                     Tidak ada data siswa ditemukan
                   </td>
                 </tr>

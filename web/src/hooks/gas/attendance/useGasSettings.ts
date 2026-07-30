@@ -4,6 +4,7 @@ import { rtdb } from "@/lib/firebase/client";
 import { ref, onValue } from "firebase/database";
 import { DailySchedule, Holiday, SchoolLocation } from "@/types/gasSettings";
 import { auth } from "@/lib/firebase/client";
+import { getSchoolIdVariants, normalizeSchoolId } from "@/lib/gas/schoolId";
 
 export function useGasSettings(schoolId: string) {
   const [schedules, setSchedules] = useState<DailySchedule[]>([
@@ -21,12 +22,14 @@ export function useGasSettings(schoolId: string) {
 
   useEffect(() => {
     if (!schoolId) return;
-    const pathBase = `school_settings/${schoolId}/attendance`;
+    const canonicalSchoolId = normalizeSchoolId(schoolId);
+    const pathBase = `school_settings/${canonicalSchoolId}/attendance`;
     const schedulesRef = ref(rtdb, `${pathBase}/schedules`);
     const holidaysRef = ref(rtdb, `${pathBase}/holidays`);
     const locationRef = ref(rtdb, `${pathBase}/school_location`);
-    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
-    const mushollaLocRef = ref(rtdb, `school_settings/${normalizedSchoolId}/prayer/musholla_location`);
+    const mushollaRefs = getSchoolIdVariants(canonicalSchoolId).map((variant) =>
+      ref(rtdb, `school_settings/${variant}/prayer/musholla_location`)
+    );
 
     const unsubSchedules = onValue(schedulesRef, (snap) => {
       const data = snap.val();
@@ -68,22 +71,24 @@ export function useGasSettings(schoolId: string) {
       }
     });
 
-    const unsubMushollaLoc = onValue(mushollaLocRef, (snap) => {
-      const data = snap.val();
-      if (data) {
-        setMushollaLocation({
-          latitude: data.latitude,
-          longitude: data.longitude,
-          radius: data.radius || 25,
-        });
-      }
-    });
+    const mushollaUnsubs = mushollaRefs.map((mRef) =>
+      onValue(mRef, (snap) => {
+        const data = snap.val();
+        if (data) {
+          setMushollaLocation({
+            latitude: data.latitude,
+            longitude: data.longitude,
+            radius: data.radius || 25,
+          });
+        }
+      })
+    );
 
     return () => {
       unsubSchedules();
       unsubHolidays();
       unsubLoc();
-      unsubMushollaLoc();
+      mushollaUnsubs.forEach((unsub) => unsub());
     };
   }, [schoolId]);
 

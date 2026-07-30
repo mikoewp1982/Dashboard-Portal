@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
-import { db, rtdb } from "@/lib/firebase/client";
-import { collection, query, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { rtdb } from "@/lib/firebase/client";
 import { ref as rtdbRef, get } from "firebase/database";
 import { DisciplineRecord } from "@/types/discipline";
+import { getSchoolIdVariants, normalizeSchoolId } from "@/lib/gas/schoolId";
 
 const fetchWithTimeout = <T>(promise: Promise<T>, ms = 4000): Promise<T> => {
   return Promise.race([
@@ -26,50 +26,56 @@ export function useGasDiscipline(schoolId: string | undefined, selectedMonth: nu
 
     setLoading(true);
     try {
-      const snapshot = await fetchWithTimeout(get(rtdbRef(rtdb, `discipline_records_by_school/${schoolId}`)));
-      const result: DisciplineRecord[] = [];
-      const data = snapshot.val();
-      
-      if (data && typeof data === 'object') {
-        Object.keys(data).forEach((key) => {
-          try {
-            const val = data[key];
-            if (!val || typeof val !== 'object') return;
-            
-            let timestamp = val.createdAt || val.date || Date.now();
-            if (typeof timestamp === 'object' && timestamp['.sv']) {
-                timestamp = Date.now(); // Handle Firebase ServerValue
-            } else if (typeof timestamp === 'string') {
-                timestamp = parseInt(timestamp) || Date.now();
-            }
-            if (isNaN(timestamp)) timestamp = Date.now();
-            
-            const d = new Date(timestamp);
-            if (isNaN(d.getTime())) return; // Skip invalid dates
-            
-            if (d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear) {
-              result.push({
-                id: key,
-                studentId: String(val.studentId || ""),
-                studentNameSnapshot: String(val.studentName || val.studentNameSnapshot || "Unknown"),
-                classNameSnapshot: String(val.classNameSnapshot || ""), 
-                ruleId: Number(val.ruleId || 0),
-                ruleNameSnapshot: String(val.ruleName || val.ruleNameSnapshot || ""),
-                category: val.category === "ACHIEVEMENT" ? "ACHIEVEMENT" : "VIOLATION",
-                points: Number(val.points || 0),
-                date: timestamp,
-                note: val.description || val.note || null,
-                recordedBy: String(val.reporterId || val.recordedBy || ""),
-                recordedByName: String(val.reporterName || val.recordedByName || ""),
-                reportedByRole: val.reportedByRole || "teacher",
-                createdAt: timestamp
-              });
-            }
-          } catch (itemErr) {
-            console.error("Error parsing record:", key, itemErr);
-          }
-        });
+      const variants = getSchoolIdVariants(schoolId);
+      const merged: Record<string, any> = {};
+
+      for (const variant of variants) {
+        const snapshot = await fetchWithTimeout(get(rtdbRef(rtdb, `discipline_records_by_school/${variant}`)));
+        const data = snapshot.val();
+        if (data && typeof data === "object") {
+          Object.assign(merged, data);
+        }
       }
+
+      const result: DisciplineRecord[] = [];
+      Object.keys(merged).forEach((key) => {
+        try {
+          const val = merged[key];
+          if (!val || typeof val !== "object") return;
+
+          let timestamp = val.createdAt || val.date || Date.now();
+          if (typeof timestamp === "object" && timestamp[".sv"]) {
+            timestamp = Date.now();
+          } else if (typeof timestamp === "string") {
+            timestamp = parseInt(timestamp) || Date.now();
+          }
+          if (isNaN(timestamp)) timestamp = Date.now();
+
+          const d = new Date(timestamp);
+          if (isNaN(d.getTime())) return;
+
+          if (d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear) {
+            result.push({
+              id: key,
+              studentId: String(val.studentId || ""),
+              studentNameSnapshot: String(val.studentName || val.studentNameSnapshot || "Unknown"),
+              classNameSnapshot: String(val.classNameSnapshot || ""),
+              ruleId: Number(val.ruleId || 0),
+              ruleNameSnapshot: String(val.ruleName || val.ruleNameSnapshot || ""),
+              category: val.category === "ACHIEVEMENT" ? "ACHIEVEMENT" : "VIOLATION",
+              points: Number(val.points || 0),
+              date: timestamp,
+              note: val.description || val.note || null,
+              recordedBy: String(val.reporterId || val.recordedBy || ""),
+              recordedByName: String(val.reporterName || val.recordedByName || ""),
+              reportedByRole: val.reportedByRole || "teacher",
+              createdAt: timestamp
+            });
+          }
+        } catch (itemErr) {
+          console.error("Error parsing record:", key, itemErr);
+        }
+      });
       setRecords(result.sort((a, b) => b.date - a.date));
     } catch (error) {
       console.error("Error fetching discipline records:", error);
@@ -82,9 +88,10 @@ export function useGasDiscipline(schoolId: string | undefined, selectedMonth: nu
   const fetchReferences = useCallback(async () => {
     if (!schoolId) return;
     try {
+      const canonicalSchoolId = normalizeSchoolId(schoolId);
       const [studentsSnap, classesSnap] = await fetchWithTimeout(Promise.all([
-        get(rtdbRef(rtdb, `gas/schools/${schoolId}/students`)),
-        get(rtdbRef(rtdb, `gas/schools/${schoolId}/classes`))
+        get(rtdbRef(rtdb, `gas/schools/${canonicalSchoolId}/students`)),
+        get(rtdbRef(rtdb, `gas/schools/${canonicalSchoolId}/classes`))
       ]));
       
       const sData = studentsSnap.val();
@@ -125,13 +132,15 @@ export function useGasDiscipline(schoolId: string | undefined, selectedMonth: nu
     
     const now = Date.now();
     const newRecordId = Date.now().toString(); // simple ID generation
+    const canonicalSchoolId = normalizeSchoolId(schoolId);
+    const variants = getSchoolIdVariants(schoolId);
     
     // Format to Android app's expected structure
     const androidRecord = {
       id: newRecordId,
       studentId: record.studentId,
       studentName: record.studentNameSnapshot || "",
-      schoolId: schoolId,
+      schoolId: canonicalSchoolId,
       ruleId: record.ruleId.toString(),
       ruleName: record.ruleNameSnapshot || "",
       points: record.points,
@@ -147,7 +156,9 @@ export function useGasDiscipline(schoolId: string | undefined, selectedMonth: nu
 
     const updates: Record<string, any> = {};
     updates[`discipline_records/${newRecordId}`] = androidRecord;
-    updates[`discipline_records_by_school/${schoolId}/${newRecordId}`] = androidRecord;
+    for (const variant of variants) {
+      updates[`discipline_records_by_school/${variant}/${newRecordId}`] = androidRecord;
+    }
 
     const { update } = await import("firebase/database");
     await update(rtdbRef(rtdb), updates);
@@ -157,9 +168,12 @@ export function useGasDiscipline(schoolId: string | undefined, selectedMonth: nu
 
   const deleteRecord = async (recordId: string) => {
     if (!schoolId) return;
+    const variants = getSchoolIdVariants(schoolId);
     const updates: Record<string, any> = {};
     updates[`discipline_records/${recordId}`] = null;
-    updates[`discipline_records_by_school/${schoolId}/${recordId}`] = null;
+    for (const variant of variants) {
+      updates[`discipline_records_by_school/${variant}/${recordId}`] = null;
+    }
 
     const { update } = await import("firebase/database");
     await update(rtdbRef(rtdb), updates);

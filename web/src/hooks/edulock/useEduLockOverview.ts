@@ -110,10 +110,10 @@ export function useEduLockOverview(schoolId: string | undefined) {
     };
 
     void run(true);
-    // Status proteksi harus cepat berubah merah tanpa menunggu refresh manual.
+    // Monitoring EduLock perlu terasa hidup agar status HP siswa cepat terlihat di web.
     const timer = window.setInterval(() => {
       void run(false);
-    }, 15_000);
+    }, 5_000);
 
     return () => {
       cancelled = true;

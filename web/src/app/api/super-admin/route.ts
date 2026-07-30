@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { normalizeSchoolId } from "@/lib/gas/schoolId";
 
 type VerifiedSuperAdminToken = Awaited<ReturnType<typeof adminAuth.verifyIdToken>>;
 type SuperAdminRequestBody = Record<string, unknown>;
@@ -25,10 +26,6 @@ function readPositiveNumber(value: unknown, fallbackValue: number) {
 function generateUninstallAccessCode() {
   const token = Math.random().toString(36).slice(2, 8).toUpperCase();
   return `EDULOCK-${token}`;
-}
-
-function normalizeSchoolId(value: unknown) {
-  return String(value || "").trim().toLowerCase();
 }
 
 async function getSchoolRegistryRecord(schoolId: string) {

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { rtdb } from "@/lib/firebase/client";
 import { ref as rtdbRef, query, orderByChild, equalTo, get } from "firebase/database";
+import { getSchoolIdVariants, normalizeSchoolId } from "@/lib/gas/schoolId";
 
 export type PrayerStatus = "PRAY" | "NOT_PRAY" | "PERMIT" | "HALANGAN";
 
@@ -20,7 +21,6 @@ export interface PrayerLog {
 
 function normalizePrayerLogs(
   data: Record<string, Omit<PrayerLog, "id">> | null,
-  schoolId: string,
   selectedMonth: number,
   selectedYear: number
 ) {
@@ -35,7 +35,7 @@ function normalizePrayerLogs(
       ...data[key],
     }))
     .filter((log: PrayerLog) => {
-      return log.schoolId === schoolId && log.date >= startOfMonth && log.date <= endOfMonth;
+      return log.date >= startOfMonth && log.date <= endOfMonth;
     });
 }
 
@@ -53,9 +53,10 @@ export function useGasPrayerAttendance(schoolId: string | undefined, selectedMon
     }
 
     try {
+      const canonicalSchoolId = normalizeSchoolId(schoolId);
       const [classesSnap, studentsSnap] = await Promise.all([
-        get(rtdbRef(rtdb, `gas/schools/${schoolId}/classes`)),
-        get(rtdbRef(rtdb, `gas/schools/${schoolId}/students`)),
+        get(rtdbRef(rtdb, `gas/schools/${canonicalSchoolId}/classes`)),
+        get(rtdbRef(rtdb, `gas/schools/${canonicalSchoolId}/students`)),
       ]);
       const classesData = classesSnap.val();
       const studentsData = studentsSnap.val();
@@ -88,32 +89,51 @@ export function useGasPrayerAttendance(schoolId: string | undefined, selectedMon
       return;
     }
 
-    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+    const variants = getSchoolIdVariants(schoolId);
+    const canonicalSchoolId = normalizeSchoolId(schoolId);
     setLoading(true);
-    // Kita gunakan get() alih-alih onValue() agar tidak meload seluruh histori data sepanjang masa
-    // dan menjaganya tetap di memori secara realtime, sesuai Pedoman Hemat Data.
-    const prayerRef = query(rtdbRef(rtdb, "prayer_attendance"), orderByChild("schoolId"), equalTo(normalizedSchoolId));
-
+    const merged: Record<string, Omit<PrayerLog, "id">> = {};
     try {
-      const snapshot = await get(prayerRef);
-      setLogs(normalizePrayerLogs(snapshot.val(), normalizedSchoolId, selectedMonth, selectedYear));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-
-      if (message.includes("Index not defined")) {
-        // Fallback sementara agar UI tidak jebol saat rules/index remote belum ter-deploy.
-        // Jalur utama tetap query terindeks berbasis schoolId agar hemat data.
-        try {
-          const fallbackSnapshot = await get(rtdbRef(rtdb, "prayer_attendance"));
-          setLogs(normalizePrayerLogs(fallbackSnapshot.val(), normalizedSchoolId, selectedMonth, selectedYear));
-          console.warn("RTDB index schoolId untuk prayer_attendance belum aktif. Menggunakan fallback sementara.");
-          return;
-        } catch (fallbackError) {
-          console.error("Fallback prayer attendance fetch failed:", fallbackError);
+      for (const variant of variants) {
+        const bySchoolSnap = await get(rtdbRef(rtdb, `prayer_attendance_by_school/${variant}`));
+        if (bySchoolSnap.exists()) {
+          Object.assign(merged, bySchoolSnap.val() || {});
         }
       }
 
+      if (Object.keys(merged).length > 0) {
+        setLogs(normalizePrayerLogs(merged, selectedMonth, selectedYear));
+        return;
+      }
+
+      const globalResults: Record<string, Omit<PrayerLog, "id">> = {};
+      const primaryQuery = query(
+        rtdbRef(rtdb, "prayer_attendance"),
+        orderByChild("schoolId"),
+        equalTo(canonicalSchoolId)
+      );
+      const snapshot = await get(primaryQuery);
+      if (snapshot.exists()) {
+        Object.assign(globalResults, snapshot.val() || {});
+      }
+
+      const legacyVariant = variants.find((v) => v !== canonicalSchoolId);
+      if (legacyVariant) {
+        const legacyQuery = query(
+          rtdbRef(rtdb, "prayer_attendance"),
+          orderByChild("schoolId"),
+          equalTo(legacyVariant)
+        );
+        const legacySnap = await get(legacyQuery);
+        if (legacySnap.exists()) {
+          Object.assign(globalResults, legacySnap.val() || {});
+        }
+      }
+
+      setLogs(normalizePrayerLogs(globalResults, selectedMonth, selectedYear));
+    } catch (error) {
       console.error("Error fetching prayer attendance:", error);
+      setLogs([]);
     } finally {
       setLoading(false);
     }

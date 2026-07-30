@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { getSchoolIdVariants, normalizeSchoolId } from "@/lib/gas/schoolId";
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,16 +24,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "School ID is required" }, { status: 400 });
     }
 
-    const normalizedSchoolId = targetSchoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+    const variants = getSchoolIdVariants(targetSchoolId);
+    const canonicalSchoolId = normalizeSchoolId(targetSchoolId);
     
     let rawLogs: Record<string, any> = {};
     try {
-      const bySchoolSnap = await adminDb.ref(`literacy_logs_by_school/${normalizedSchoolId}`).once("value");
-      if (bySchoolSnap.exists()) {
-        rawLogs = bySchoolSnap.val() || {};
-      } else {
-        const logsSnap = await adminDb.ref("literacy_logs").orderByChild("schoolId").equalTo(normalizedSchoolId).once("value");
+      for (const variant of variants) {
+        const bySchoolSnap = await adminDb.ref(`literacy_logs_by_school/${variant}`).once("value");
+        if (bySchoolSnap.exists()) {
+          rawLogs = { ...(rawLogs || {}), ...(bySchoolSnap.val() || {}) };
+        }
+      }
+
+      if (!Object.keys(rawLogs).length) {
+        const logsSnap = await adminDb.ref("literacy_logs").orderByChild("schoolId").equalTo(canonicalSchoolId).once("value");
         rawLogs = logsSnap.val() || {};
+
+        const legacyVariant = variants.find((v) => v !== canonicalSchoolId);
+        if (legacyVariant) {
+          const legacySnap = await adminDb.ref("literacy_logs").orderByChild("schoolId").equalTo(legacyVariant).once("value");
+          rawLogs = { ...(rawLogs || {}), ...(legacySnap.val() || {}) };
+        }
       }
     } catch (queryErr) {
       const logsSnap = await adminDb.ref("literacy_logs").once("value");
@@ -45,8 +57,8 @@ export async function GET(req: NextRequest) {
         ...rawLog,
       }))
       .filter((log) => {
-        const scope = String(log.schoolId || "").trim().toLowerCase().replace(/[\s\-]+/g, "_");
-        return scope === normalizedSchoolId || scope === targetSchoolId.trim().toLowerCase();
+        const scope = normalizeSchoolId(log.schoolId);
+        return scope === canonicalSchoolId || variants.includes(scope);
       })
       .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
 

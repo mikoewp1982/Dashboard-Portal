@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { normalizeSchoolId } from "@/lib/gas/schoolId";
 
 type StudentRow = {
   nisn?: string;
@@ -14,10 +15,6 @@ type StudentRow = {
 
 function clampStat(value: number) {
   return Math.min(100, Math.max(0, value));
-}
-
-function normalizeSchoolId(value: unknown) {
-  return String(value || "").trim().toLowerCase();
 }
 
 function normalizeIdentity(value: unknown) {

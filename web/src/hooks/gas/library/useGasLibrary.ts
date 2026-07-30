@@ -5,6 +5,7 @@ import { ref as rtdbRef, get, update, push, set, remove } from "firebase/databas
 import { LibraryTask } from "@/types/library";
 import { callAdminApi } from "@/lib/callAdminApi";
 import { isSessionInactiveError } from "@/lib/firebase/waitForClientUser";
+import { getSchoolIdVariants, normalizeSchoolId } from "@/lib/gas/schoolId";
 
 export interface LiteracyLog {
   id: string;
@@ -59,7 +60,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     }
 
     setLoading(true);
-    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+    const scopeVariants = new Set(getSchoolIdVariants(schoolId));
 
     try {
       const snapshot = await get(rtdbRef(rtdb, "literacy_tasks"));
@@ -67,8 +68,10 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
       const val = snapshot.val();
       if (val) {
         Object.entries<any>(val).forEach(([id, item]) => {
-          const itemScope = String(item.schoolId || "").trim().toLowerCase().replace(/[\s\-]+/g, "_");
-          if (itemScope === normalizedSchoolId || itemScope === schoolId.trim().toLowerCase()) {
+          const rawScope = normalizeSchoolId(item.schoolId);
+          const scopeCandidates = new Set(getSchoolIdVariants(rawScope));
+          const matches = Array.from(scopeCandidates).some((candidate) => scopeVariants.has(candidate));
+          if (matches) {
             const taskClassName = item.className || "Semua Kelas";
             if (!selectedClass || taskClassName === selectedClass) {
               result.push({
@@ -102,16 +105,24 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
       return;
     }
 
-    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+    const variants = getSchoolIdVariants(schoolId);
 
     try {
-      const snap = await get(rtdbRef(rtdb, `literacy_logs_by_school/${normalizedSchoolId}`));
-      const logsMap = snap.val();
-      if (logsMap) {
-        const logsList: LiteracyLog[] = Object.entries<any>(logsMap).map(([id, val]) => ({
-          id,
-          ...val
-        })).sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
+      const merged: Record<string, any> = {};
+      for (const variant of variants) {
+        const snap = await get(rtdbRef(rtdb, `literacy_logs_by_school/${variant}`));
+        if (snap.exists()) {
+          Object.assign(merged, snap.val() || {});
+        }
+      }
+
+      if (Object.keys(merged).length > 0) {
+        const logsList: LiteracyLog[] = Object.entries<any>(merged)
+          .map(([id, val]) => ({
+            id,
+            ...val
+          }))
+          .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
         setLiteracyLogs(logsList);
         return;
       }
@@ -130,8 +141,9 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
   const fetchBooksAndRecords = useCallback(async () => {
     if (!schoolId) return;
     try {
-      const booksSnap = await get(rtdbRef(rtdb, `gas/schools/${schoolId}/library/books`));
-      const borrowSnap = await get(rtdbRef(rtdb, `gas/schools/${schoolId}/library/borrowRecords`));
+      const canonicalSchoolId = normalizeSchoolId(schoolId);
+      const booksSnap = await get(rtdbRef(rtdb, `gas/schools/${canonicalSchoolId}/library/books`));
+      const borrowSnap = await get(rtdbRef(rtdb, `gas/schools/${canonicalSchoolId}/library/borrowRecords`));
       
       const bData = booksSnap.val();
       if (bData) setBooks(Object.entries(bData).map(([id, val]: any) => ({ id, ...val })));
@@ -146,7 +158,8 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
   const fetchClasses = useCallback(async () => {
     if (!schoolId) return;
     try {
-      const classesSnap = await get(rtdbRef(rtdb, `gas/schools/${schoolId}/classes`));
+      const canonicalSchoolId = normalizeSchoolId(schoolId);
+      const classesSnap = await get(rtdbRef(rtdb, `gas/schools/${canonicalSchoolId}/classes`));
       const cData = classesSnap.val();
       if (cData) {
         setClasses(Object.entries(cData).map(([id, val]: any) => ({ id, ...val })));
@@ -175,7 +188,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
 
   const addTask = async (task: Omit<LibraryTask, "id">) => {
     if (!schoolId) return;
-    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+    const normalizedSchoolId = normalizeSchoolId(schoolId);
     
     // Write to RTDB literacy_tasks (Primary source of truth for Mobile & Web)
     const newTaskRef = push(rtdbRef(rtdb, "literacy_tasks"));
@@ -201,7 +214,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
 
     // Mirror to Firestore for web backwards compatibility
     try {
-      const docRef = doc(db, `schools/${schoolId}/library_tasks/${taskId}`);
+      const docRef = doc(db, `schools/${normalizedSchoolId}/library_tasks/${taskId}`);
       await setDoc(docRef, { ...task, id: taskId, schoolId: normalizedSchoolId });
     } catch (e) {
       console.warn("Firestore mirror failed for library task:", e);
@@ -220,7 +233,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     await update(taskRef, { status: newStatus, isActive: newStatus === "ACTIVE", updatedAt: Date.now() });
 
     try {
-      const docRef = doc(db, `schools/${schoolId}/library_tasks/${taskId}`);
+      const docRef = doc(db, `schools/${normalizeSchoolId(schoolId)}/library_tasks/${taskId}`);
       await updateDoc(docRef, { status: newStatus, updatedAt: Date.now() });
     } catch (e) {}
 
@@ -233,7 +246,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     await remove(taskRef);
 
     try {
-      const docRef = doc(db, `schools/${schoolId}/library_tasks/${taskId}`);
+      const docRef = doc(db, `schools/${normalizeSchoolId(schoolId)}/library_tasks/${taskId}`);
       await deleteDoc(docRef);
     } catch (e) {}
 
@@ -242,7 +255,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
 
   const updateLiteracyLogStatus = async (logId: string, status: "GRADED" | "REJECTED", grade: string, feedback: string) => {
     if (!schoolId) return;
-    const normalizedSchoolId = schoolId.trim().toLowerCase().replace(/[\s\-]+/g, "_");
+    const variants = getSchoolIdVariants(schoolId);
     try {
       const updates: Record<string, any> = {};
       updates[`literacy_logs/${logId}/status`] = status;
@@ -250,10 +263,12 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
       updates[`literacy_logs/${logId}/feedback`] = feedback;
       updates[`literacy_logs/${logId}/gradedAt`] = Date.now();
 
-      updates[`literacy_logs_by_school/${normalizedSchoolId}/${logId}/status`] = status;
-      updates[`literacy_logs_by_school/${normalizedSchoolId}/${logId}/grade`] = grade;
-      updates[`literacy_logs_by_school/${normalizedSchoolId}/${logId}/feedback`] = feedback;
-      updates[`literacy_logs_by_school/${normalizedSchoolId}/${logId}/gradedAt`] = Date.now();
+      for (const variant of variants) {
+        updates[`literacy_logs_by_school/${variant}/${logId}/status`] = status;
+        updates[`literacy_logs_by_school/${variant}/${logId}/grade`] = grade;
+        updates[`literacy_logs_by_school/${variant}/${logId}/feedback`] = feedback;
+        updates[`literacy_logs_by_school/${variant}/${logId}/gradedAt`] = Date.now();
+      }
 
       await update(rtdbRef(rtdb), updates);
       setLiteracyLogs(prev => prev.map(l => l.id === logId ? { ...l, status, grade, feedback } : l));

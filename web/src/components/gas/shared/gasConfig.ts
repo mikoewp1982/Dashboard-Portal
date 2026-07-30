@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeSchoolId } from "@/lib/gas/schoolId";
+
 export const gasMenuItems = [
   { id: "dashboard", label: "Beranda GAS", status: "active" },
   { id: "students", label: "Manajemen Siswa", status: "active" },
@@ -37,8 +39,9 @@ export const defaultGasTab: GasTab = "dashboard";
 export const getGasTabLabel = (tab: GasTab) => gasMenuItems.find((item) => item.id === tab)?.label || "GAS";
 
 export const getGasPath = (tab: GasTab, schoolId: string) => {
-  if (tab === "students") return `gas/schools/${schoolId}/students`;
-  if (tab === "teachers") return `gas/schools/${schoolId}/teachers`;
+  const canonicalSchoolId = normalizeSchoolId(schoolId);
+  if (tab === "students") return `gas/schools/${canonicalSchoolId}/students`;
+  if (tab === "teachers") return `gas/schools/${canonicalSchoolId}/teachers`;
   return "";
 };
 

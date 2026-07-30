@@ -3,10 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { rtdb } from "@/lib/firebase/client";
 import { ref as rtdbRef, get } from "firebase/database";
 import { AttendanceRecord, AttendanceStatus } from "@/types/gas";
-
-function normalizeSchoolId(value: unknown) {
-  return String(value || "").trim().toLowerCase();
-}
+import { normalizeSchoolId } from "@/lib/gas/schoolId";
 
 function normalizeIdentity(value: unknown) {
   return String(value || "").trim();
