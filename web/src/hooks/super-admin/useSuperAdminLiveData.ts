@@ -71,6 +71,14 @@ export type SuperAdminStudentUsageRow = {
   latestActivityAt: number | null;
 };
 
+type RuntimeAdminRow = {
+  uid: string;
+  role: string;
+  schoolId: string;
+  email: string;
+  lastLoginAt: number | null;
+};
+
 type StudentRegistryAggregate = {
   totalStudents: number;
   studentKeys: string[];
@@ -179,6 +187,7 @@ export function useSuperAdminLiveData() {
   const [globalConfig, setGlobalConfig] = useState<SuperAdminGlobalConfig | null>(null);
   const [studentRegistryBySchool, setStudentRegistryBySchool] = useState<Record<string, StudentRegistryAggregate>>({});
   const [activeDeviceBySchool, setActiveDeviceBySchool] = useState<Record<string, ActiveDeviceAggregate>>({});
+  const [runtimeAdminBySchool, setRuntimeAdminBySchool] = useState<Record<string, RuntimeAdminRow>>({});
   const canAccess = user?.role === "super_admin";
 
   useEffect(() => {
@@ -256,6 +265,48 @@ export function useSuperAdminLiveData() {
 
       rows.sort((a, b) => a.username.localeCompare(b.username));
       setPrincipals(rows);
+    });
+
+    const unsubRuntimeAdmins = onValue(ref(rtdb, "admin_profiles"), (snapshot) => {
+      const data = snapshot.val();
+      if (!data || typeof data !== "object") {
+        setRuntimeAdminBySchool({});
+        return;
+      }
+
+      const latestBySchool = Object.entries(data as Record<string, unknown>).reduce<Record<string, RuntimeAdminRow>>(
+        (acc, [key, value]) => {
+          const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+          const role = readString(record, "role").toLowerCase();
+          if (role && role !== "admin") {
+            return acc;
+          }
+
+          const schoolId = normalizeKey(readString(record, "schoolId"));
+          if (!schoolId) {
+            return acc;
+          }
+
+          const candidate: RuntimeAdminRow = {
+            uid: readString(record, "uid") || key,
+            role: role || "admin",
+            schoolId,
+            email: readString(record, "email").toLowerCase(),
+            lastLoginAt: readNumber(record, "lastLoginAt"),
+          };
+
+          const existing = acc[schoolId];
+          const currentTs = Number(candidate.lastLoginAt || 0) || 0;
+          const previousTs = Number(existing?.lastLoginAt || 0) || 0;
+          if (!existing || currentTs >= previousTs) {
+            acc[schoolId] = candidate;
+          }
+          return acc;
+        },
+        {}
+      );
+
+      setRuntimeAdminBySchool(latestBySchool);
     });
 
     const unsubSupport = onValue(ref(rtdb, "gas/support_requests"), (snapshot) => {
@@ -405,6 +456,7 @@ export function useSuperAdminLiveData() {
     return () => {
       unsubSchools();
       unsubPrincipals();
+      unsubRuntimeAdmins();
       unsubSupport();
       unsubSyncJobs();
       unsubSecurityLogs();
@@ -414,7 +466,19 @@ export function useSuperAdminLiveData() {
     };
   }, [authLoading, canAccess]);
 
-  const visibleSchools = useMemo(() => (canAccess ? schools : []), [canAccess, schools]);
+  const visibleSchools = useMemo(() => {
+    if (!canAccess) return [] as SuperAdminSchoolRow[];
+
+    return schools.map((school) => {
+      const runtime = runtimeAdminBySchool[school.schoolId];
+      const runtimeLastLoginAt = runtime?.lastLoginAt ?? null;
+
+      return {
+        ...school,
+        lastLoginAt: runtimeLastLoginAt ?? school.lastLoginAt,
+      };
+    });
+  }, [canAccess, runtimeAdminBySchool, schools]);
   const visiblePrincipals = useMemo(() => (canAccess ? principals : []), [canAccess, principals]);
   const visibleSupportRequests = useMemo(() => (canAccess ? supportRequests : []), [canAccess, supportRequests]);
   const visibleSyncJobs = useMemo(() => (canAccess ? syncJobs : []), [canAccess, syncJobs]);

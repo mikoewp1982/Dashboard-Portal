@@ -29,7 +29,18 @@ export async function POST(req: Request) {
     const targetSchoolId = schoolContext?.schoolId || null;
 
     if (targetSchoolId) {
-      await adminDb.ref(`schools/${targetSchoolId}/lastLoginAt`).set(Date.now());
+      const loginAt = Date.now();
+      await adminDb.ref().update({
+        [`schools/${targetSchoolId}/lastLoginAt`]: loginAt,
+        [`admin_profiles/${decodedToken.uid}/uid`]: decodedToken.uid,
+        [`admin_profiles/${decodedToken.uid}/email`]: email,
+        [`admin_profiles/${decodedToken.uid}/role`]: "admin",
+        [`admin_profiles/${decodedToken.uid}/schoolId`]: targetSchoolId,
+        [`admin_profiles/${decodedToken.uid}/schoolName`]: schoolContext?.name || "",
+        [`admin_profiles/${decodedToken.uid}/npsn`]: schoolContext?.npsn || localIdentifier || decodedToken.npsn || "",
+        [`admin_profiles/${decodedToken.uid}/lastLoginAt`]: loginAt,
+        [`admin_profiles/${decodedToken.uid}/updatedAt`]: loginAt,
+      });
       return NextResponse.json({ success: true, schoolId: targetSchoolId });
     } else {
       return NextResponse.json({ success: true, message: "User is not a school admin" });

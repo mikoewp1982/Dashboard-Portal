@@ -40,7 +40,7 @@ export default function SuperAdminMonitoringPage() {
         schoolId: row.schoolId,
         role: "Admin Sekolah",
         identifier: row.npsn || row.authEmail || row.adminEmail || "-",
-        status: row.isActive && row.adminAccessActive ? "LOGIN DIBUKA" : "LOGIN DITUTUP",
+        status: row.isActive && row.adminAccessActive ? "AKSES LOGIN DIBUKA" : "AKSES LOGIN DITUTUP",
         lastLoginAt: row.lastLoginAt,
       }));
 
@@ -108,7 +108,7 @@ export default function SuperAdminMonitoringPage() {
           <div>
             <div className="text-sm font-semibold text-white">Monitoring Aktivitas User</div>
             <div className="mt-1 text-sm text-slate-400">
-              Memantau admin sekolah dan kepala sekolah berdasarkan aktivitas login terakhir yang tercatat.
+              Memantau admin sekolah dan kepala sekolah berdasarkan aktivitas login terakhir yang tercatat, terpisah dari status akses akun.
             </div>
           </div>
           <input
@@ -128,7 +128,7 @@ export default function SuperAdminMonitoringPage() {
                 <th className="px-5 py-4 text-left text-xs font-semibold tracking-widest text-slate-400">IDENTITAS</th>
                 <th className="px-5 py-4 text-left text-xs font-semibold tracking-widest text-slate-400">SEKOLAH</th>
                 <th className="px-5 py-4 text-left text-xs font-semibold tracking-widest text-slate-400">AKTIVITAS TERAKHIR</th>
-                <th className="px-5 py-4 text-left text-xs font-semibold tracking-widest text-slate-400">STATUS</th>
+                <th className="px-5 py-4 text-left text-xs font-semibold tracking-widest text-slate-400">STATUS AKSES</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 bg-slate-950/20">
