@@ -247,109 +247,111 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
   }
 
   return (
-    <div className="flex h-full flex-col p-6 space-y-6 overflow-y-auto bg-[#0b1221]">
-      <GasPetHeader loading={loading} onRefresh={() => void refresh()} />
-      <GasPetStatsCards stats={stats} />
-      {typedStudents.length > 0 && pets.length === 0 && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Data siswa tenant ini terbaca {typedStudents.length} siswa, tetapi belum ada data pet yang cocok untuk monitor ini.
-          Ini biasanya berarti node `virtual_pets` belum terbentuk, `studentId` pet belum match ke siswa, atau `schoolId` pet lama belum sinkron.
-        </div>
-      )}
-      {typedStudents.length > 0 && pets.length > 0 && studentsWithoutPetCount > 0 && (
-        <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
-          Monitor web sudah membaca {typedStudents.length} siswa. Saat ini {studentsWithoutPetCount} siswa belum punya data pet yang terhubung.
-        </div>
-      )}
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-[#0b1221]">
+      <div className="space-y-6 overflow-y-auto p-6">
+        <GasPetHeader loading={loading} onRefresh={() => void refresh()} />
+        <GasPetStatsCards stats={stats} />
+        {typedStudents.length > 0 && pets.length === 0 && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            Data siswa tenant ini terbaca {typedStudents.length} siswa, tetapi belum ada data pet yang cocok untuk monitor ini.
+            Ini biasanya berarti node `virtual_pets` belum terbentuk, `studentId` pet belum match ke siswa, atau `schoolId` pet lama belum sinkron.
+          </div>
+        )}
+        {typedStudents.length > 0 && pets.length > 0 && studentsWithoutPetCount > 0 && (
+          <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
+            Monitor web sudah membaca {typedStudents.length} siswa. Saat ini {studentsWithoutPetCount} siswa belum punya data pet yang terhubung.
+          </div>
+        )}
+      </div>
 
-      {/* Main Content */}
-      <div className="bg-[#111827]/40 rounded-xl border border-slate-800 overflow-hidden mt-2">
-        {/* Tabs */}
-        <div className="border-b border-slate-800 px-6 pt-4 flex gap-8 overflow-x-auto">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`cursor-pointer pb-4 text-sm font-medium flex items-center gap-2 transition-colors relative ${
-                activeTab === tab.id 
-                ? 'text-red-500 border-b-2 border-red-500' 
-                : 'text-slate-400 hover:text-slate-300 border-transparent border-b-2'
-              }`}
-            >
-              {tab.label}
-              {tab.id === 'risk' && stats.atRisk > 0 && (
-                <span className="bg-red-200 text-red-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1">
-                  {stats.atRisk}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+      <div className="min-h-0 flex-1 px-6 pb-6">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#111827]/40">
+          <div className="flex gap-8 overflow-x-auto border-b border-slate-800 px-6 pt-4">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`cursor-pointer pb-4 text-sm font-medium flex items-center gap-2 transition-colors relative ${
+                  activeTab === tab.id
+                    ? 'text-red-500 border-b-2 border-red-500'
+                    : 'text-slate-400 hover:text-slate-300 border-transparent border-b-2'
+                }`}
+              >
+                {tab.label}
+                {tab.id === 'risk' && stats.atRisk > 0 && (
+                  <span className="bg-red-200 text-red-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1">
+                    {stats.atRisk}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
 
-        {/* Tab Content */}
-        <div className="p-6">
-          {activeTab === 'summary' && (
-            <GasPetSummaryTab
-              topClasses={topClasses}
-              leaderboardData={leaderboardData}
-              reviveHistoryRows={reviveHistoryRows}
-            />
-          )}
+          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            {activeTab === 'summary' && (
+              <GasPetSummaryTab
+                topClasses={topClasses}
+                leaderboardData={leaderboardData}
+                reviveHistoryRows={reviveHistoryRows}
+              />
+            )}
 
-          {activeTab === 'risk' && (
-            <GasPetRiskTab
-              searchTerm={searchTerm}
-              riskPets={riskPets}
-              onSearchChange={setSearchTerm}
-              onRevivePet={async (petId, studentName) => {
-                if (confirm(`Hidupkan kembali pet milik ${studentName}? Status akan di-reset ke 50%.`)) {
-                  await revivePet(petId);
-                }
-              }}
-              onResetPetLevel={async (petId, studentName) => {
-                if (confirm(`Reset Level pet milik ${studentName}? Level akan kembali ke 1 dan XP ke 0.`)) {
-                  await resetPetLevel(petId);
-                }
-              }}
-            />
-          )}
+            {activeTab === 'risk' && (
+              <GasPetRiskTab
+                searchTerm={searchTerm}
+                riskPets={riskPets}
+                onSearchChange={setSearchTerm}
+                onRevivePet={async (petId, studentName) => {
+                  if (confirm(`Hidupkan kembali pet milik ${studentName}? Status akan di-reset ke 50%.`)) {
+                    await revivePet(petId);
+                  }
+                }}
+                onResetPetLevel={async (petId, studentName) => {
+                  if (confirm(`Reset Level pet milik ${studentName}? Level akan kembali ke 1 dan XP ke 0.`)) {
+                    await resetPetLevel(petId);
+                  }
+                }}
+              />
+            )}
 
-          {activeTab === 'leaderboard' && (
-            <GasPetLeaderboardTab leaderboardData={leaderboardData} />
-          )}
-          
-          {activeTab === 'stats' && (
-            <GasPetStatsTab statGroups={statGroups} />
-          )}
+            {activeTab === 'leaderboard' && (
+              <GasPetLeaderboardTab
+                leaderboardData={leaderboardData}
+              />
+            )}
 
-          {activeTab === 'rewards' && (
-            <GasPetRewardsTab
-              rewardTarget={rewardTarget}
-              selectedClassReward={selectedClassReward}
-              selectedStudentId={selectedStudentId}
-              studentSearchTerm={studentSearchTerm}
-              rewardType={rewardType}
-              rewardAmount={rewardAmount}
-              isSubmittingReward={isSubmittingReward}
-              uniqueClasses={uniqueClasses}
-              students={typedStudents}
-              onRewardTargetChange={setRewardTarget}
-              onClassRewardChange={setSelectedClassReward}
-              onStudentSearchChange={setStudentSearchTerm}
-              onStudentSelect={(studentId, studentName) => {
-                setSelectedStudentId(studentId);
-                setStudentSearchTerm(studentName);
-              }}
-              onStudentClear={() => {
-                setSelectedStudentId("");
-                setStudentSearchTerm("");
-              }}
-              onRewardTypeChange={setRewardType}
-              onRewardAmountChange={setRewardAmount}
-              onSubmit={handleGiveReward}
-            />
-          )}
+            {activeTab === 'stats' && (
+              <GasPetStatsTab statGroups={statGroups} />
+            )}
 
+            {activeTab === 'rewards' && (
+              <GasPetRewardsTab
+                rewardTarget={rewardTarget}
+                selectedClassReward={selectedClassReward}
+                selectedStudentId={selectedStudentId}
+                studentSearchTerm={studentSearchTerm}
+                rewardType={rewardType}
+                rewardAmount={rewardAmount}
+                isSubmittingReward={isSubmittingReward}
+                uniqueClasses={uniqueClasses}
+                students={typedStudents}
+                onRewardTargetChange={setRewardTarget}
+                onClassRewardChange={setSelectedClassReward}
+                onStudentSearchChange={setStudentSearchTerm}
+                onStudentSelect={(studentId, studentName) => {
+                  setSelectedStudentId(studentId);
+                  setStudentSearchTerm(studentName);
+                }}
+                onStudentClear={() => {
+                  setSelectedStudentId("");
+                  setStudentSearchTerm("");
+                }}
+                onRewardTypeChange={setRewardType}
+                onRewardAmountChange={setRewardAmount}
+                onSubmit={handleGiveReward}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

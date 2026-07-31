@@ -10,9 +10,12 @@ interface GasPetLeaderboardTabProps {
   leaderboardData: LeaderboardPet[];
 }
 
-export function GasPetLeaderboardTab({ leaderboardData }: GasPetLeaderboardTabProps) {
+export function GasPetLeaderboardTab({
+  leaderboardData,
+}: GasPetLeaderboardTabProps) {
   return (
-    <div className="overflow-x-auto">
+    <div className="space-y-4">
+      <div className="overflow-x-auto">
       <table className="w-full">
         <thead className="border-y border-slate-700 bg-slate-900/40">
           <tr>
@@ -45,6 +48,7 @@ export function GasPetLeaderboardTab({ leaderboardData }: GasPetLeaderboardTabPr
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

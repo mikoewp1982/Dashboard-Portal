@@ -1,0 +1,705 @@
+# Build Log GAS
+
+Dokumen ini adalah log operasional wajib untuk setiap perubahan APK `GAS`.
+
+## Aturan Pakai
+1. Tambahkan entry baru paling atas.
+2. Isi jujur apa yang diubah, flavor terdampak, build yang dijalankan, dan apa yang belum diuji.
+3. Jika tidak ada build, tulis alasan kenapa tidak build.
+4. Jika APK disalin ke folder distribusi, tulis lokasi pastinya.
+5. Gunakan format baku yang sama agar mudah dicari lintas orang dan lintas waktu.
+
+## Format Baku Entry
+Field berikut wajib dipakai di setiap entri:
+- Waktu
+- Pelaksana
+- Jenis perubahan: `feature`, `fix`, `refactor`, `docs`, atau `no-build`
+- Flavor terdampak
+- Tujuan perubahan
+- File utama yang diubah
+- Fitur lama yang wajib ikut dicek
+- Build yang dijalankan
+- Hasil build
+- Output APK
+- Disalin ke
+- Regression check yang dijalankan
+- Belum diuji
+- Catatan
+
+---
+
+## Template Entry
+
+### YYYY-MM-DD HH:mm - Judul Singkat
+- Pelaksana:
+- Jenis perubahan:
+- Tujuan perubahan:
+- Flavor terdampak:
+- File utama yang diubah:
+- Fitur lama yang wajib ikut dicek:
+- Build yang dijalankan:
+- Hasil build:
+- Output APK:
+- Disalin ke:
+- Regression check yang dijalankan:
+- Belum diuji:
+- Catatan:
+
+---
+
+## 2026-07-31 00:20 - Hardening web admin GAS untuk spinner 7 KAIH
+- Pelaksana: Assistant
+- Jenis perubahan: `no-build`
+- Tujuan perubahan: Menghentikan infinite spinner pada dashboard GAS web admin saat `schoolId` kosong atau subscription RTDB gagal, lalu memberi fallback yang jelas pada panel `7 KAIH`.
+- Flavor terdampak: `web-admin`
+- File utama yang diubah:
+  - `web/src/hooks/gas/useGasRecords.ts`
+  - `web/src/components/gas/seven-habits/Gas7HabitsPanel.tsx`
+  - `web/src/components/layout/Sidebar.tsx`
+  - `web/src/components/gas/virtual-pet/GasPetLeaderboardTab.tsx`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+  - `Apk Release/Pegangan Build APK/GAS/CATATAN_HARDENING_INTEGRASI_GAS.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - buka menu `Students` dan `Teachers` di dashboard GAS
+  - buka tab `7 KAIH`
+  - buka tab `Virtual Pet -> Peringkat`
+  - navigasi sidebar di mode development
+- Build yang dijalankan:
+  - tidak ada build APK
+  - `npx tsc --noEmit` pada folder `web`
+  - `npm run lint` pada folder `web`
+- Hasil build:
+  - tidak build APK karena perubahan hanya menyentuh web admin dan dokumentasi
+  - `npx tsc --noEmit`: sukses
+  - `npm run lint`: gagal oleh hutang lint lama di repo (skrip util `.js`, beberapa warning/aturan lama), bukan oleh patch ini
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - review source: `useGasRecords.ts` sekarang mematikan loading dan mengosongkan data saat `schoolId`/path tidak siap atau listener gagal
+  - review source: `Gas7HabitsPanel.tsx` sekarang menampilkan fallback message saat sesi admin belum membawa `schoolId`
+  - review source: `Sidebar.tsx` hanya melakukan prefetch link pada mode production
+  - review source: wrapper tabel `GasPetLeaderboardTab.tsx` dirapikan agar area ranking lebih stabil
+- Belum diuji:
+  - smoke test manual pada web live setelah patch ini di-push ke `main`
+  - verifikasi sesi admin bermasalah yang sebelumnya memicu infinite spinner
+  - verifikasi data ranking virtual pet pada tenant dengan data besar
+- Catatan: Perbaikan monitoring super admin sudah live lebih dulu, tetapi patch spinner GAS ini masih status lokal sampai ikut dideploy.
+
+## 2026-07-30 19:14 - Hardening akses OSIS realtime pada GAS siswa
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Memastikan menu `Catat Pelanggaran` di APK GAS siswa hanya muncul selama siswa masih terdaftar sebagai petugas OSIS di sekolah aktif. Jika admin menghapus siswa dari `Manajemen Petugas OSIS`, menu harus hilang otomatis tanpa perlu login ulang.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - Visibilitas menu `Catat Pelanggaran` pada akun siswa petugas OSIS
+  - Route `osis_discipline` setelah hak OSIS dicabut dari web admin
+  - Sinkronisasi preferensi `user_is_osis_staff` di sesi siswa
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Siswa-2026-07-30_19-13-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin siswa sukses
+  - assemble release siswa sukses
+  - review source: status OSIS sekarang dipantau realtime dari `gas/schools/{schoolId}/staff`
+  - review source: pencocokan petugas OSIS sekarang memakai alias siswa `studentId/nisn/loginKey/username`
+  - review source: saat entri staff hilang atau query gagal, `user_is_osis_staff` langsung di-reset ke `false`
+- Belum diuji:
+  - uji perangkat fisik untuk memastikan menu `Catat Pelanggaran` hilang otomatis beberapa saat setelah siswa dihapus dari `Manajemen Petugas OSIS`
+  - uji perangkat fisik untuk memastikan route `osis_discipline` ikut tertutup jika user masih berada di sesi siswa yang sama
+- Catatan: Build tetap menghasilkan warning lama yang tidak memblokir, terutama deprecation icon dan beberapa opt-in `ExperimentalCoroutinesApi`.
+
+## 2026-07-30 18:34 - Sinkronisasi teks card Literasi Aktif Virtual Pet siswa
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menyamakan card `Pencapaian -> Literasi Aktif` pada `Virtual Pet` siswa agar subtitle, progress, dan trigger pencapaian membaca semuanya konsisten memakai target 30 menit, bukan menyisakan teks lama 60 menit.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/VirtualPetViewModel.kt`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - Card `Pencapaian -> Literasi Aktif`
+  - Quest `Membaca Buku` pada `Virtual Pet`
+  - Konsistensi target 30 menit antar card `Status` dan `Pencapaian`
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Siswa-2026-07-30_18-34-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin siswa sukses
+  - assemble release siswa sukses
+  - review source: `Literasi Aktif` sekarang bertuliskan `Baca 30 menit atau kirim 1 aktivitas literasi`
+  - review source: progress card `Literasi Aktif` sekarang memakai format `x/30 menit`
+  - review source: quest `Membaca Buku` sekarang tercapai di 30 menit
+- Belum diuji:
+  - uji perangkat fisik untuk memastikan card `Pencapaian -> Literasi Aktif` tidak lagi menampilkan teks 60 menit
+  - uji perangkat fisik untuk memastikan pencapaian membaca tetap sinkron saat durasi baca menyentuh 30 menit
+- Catatan: Build tetap menghasilkan warning lama yang tidak memblokir, terutama deprecation icon dan beberapa opt-in `ExperimentalCoroutinesApi`.
+
+## 2026-07-30 18:26 - Hardening Virtual Pet siswa untuk literasi, E-Perpus, dan peringkat
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menghidupkan alur `Virtual Pet` siswa agar kartu `Literasi` benar-benar membuka `Tugas Literasi`, target `E-Perpus` turun menjadi 30 menit, dan tab `Peringkat` tetap membaca data meski identitas pet lama memakai alias siswa yang berbeda.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/StudentLibraryScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/VirtualPetViewModel.kt`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - Navigasi `Virtual Pet -> Tugas Literasi`
+  - Progress `E-Perpus` pada status aktivitas harian
+  - Tab `Pencapaian` dan `Peringkat` pada `Virtual Pet`
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Siswa-2026-07-30_18-26-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin siswa sukses
+  - assemble release siswa sukses
+  - review source: route `tasks` siswa sekarang membuka `StudentLibraryScreen` dengan tab awal `Tugas Literasi`
+  - review source: status aktivitas `E-Perpus` sekarang penuh di 30 menit dan label teks ikut berubah ke `30 menit membaca hari ini`
+  - review source: leaderboard `Virtual Pet` sekarang mencocokkan siswa dengan alias `recordId/id/nisn/username`
+- Belum diuji:
+  - uji perangkat fisik untuk memastikan kartu `Literasi` dari `Virtual Pet` langsung membuka daftar tugas aktif
+  - uji perangkat fisik untuk memastikan `E-Perpus` penuh saat mencapai 30 menit baca
+  - uji perangkat fisik untuk memastikan tab `Pencapaian` dan `Peringkat` tampil data nyata pada akun dengan data pet lama
+- Catatan: Build tetap menghasilkan warning lama yang tidak memblokir, terutama deprecation icon dan beberapa opt-in `ExperimentalCoroutinesApi`.
+
+## 2026-07-30 17:47 - Penataan ulang urutan menu beranda GAS guru
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menyesuaikan urutan menu beranda GAS guru agar mengikuti susunan operasional yang diminta, dengan `Rekapitulasi` dipindah ke posisi paling akhir tanpa mengubah route menu.
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - Urutan grid menu beranda guru
+  - Navigasi semua menu guru yang sudah ada
+  - Akses menu `Rekapitulasi` dari beranda guru
+- Build yang dijalankan:
+  - `:app:compileGuruReleaseKotlin`
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_17-47-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin guru sukses
+  - assemble release guru sukses
+  - review source: urutan menu guru sekarang `Data Siswa -> Presensi Siswa -> Presensi Sholat -> Literasi & Tugas -> 7 KAIH -> Kedisiplinan -> Layanan Aduan -> Notifikasi -> Rekapitulasi`
+  - review source: route `teacher_recap` tetap aktif, hanya dipindah ke posisi paling akhir
+- Belum diuji:
+  - uji perangkat fisik untuk memastikan urutan grid guru tampil sesuai susunan baru
+  - uji perangkat fisik untuk memastikan `Rekapitulasi` tetap bisa dibuka normal dari posisi terakhir
+- Catatan: Build tetap menghasilkan warning lama yang tidak memblokir, terutama deprecation icon dan beberapa opt-in `ExperimentalCoroutinesApi`.
+
+## 2026-07-30 17:27 - Penataan ulang urutan menu beranda GAS siswa
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menyesuaikan urutan menu beranda GAS siswa agar mengikuti urutan operasional yang diminta, dengan `Catat Pelanggaran` tetap khusus petugas OSIS dan berada di posisi paling akhir.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt`
+  - `Apk Release/Pegangan Build APK/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - Urutan grid menu beranda siswa
+  - Visibilitas menu `Catat Pelanggaran` untuk akun OSIS
+  - Navigasi menu siswa yang sudah ada
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Siswa-2026-07-30_17-27-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin siswa sukses
+  - assemble release siswa sukses
+  - review source: urutan menu dasar siswa sekarang `Absensi -> Presensi Sholat -> Lentera Digital -> 7 KAIH -> Virtual Pet -> Kedisiplinan -> Layanan Aduan -> Notifikasi -> Tools`
+  - review source: `Catat Pelanggaran` tetap hanya ditambahkan untuk akun OSIS dan tetap berada di urutan terakhir
+- Belum diuji:
+  - uji perangkat fisik untuk memastikan urutan grid tampil benar pada akun siswa biasa
+  - uji perangkat fisik untuk memastikan akun OSIS melihat `Catat Pelanggaran` sesudah `Tools`
+- Catatan: Build tetap menghasilkan warning lama yang tidak memblokir, terutama deprecation icon dan beberapa opt-in `ExperimentalCoroutinesApi`.
+
+## 2026-07-30 14:05 - Menu Rekapitulasi Kelas guru muncul di beranda
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Memunculkan menu `Rekapitulasi` di beranda guru dan menambahkan route `teacher_recap` ke `TeacherRecapScreen` (sebelumnya layar sudah ada tetapi tidak terhubung, sehingga menu tidak muncul).
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt`
+- Fitur lama yang wajib ikut dicek:
+  - Beranda guru (grid menu)
+  - Navigasi guru ke layar `Rekapitulasi`
+- Build yang dijalankan:
+  - `:app:compileGuruReleaseKotlin`
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_14-05-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin guru sukses
+  - assemble release guru sukses
+  - review source: menu `Rekapitulasi` guru sekarang punya item di beranda dan route `teacher_recap` sudah terdaftar
+- Belum diuji:
+  - uji perangkat fisik memastikan menu `Rekapitulasi` muncul di beranda guru dan layar bisa dibuka
+- Catatan: Perubahan ini melengkapi build 13:23 yang fokus hardening alias ID, tanpa mengubah logika rekap bulanan `H/S/I/A`.
+
+## 2026-07-30 13:23 - Hardening alias ID siswa pada modul guru non-kehadiran
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menutup titik rawan yang masih tersisa setelah fix rekap bulanan, yaitu modul `Presensi Sholat`, `Kedisiplinan`, dan `Notifikasi` guru yang masih mengandalkan `id/nisn` sempit sehingga data siswa bisa hilang bila backend menyimpan `recordId` atau `username`.
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherPrayerViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherPrayerScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherDisciplineViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherNotificationViewModel.kt`
+- Fitur lama yang wajib ikut dicek:
+  - Presensi Sholat guru (harian + rekap bulanan)
+  - Kedisiplinan guru (filter record + riwayat)
+  - Notifikasi guru untuk literasi dan bullying
+- Build yang dijalankan:
+  - `:app:compileGuruReleaseKotlin`
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_13-23-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin guru sukses setelah helper alias diperluas
+  - assemble release guru sukses
+  - review source: `Presensi Sholat` guru sekarang membaca alias `recordId/id/nisn/username` dan ikut menyimpan `username` pada manual submit
+  - review source: `Kedisiplinan` guru sekarang memfilter dan membangun riwayat dengan alias siswa lengkap
+  - review source: `Notifikasi` guru sekarang mencocokkan literasi dan bullying memakai alias siswa lengkap, tidak hanya `id/nisn`
+- Belum diuji:
+  - uji perangkat fisik `Presensi Sholat` guru untuk siswa yang source datanya memakai alias selain NISN
+  - uji perangkat fisik `Kedisiplinan` guru memastikan record otomatis/manual tidak hilang dari riwayat
+  - uji perangkat fisik notifikasi literasi dan bullying guru untuk siswa dengan alias ID campuran
+- Catatan: Entry ini adalah tindak lanjut audit setelah kasus `A:26 -> 25` selesai. Fokusnya bukan UI, melainkan hardening logika join data siswa lintas modul guru.
+
+## 2026-07-30 13:02 - Rekap bulanan guru diperbaiki dengan alias matching identitas siswa
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menutup kasus nyata selisih rekap bulanan guru (`A:26` vs `25`) dengan mencocokkan log absensi ke siswa memakai alias identitas yang lebih fleksibel, sehingga record yang tersimpan sebagai `recordId`, `id`, `nisn`, atau `username` tetap masuk ke siswa yang benar.
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt`
+- Fitur lama yang wajib ikut dicek:
+  - Rekapitulasi Kehadiran guru (tab `Rekap Bulanan`)
+  - konsistensi angka `H/S/I/A` terhadap tabel siswa Web Admin
+  - kasus siswa yang sebelumnya kehilangan 1 log karena mismatch identitas
+- Build yang dijalankan:
+  - `:app:compileGuruReleaseKotlin`
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_13-02-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin guru sukses
+  - assemble release guru sukses
+  - review source: rekap bulanan sekarang membangun `studentAliasMap` dari `recordId`, `id`, `nisn`, `username`
+  - review source: log absensi bulanan dipetakan ke siswa lewat alias `studentId`, `nisn`, `username`, lalu dirender memakai key identitas bulanan yang sama
+- Belum diuji:
+  - uji perangkat fisik memastikan kasus siswa `ok` berubah dari `A:26` menjadi `A:25`
+  - uji perangkat fisik membandingkan angka `H/S/I/A` guru vs Web Admin untuk beberapa siswa dengan riwayat ID campuran
+- Catatan: Entry ini menyempurnakan build `12:53`. Format output tetap `H/S/I/A`, tetapi pencocokan record sekarang tidak lagi bergantung pada satu ID tunggal.
+
+## 2026-07-30 12:53 - Rekap bulanan guru disamakan persis ke tabel siswa Web Admin
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menyesuaikan perubahan 12:46 agar APK guru mengikuti tabel siswa di Web Admin secara persis, yaitu format `H/S/I/A` tanpa kolom `T`, memakai `student.id` kanonik yang sama, dan menghitung `LATE` sebagai `Hadir`.
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt`
+- Fitur lama yang wajib ikut dicek:
+  - Rekapitulasi Kehadiran guru (tab `Rekap Bulanan`)
+  - konsistensi angka `H/S/I/A` terhadap tabel siswa Web Admin
+  - tampilan tabel bulanan setelah penghapusan kolom `T`
+- Build yang dijalankan:
+  - `:app:compileGuruReleaseKotlin`
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_12-53-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin guru sukses
+  - assemble release guru sukses
+  - review source: rekap bulanan sekarang memakai `student.id` sebagai key tabel, `LATE` digabung ke `PRESENT`, dan header kembali ke `H/S/I/A`
+- Belum diuji:
+  - uji perangkat fisik membandingkan angka `H/S/I/A` guru vs tabel siswa Web Admin
+  - uji perangkat fisik memastikan nama panjang dan lebar tabel tetap rapi setelah kolom `T` dihapus
+- Catatan: Entry ini menggantikan arah 12:46 pada level UI/output. Acuan final sekarang adalah tampilan tabel siswa di Web Admin, bukan kartu statistik atas yang masih memisahkan `Terlambat`.
+
+## 2026-07-30 12:46 - Rekap kehadiran guru disamakan dengan Web Admin
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menyamakan logika rekap bulanan `Rekapitulasi Kehadiran` guru dengan sumber data Web Admin. Perbaikan menutup mismatch key identitas siswa, memisahkan `Terlambat` dari `Hadir`, dan menghentikan perhitungan `Alpa` untuk tanggal masa depan pada bulan berjalan.
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt`
+- Fitur lama yang wajib ikut dicek:
+  - Rekapitulasi Kehadiran guru (tab `Rekap Bulanan`)
+  - konsistensi angka `H/T/S/I/A` terhadap Web Admin
+  - tampilan tabel bulanan setelah penambahan kolom `T`
+- Build yang dijalankan:
+  - `:app:compileGuruReleaseKotlin`
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_12-46-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin guru sukses setelah perubahan model rekap bulanan
+  - assemble release guru sukses
+  - review source: rekap bulanan sekarang menghitung `PRESENT`, `LATE`, `SICK`, `PERMIT`, `ABSENT` secara terpisah dan membatasi bulan berjalan hanya sampai hari ini
+- Belum diuji:
+  - uji perangkat fisik membandingkan angka `H/T/S/I/A` di APK guru vs Web Admin untuk kelas yang sama
+  - uji tampilan tabel bulanan di layar HP memastikan kolom tambahan masih rapi
+- Catatan: Arah perbaikan mengikuti pola rekap bulanan yang sudah stabil di menu `Presensi Sholat`, yaitu key siswa konsisten dari proses hitung sampai proses render.
+
+## 2026-07-30 12:33 - Sinkronisasi label PET guru dengan state `Sekarat`
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menyamakan label kondisi PET di `Data Siswa` guru dengan state machine APK siswa. Sebelumnya guru hanya mengenal `Sehat/Sakit/Mati`, sehingga pet yang seharusnya `Sekarat` masih tampil sebagai `Sakit`.
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherStudentsScreen.kt`
+- Fitur lama yang wajib ikut dicek:
+  - Data Siswa (kolom PET)
+  - sinkronisasi label kondisi pet dengan APK siswa
+- Build yang dijalankan:
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_12-33-release.apk`
+- Regression check yang dijalankan:
+  - assemble release guru sukses
+  - review source: label PET guru sekarang memakai `lowestVitalScore()` dengan threshold `Dead -> Sekarat (<30) -> Sakit (<60) -> Sehat`
+- Belum diuji:
+  - uji perangkat fisik memastikan kondisi yang tampil `Sekarat` di APK siswa ikut tampil `Sekarat` di menu guru
+  - uji perubahan status naik/turun tanpa relogin guru
+- Catatan: Entry ini melengkapi perbaikan 12:25 yang sebelumnya baru membetulkan pencocokan identitas pet realtime.
+
+## 2026-07-30 12:25 - Perbaikan tabel guru (divider vertikal + PET realtime)
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Memastikan garis pemisah kolom benar-benar turun sampai ke row data pada tabel guru (bukan hanya header) dan memperbaiki kolom `PET` di `Data Siswa` guru agar bisa membaca status virtual pet realtime (tidak tampil `-` terus karena mismatch ID siswa).
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherStudentsScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherPrayerScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt`
+- Fitur lama yang wajib ikut dicek:
+  - Data Siswa (kolom PET)
+  - Presensi Sholat (tabel manual)
+  - Rekapitulasi Kehadiran (tabel manual)
+- Build yang dijalankan:
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_12-25-release.apk`
+- Regression check yang dijalankan:
+  - assemble release guru sukses
+  - review source: row tabel pakai `IntrinsicSize.Min` supaya divider vertikal tidak kolaps
+  - review source: kolom `PET` cocokkan pet dengan prioritas `recordId -> nisn -> id -> username`
+- Belum diuji:
+  - uji perangkat fisik memastikan divider vertikal terlihat di row data (bukan hanya header)
+  - uji perangkat fisik memastikan kolom PET berubah realtime ketika pet siswa berubah kondisi (sehat/sakit/mati)
+- Catatan: Build acuan `OK_4` untuk GAS Guru sekarang mengacu ke `2026-07-30 12:25`.
+
+## 2026-07-30 11:59 - Pemisahan tampilan Kedisiplinan GAS Guru
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Memisahkan menu `Pelanggaran` dan `Riwayat` pada Kedisiplinan guru agar tidak lagi tercampur dalam satu list. Mode `Pelanggaran` sekarang hanya menampilkan daftar siswa, sedangkan mode `Riwayat` hanya menampilkan riwayat terbaru.
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Memisahkan menu `Pelanggaran` dan `Riwayat` pada Kedisiplinan guru agar tidak lagi tercampur dalam satu list. Mode `Pelanggaran` sekarang hanya menampilkan daftar siswa, sedangkan mode `Riwayat` hanya menampilkan riwayat terbaru.
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherDisciplineScreen.kt`
+- Fitur lama yang wajib ikut dicek:
+  - Kedisiplinan guru
+  - input pelanggaran final
+  - daftar riwayat terbaru
+- Build yang dijalankan:
+  - `:app:compileGuruReleaseKotlin`
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_11-59-release.apk`
+- Regression check yang dijalankan:
+  - compile release Kotlin guru sukses
+  - assemble release guru sukses
+  - review struktur UI `Pelanggaran` dan `Riwayat` pada source
+- Belum diuji:
+  - uji perangkat fisik perpindahan mode `Pelanggaran` dan `Riwayat`
+  - verifikasi list siswa benar-benar tidak bercampur dengan riwayat di HP target
+  - verifikasi daftar riwayat tidak bercampur dengan list siswa di HP target
+- Catatan: Entry ini menggantikan perilaku lama `Riwayat` yang hanya berupa shortcut lompat. Build acuan `OK_4` untuk GAS Guru sekarang mengacu ke `2026-07-30 11:59`.
+
+---
+
+## 2026-07-30 10:58 - Rebuild GAS Guru & Siswa (paket integrasi terbaru)
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Memastikan APK GAS Guru & GAS Siswa memasukkan perubahan integrasi terbaru (terutama notifikasi/pet dan sinkronisasi path RTDB) dalam build release terbaru.
+- Flavor terdampak: `guru`, `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
+- Fitur lama yang wajib ikut dicek:
+  - notifikasi inbox (`notification_inbox`) untuk siswa & guru
+  - notifikasi status pet (SICK/DEAD) untuk siswa
+  - login siswa & guru (auto-isi nama)
+- Build yang dijalankan:
+  - `:app:assembleGuruRelease`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_10-58-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Siswa-2026-07-30_10-58-release.apk`
+  - `D:\Dashboard Portal\Apk Release\GAS\GAS-Guru-2026-07-30_10-58-release.apk`
+  - `D:\Dashboard Portal\Apk Release\GAS\GAS-Siswa-2026-07-30_10-58-release.apk`
+  - `D:\Dashboard Portal\Apk Release\GAS\app-guru-release.apk` (ditimpa)
+  - `D:\Dashboard Portal\Apk Release\GAS\app-siswa-release.apk` (ditimpa)
+- Regression check yang dijalankan:
+  - assemble release guru+siswa sukses
+  - verifikasi file output ter-copy ke OK_4 (rumah APK terbaru)
+- Belum diuji:
+  - uji perangkat fisik notifikasi inbox (guru & siswa)
+  - uji perangkat fisik notifikasi pet (SICK/DEAD)
+- Catatan: OK_4 sekarang mengacu ke build terbaru `2026-07-30 10:58`.
+
+## 2026-07-30 09:49 - Login siswa auto-isi, hapus prestasi, dan kunci pet mati
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Mengubah login GAS siswa menjadi pola `NPSN -> NISN -> Nama Siswa` dengan auto-isi nama dari database, menghapus card `Prestasi` pada Kedisiplinan siswa, dan memastikan overlay `pet mati` benar-benar memblokir interaksi.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/DisciplineScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt`
+- Fitur lama yang wajib ikut dicek:
+  - login siswa
+  - Kedisiplinan siswa
+  - gate pet mati
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Siswa-2026-07-30_09-49-release.apk`
+  - `D:\Dashboard Portal\Apk Release\GAS\GAS-Siswa-2026-07-30_09-49-release.apk`
+- Regression check yang dijalankan:
+  - assemble release siswa sukses
+  - review urutan input login siswa dan alur auto-isi nama
+  - review penghapusan card `Prestasi` di kedisiplinan siswa
+  - review overlay pet mati memblokir interaksi sentuhan
+- Belum diuji:
+  - uji perangkat fisik login siswa dengan NPSN dan NISN riil
+  - verifikasi nama siswa benar-benar terisi otomatis di berbagai tenant
+  - verifikasi siswa tidak bisa mengakses UI GAS saat pet mati (modal blocking)
+- Catatan: File `OK_4` untuk GAS siswa sekarang mengacu ke build terbaru `2026-07-30 09:49`.
+
+## 2026-07-30 09:16 - Perapihan tabel, login, dan kedisiplinan GAS Guru
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Mempertegas garis pemisah tabel guru, mengubah login guru menjadi pola `NPSN -> NUPTK -> Nama Guru` dengan auto-isi nama, serta menambahkan menu cepat `Riwayat` di samping card `Pelanggaran`.
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherStudentsScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherPrayerScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherDisciplineScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt`
+- Fitur lama yang wajib ikut dicek:
+  - login guru
+  - Data Siswa
+  - Presensi Siswa
+  - Presensi Sholat
+  - Kedisiplinan guru
+- Build yang dijalankan:
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_09-16-release.apk`
+  - `D:\Dashboard Portal\Apk Release\GAS\GAS-Guru-2026-07-30_09-16-release.apk`
+- Regression check yang dijalankan:
+  - assemble release guru sukses
+  - review urutan field login guru dan alur auto-isi nama
+  - review penebalan divider pada tiga tabel guru
+  - review tombol `Riwayat` untuk lompat ke daftar riwayat terbaru
+- Belum diuji:
+  - uji perangkat fisik login guru dengan kombinasi NPSN dan NUPTK riil
+  - verifikasi visual garis pemisah tabel di HP target
+  - verifikasi tombol `Riwayat` di menu kedisiplinan pada perangkat fisik
+- Catatan: File `OK_4` untuk GAS Guru sekarang mengacu ke build terbaru `2026-07-30 09:16`.
+
+
+## 2026-07-30 07:56 - Standardisasi BUILD_LOG GAS
+- Pelaksana: Assistant
+- Tujuan perubahan: Membakukan satu format entry BUILD_LOG untuk semua perubahan APK GAS agar setiap orang mencatat dengan pola yang sama.
+- Flavor terdampak: `siswa`, `guru`, `kepala`, `legacy`, `universal`
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - tidak ada perubahan perilaku APK
+- Build yang dijalankan:
+  - tidak ada
+- Hasil build: tidak build karena hanya perubahan dokumen
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - verifikasi format baku field log
+- Belum diuji:
+  - tidak relevan
+- Catatan: Entry ini menjadi format acuan untuk semua catatan berikutnya.
+
+## 2026-07-30 07:49 - Hard gate EduLock di GAS Siswa
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menahan akses GAS siswa bila EduLock belum terpasang dan membuat overlay benar-benar memblokir sentuhan.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/EduLockComplianceGate.kt`
+- Fitur lama yang wajib ikut dicek:
+  - login siswa
+  - overlay compliance EduLock
+  - akses siswa ke home/fitur utama
+- Build yang dijalankan:
+  - `:app:compileSiswaDebugKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke: `D:\Dashboard Portal\Apk Release\OK_4\GAS-Siswa-2026-07-30_07-49-release.apk`
+- Regression check yang dijalankan:
+  - verifikasi compile siswa
+  - verifikasi assemble release siswa
+- Belum diuji:
+  - uji perangkat fisik penuh
+  - verifikasi interaksi dengan EduLock di semua skenario lapangan
+- Catatan: Perubahan ini tidak mengubah APK EduLock, hanya GAS siswa.
+
+## 2026-07-30 00:33 - Perbaikan tabel guru untuk nama panjang
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Membuat nama siswa di Data Siswa mendukung 2 baris dan menghapus NISN dari dua layar presensi agar ruang nama lebih lega.
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherStudentsScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherPrayerScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt`
+- Fitur lama yang wajib ikut dicek:
+  - menu Data Siswa
+  - Presensi Sholat
+  - Rekapitulasi Kehadiran
+- Build yang dijalankan:
+  - `:app:compileGuruDebugKotlin`
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke: `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_00-33-release.apk`
+- Regression check yang dijalankan:
+  - compile guru
+  - assemble guru release
+- Belum diuji:
+  - verifikasi semua tabel guru lain dengan nama sangat panjang
+- Catatan: perubahan hanya untuk flavor guru.
+
+## 2026-07-29 21:53 - Lock laporan 7 KAIH siswa dan perbaikan reader Lentera
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Tujuan perubahan: Mengunci checklist 7 KAIH setelah siswa mengirim laporan minggu berjalan dan memperbaiki pembaca Lentera Digital dengan zoom/pan agar buku lebih terbaca.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/SevenHabitsRepository.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/SevenHabitsViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/SevenHabitsScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/NativePdfReaderScreen.kt`
+- Fitur lama yang wajib ikut dicek:
+  - submit laporan 7 KAIH siswa
+  - pembukaan buku dari menu Lentera Digital
+  - gesture baca saat zoom aktif dan nonaktif
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke: `D:\Dashboard Portal\Apk Release\OK_4\GAS-Siswa-2026-07-29_21-53-release.apk`
+- Regression check yang dijalankan:
+  - verifikasi build release siswa
+  - audit kode lock submit mingguan
+  - audit kode zoom reader PDF
+- Belum diuji:
+  - seluruh skenario buku PDF berbeda ukuran pada perangkat fisik
+- Catatan: Status lock disimpan persisten di RTDB agar siswa tidak bisa edit ulang pada minggu yang sama.
+
+## 2026-07-29 20:57 - Input cepat nilai kelas untuk 7 KAIH guru
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Tujuan perubahan: Menambah fitur input cepat nilai kelas 7 KAIH agar guru tidak perlu mengisi empat komponen nilai satu per satu untuk semua siswa.
+- Flavor terdampak: `guru`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherSevenHabitsScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/TeacherSevenHabitsRepository.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherSevenHabitsViewModel.kt`
+- Fitur lama yang wajib ikut dicek:
+  - input nilai per siswa
+  - rumus total 4 komponen x 25 = 100
+  - penyimpanan nilai guru
+- Build yang dijalankan:
+  - `:app:assembleGuruRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- Disalin ke: `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-29_20-57-release.apk`
+- Regression check yang dijalankan:
+  - verifikasi build release guru
+  - audit kode input massal dan koreksi manual per siswa
+- Belum diuji:
+  - seluruh kombinasi edit cepat lalu koreksi individu pada kelas besar
+- Catatan: Label preset kemudian disederhanakan menjadi `Nilai 20`, `Nilai 25`, dan `Reset`.

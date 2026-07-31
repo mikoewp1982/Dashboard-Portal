@@ -18,6 +18,7 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const linkPrefetch = process.env.NODE_ENV === "production";
 
   const handleLinkClick = () => {
     if (onClose) onClose();
@@ -131,6 +132,7 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
         <div className="mt-4 space-y-2">
           <Link
             href={isSuperAdmin ? "/super-admin/dashboard" : "/dashboard"}
+            prefetch={linkPrefetch}
             onClick={handleLinkClick}
             className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 cursor-pointer"
             style={{ cursor: "pointer" }}
@@ -157,6 +159,7 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
                   <Link
                     key={item.label}
                     href={item.href}
+                    prefetch={linkPrefetch}
                     onClick={handleLinkClick}
                     className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition cursor-pointer ${
                       isActive
@@ -185,6 +188,7 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
                   <Link
                     key={item.label}
                     href={item.href}
+                    prefetch={linkPrefetch}
                     onClick={handleLinkClick}
                     className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition cursor-pointer ${
                       isActive
@@ -212,6 +216,7 @@ const Sidebar = ({ className = "", onClose }: SidebarProps) => {
                   <Link
                     key={item.label}
                     href={item.href}
+                    prefetch={linkPrefetch}
                     onClick={handleLinkClick}
                     className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition cursor-pointer ${
                       isActive 

@@ -219,6 +219,16 @@ export function Gas7HabitsPanel({ schoolId }: { schoolId: string }) {
     window.print();
   };
 
+  if (!schoolId) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-[#0b1221] p-6">
+        <div className="max-w-lg rounded-2xl border border-amber-500/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-100">
+          Data sekolah admin belum siap di sesi ini. Muat ulang halaman atau login ulang agar `schoolId` terpasang, lalu buka lagi menu `7 KAIH`.
+        </div>
+      </div>
+    );
+  }
+
   if (studentsLoading || habitsLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-[#0b1221]">
