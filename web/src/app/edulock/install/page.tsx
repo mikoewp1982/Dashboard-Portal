@@ -59,9 +59,9 @@ const visualSteps = [
     imageAlt: "Halaman login aplikasi EduLock",
     callouts: [
       {
-        title: "Masukan NIS kalian",
+        title: "Masukan NISN kalian",
         body: "Isi kolom NISN dengan NISN kalian.",
-        positionClassName: "left-[6%] top-[30%] max-w-[38%]",
+        positionClassName: "right-[4%] top-[40%] max-w-[42%]",
         arrowClassName: "left-[36%] top-[41%] h-12 w-12 border-r-4 border-t-4",
         arrowRotationClassName: "rotate-45",
       },
@@ -238,9 +238,6 @@ export default function EduLockInstallPage() {
                                       {callout.body}
                                     </p>
                                   </div>
-                                  <div
-                                    className={`absolute border-red-400 ${callout.arrowClassName} ${callout.arrowRotationClassName}`}
-                                  />
                                 </div>
                               ))}
                             </div>
