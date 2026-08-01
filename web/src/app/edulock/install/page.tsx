@@ -182,7 +182,7 @@ export default function EduLockInstallPage() {
                 <div>
                   <div className="font-bold text-white">URL yang nanti dibagikan ke siswa</div>
                   <p className="mt-1 break-all rounded-xl bg-white/5 px-3 py-2 text-cyan-100">
-                    /edulock/install
+                    /e
                   </p>
                 </div>
               </div>
