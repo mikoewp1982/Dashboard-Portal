@@ -57,7 +57,7 @@ type LatestMasterSwitchCommandSnapshot = {
   pendingDeviceCount: number;
 };
 
-const ONLINE_WINDOW_MS = 15 * 60 * 1000;
+const ONLINE_WINDOW_MS = 3 * 60 * 1000;
 
 function parseClockTime(rawValue: string) {
   const value = String(rawValue || "").trim();
@@ -198,9 +198,11 @@ function parseActiveDevices(rawValue: unknown) {
     const isAccessibilityEnabled = readBoolean(record, "isAccessibilityEnabled");
     const isDeviceAdminEnabled = readBoolean(record, "isDeviceAdminEnabled");
     const isProtectionActive = readBoolean(record, "isProtectionActive");
+    const isExplicitlyOffline = rawStatus.toUpperCase().includes("OFFLINE");
     const computedOnline =
-      rawStatus.toUpperCase() === "ONLINE" ||
-      (lastSeenAt !== null && now - lastSeenAt <= ONLINE_WINDOW_MS);
+      !isExplicitlyOffline &&
+      (rawStatus.toUpperCase() === "ONLINE" ||
+        (lastSeenAt !== null && now - lastSeenAt <= ONLINE_WINDOW_MS));
 
     return {
       deviceId,
