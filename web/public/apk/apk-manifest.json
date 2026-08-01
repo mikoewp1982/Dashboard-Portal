@@ -1,0 +1,17 @@
+﻿{
+    "updatedAt":  "2026-08-02T01:54:30",
+    "files":  {
+                  "GAS-Siswa-release.apk":  {
+                                                "sizeBytes":  20521127,
+                                                "sha256":  "D6BBE3C2AAADC7056443783138CF3773AD0FB654FCA6B0D7ACBABF549B4CFF7A",
+                                                "lastModified":  "2026-08-01T23:07:03",
+                                                "sizeMB":  19.57
+                                            },
+                  "EduLock-studentRelease.apk":  {
+                                                     "sizeBytes":  3786949,
+                                                     "sha256":  "7ACBC617ADE69210C5C20DBED7FA41BA3362C3BEF38C4FF0B580AAB239FDD7E0",
+                                                     "lastModified":  "2026-08-01T20:32:32",
+                                                     "sizeMB":  3.61
+                                                 }
+              }
+}

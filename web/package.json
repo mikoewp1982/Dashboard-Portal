@@ -9,7 +9,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync:apk": "powershell -ExecutionPolicy Bypass -File .\\scripts\\sync-public-apk.ps1",
+    "sync:apk:gas": "powershell -ExecutionPolicy Bypass -File .\\scripts\\sync-public-apk.ps1 -App gas",
+    "sync:apk:edulock": "powershell -ExecutionPolicy Bypass -File .\\scripts\\sync-public-apk.ps1 -App edulock"
   },
   "dependencies": {
     "firebase": "^12.16.0",

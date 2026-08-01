@@ -1,11 +1,33 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 export const metadata: Metadata = {
   title: "Tutorial Instalasi EduLock Siswa",
   description: "Panduan instalasi APK EduLock untuk siswa melalui browser Android.",
 };
+
+function getApkDownloadHref(fileName: string) {
+  const baseHref = `/apk/${fileName}`;
+
+  try {
+    const manifestPath = path.join(process.cwd(), "public", "apk", "apk-manifest.json");
+    const manifestRaw = readFileSync(manifestPath, "utf8").replace(/^\uFEFF/, "");
+    const manifest = JSON.parse(manifestRaw) as {
+      files?: Record<string, { sha256?: string; lastModified?: string }>;
+    };
+
+    const fileMeta = manifest.files?.[fileName];
+    const versionToken = fileMeta?.sha256?.slice(0, 12) || fileMeta?.lastModified;
+    if (!versionToken) return baseHref;
+
+    return `${baseHref}?v=${encodeURIComponent(versionToken)}`;
+  } catch {
+    return baseHref;
+  }
+}
 
 const installSteps = [
   {
@@ -90,6 +112,8 @@ const visualSteps = [
 ];
 
 export default function EduLockInstallPage() {
+  const apkHref = getApkDownloadHref("EduLock-studentRelease.apk");
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#1d4ed8_0%,_#0f172a_46%,_#020617_100%)] text-white">
       <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-5 py-8 sm:px-8 lg:px-10 lg:py-10">
@@ -112,7 +136,7 @@ export default function EduLockInstallPage() {
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href="/apk/EduLock-studentRelease.apk"
+                  href={apkHref}
                   className="inline-flex items-center justify-center rounded-2xl bg-cyan-400 px-6 py-4 text-base font-bold text-slate-950 transition hover:bg-cyan-300"
                 >
                   Unduh APK EduLock
