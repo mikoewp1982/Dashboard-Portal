@@ -17,12 +17,24 @@ const installSteps = [
     body: "Jika muncul peringatan keamanan, buka pengaturan yang ditawarkan lalu aktifkan izin instal aplikasi dari browser yang sedang dipakai.",
   },
   {
-    title: "Buka file APK dan lanjutkan instalasi",
-    body: "Setelah izin aktif, kembali ke file unduhan lalu tekan Instal. Tunggu sampai proses selesai tanpa menutup layar.",
+    title: "Instal aplikasi sampai selesai",
+    body: "Setelah izin aktif, lanjutkan pemasangan APK sampai selesai tanpa menutup layar.",
   },
   {
-    title: "Buka aplikasi EduLock",
-    body: "Setelah terpasang, buka EduLock dan login memakai akun siswa yang dibagikan sekolah.",
+    title: "Buka logo aplikasi EduLock",
+    body: "Setelah instalasi selesai, cari logo aplikasi EduLock di HP siswa lalu tekan untuk membuka aplikasi.",
+  },
+  {
+    title: "Masuk ke halaman login",
+    body: "Saat aplikasi terbuka, siswa akan melihat halaman login EduLock dan siap memasukkan akun yang diberikan sekolah.",
+  },
+  {
+    title: "Klik tombol Masuk",
+    body: "Setelah akun diisi dengan benar, tekan tombol Masuk untuk melanjutkan proses aktivasi awal aplikasi.",
+  },
+  {
+    title: "Setup konfigurasi lalu mulai aplikasi",
+    body: "Ikuti setup konfigurasi yang muncul di layar sampai selesai, lalu lanjutkan ke tahap mulai aplikasi.",
   },
 ];
 
@@ -31,6 +43,50 @@ const notes = [
   "Pastikan ruang penyimpanan cukup sebelum mengunduh dan menginstal.",
   "Jangan menghapus aplikasi setelah berhasil login tanpa arahan dari sekolah.",
   "Jika tombol Instal tidak muncul, cek lagi izin instal aplikasi dari browser/File Manager.",
+];
+
+const visualSteps = [
+  {
+    title: "1. Buka logo aplikasi EduLock",
+    body: "Setelah APK berhasil dipasang, cari ikon EduLock di layar HP siswa lalu tekan untuk membuka aplikasi.",
+    imageSrc: "/tutorial/edulock/logo-aplikasi.png",
+    imageAlt: "Logo aplikasi EduLock",
+  },
+  {
+    title: "2. Masuk ke halaman login lalu klik Masuk",
+    body: "Saat halaman login muncul, isi akun siswa yang dibagikan sekolah, kemudian tekan tombol Masuk untuk lanjut.",
+    imageSrc: "/tutorial/edulock/halaman-login.jpeg",
+    imageAlt: "Halaman login aplikasi EduLock",
+    callouts: [
+      {
+        title: "Masukan NIS kalian",
+        body: "Isi kolom NISN dengan NISN kalian.",
+        positionClassName: "left-[6%] top-[30%] max-w-[38%]",
+        arrowClassName: "left-[36%] top-[41%] h-12 w-12 border-r-4 border-t-4",
+        arrowRotationClassName: "rotate-45",
+      },
+      {
+        title: "Nama siswa terisi otomatis",
+        body: "Pastikan nama Anda sesuai. Jika tidak sesuai, hubungi Admin.",
+        positionClassName: "right-[4%] top-[50%] max-w-[42%]",
+        arrowClassName: "right-[34%] top-[61%] h-12 w-12 border-l-4 border-t-4",
+        arrowRotationClassName: "-rotate-45",
+      },
+      {
+        title: "Jika sesuai, tekan tombol Masuk",
+        body: "Lanjutkan setelah data siswa benar.",
+        positionClassName: "left-[10%] bottom-[6%] max-w-[42%]",
+        arrowClassName: "left-[38%] bottom-[20%] h-12 w-12 border-r-4 border-b-4",
+        arrowRotationClassName: "-rotate-45",
+      },
+    ],
+  },
+  {
+    title: "3. Selesaikan setup konfigurasi lalu mulai aplikasi",
+    body: "Ikuti petunjuk setup konfigurasi yang tampil di layar sampai selesai, kemudian lanjutkan ke tahap mulai aplikasi.",
+    imageSrc: "/tutorial/edulock/setup-konfigurasi.jpeg",
+    imageAlt: "Halaman setup konfigurasi EduLock",
+  },
 ];
 
 export default function EduLockInstallPage() {
@@ -143,6 +199,59 @@ export default function EduLockInstallPage() {
                 </div>
               ))}
             </div>
+
+            <div className="mt-8 border-t border-white/10 pt-8">
+              <div className="text-sm font-bold uppercase tracking-[0.24em] text-cyan-200">
+                Panduan Visual
+              </div>
+              <div className="mt-5 grid gap-4">
+                {visualSteps.map((step) => (
+                  <div
+                    key={step.title}
+                    className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5"
+                  >
+                    <div className="border-b border-white/10 bg-slate-950/30 p-4 sm:p-5">
+                      <h3 className="text-lg font-bold text-white">{step.title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-slate-300">{step.body}</p>
+                    </div>
+                    <div className="p-4 sm:p-5">
+                      <div className="overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-950/50">
+                        <div className="relative">
+                          <Image
+                            src={step.imageSrc}
+                            alt={step.imageAlt}
+                            width={1200}
+                            height={900}
+                            className="h-auto w-full object-contain"
+                          />
+                          {"callouts" in step && step.callouts ? (
+                            <div className="pointer-events-none absolute inset-0">
+                              {step.callouts.map((callout) => (
+                                <div key={callout.title}>
+                                  <div
+                                    className={`absolute rounded-2xl border-2 border-red-400 bg-white/95 px-3 py-2 shadow-lg ${callout.positionClassName}`}
+                                  >
+                                    <div className="text-xs font-black uppercase tracking-[0.16em] text-red-700">
+                                      {callout.title}
+                                    </div>
+                                    <p className="mt-1 text-[11px] font-semibold leading-4 text-slate-800">
+                                      {callout.body}
+                                    </p>
+                                  </div>
+                                  <div
+                                    className={`absolute border-red-400 ${callout.arrowClassName} ${callout.arrowRotationClassName}`}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -177,12 +286,6 @@ export default function EduLockInstallPage() {
                   <div className="font-bold text-white">Aplikasi berhasil terpasang tapi tidak bisa masuk?</div>
                   <p className="mt-1">
                     Pastikan akun siswa yang dipakai benar. Jika masih gagal, hubungi admin sekolah.
-                  </p>
-                </div>
-                <div>
-                  <div className="font-bold text-white">URL yang nanti dibagikan ke siswa</div>
-                  <p className="mt-1 break-all rounded-xl bg-white/5 px-3 py-2 text-cyan-100">
-                    /e
                   </p>
                 </div>
               </div>
