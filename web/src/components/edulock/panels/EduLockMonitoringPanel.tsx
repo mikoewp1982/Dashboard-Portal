@@ -82,7 +82,7 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
         const status = runtime?.isOnline
           ? "ONLINE"
           : deviceId
-            ? "TERIKAT"
+            ? "OFFLINE"
             : "BELUM BINDING";
         const trustScore =
           runtime?.trustScore ??
@@ -252,8 +252,8 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                             student.status === "ONLINE"
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : student.status === "TERIKAT"
-                                ? "bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                              : student.status === "OFFLINE"
+                                ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                                 : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
                           }`}>
                             {student.status}
