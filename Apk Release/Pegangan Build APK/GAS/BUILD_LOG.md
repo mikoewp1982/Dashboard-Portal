@@ -21,6 +21,290 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-02 09:38 - Portal tutorial GAS siswa: rapikan posisi & tampilan text box (callout) panduan login
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Mempercantik dan merapikan posisi text box petunjuk (callout) pada gambar panduan login agar lebih rapi, tidak mengganggu tampilan, dan lebih sesuai dengan area input.
+- File utama yang diubah:
+  - `web/src/app/gas/install/page.tsx`
+- Fitur lama yang wajib ikut dicek:
+  - posisi callout pada panduan visual login (NISN, nama otomatis, tombol Masuk) tetap terbaca di berbagai ukuran layar
+- Build yang dijalankan:
+  - tidak ada build APK baru
+- Hasil build: tidak build
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - review kelas Tailwind untuk container callout + posisi callout login
+- Belum diuji:
+  - cek visual langsung di HP nyata (responsif)
+- Catatan:
+  - Perubahan ini hanya menyentuh portal tutorial web, tidak mengubah APK GAS siswa.
+
+## 2026-08-02 09:33 - Portal tutorial GAS siswa: tambah catatan tombol Presensi Sholat berbasis area musholla
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menambahkan keterangan bahwa tombol `Presensi Sholat` hanya akan muncul jika siswa berada di area musholla, agar ekspektasi siswa sesuai saat praktik.
+- File utama yang diubah:
+  - `web/src/app/gas/install/page.tsx`
+- Fitur lama yang wajib ikut dicek:
+  - section `Presensi Sholat` pada `/gas/install` menampilkan keterangan tambahan
+- Build yang dijalankan:
+  - tidak ada build APK baru
+- Hasil build: tidak build
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - review teks `visualSteps` Presensi Sholat pada portal tutorial
+- Belum diuji:
+  - cek visual langsung di HP nyata
+- Catatan:
+  - Perubahan ini hanya menyentuh portal tutorial web, tidak mengubah APK GAS siswa.
+
+## 2026-08-02 09:30 - Portal tutorial GAS siswa: tambah visual menu Presensi Sholat
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menambahkan panduan visual penggunaan menu `Presensi Sholat` pada portal tutorial `/gas/install` mengikuti urutan gambar dari folder tutorial.
+- File utama yang diubah:
+  - `web/src/app/gas/install/page.tsx`
+  - `web/public/tutorial/gas-siswa/presensi-sholat/1.jpeg`
+- Fitur lama yang wajib ikut dicek:
+  - bagian `Penggunaan Menu GAS` pada route `/gas/install`
+  - section `Presensi Sholat` menampilkan contoh visual tanpa pecah layout
+  - anchor link `Presensi Sholat` dari daftar menu mengarah ke bagian yang benar
+- Build yang dijalankan:
+  - tidak ada build APK baru
+- Hasil build: tidak build
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - verifikasi aset tutorial presensi sholat tersedia di `web/public/tutorial/gas-siswa/presensi-sholat`
+  - review source `gasMenuItems.presensi-sholat.visualSteps` sudah mengikuti urutan gambar
+- Belum diuji:
+  - cek visual langsung di HP nyata (responsif + loading gambar)
+- Catatan:
+  - Perubahan ini hanya menyentuh portal tutorial web, tidak mengubah APK GAS siswa.
+
+## 2026-08-02 09:23 - Portal tutorial GAS siswa: tambah visual menu Absensi
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menambahkan panduan visual penggunaan menu `Absensi` pada portal tutorial `/gas/install` mengikuti urutan gambar (1-3) agar siswa lebih mudah memahami alur absen.
+- File utama yang diubah:
+  - `web/src/app/gas/install/page.tsx`
+  - `web/public/tutorial/gas-siswa/absensi/1.jpeg`
+  - `web/public/tutorial/gas-siswa/absensi/2.jpeg`
+  - `web/public/tutorial/gas-siswa/absensi/3.jpeg`
+- Fitur lama yang wajib ikut dicek:
+  - bagian `Penggunaan Menu GAS` pada route `/gas/install`
+  - section `Absensi` menampilkan 3 gambar contoh tanpa pecah layout
+  - anchor link `Absensi` dari daftar menu mengarah ke bagian yang benar
+- Build yang dijalankan:
+  - tidak ada build APK baru
+- Hasil build: tidak build
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - verifikasi aset tutorial absensi tersedia di `web/public/tutorial/gas-siswa/absensi`
+  - review source `gasMenuItems.absensi.visualSteps` sudah mengikuti urutan 1-3
+- Belum diuji:
+  - cek visual langsung di HP nyata (responsif + loading gambar)
+- Catatan:
+  - Perubahan ini hanya menyentuh portal tutorial web, tidak mengubah APK GAS siswa.
+
+## 2026-08-02 08:25 - Audit kegagalan overwrite manual mengarah ke signer debug lama
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Mendokumentasikan temuan bukti bahwa kegagalan install manual terbaru kemungkinan besar bukan lagi karena `versionCode`, tetapi karena sebagian APK lama pernah didistribusikan sebagai build `debug` dengan signer berbeda dari build release saat ini.
+- File utama yang diubah:
+  - `debug-apk-overwrite-fail.md`
+  - `Apk Release/Pegangan Build APK/GAS/CATATAN_MASALAH_UPDATE_APK_MANUAL.md`
+  - `Apk Release/Pegangan Build APK/GAS/RINGKASAN_MASALAH_UPDATE_APK_MANUAL.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - install manual APK siswa terbaru di HP yang sudah terpasang build lama
+  - identifikasi jalur distribusi APK lama yang pertama kali dipasang di device target
+  - konsistensi signer semua artefak distribusi resmi
+- Build yang dijalankan:
+  - tidak ada build baru
+- Hasil build: tidak relevan
+- Bukti audit utama:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` = `com.satupintu.mobile.siswa`, `1.0.15-siswa`, `23007`, signer `64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63`
+  - `D:\Dashboard Portal\docs\APK GAS\apk GAS siswa.apk` = `com.satupintu.mobile.siswa`, `1.0.11-siswa`, `1028`, signer `a2eb5bc009532e7075912b58c6825b9ea91862676a31507b227d90583d26b674`
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\debug\app-siswa-debug.apk` memakai signer yang sama dengan file `docs\APK GAS\apk GAS siswa.apk`
+  - `D:\Dashboard Portal\docs\APK GAS\handoff_APK GAS.md` menyebut folder `docs\APK GAS\` berisi build terbaru `debug`
+- Regression check yang dijalankan:
+  - scan signer semua APK `com.satupintu.mobile.siswa` di workspace
+  - verifikasi signer release final vs signer debug/docs
+  - verifikasi artefak web publik saat ini masih `23005`, belum sama dengan build uji manual `23007`
+- Belum diuji:
+  - pembuktian device-side bahwa HP target memang memasang jalur debug lama
+  - install manual pada HP yang baseline-nya sudah pasti build release signer `6473...`
+- Catatan:
+  - Jika perangkat siswa terlanjur memasang APK signer debug `a2eb...`, maka build release `6473...` tidak bisa menimpa langsung walaupun `versionCode` dinaikkan.
+  - Konsekuensi operasionalnya adalah perlu identifikasi sumber APK awal per perangkat dan kemungkinan satu kali uninstall-install ulang untuk populasi yang terpasang dari jalur debug.
+
+## 2026-08-02 11:40 - Build uji overwrite manual GAS siswa tanpa mengandalkan URL instalasi web
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menyiapkan build terbaru khusus untuk menguji skenario nyata setelah launching awal, yaitu siswa meng-install manual APK baru dari luar agar menimpa APK lama di HP. Fokusnya bukan distribusi via URL web, tetapi kompatibilitas overwrite manual antarrilis.
+- File utama yang diubah:
+  - `native-mobile-gas/app/build.gradle.kts`
+  - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - APK siswa terbaru harus bisa di-install menimpa build lama tanpa uninstall
+  - `Absensi` dan `Presensi Sholat` tetap membaca rule hari efektif dari web admin
+  - build uji ini tidak boleh diam-diam mengubah jalur distribusi web publik
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: `BUILD SUCCESSFUL`
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23007`
+  - versionName: `1.0.15-siswa`
+- Hash SHA-256:
+  - `8A09BC167060CC0E3C73BEB130B06FC972D206EBD4A9E62078E135C651C64815`
+- Regression check yang dijalankan:
+  - metadata APK output sudah terbaca `23007 / 1.0.15-siswa`
+  - hash APK output dan file `Final` identik
+  - `web/public/apk` sengaja belum disentuh agar build ini dipakai dulu untuk uji manual overwrite dari luar
+- Belum diuji:
+  - install manual di HP menimpa APK lama tanpa pesan `Aplikasi tidak terinstal`
+  - `Presensi Sholat` siswa sesudah update manual ke build `23007`
+- Catatan:
+  - build ini sengaja dinaikkan lagi dari `23006` ke `23007` agar pengujian overwrite tidak tertahan oleh kasus versi sama
+  - pendekatan yang diuji mengikuti operasional lapangan: URL hanya untuk instalasi awal, update rutin dilakukan dari file APK luar
+
+## 2026-08-02 11:27 - Tambah versi singkat catatan masalah update manual APK untuk dibagikan ke tim
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menyediakan versi singkat satu halaman dari catatan masalah update manual APK GAS siswa agar lebih mudah dikirim ke tim lewat chat atau dipakai sebagai bahan diskusi cepat.
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/GAS/RINGKASAN_MASALAH_UPDATE_APK_MANUAL.md`
+  - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - tidak ada perubahan perilaku aplikasi
+  - dokumen ringkas tetap konsisten dengan catatan lengkap
+- Build yang dijalankan:
+  - tidak ada build; perubahan ini murni dokumentasi
+- Hasil build: tidak build
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - file ringkasan baru disimpan di folder pegangan `GAS`
+  - README pegangan kini menautkan versi singkat dan versi lengkap
+- Belum diuji:
+  - tidak ada
+- Catatan:
+  - dokumen ini dibuat khusus agar isu bisa dijelaskan cepat tanpa membuka catatan panjang
+
+## 2026-08-02 11:24 - Revisi catatan konsultasi: URL instalasi siswa hanya untuk launching awal, bukan kanal update rutin
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menyesuaikan catatan masalah update manual APK dengan praktik operasional nyata. URL instalasi siswa diposisikan sebagai kanal onboarding awal, sedangkan fokus risiko update harian dipindahkan ke kompatibilitas overwrite APK lama di HP siswa.
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/GAS/CATATAN_MASALAH_UPDATE_APK_MANUAL.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - tidak ada perubahan perilaku aplikasi
+  - catatan konsultasi tetap sesuai kondisi operasional lapangan
+- Build yang dijalankan:
+  - tidak ada build; perubahan ini murni dokumentasi
+- Hasil build: tidak build
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - fokus dokumen bergeser dari URL unduhan ke proses overwrite APK manual antarrilis
+- Belum diuji:
+  - tidak ada
+- Catatan:
+  - perubahan ini penting agar diskusi tim tidak salah fokus menganggap URL instalasi sebagai solusi utama update rutin
+
+## 2026-08-02 11:18 - Tambah catatan khusus masalah update manual APK GAS siswa untuk bahan konsultasi tim
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Mendokumentasikan secara ringkas akar kekhawatiran operasional bahwa siswa bisa gagal menimpa APK lama saat update manual, termasuk temuan teknis, mitigasi yang sudah dipasang, dan daftar pertanyaan yang perlu diputuskan bersama tim.
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/GAS/CATATAN_MASALAH_UPDATE_APK_MANUAL.md`
+  - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - tidak ada perubahan perilaku aplikasi
+  - dokumen pegangan tetap mudah dipakai untuk release berikutnya
+- Build yang dijalankan:
+  - tidak ada build; perubahan ini murni dokumentasi
+- Hasil build: tidak build
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - file catatan baru tersimpan di folder pegangan `GAS`
+  - README pegangan sekarang menautkan catatan baru agar mudah ditemukan
+- Belum diuji:
+  - tidak ada
+- Catatan:
+  - dokumen ini dibuat khusus untuk membantu diskusi internal/non-teknis tanpa harus membuka seluruh riwayat commit dan log build
+
+## 2026-08-02 11:05 - Sinkronisasi sumber rule Presensi Sholat ke attendance schedules web admin
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`, `guru`, `kepala`
+- Tujuan perubahan: Menutup bug lanjutan pada `Presensi Sholat` yang masih membaca hari non-efektif walaupun admin sudah mengaktifkan Minggu. Akar masalahnya adalah jalur sholat masih membaca `prayer/schedules`, padahal dashboard web hanya mengelola `attendance/schedules`.
+- File utama yang diubah:
+  - `native-mobile-gas/app/build.gradle.kts`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/PrayerScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherPrayerViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherRecapViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/PrincipalDashboardViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/VirtualPetRepository.kt`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - kartu `Aturan Hari` pada `Presensi Sholat` siswa harus mengikuti `attendance/schedules` dari web admin
+  - rekap `Presensi Sholat` guru dan kepala sekolah tetap konsisten dengan hari efektif yang sama
+  - `Virtual Pet` tidak salah membaca status hari efektif sholat
+  - build baru bisa di-install di atas `GAS Siswa 23005`
+- Build yang dijalankan:
+  - `:app:compileSiswaDebugKotlin`
+  - `:app:compileGuruDebugKotlin`
+  - `:app:compileKepalaDebugKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+- Regression check yang dijalankan:
+  - referensi `prayer_schedules` dan `school_settings/.../prayer/schedules` sudah dihapus dari source mobile
+  - ketiga flavor debug (`siswa`, `guru`, `kepala`) berhasil dikompilasi
+  - metadata APK release: `com.satupintu.mobile.siswa`, `1.0.14-siswa`, `versionCode 23006`
+  - hash APK output build dan file `Final` sama: `A93D555B60843FDE79DF3B8C1C8D52662B6DD9430C73B71AD157B06A2DAF9A63`
+- Belum diuji:
+  - uji HP siswa pada layar `Presensi Sholat` sesudah memasang build `23006`
+  - sinkronisasi ke `web/public/apk` dan deploy web live
+- Catatan:
+  - perbaikan ini sengaja memakai `attendance/schedules` sebagai sumber tunggal karena web admin saat ini tidak menyediakan pengaturan `prayer/schedules`
+
 ## 2026-08-02 07:44 - Finalisasi rilis GAS siswa 1.0.13-siswa (23005), sinkronisasi APK publik, siap deploy App Hosting
 - Pelaksana: Assistant
 - Jenis perubahan: `fix`

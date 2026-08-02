@@ -3,6 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import gasAbsensiStep1Image from "../../../../public/tutorial/gas-siswa/absensi/1.jpeg";
+import gasAbsensiStep2Image from "../../../../public/tutorial/gas-siswa/absensi/2.jpeg";
+import gasAbsensiStep3Image from "../../../../public/tutorial/gas-siswa/absensi/3.jpeg";
 import gas7KaihImage from "../../../../public/tutorial/gas-siswa/7-kaih/1.jpeg";
 import gasLoginImage from "../../../../public/tutorial/gas-siswa/halaman-login.jpeg";
 import gasLocationPermissionImage from "../../../../public/tutorial/gas-siswa/izin-lokasi.jpeg";
@@ -13,6 +16,7 @@ import gasLenteraStep2Image from "../../../../public/tutorial/gas-siswa/lentera-
 import gasLenteraStep3Image from "../../../../public/tutorial/gas-siswa/lentera-digital/3.jpeg";
 import gasLenteraStep4Image from "../../../../public/tutorial/gas-siswa/lentera-digital/4.jpeg";
 import gasLenteraStep5Image from "../../../../public/tutorial/gas-siswa/lentera-digital/5.jpeg";
+import gasPresensiSholatStep1Image from "../../../../public/tutorial/gas-siswa/presensi-sholat/1.jpeg";
 import gasLogoImage from "../../../../public/tutorial/gas-siswa/logo-aplikasi.png";
 import gasMenuImage from "../../../../public/tutorial/gas-siswa/menu-gas.png";
 import gasToolsImage from "../../../../public/tutorial/gas-siswa/tools/1.jpeg";
@@ -89,21 +93,21 @@ const visualSteps = [
       {
         title: "Isi NISN kalian",
         body: "Isi kolom NISN dengan NISN kalian.",
-        positionClassName: "right-[4%] top-[50%] max-w-[44%]",
+        positionClassName: "right-[6%] top-[44%] max-w-[46%]",
         arrowClassName: "left-[32%] top-[56%] h-10 w-10 border-r-4 border-t-4",
         arrowRotationClassName: "rotate-45",
       },
       {
         title: "Nama terisi otomatis",
         body: "Pastikan nama Anda sesuai. Jika tidak sesuai, hubungi Admin.",
-        positionClassName: "right-[4%] top-[58%] max-w-[44%]",
+        positionClassName: "right-[6%] top-[55%] max-w-[46%]",
         arrowClassName: "right-[22%] top-[74%] h-10 w-10 border-l-4 border-t-4",
         arrowRotationClassName: "-rotate-45",
       },
       {
         title: "Jika sesuai, tekan Masuk",
         body: "Lanjutkan setelah data siswa benar.",
-        positionClassName: "left-[10%] bottom-[6%] max-w-[46%]",
+        positionClassName: "right-[6%] bottom-[10%] max-w-[46%]",
         arrowClassName: "left-[48%] bottom-[24%] h-9 w-9 border-r-4 border-b-4",
         arrowRotationClassName: "-rotate-45",
       },
@@ -136,6 +140,26 @@ const gasMenuItems = [
       "Pilih tombol/aksi yang diminta guru (misal: Absen Masuk/Pulang).",
       "Pastikan data terkirim, lalu kembali ke beranda.",
     ],
+    visualSteps: [
+      {
+        title: "1. Buka halaman Absensi",
+        body: 'Tekan tombol "ABSEN DATANG" atau "ABSEN PULANG" sesuai jadwal.',
+        imageSrc: gasAbsensiStep1Image,
+        imageAlt: "Absensi - Halaman utama",
+      },
+      {
+        title: "2. Verifikasi lokasi sekolah",
+        body: 'Jika muncul peta, pastikan jarak tertulis "TERPENUHI" lalu tekan tombol Absen.',
+        imageSrc: gasAbsensiStep2Image,
+        imageAlt: "Absensi - Verifikasi lokasi",
+      },
+      {
+        title: "3. Pastikan status sudah tercatat",
+        body: 'Jika sudah berhasil, akan muncul status seperti "Sudah Absen Masuk" atau "Sudah Absen Pulang".',
+        imageSrc: gasAbsensiStep3Image,
+        imageAlt: "Absensi - Status tercatat",
+      },
+    ],
   },
   {
     id: "presensi-sholat",
@@ -145,6 +169,14 @@ const gasMenuItems = [
       "Buka menu Presensi Sholat.",
       "Pilih jadwal/waktu sholat yang tersedia.",
       "Ikuti instruksi di layar sampai status tercatat.",
+    ],
+    visualSteps: [
+      {
+        title: "1. Buka halaman Presensi Sholat",
+        body: 'Cek aturan hari dan lokasi musholla, lalu tekan "Presensi Sholat" saat waktunya. Tombol Presensi Sholat akan muncul jika di area Mushollah.',
+        imageSrc: gasPresensiSholatStep1Image,
+        imageAlt: "Presensi Sholat - Halaman utama",
+      },
     ],
   },
   {
@@ -437,9 +469,9 @@ export default function GasStudentInstallPage() {
                               {step.callouts.map((callout) => (
                                 <div key={callout.title}>
                                   <div
-                                    className={`absolute rounded-2xl border-2 border-red-400 bg-white/95 px-3 py-2 shadow-lg ${callout.positionClassName}`}
+                                    className={`absolute rounded-2xl border border-red-500/70 bg-white/95 px-3 py-2 text-left shadow-[0_12px_30px_rgba(0,0,0,0.28)] ring-1 ring-red-400/25 backdrop-blur-sm ${callout.positionClassName}`}
                                   >
-                                    <div className="text-xs font-black uppercase tracking-[0.16em] text-red-700">
+                                    <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-red-700">
                                       {callout.title}
                                     </div>
                                     <p className="mt-1 text-[11px] font-semibold leading-4 text-slate-800">
