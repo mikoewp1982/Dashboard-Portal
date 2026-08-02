@@ -32,11 +32,22 @@ Tambahkan nama pelaksana jika perlu:
 - Fixed: Tab `Peringkat` pada `Virtual Pet` web admin dirapikan agar wrapper tabel tetap stabil saat data ranking tampil.
 
 ### Siswa
+- Fixed: Tombol unduh APK di portal tutorial live sempat `404` pada App Hosting standalone; diperbaiki lewat `ensure-standalone-public.mjs` + stop tracing `apk-manifest` dari `public` (commit `3c9b1413`), unduh GAS+EduLock live sudah normal.
+- Fixed: Binding 1 akun 1 device GAS Siswa dipisah ke field `gasDeviceId`, sehingga logout/login ulang di HP yang sama tetap berhasil dan binding EduLock tidak lagi menimpa kunci perangkat GAS.
+- Changed: Backend `mobileAuth` serta reset device admin ikut membaca/membersihkan `gasDeviceId` agar kontrak 1 akun 1 device konsisten antara APK dan web.
+- Changed: Build distribusi manual terbaru GAS Siswa dinaikkan ke `1.0.30-siswa (23022)` untuk merangkum pemisahan binding `gasDeviceId` dan perbaikan login ulang di HP yang sama.
+- Removed: Overlay callout text box pada portal tutorial `/gas/install` dihapus; panduan visual sekarang mengandalkan judul/body langkah di atas gambar saja (deploy `307751ae`).
+- Fixed: GAS Siswa sekarang hanya bisa dibuka jika telemetry EduLock berasal dari HP yang sama, status monitoring masih `ONLINE`, dan proteksi benar-benar `COMPLIANT`; install EduLock tanpa aktivasi atau record hijau lama dari HP lain tidak lagi boleh meloloskan akses.
+- Fixed: Login ulang GAS Siswa pada HP yang sama sekarang mengikuti pola binding yang aman untuk device milik sendiri, sehingga siswa yang logout lalu masuk lagi tidak lagi salah ditolak sebagai HP terkunci.
+- Changed: Build distribusi manual GAS Siswa sempat dinaikkan ke `1.0.27-siswa (23019)` untuk perbaikan gate EduLock yang lebih ketat berbasis device yang sama.
+- Fixed: `Presensi Sholat` siswa sekarang langsung mengunci tombol setelah status `PRAY` hari ini tercatat, menampilkan pesan bahwa siswa sudah melaksanakan sholat, dan tidak lagi membiarkan klik berulang menimpa jam presensi yang sama.
+- Changed: Build distribusi manual terbaru GAS Siswa dinaikkan ke `1.0.15-siswa (23007)` agar uji install manual menimpa APK lama dilakukan dengan versi yang benar-benar lebih tinggi, tanpa bergantung pada URL instalasi web.
 - Changed: Layar `Force Update` GAS siswa sekarang menegaskan bahwa update dilakukan dengan cara download lalu install manual file APK terbaru di HP, bukan update otomatis dari dalam aplikasi.
 - Fixed: Build `GAS Siswa` sekarang memakai compatibility version bump agar tetap bisa di-install sebagai update pada perangkat yang sebelumnya terpasang jalur `legacySiswa`.
 - Fixed: Versi paket `GAS Siswa` dinaikkan agar APK bugfix terbaru bisa di-install sebagai update di atas build lama tanpa uninstall manual.
 - Fixed: GAS Siswa tidak lagi menganggap hari Minggu selalu libur; jika admin mengaktifkan Minggu pada pengaturan presensi sekolah, menu `Absensi` kini mengikuti rule RTDB yang tersimpan.
 - Fixed: `Presensi Sholat` siswa kini konsisten dengan rule hari efektif sekolah dan tidak lagi memaksa Minggu sebagai libur saat sekolah sengaja mengaktifkannya.
+- Fixed: `Presensi Sholat` siswa sekarang membaca hari efektif dari `attendance/schedules` yang dikelola web admin, bukan dari node `prayer/schedules` lama yang tidak lagi dipakai dashboard.
 - Added: Portal tutorial GAS siswa di web sekarang tersedia dengan alias URL pendek `/g` dan fallback `/gas/install`, lengkap dengan tombol unduh APK publik, langkah instalasi, dan panduan visual dasar.
 - Added: Bagian `Penggunaan Menu GAS` sekarang menampilkan daftar 10 menu utama yang bisa diklik untuk membuka panduan penggunaan visual masing-masing di halaman yang sama.
 - Added: Contoh visual penggunaan sudah mulai dicatat untuk menu `Lentera Digital`, `Layanan Aduan`, `7 KAIH`, `Virtual Pet`, dan `Tools` agar siswa lebih mudah mengikuti alur dari browser sebelum membuka APK.

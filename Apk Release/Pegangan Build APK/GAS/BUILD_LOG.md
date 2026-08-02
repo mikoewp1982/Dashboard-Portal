@@ -21,6 +21,279 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-02 19:20 - Perbaiki unduh APK tutorial 404 di App Hosting standalone
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`, `web-tutorial`
+- Tujuan perubahan: Memulihkan tombol unduh APK GAS (dan EduLock) di portal tutorial yang sempat `404` karena output standalone App Hosting tidak mengemas isi `web/public/apk`.
+- File utama yang diubah:
+  - `web/scripts/ensure-standalone-public.mjs`
+  - konfigurasi agar `apk-manifest` tidak di-trace dari `public`
+- Fitur lama yang wajib ikut dicek:
+  - unduh `GAS-Siswa-release.apk` dari `/gas/install` / `/g`
+  - unduh `EduLock-studentRelease.apk` dari `/edulock/install` / `/e`
+- Build yang dijalankan:
+  - tidak ada build APK GAS baru pada entri ini
+- Hasil build:
+  - tidak build APK; deploy web via commit `3c9b1413`
+- Output APK:
+  - tidak ada
+- Disalin ke:
+  - tidak ada
+- Regression check yang dijalankan:
+  - verifikasi live unduh APK GAS + EduLock kembali normal (bukan `404`)
+- Belum diuji:
+  - tidak relevan setelah verifikasi live unduh
+- Catatan:
+  - Shared dengan EduLock; ship EduLock menyusul di `24e3ffa6`. Detail penuh ada di pegangan EduLock `BUILD_LOG.md`.
+
+## 2026-08-02 13:40 - Catat rilis GAS siswa 1.0.30 / 23022 (gasDeviceId) dan simplifikasi tutorial web
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `siswa`, `web-tutorial`
+- Tujuan perubahan: Mencatat dua perubahan terbaru ke dokumen pegangan: (1) APK GAS Siswa `1.0.30-siswa (23022)` dengan binding terpisah `gasDeviceId` agar logout/login ulang di HP yang sama tetap aman tanpa tertimpa binding EduLock; (2) portal tutorial `/gas/install` dan `/edulock/install` menghapus overlay callout, sudah push `307751ae` ke `main`.
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
+  - `Apk Release/Pegangan Build APK/Edulock/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/Edulock/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - dokumen versi aktif GAS siswa harus menunjuk ke `1.0.30-siswa (23022)`
+  - checklist uji login ulang HP yang sama memakai acuan build `23022`
+  - catatan tutorial live merujuk commit `307751ae`
+- Build yang dijalankan:
+  - tidak ada build baru pada entri dokumentasi ini
+- Hasil build:
+  - tidak build
+- Output APK:
+  - tidak ada (mengacu artefak yang sudah ada)
+- Disalin ke:
+  - tidak ada
+- Regression check yang dijalankan:
+  - verifikasi metadata `Final/GAS-Siswa-release.apk` = `1.0.30-siswa` / `23022`
+  - review silang field `gasDeviceId` di `LoginScreen.kt`, `mobileAuth.ts`, dan route reset admin
+- Belum diuji:
+  - sinkronisasi artefak publik web ke build `23022`
+  - uji perangkat logout/login ulang + izolasi binding EduLock vs GAS
+- Catatan:
+  - Artefak aktif di `Apk Release/Final/GAS-Siswa-release.apk` (hash `1277A714...`); salinan bernama `GAS-Siswa-v1.0.30-23022-release.apk` belum ada di folder Final saat pencatatan ini.
+
+## 2026-08-02 13:12 - Pisahkan binding 1 akun 1 device GAS siswa ke gasDeviceId
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Memastikan logout lalu login ulang di HP yang sama tetap berhasil (pola mirip EduLock), sekaligus memisahkan kunci perangkat GAS ke `gasDeviceId` agar registrasi/login EduLock tidak menimpa binding GAS.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt`
+  - `native-mobile-gas/app/build.gradle.kts`
+  - `web/functions/src/api/mobileAuth.ts`
+  - `web/src/app/api/admin/database/route.ts`
+  - `web/src/app/api/admin/edulock/route.ts`
+- Fitur lama yang wajib ikut dicek:
+  - login siswa pertama kali tetap mengunci ke 1 device
+  - logout lalu login ulang di HP yang sama tetap diperbolehkan
+  - login di HP berbeda tetap ditolak
+  - reset device admin membersihkan `gasDeviceId`
+  - binding EduLock (`device_uuid` / `deviceId` / `device`) tidak lagi dipakai sebagai kunci eksklusif GAS
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build:
+  - sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23022`
+  - versionName: `1.0.30-siswa`
+- Hash SHA-256:
+  - `1277A714DC557384BB5EAA6E5798EA6E54C3B77A61D1413CB7F5F2DFA6253F63`
+- Regression check yang dijalankan:
+  - review jalur baca/tulis `gasDeviceId` vs legacy `device_uuid/deviceId/device`
+  - review reset admin ikut mengosongkan `gasDeviceId`
+  - build `assembleSiswaRelease` sukses
+- Belum diuji:
+  - uji nyata logout lalu login ulang pada HP siswa yang sama dengan build `23022`
+  - uji login akun yang sama dari HP berbeda tetap terkunci
+  - uji login EduLock di HP yang sama tidak menimpa binding GAS
+- Catatan:
+  - Versi dinaikkan ke `1.0.30-siswa (23022)` agar bisa menimpa build `23019` sebelumnya.
+
+## 2026-08-02 13:35 - Hapus overlay callout pada portal tutorial GAS & EduLock
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `web-tutorial`
+- Tujuan perubahan: Menyederhanakan visual tutorial siswa: kotak callout di atas screenshot dihapus, teks langkah default di atas gambar tetap dipakai, dan wording EduLock memakai tombol `Daftar`.
+- File utama yang diubah:
+  - `web/src/app/gas/install/page.tsx`
+  - `web/src/app/edulock/install/page.tsx`
+- Fitur lama yang wajib ikut dicek:
+  - judul/body langkah instalasi tetap terbaca di `/gas/install` dan `/edulock/install`
+  - gambar tutorial tetap termuat via static import
+  - alias URL pendek `/g` dan `/e` tetap mengarah ke halaman yang sama
+- Build yang dijalankan:
+  - tidak ada build APK baru
+- Hasil build:
+  - tidak build
+- Output APK:
+  - tidak ada
+- Disalin ke:
+  - tidak ada
+- Regression check yang dijalankan:
+  - commit `307751ae` (`fix(web): simplify student tutorial visuals`) sudah di-push ke `main`
+- Belum diuji:
+  - verifikasi visual langsung di halaman live App Hosting sesudah rollout Firebase selesai
+- Catatan:
+  - Deploy mengikuti jalur git push `main` ke Firebase App Hosting `gerbang-aplikasi-sekolah--kompas-5f0b4`.
+
+## 2026-08-02 12:20 - Rapikan dokumen final GAS siswa agar sinkron dengan build 1.0.27 / 23019
+- Pelaksana: Assistant
+- Jenis perubahan: `no-build`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menyelaraskan dokumen pegangan GAS dengan status final progres terakhir, terutama versi aktif, lokasi artefak final, dan checklist uji gate EduLock berbasis device yang sama.
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - dokumen versi aktif GAS siswa harus menunjuk ke `1.0.27-siswa (23019)`
+  - catatan distribusi harus menunjuk ke folder `Apk Release/Final`
+  - checklist compliance EduLock harus sesuai rule gate final terbaru
+- Build yang dijalankan:
+  - tidak ada build baru
+- Hasil build:
+  - tidak build
+- Output APK:
+  - tidak ada
+- Disalin ke:
+  - tidak ada
+- Regression check yang dijalankan:
+  - review silang versi pada `build.gradle.kts` vs dokumen GAS
+  - review silang status build final vs checklist uji perangkat
+- Belum diuji:
+  - sinkronisasi artefak publik web ke build `23019` bila nanti diputuskan ikut dirilis lewat portal
+- Catatan:
+  - Perubahan ini murni perapian dokumentasi; APK EduLock tidak disentuh dan tidak ada build tambahan.
+
+## 2026-08-02 12:11 - Kunci GAS siswa hanya saat monitoring dan proteksi EduLock hijau di HP yang sama
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menutup celah saat GAS masih bisa dibuka walaupun EduLock baru terpasang tetapi belum diaktivasi. Gate sekarang hanya meloloskan akses jika telemetry EduLock berasal dari HP yang sama, status monitoring masih online, dan proteksi berstatus `COMPLIANT`.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/EduLockComplianceGate.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt`
+  - `native-mobile-gas/app/build.gradle.kts`
+- Fitur lama yang wajib ikut dicek:
+  - GAS tetap menahan akses jika EduLock belum terpasang
+  - GAS tetap menahan akses jika EduLock terpasang tetapi belum login/aktivasi di HP tersebut
+  - GAS hanya terbuka jika monitoring EduLock online dan proteksi `COMPLIANT`
+  - record telemetry lama dari HP lain tidak boleh lagi membuka GAS di HP sekarang
+  - tombol `BUKA EDULOCK` dari overlay tetap berfungsi
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build:
+  - sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-v1.0.27-23019-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23019`
+  - versionName: `1.0.27-siswa`
+- Hash SHA-256:
+  - `4DE1ED507ECFF068C9EC7EFFC92107DC2B1AEADC3E2FB1A8DE794B75B98DC059`
+- Regression check yang dijalankan:
+  - review rule telemetry `COMPLIANT` vs `PAUSED/NON_COMPLIANT`
+  - review kecocokan device binding lokal GAS dengan `active_devices` EduLock
+  - build `assembleSiswaRelease` sukses
+- Belum diuji:
+  - uji di HP siswa: EduLock terpasang tetapi belum login -> GAS harus tetap tertahan
+  - uji di HP siswa: EduLock login + monitoring/proteksi hijau -> GAS harus terbuka
+  - uji dengan record telemetry lama dari HP lain untuk memastikan tidak lagi lolos
+- Catatan:
+  - Pendekatan final tidak membaca warna panel admin secara literal, tetapi memakai field sumber yang sama (`deviceStatus`, `complianceStatus`, `protectionHealth`, `lastUpdated`) agar hasil gate konsisten dengan indikator hijau/merah di dashboard.
+
+## 2026-08-02 12:00 - Samakan perilaku login ulang GAS siswa pada HP yang sama dengan EduLock
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Mencegah kasus siswa logout lalu login lagi di HP yang sama tetapi ditolak dengan pesan akun/HP terkunci. GAS siswa sekarang membaca dan menyinkronkan binding perangkat dengan pola yang sama seperti EduLock (`device_uuid`, `deviceId`, `device`).
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt`
+  - `native-mobile-gas/app/build.gradle.kts`
+- Fitur lama yang wajib ikut dicek:
+  - login siswa pertama kali tetap mengunci ke 1 device
+  - logout lalu login ulang di HP yang sama tetap diperbolehkan
+  - login di HP berbeda tetap ditolak
+  - field binding siswa di RTDB tetap sinkron antara `device_uuid`, `deviceId`, dan `device`
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build:
+  - sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-v1.0.26-23018-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23018`
+  - versionName: `1.0.26-siswa`
+- Hash SHA-256:
+  - `3753BC994197BC9D1FFDC1C33BC8D0BDA41B3FCE6CA04DED5AFFF792265D9C7C`
+- Regression check yang dijalankan:
+  - review jalur binding siswa di login GAS vs EduLock
+  - build `assembleSiswaRelease` sukses
+- Belum diuji:
+  - uji nyata logout lalu login ulang pada HP siswa yang sama
+  - uji login akun yang sama dari HP berbeda untuk memastikan tetap terkunci
+- Catatan:
+  - Sumber mismatch sebelumnya kemungkinan berasal dari GAS yang hanya membaca `deviceId/device`, sementara binding aktif siswa sudah tersimpan pada `device_uuid` seperti pola EduLock.
+
+## 2026-08-02 11:53 - Wajibkan EduLock benar-benar dibuka sebelum GAS Siswa bisa dipakai
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menutup celah di mana siswa cukup meng-install EduLock tanpa login/menjalankannya lalu GAS Siswa tetap bisa dibuka. GAS sekarang menuntut telemetry EduLock yang valid sebelum akses siswa dibuka.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/EduLockComplianceGate.kt`
+  - `native-mobile-gas/app/build.gradle.kts`
+- Fitur lama yang wajib ikut dicek:
+  - GAS tetap menahan akses jika EduLock belum terpasang
+  - GAS sekarang juga menahan akses jika EduLock baru terpasang tetapi belum dibuka/login
+  - tombol `BUKA EDULOCK` dari overlay masih berfungsi
+  - akses terbuka kembali setelah EduLock mengirim telemetry compliance yang cocok
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build:
+  - sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-v1.0.25-23017-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23017`
+  - versionName: `1.0.25-siswa`
+- Hash SHA-256:
+  - `884C5CAB66DA18818A34BCB17E5BDD33DF305B13D37685D94283455AA4445372`
+- Regression check yang dijalankan:
+  - review logika blokir pada `EduLockComplianceGate`
+  - build `assembleSiswaRelease` sukses
+- Belum diuji:
+  - uji di HP siswa: install EduLock tanpa dibuka -> GAS harus tetap tertahan
+  - uji di HP siswa: buka/login EduLock -> GAS harus terbuka kembali
+- Catatan:
+  - Perilaku kompatibilitas lama yang mengizinkan saat telemetry EduLock belum ada sudah dihapus untuk flavor siswa.
+
 ## 2026-08-02 11:46 - Tampilkan versi APK terkini di halaman Force Update Control (web) dari apk-manifest
 - Pelaksana: Assistant
 - Jenis perubahan: `feature`

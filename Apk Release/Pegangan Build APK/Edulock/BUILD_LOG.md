@@ -28,6 +28,99 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-02 20:03 - Ship EduLock siswa 1.3.4 fail-closed presence + sync tutorial
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Merilis APK EduLock siswa dengan proteksi GPS/internet fail-closed berbasis indikasi kehadiran sekolah, menyinkronkan artefak ke `web/public/apk`, memperbarui URL unduh tutorial live, dan menyiapkan handoff lapangan.
+- Scope terdampak: `student`, `student-web`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LocationMonitor.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PreferencesManager.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MainActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/GeofenceBroadcastReceiver.kt`
+  - `native-mobile-edulock/app/build.gradle.kts` (`versionName 1.3.4` / `versionCode 30`)
+  - `native-mobile-edulock/HANDOFF_LAPANGAN_EDULOCK.md`
+  - `Apk Release/Final/EduLock-studentRelease.apk`
+  - `Apk Release/Final/HANDOFF_LAPANGAN_EDULOCK.docx`
+  - `web/public/apk/EduLock-studentRelease.apk`
+- Fitur lama yang wajib ikut dicek:
+  - hard lock GPS-off / internet-off hanya saat ada indikasi presence (sticky / near-school / recent geofence)
+  - siswa sakit di rumah tanpa indikasi dekat sekolah tidak dipaksa terkunci
+  - tombol unduh APK EduLock di `/e` dan `/edulock/install` tidak `404`
+  - proteksi jam sekolah, Device Admin, Accessibility, overlay `pet mati`
+- Build yang dijalankan:
+  - `:app:assembleStudentRelease`
+- Hasil build:
+  - sukses; ship commit `24e3ffa6`
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk` (`3,787,940` bytes; nama kanonik saja)
+  - `D:\Dashboard Portal\web\public\apk\EduLock-studentRelease.apk`
+- Regression check yang dijalankan:
+  - verifikasi metadata versi `1.3.4` / `30`
+  - verifikasi unduh tutorial live GAS + EduLock setelah fix App Hosting
+- Belum diuji:
+  - uji lapangan GPS off di sekolah vs di rumah (sakit) pada device siswa nyata
+- Catatan:
+  - Duplikat bertanggal/versi di `Final` dibersihkan; acuan distribusi memakai nama kanonik `EduLock-studentRelease.apk`.
+  - Handoff Word ada di `Apk Release/Final/HANDOFF_LAPANGAN_EDULOCK.docx`.
+
+## 2026-08-02 19:20 - Perbaiki unduh APK tutorial 404 di App Hosting standalone
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Memulihkan tombol unduh APK di portal tutorial siswa yang sempat `404` karena output standalone App Hosting tidak mengemas isi `web/public/apk`.
+- Scope terdampak: `student-web` (GAS + EduLock)
+- File utama yang diubah:
+  - `web/scripts/ensure-standalone-public.mjs`
+  - konfigurasi agar `apk-manifest` tidak di-trace dari `public`
+- Fitur lama yang wajib ikut dicek:
+  - unduh `GAS-Siswa-release.apk` dari `/gas/install` / `/g`
+  - unduh `EduLock-studentRelease.apk` dari `/edulock/install` / `/e`
+  - gambar tutorial static import tetap `200`
+- Build yang dijalankan:
+  - tidak ada build APK baru pada entri ini
+- Hasil build:
+  - tidak build APK; deploy web via commit `3c9b1413`
+- Output APK:
+  - tidak ada
+- Disalin ke:
+  - tidak ada
+- Regression check yang dijalankan:
+  - verifikasi live bahwa unduh APK GAS dan EduLock kembali normal
+- Belum diuji:
+  - tidak relevan setelah verifikasi live unduh
+- Catatan:
+  - Commit `3c9b1413` (`fix(web): restore student APK downloads on App Hosting`); ship EduLock menyusul di `24e3ffa6`.
+
+## 2026-08-02 13:35 - Hapus overlay callout pada tutorial EduLock web
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Tujuan perubahan: Menyederhanakan visual tutorial instalasi EduLock siswa: seluruh kotak callout di atas screenshot dihapus, teks langkah default di atas gambar tetap dipakai, dan wording tombol registrasi diselaraskan ke `Daftar`.
+- Scope terdampak: `student-web`
+- File utama yang diubah:
+  - `web/src/app/edulock/install/page.tsx`
+- Fitur lama yang wajib ikut dicek:
+  - judul/body langkah instalasi tetap terbaca di `/edulock/install`
+  - gambar tutorial tetap termuat via static import
+  - alias URL pendek `/e` tetap mengarah ke halaman yang sama
+  - teks langkah menyebut tombol `Daftar`, bukan `Masuk`
+- Build yang dijalankan:
+  - tidak ada build APK baru
+- Hasil build:
+  - tidak build
+- Output APK:
+  - tidak ada
+- Disalin ke:
+  - tidak ada
+- Regression check yang dijalankan:
+  - commit `307751ae` (`fix(web): simplify student tutorial visuals`) sudah di-push ke `main`
+- Belum diuji:
+  - verifikasi visual langsung di halaman live App Hosting sesudah rollout Firebase selesai
+- Catatan:
+  - Deploy mengikuti jalur git push `main` ke Firebase App Hosting `gerbang-aplikasi-sekolah--kompas-5f0b4`. Perubahan ini hanya menyentuh portal tutorial web, bukan APK EduLock.
+
 ## 2026-08-02 09:55 - Rapikan posisi callout tombol Masuk pada tutorial EduLock web
 - Pelaksana: Assistant
 - Jenis perubahan: `docs`

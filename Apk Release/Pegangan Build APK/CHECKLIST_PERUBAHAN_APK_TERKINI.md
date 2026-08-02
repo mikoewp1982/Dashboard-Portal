@@ -6,7 +6,36 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-02 07:44
+Update terakhir: 2026-08-02 20:10
+
+## Temuan portal tutorial web
+
+- [x] Penyebab gambar rusak di portal tutorial live mengarah ke aset `/tutorial/...` yang dibalas `404` oleh host
+- [x] Halaman `web/src/app/gas/install/page.tsx` sekarang memakai static import untuk seluruh gambar tutorial GAS
+- [x] Halaman `web/src/app/edulock/install/page.tsx` sekarang memakai static import untuk gambar tutorial EduLock
+- [x] Uji lokal: build produksi `web` sukses sesudah static import image diterapkan
+- [x] Uji lokal: buka `http://localhost:3000/gas/install` dan aset bundle GAS seperti `logo-aplikasi`, `halaman-login`, dan `izin-lokasi` merespons `200`
+- [x] Uji lokal: buka `http://localhost:3000/edulock/install` dan aset bundle EduLock seperti `logo-aplikasi`, `halaman-login`, dan `setup-konfigurasi` merespons `200`
+- [x] Overlay callout text box dihapus dari `/gas/install` dan `/edulock/install`; judul/body langkah di atas gambar tetap dipakai
+- [x] Wording tutorial EduLock diselaraskan ke tombol `Daftar` (bukan `Masuk`) pada langkah registrasi
+- [x] Deploy live tutorial sudah didorong ke `main` via commit `307751ae` untuk Firebase App Hosting `gerbang-aplikasi-sekolah--kompas-5f0b4`
+- [x] Cek web live: `/gas/install` dan `/edulock/install` tidak lagi menampilkan kotak callout di atas screenshot (verifikasi `2026-08-02 ~13:41` / `06:41Z`, commit `307751ae`, backend reconciling false; string callout absen di kedua halaman)
+- [x] Cek web live: teks langkah EduLock menyebut tombol `Daftar`, bukan `Masuk` (verifikasi `2026-08-02 ~13:41` / `06:41Z`, live memakai `Daftar`)
+- [x] Tombol unduh APK di tutorial live sempat `404` karena App Hosting standalone tidak ikut mengemas file di `web/public/apk`
+- [x] Perbaikan unduh APK: `ensure-standalone-public.mjs` + stop tracing `apk-manifest` dari `public` (commit `3c9b1413`)
+- [x] Ship EduLock siswa + sync APK publik + update URL tutorial live (commit `24e3ffa6`)
+- [x] Cek web live: unduh APK GAS dan EduLock dari halaman tutorial sudah merespons normal (bukan `404`)
+
+## Temuan kritis terbaru
+
+- [x] Audit signer APK siswa menemukan dua jalur signer berbeda untuk package `com.satupintu.mobile.siswa`
+- [x] `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` memakai signer release `64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63`
+- [x] `D:\Dashboard Portal\docs\APK GAS\apk GAS siswa.apk` memakai signer debug `a2eb5bc009532e7075912b58c6825b9ea91862676a31507b227d90583d26b674`
+- [x] Dokumen `D:\Dashboard Portal\docs\APK GAS\handoff_APK GAS.md` menyebut folder `docs\APK GAS\` memang berisi build terbaru `debug`
+- [x] Konsekuensi teknis: device yang baseline instalasinya berasal dari signer debug tidak bisa ditimpa langsung oleh APK release saat ini
+- [ ] Konfirmasi lapangan: tentukan apakah HP yang gagal install dulu memasang APK dari jalur `docs\APK GAS` / build debug
+- [ ] Uji di HP pembanding yang baseline-nya sudah pasti APK release signer `6473...`
+- [ ] Putuskan SOP migrasi satu kali untuk perangkat yang terlanjur memakai signer debug
 
 ## 0. Web Admin / Dashboard
 
@@ -17,7 +46,9 @@ Update terakhir: 2026-08-02 07:44
 - [x] Skrip sinkronisasi sudah disiapkan di `web/scripts/sync-public-apk.ps1`
 - [x] Shortcut sinkronisasi sudah tersedia via `npm run sync:apk`, `npm run sync:apk:gas`, dan `npm run sync:apk:edulock`
 - [x] Sinkronisasi dari `Final` ke `web/public/apk` sudah dijalankan lagi pada `2026-08-02 07:44` untuk GAS siswa
+- [x] Sinkronisasi EduLock siswa dari `Final` ke `web/public/apk` sudah dijalankan pada ship `24e3ffa6` (`EduLock-studentRelease.apk` = `1.3.4` / `30`)
 - [x] Skrip sinkronisasi GAS siswa sekarang juga memverifikasi `packageName`, `versionCode`, `versionName`, hash, dan signature agar file publik tidak lagi tertinggal atau menimpa build dengan versi yang salah
+- [x] App Hosting standalone sekarang mengemas ulang isi `public` (termasuk APK) via `ensure-standalone-public.mjs` agar tombol unduh tutorial tidak `404`
 - [ ] Jika nama file APK berubah, link tombol unduh di halaman web harus ikut diperbarui
 - [ ] Ingat: siswa tidak otomatis mengunduh ulang APK hanya karena file server diganti; mereka tetap perlu menekan tombol unduh lagi atau dipaksa update dari sisi aplikasi
 
@@ -51,7 +82,9 @@ Update terakhir: 2026-08-02 07:44
 ## 1. EduLock Siswa
 
 Build acuan:
-- `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_20-08-release.apk`
+- `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk` (`versionName 1.3.4` / `versionCode 30`, `3,787,940` bytes, commit ship `24e3ffa6`)
+- `D:\Dashboard Portal\web\public\apk\EduLock-studentRelease.apk` (sudah disinkronkan dari Final pada ship `24e3ffa6`)
+- Handoff lapangan: `native-mobile-edulock/HANDOFF_LAPANGAN_EDULOCK.md` + salinan Word `Apk Release/Final/HANDOFF_LAPANGAN_EDULOCK.docx`
 
 ### Login dan registrasi
 - [x] Urutan field login/registrasi diubah menjadi `NPSN -> NISN -> Nama Siswa`
@@ -102,6 +135,11 @@ Build acuan:
   - Grace period `appSwitchTimestamp` di-reset ke `0L` agar `performChecks()` tidak skip
   - `relaunchEduLock()` + `requestKiosk()` dipanggil 3 kali berturut-turut (0ms, 500ms, 1500ms) untuk memastikan HP benar-benar terkunci
 - [ ] Cek di HP: buka TikTok/Instagram → admin nyalakan proteksi → HP harus langsung terkunci tanpa siswa menutup TikTok
+- [x] **Fail-closed berbasis indikasi kehadiran sekolah** (build `1.3.4` / `30`, ship `24e3ffa6`): hard lock GPS-off / internet-off hanya jika ada indikasi presence (sticky / near-school / recent geofence)
+- [x] Siswa sakit di rumah (GPS/internet off, belum pernah dekat sekolah) tetap tidak dipaksa terkunci
+- [x] Native terdampak: `MonitoringService`, `LocationMonitor`, `PreferencesManager`, `MainActivity`, `GeofenceBroadcastReceiver`
+- [ ] Cek di HP: di sekolah + GPS off → harus masuk jalur peringatan/kunci sesuai policy
+- [ ] Cek di HP: di rumah tanpa indikasi dekat sekolah + GPS off → HP tidak hard-lock
 
 ### Monitoring realtime ke web
 - [x] Heartbeat perangkat dikirim lebih rapat ke `active_devices`
@@ -115,8 +153,8 @@ Build acuan:
 
 Build acuan:
 - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Siswa-2026-07-30_19-13-release.apk`
-- `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` (ditimpa lagi pada `2026-08-02 07:43`, versi `1.0.13-siswa` / `versionCode 23005`)
-- `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk` (disinkronkan lagi dari `Final` pada `2026-08-02 07:44`; hash sekarang harus identik dengan file `Final`)
+- `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` (ditimpa lagi pada `2026-08-02 13:12:56`, versi `1.0.30-siswa` / `versionCode 23022`, hash `1277A714DC557384BB5EAA6E5798EA6E54C3B77A61D1413CB7F5F2DFA6253F63`)
+- `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk` (rilis publik web masih build `23005`; artefak web belum ikut disinkronkan ke build final `23022`)
 
 ### Login siswa
 - [x] Login siswa diubah menjadi urutan `NPSN -> NISN -> Nama Siswa`
@@ -127,12 +165,22 @@ Build acuan:
 - [x] Ditemukan juga bahwa file `web/public/apk/GAS-Siswa-release.apk` sempat tertinggal di `versionCode 1028`; file itu sudah disinkronkan ulang dari `Final`
 - [x] Pengaman proses rilis sekarang menolak sinkronisasi GAS siswa bila `versionCode` turun, tetap sama tetapi isi APK berubah, atau signature berbeda dari file publik sebelumnya
 - [x] `versionCode` siswa sudah dinaikkan lagi ke `23005` agar perubahan layar force update tetap bisa di-install di atas build `23004`
+- [x] Build fix `Presensi Sholat` sudah dibuat sebagai `1.0.14-siswa` / `versionCode 23006` agar bisa di-install di atas build `23005`
+- [x] Build uji overwrite manual berikutnya sudah dibuat sebagai `1.0.15-siswa` / `versionCode 23007` agar tidak terhambat kasus versi sama saat pengujian timpa APK lama
+- [x] Build `GAS Siswa` untuk menyamakan login ulang HP yang sama dengan EduLock sudah dibuat sebagai `1.0.26-siswa` / `versionCode 23018`
+- [x] Build final gate EduLock ketat berbasis device yang sama + status monitoring/proteksi hijau sudah dibuat sebagai `1.0.27-siswa` / `versionCode 23019`
+- [x] Binding perangkat GAS siswa dipisah ke field `gasDeviceId` agar binding EduLock (`device_uuid` / `deviceId` / `device`) tidak menimpa kunci 1 akun 1 device GAS
+- [x] Backend `mobileAuth` dan jalur reset admin ikut membersihkan/menghormati `gasDeviceId`
+- [x] Build final 1 akun 1 device + pemisahan `gasDeviceId` sudah dibuat sebagai `1.0.30-siswa` / `versionCode 23022`
 - [ ] Cek di HP: `NPSN benar + NISN benar` harus memunculkan nama siswa otomatis
 - [ ] Cek di HP: `NPSN benar + NISN salah` tidak boleh memunculkan nama siswa
 - [ ] Cek di HP: login siswa tetap berhasil setelah nama siswa terisi otomatis
 - [ ] Cek di HP: update APK langsung di atas build lama berhasil tanpa pesan `Aplikasi tidak terinstal`
 - [ ] Cek di HP: update APK langsung di atas build `legacySiswa` juga berhasil tanpa uninstall
-- [ ] Cek di HP: bila APK diunduh dari portal/web, file yang terpasang sekarang benar-benar build `23005`, bukan file stale lama
+- [ ] Cek di HP: logout lalu login ulang di HP yang sama tetap berhasil sesudah update ke build `23022`
+- [ ] Cek di HP: login akun yang sama dari HP lain tetap tertolak sesudah update ke build `23022`
+- [ ] Cek di HP: login EduLock di HP yang sama tidak boleh menimpa / mengunci ulang binding `gasDeviceId` GAS
+- [ ] Cek di HP: bila APK diunduh dari portal/web, file yang terpasang sekarang masih build `23005` sampai artefak publik `23022` disinkronkan
 
 ### Compliance dengan EduLock
 - [x] Telemetry Realtime EduLock ke Web Admin diperbaiki: saat EduLock baru di-install / di-install ulang, telemetry status `ONLINE` langsung dikirim seketika saat registrasi selesai & selama halaman `SetupActivity` (onboarding izin HP) dibuka. Web Admin tidak lagi tertahan di status `TERIKAT / Offline` (misal *7283 min lalu*) saat siswa sedang melengkapi konfigurasi.
@@ -140,13 +188,19 @@ Build acuan:
 - [x] Gate dicek sejak aplikasi mulai, termasuk sebelum siswa lolos masuk ke area utama
 - [x] Pengecekan instalasi EduLock dibuat sangat agresif: dipasang `LifecycleEventObserver` pada `ON_RESUME` sehingga saat EduLock di-uninstall lalu siswa membuka GAS dari Recent Apps / Switcher, overlay merah langsung muncul seketika tanpa perlu menghapus Recent Apps
 - [x] Overlay compliance sudah dibuat benar-benar memblokir sentuhan ke UI di bawahnya
+- [x] Gate GAS sekarang tidak lagi cukup membaca alias siswa saja; telemetry EduLock harus cocok dengan fingerprint device HP yang sedang dipakai
+- [x] GAS sekarang hanya boleh terbuka jika status monitoring EduLock masih `ONLINE` dan proteksi berstatus `COMPLIANT`
+- [x] Kondisi `PAUSED`, `NON_COMPLIANT`, telemetry kosong, record stale, atau record hijau lama dari HP lain tidak lagi boleh meloloskan akses
 - [ ] Cek di HP: uninstall EduLock lalu buka GAS siswa, akses harus tertahan penuh
 - [ ] Cek di HP: layar login GAS siswa juga harus ikut tertahan bila EduLock tidak aktif
 - [ ] Cek di HP: overlay tidak boleh bisa ditembus sentuhan
+- [ ] Cek di HP: install EduLock tanpa login/aktivasi tetap harus membuat GAS tertahan merah
+- [ ] Cek di HP: setelah login EduLock di HP yang sama dan monitoring/proteksi hijau, GAS baru boleh terbuka
 
 ### Fitur siswa lain
 - [x] `Absensi` siswa tidak lagi memaksa hari Minggu sebagai libur; jika admin mengaktifkan Minggu di pengaturan presensi sekolah, APK sekarang mengikuti rule RTDB
 - [x] `Presensi Sholat` siswa juga tidak lagi memaksa hari Minggu sebagai libur bila sekolah sengaja mengaktifkannya
+- [x] `Presensi Sholat` siswa sekarang diarahkan membaca `attendance/schedules` web admin karena dashboard tidak lagi menulis `prayer/schedules`
 - [x] Layar `Force Update` GAS siswa sekarang memperjelas bahwa siswa harus download lalu install manual APK terbaru di HP, bukan menunggu update otomatis dari dalam aplikasi
 - [x] Logika **Device Binding (1 Akun 1 Device)** pada APK GAS Siswa disamakan persis dengan EduLock: menggunakan pencocokan Fingerprint Hardware `ANDROID_ID` case-insensitive & varian SHA-256 sehingga siswa yang meng-install ulang GAS di HP miliknya sendiri tidak akan lagi terkunci/tertolak, namun jika dicoba di HP teman tetap 100% terblokir.
 - [x] Laporan 7 KAIH terkunci setelah tombol kirim dipakai
@@ -176,6 +230,7 @@ Build acuan:
 - [ ] Cek di HP: laporan 7 KAIH minggu berjalan tidak bisa diedit ulang setelah dikirim
 - [ ] Cek di HP: saat admin menyalakan Minggu sebagai hari efektif, menu `Absensi` siswa di hari Minggu tidak lagi menampilkan status `Libur`
 - [ ] Cek di HP: saat admin menyalakan Minggu sebagai hari efektif, `Presensi Sholat` siswa di hari Minggu juga ikut aktif sesuai rule sekolah
+- [ ] Cek di HP: setelah update ke build `23019`, kartu `Aturan Hari` pada `Presensi Sholat` harus menampilkan `Hari efektif: Ya` saat Minggu diaktifkan dari web admin
 - [ ] Cek di HP: PDF Lentera tetap nyaman dibaca di beberapa ukuran file
 - [ ] Cek di HP: menu Kedisiplinan tidak menampilkan card `Prestasi`
 - [ ] Cek di HP: saat pet mati, siswa tidak bisa berinteraksi dengan UI GAS sama sekali
@@ -284,7 +339,12 @@ Build acuan:
 - [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 06:46` dengan build fix hari Minggu efektif presensi
 - [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 06:52` setelah bump versi ke `1.0.12-siswa` (`versionCode 1029`) agar bisa update menimpa APK lama di HP
 - [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 07:09` dengan compatibility bump `versionCode 23004` agar tetap bisa update dari jalur `legacySiswa 23003`
+- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 12:11` dengan build final `1.0.27-siswa` (`versionCode 23019`) untuk gate EduLock ketat berbasis device yang sama dan status hijau
+- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 13:12` dengan build final `1.0.30-siswa` (`versionCode 23022`) untuk 1 akun 1 device + pemisahan binding `gasDeviceId`
 - [x] File `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 07:12` agar tidak lagi membagikan build stale `1028`
+- [x] File kanonik EduLock siswa di Final sekarang `EduLock-studentRelease.apk` (`1.3.4` / `30`, `3,787,940` bytes); duplikat bertanggal/versi di `Final` dibersihkan pada ship `24e3ffa6`
+- [x] File `D:\Dashboard Portal\web\public\apk\EduLock-studentRelease.apk` sudah disinkronkan dari Final pada ship `24e3ffa6`
+- [x] Handoff lapangan EduLock tersedia di `native-mobile-edulock/HANDOFF_LAPANGAN_EDULOCK.md` dan salinan Word `Apk Release/Final/HANDOFF_LAPANGAN_EDULOCK.docx`
 
 ## 6. Prioritas Uji Perangkat Nanti
 
@@ -292,6 +352,7 @@ Urutan yang disarankan saat mulai uji:
 - [ ] EduLock siswa: login otomatis `NPSN + NISN -> Nama`
 - [x] EduLock siswa: overlay `pet mati` berhasil diverifikasi saat proteksi sekolah aktif
 - [ ] EduLock siswa: blok menu `Aplikasi admin perangkat`
+- [ ] EduLock siswa build `1.3.4`: fail-closed presence (GPS off di sekolah vs di rumah)
 - [ ] Web monitoring EduLock: status HP live
-- [ ] GAS siswa: hard gate saat EduLock tidak ada / tidak aktif
+- [ ] GAS siswa: hard gate saat EduLock tidak ada / belum hijau di HP yang sama
 - [ ] GAS guru: login otomatis guru, garis pemisah tabel, dan pemisahan menu `Pelanggaran` / `Riwayat`
