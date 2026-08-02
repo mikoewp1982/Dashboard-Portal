@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node ./scripts/ensure-standalone-public.mjs",
     "start": "next start",
     "lint": "eslint",
     "sync:apk": "powershell -ExecutionPolicy Bypass -File .\\scripts\\sync-public-apk.ps1",

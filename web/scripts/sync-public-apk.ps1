@@ -235,10 +235,20 @@ $manifest = @{
     files = $manifestFiles
 }
 
-$manifest | ConvertTo-Json -Depth 6 | Set-Content -Path $manifestPath -Encoding UTF8
+$manifestJson = $manifest | ConvertTo-Json -Depth 6
+$manifestJson | Set-Content -Path $manifestPath -Encoding UTF8
+
+# Mirror ke src agar halaman tutorial tidak perlu readFileSync dari public/
+# (readFileSync public menyebabkan App Hosting standalone hanya menyalin partial public/).
+$srcManifestPath = Join-Path $repoRoot "src\data\apk-manifest.json"
+$srcManifestDir = Split-Path -Parent $srcManifestPath
+if (-not (Test-Path -LiteralPath $srcManifestDir)) {
+    New-Item -ItemType Directory -Path $srcManifestDir -Force | Out-Null
+}
+$manifestJson | Set-Content -Path $srcManifestPath -Encoding UTF8
 
 Write-Host ""
 Write-Host "Langkah berikutnya:" -ForegroundColor Yellow
-Write-Host "1. Cek git diff/status untuk file APK di web/public/apk"
+Write-Host "1. Cek git diff/status untuk file APK di web/public/apk dan src/data/apk-manifest.json"
 Write-Host "2. Stage file APK yang berubah"
 Write-Host "3. Commit dan push ke main agar App Hosting merollout versi terbaru"

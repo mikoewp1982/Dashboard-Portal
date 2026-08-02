@@ -1,5 +1,5 @@
 ﻿{
-    "updatedAt":  "2026-08-02T11:42:50",
+    "updatedAt":  "2026-08-02T19:16:18",
     "files":  {
                   "EduLock-studentRelease.apk":  {
                                                      "lastModified":  "2026-08-01T20:32:32",
@@ -12,13 +12,13 @@
                                                  },
                   "GAS-Siswa-release.apk":  {
                                                 "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",
-                                                "lastModified":  "2026-08-02T07:43:07",
+                                                "lastModified":  "2026-08-02T13:12:56",
                                                 "packageName":  "com.satupintu.mobile.siswa",
-                                                "sizeMB":  19.57,
-                                                "sha256":  "6182A3C142228AC3E0420925EA9A2E389C3C9A4CE8F41E0FD659B067B58D9157",
-                                                "versionName":  "1.0.13-siswa",
-                                                "versionCode":  23005,
-                                                "sizeBytes":  20521130
+                                                "sizeMB":  25.47,
+                                                "sha256":  "1277A714DC557384BB5EAA6E5798EA6E54C3B77A61D1413CB7F5F2DFA6253F63",
+                                                "versionName":  "1.0.30-siswa",
+                                                "versionCode":  23022,
+                                                "sizeBytes":  26707046
                                             }
               }
 }

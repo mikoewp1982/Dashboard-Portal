@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { readFileSync } from "node:fs";
-import path from "node:path";
+import { getApkDownloadHref } from "@/lib/getApkDownloadHref";
 import edulockLoginImage from "../../../../public/tutorial/edulock/halaman-login.jpeg";
 import edulockLogoImage from "../../../../public/tutorial/edulock/logo-aplikasi.png";
 import edulockSetupImage from "../../../../public/tutorial/edulock/setup-konfigurasi.jpeg";
@@ -11,26 +10,6 @@ export const metadata: Metadata = {
   title: "Tutorial Instalasi EduLock Siswa",
   description: "Panduan instalasi APK EduLock untuk siswa melalui browser Android.",
 };
-
-function getApkDownloadHref(fileName: string) {
-  const baseHref = `/apk/${fileName}`;
-
-  try {
-    const manifestPath = path.join(process.cwd(), "public", "apk", "apk-manifest.json");
-    const manifestRaw = readFileSync(manifestPath, "utf8").replace(/^\uFEFF/, "");
-    const manifest = JSON.parse(manifestRaw) as {
-      files?: Record<string, { sha256?: string; lastModified?: string }>;
-    };
-
-    const fileMeta = manifest.files?.[fileName];
-    const versionToken = fileMeta?.sha256?.slice(0, 12) || fileMeta?.lastModified;
-    if (!versionToken) return baseHref;
-
-    return `${baseHref}?v=${encodeURIComponent(versionToken)}`;
-  } catch {
-    return baseHref;
-  }
-}
 
 const installSteps = [
   {
