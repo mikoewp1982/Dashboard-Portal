@@ -1,13 +1,11 @@
 package com.sekolah.edulock
 
 import android.app.admin.DeviceAdminReceiver
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 
 class DeviceAdminReceiver : DeviceAdminReceiver() {
-
     override fun onEnabled(context: Context, intent: Intent) {
         super.onEnabled(context, intent)
         Toast.makeText(
@@ -22,6 +20,7 @@ class DeviceAdminReceiver : DeviceAdminReceiver() {
 
     override fun onDisabled(context: Context, intent: Intent) {
         super.onDisabled(context, intent)
+        val prefsManager = PreferencesManager(context)
         Toast.makeText(
             context,
             "⚠️ EduLock Device Admin Dinonaktifkan",
@@ -30,33 +29,28 @@ class DeviceAdminReceiver : DeviceAdminReceiver() {
 
         // Log deaktivasi
         logToDatabase(context, "DEVICE_ADMIN_DISABLED", "Device Admin dinonaktifkan")
+
+        if (!prefsManager.isUninstallBypassActive()) {
+            val relaunchIntent = Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            context.startActivity(relaunchIntent)
+        }
     }
 
     override fun onDisableRequested(context: Context, intent: Intent): CharSequence? {
         val prefsManager = PreferencesManager(context)
         if (prefsManager.isUninstallBypassActive()) return null
 
-        // INTERCEPT: User mencoba disable device admin
-
-        // 0. IMMEDIATE LOCK!
-        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
-        if (dpm.isAdminActive(ComponentName(context, DeviceAdminReceiver::class.java))) {
-            dpm.lockNow()
-        }
-
-        // 1. Launch AdminPasswordActivity untuk verifikasi password (sebagai blocker)
-        val passwordIntent = Intent(context, AdminPasswordActivity::class.java)
-        passwordIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        context.startActivity(passwordIntent)
-
-        // 2. Log percobaan disable
+        // Hindari menarik layar secara agresif dari halaman sistem agar flow tetap stabil.
+        // Jika user benar-benar menonaktifkan admin, onDisabled() akan membawa mereka kembali
+        // ke EduLock dan MainActivity akan menampilkan prompt Device Admin yang resmi.
         logToDatabase(
             context,
             "DISABLE_ADMIN_ATTEMPTED",
-            "User mencoba menonaktifkan Device Admin - Auto Lock Triggered"
+            "User mencoba menonaktifkan Device Admin"
         )
 
-        // 3. Return pesan peringatan
         return """
             ⚠️ PERINGATAN KEAMANAN ⚠️
             

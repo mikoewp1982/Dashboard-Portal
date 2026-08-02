@@ -37,14 +37,11 @@ class OverlayLockActivity : AppCompatActivity() {
         val message = intent.getStringExtra("MESSAGE") ?: "PERANGKAT TERKUNCI!"
         val target = intent.getStringExtra("TARGET") ?: "location"
         tvMessage.text = message
+        btnAction.text = resolveActionLabel(target)
 
         btnAction.setOnClickListener {
             try {
-                val intent = when (target) {
-                    "accessibility" -> Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                    else -> Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                }
-                startActivity(intent)
+                startActivity(resolveTargetIntent(target))
             } catch (e: Exception) {
                 Toast.makeText(this, "Tidak bisa membuka pengaturan.", Toast.LENGTH_SHORT).show()
             }
@@ -222,12 +219,30 @@ class OverlayLockActivity : AppCompatActivity() {
     override fun onBackPressed() {
         // Disable back button
         val target = intent.getStringExtra("TARGET") ?: "location"
-        val message = if (target == "accessibility") {
-            "HARAP NYALAKAN PROTEKSI!"
-        } else {
-            "HARAP NYALAKAN GPS!"
+        val message = when (target) {
+            "accessibility" -> "HARAP NYALAKAN PROTEKSI!"
+            "geofence" -> "KEMBALI KE EDULOCK!"
+            else -> "HARAP NYALAKAN LOKASI!"
         }
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun resolveActionLabel(target: String): String {
+        return when (target) {
+            "accessibility" -> "Buka Pengaturan Aksesibilitas"
+            "geofence" -> "Kembali ke EduLock"
+            else -> "Buka Pengaturan Lokasi"
+        }
+    }
+
+    private fun resolveTargetIntent(target: String): Intent {
+        return when (target) {
+            "accessibility" -> Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            "geofence" -> Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+            else -> Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+        }
     }
 
     private fun shouldStayLocked(): Boolean {

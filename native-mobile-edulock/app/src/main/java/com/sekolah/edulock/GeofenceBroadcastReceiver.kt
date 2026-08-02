@@ -34,6 +34,9 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         prefsManager.lastGeofenceTransition = transitionLabel
         prefsManager.lastGeofenceTransitionAt = System.currentTimeMillis()
         prefsManager.isInsideSchoolZone = transition != Geofence.GEOFENCE_TRANSITION_EXIT
+        if (transition != Geofence.GEOFENCE_TRANSITION_EXIT) {
+            prefsManager.markNearSchool()
+        }
 
         val traceId = metricsLogger.startTrace("geofence", transitionLabel)
         val decision = lockStateManager.reconcile()

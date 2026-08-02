@@ -22,20 +22,21 @@ class AntiUninstallService : AccessibilityService() {
         val isDeviceAdminRequest = now < prefsManager.deviceAdminRequestUntil
         val uninstallBypass = prefsManager.isUninstallBypassActive(now)
 
+        val shouldSkipEnforcement = !prefsManager.isProtectionActive || uninstallBypass || !prefsManager.isSetupCompleted || prefsManager.isHolidayMode || isSettingsGrace
+
+        if (shouldSkipEnforcement) {
+            // Setup Mode / Settings Grace / Protection OFF: Izinkan user mengaktifkan permission (Overlay, Battery, dll)
+            return
+        }
+
         // TRACK FOREGROUND PACKAGE (Untuk Whitelist App Sekolah)
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val packageName = event.packageName?.toString() ?: ""
             prefsManager.lastForegroundPackage = packageName
+            val rootNode = rootInActiveWindow
 
-            if (isSettingsGrace) {
+            if (rootNode != null && handleProtectedAdminScreen(packageName, rootNode, isDeviceAdminRequest, prefsManager)) {
                 return
-            }
-
-            if (isDeviceAdminRequest && isProtectedSystemPackage(packageName)) {
-                val rootNode = rootInActiveWindow
-                if (rootNode != null && isEduLockDeviceAdminActivationPage(rootNode)) {
-                    return
-                }
             }
 
             // LOGIKA WHITELIST ENFORCEMENT (Buka Paksa EduLock jika keluar dari Whitelist)
@@ -53,11 +54,6 @@ class AntiUninstallService : AccessibilityService() {
                 metricsLogger.finishTrace(traceId)
                 Toast.makeText(this, "AKSES DITOLAK! Hanya Aplikasi Sekolah yang diizinkan.", Toast.LENGTH_SHORT).show()
             }
-        }
-
-        if (!prefsManager.isProtectionActive || uninstallBypass || !prefsManager.isSetupCompleted || prefsManager.isHolidayMode || isSettingsGrace) {
-            // Setup Mode / Protection OFF: Izinkan akses ke Settings agar user bisa mengaktifkan permission / mengelola aplikasi
-            return 
         }
 
         // Monitor semua package yang relevan dengan Settings atau Installer
@@ -156,6 +152,52 @@ class AntiUninstallService : AccessibilityService() {
         return false
     }
 
+    private fun handleProtectedAdminScreen(
+        packageName: String,
+        rootNode: AccessibilityNodeInfo,
+        isDeviceAdminRequest: Boolean,
+        prefsManager: PreferencesManager
+    ): Boolean {
+        val now = System.currentTimeMillis()
+        val isSettingsGrace = prefsManager.isSettingsOpen || now < prefsManager.settingsGraceUntil
+        val uninstallBypass = prefsManager.isUninstallBypassActive(now)
+
+        if (!prefsManager.isProtectionActive || uninstallBypass || !prefsManager.isSetupCompleted || prefsManager.isHolidayMode || isSettingsGrace) {
+            return false
+        }
+
+        if (!isProtectedSystemPackage(packageName)) {
+            return false
+        }
+
+        if (isDeviceAdminRequest && isEduLockDeviceAdminActivationPage(rootNode)) {
+            return false
+        }
+
+        val isBlockedAdminPage =
+            isEduLockAppInfoPage(rootNode) ||
+            isEduLockDeviceAdminManagementPage(rootNode)
+
+        if (!isBlockedAdminPage) {
+            return false
+        }
+
+        prefsManager.isSettingsOpen = false
+        prefsManager.settingsGraceUntil = 0L
+        prefsManager.deviceAdminRequestUntil = 0L
+
+        performGlobalAction(GLOBAL_ACTION_BACK)
+        performGlobalAction(GLOBAL_ACTION_HOME)
+
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        startActivity(intent)
+
+        Toast.makeText(this, "⛔ Menu Admin Perangkat tidak boleh dibuka. Kembali ke EduLock.", Toast.LENGTH_LONG).show()
+        return true
+    }
+
     private fun isProtectedSystemPackage(packageName: String): Boolean {
         return packageName.contains("com.android.settings") ||
             packageName.contains("com.google.android.packageinstaller") ||
@@ -173,6 +215,29 @@ class AntiUninstallService : AccessibilityService() {
                 "Activate this device admin app",
                 "Device administrator",
                 "Device admin"
+            )
+
+            val hasApp = appMentions.any { rootNode.findAccessibilityNodeInfosByText(it).isNotEmpty() }
+            val hasAdminKeyword = deviceAdminKeywords.any { rootNode.findAccessibilityNodeInfosByText(it).isNotEmpty() }
+            hasApp && hasAdminKeyword
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun isEduLockDeviceAdminManagementPage(rootNode: AccessibilityNodeInfo): Boolean {
+        return try {
+            val appMentions = listOf("EduLock", "com.sekolah.edulock")
+            val deviceAdminKeywords = listOf(
+                "Aplikasi admin perangkat",
+                "Administrator perangkat",
+                "Admin perangkat",
+                "Nonaktifkan",
+                "Matikan",
+                "Turn off",
+                "Deactivate",
+                "Device admin apps",
+                "Device administrators"
             )
 
             val hasApp = appMentions.any { rootNode.findAccessibilityNodeInfosByText(it).isNotEmpty() }

@@ -93,6 +93,13 @@
             android:launchMode="singleTask"
             android:theme="@style/Theme.EduLock.Fullscreen" />
 
+        <activity
+            android:name=".ForceUpdateActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.EduLock.Fullscreen" />
+
         <!-- Overlay Lock Activity -->
         <activity
             android:name=".OverlayLockActivity"

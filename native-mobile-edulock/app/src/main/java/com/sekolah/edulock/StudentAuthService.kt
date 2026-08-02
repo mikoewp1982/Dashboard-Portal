@@ -1,23 +1,68 @@
 package com.sekolah.edulock
 
-import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 class StudentAuthService {
-    data class TokenResult(
-        val token: String,
+    data class StudentLookupResult(
         val nisn: String,
         val studentName: String,
+        val studentUsername: String,
         val className: String,
         val schoolId: String,
         val schoolName: String,
         val schoolNpsn: String,
         val studentKey: String
     )
+
+    data class TokenResult(
+        val token: String,
+        val nisn: String,
+        val studentName: String,
+        val studentUsername: String,
+        val className: String,
+        val schoolId: String,
+        val schoolName: String,
+        val schoolNpsn: String,
+        val studentKey: String
+    )
+
+    fun lookupStudent(
+        npsn: String,
+        nisn: String,
+        callback: (StudentLookupResult?, String?) -> Unit
+    ) {
+        ensureAnonymousAuth { authError ->
+            if (authError != null) {
+                callback(null, authError)
+                return@ensureAnonymousAuth
+            }
+
+            val db = FirebaseDatabase.getInstance()
+            resolveSchoolAndStudent(db, npsn, nisn, null) { schoolSnapshot, studentSnapshot, error ->
+                if (schoolSnapshot == null || studentSnapshot == null) {
+                    callback(null, error ?: "Siswa tidak ditemukan.")
+                    return@resolveSchoolAndStudent
+                }
+
+                callback(
+                    extractStudentLookup(
+                        studentSnapshot = studentSnapshot,
+                        schoolId = schoolSnapshot.key ?: "",
+                        schoolName = schoolSnapshot.child("schoolName").getValue(String::class.java)
+                            ?: schoolSnapshot.child("name").getValue(String::class.java)
+                            ?: "",
+                        schoolNpsn = npsn
+                    ),
+                    null
+                )
+            }
+        }
+    }
 
     fun requestToken(
         npsn: String,
@@ -26,16 +71,12 @@ class StudentAuthService {
         deviceId: String,
         callback: (TokenResult?, String?) -> Unit
     ) {
-        val auth = FirebaseAuth.getInstance()
-        if (auth.currentUser == null) {
-            auth.signInAnonymously().addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    verifyStudentWithDatabase(npsn, nisn, name, deviceId, callback)
-                } else {
-                    callback(null, "Gagal terhubung ke server autentikasi: ${task.exception?.message}")
-                }
+        ensureAnonymousAuth { authError ->
+            if (authError != null) {
+                callback(null, authError)
+                return@ensureAnonymousAuth
             }
-        } else {
+
             verifyStudentWithDatabase(npsn, nisn, name, deviceId, callback)
         }
     }
@@ -48,97 +89,255 @@ class StudentAuthService {
         callback: (TokenResult?, String?) -> Unit
     ) {
         val db = FirebaseDatabase.getInstance()
-        
-        // 1. Coba langsung akses by ID di node 'schools' root
+        resolveSchoolAndStudent(db, npsn, nisn, name) { schoolSnapshot, studentSnapshot, error ->
+            if (schoolSnapshot == null || studentSnapshot == null) {
+                callback(null, error ?: "Siswa tidak ditemukan.")
+                return@resolveSchoolAndStudent
+            }
+
+            val schoolId = schoolSnapshot.key ?: ""
+            val schoolName = schoolSnapshot.child("schoolName").getValue(String::class.java)
+                ?: schoolSnapshot.child("name").getValue(String::class.java)
+                ?: ""
+            bindAndReturn(studentSnapshot, schoolId, schoolName, npsn, deviceId, callback)
+        }
+    }
+
+    private fun ensureAnonymousAuth(callback: (String?) -> Unit) {
+        val auth = FirebaseAuth.getInstance()
+        if (auth.currentUser != null) {
+            callback(null)
+            return
+        }
+
+        auth.signInAnonymously().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                callback(null)
+            } else {
+                callback("Gagal terhubung ke server autentikasi: ${task.exception?.message}")
+            }
+        }
+    }
+
+    private fun resolveSchoolAndStudent(
+        db: FirebaseDatabase,
+        npsn: String,
+        nisn: String,
+        name: String?,
+        callback: (DataSnapshot?, DataSnapshot?, String?) -> Unit
+    ) {
+        resolveSchoolByNpsn(db, npsn) { schoolSnapshot, schoolError ->
+            if (schoolSnapshot == null) {
+                callback(null, null, schoolError ?: "Sekolah tidak ditemukan.")
+                return@resolveSchoolByNpsn
+            }
+
+            val schoolId = schoolSnapshot.key ?: ""
+            val studentsRef = db.getReference("gas/schools/$schoolId/students")
+            findStudentByNisn(studentsRef, nisn) { nisnSnapshot, nisnError ->
+                if (nisnSnapshot != null) {
+                    callback(schoolSnapshot, nisnSnapshot, null)
+                    return@findStudentByNisn
+                }
+
+                if (name.isNullOrBlank()) {
+                    callback(null, null, nisnError ?: "Siswa dengan NISN $nisn tidak ditemukan.")
+                    return@findStudentByNisn
+                }
+
+                findStudentByUsername(studentsRef, name) { usernameSnapshot, usernameError ->
+                    if (usernameSnapshot != null) {
+                        callback(schoolSnapshot, usernameSnapshot, null)
+                    } else {
+                        callback(
+                            null,
+                            null,
+                            usernameError ?: nisnError ?: "Siswa tidak ditemukan. Pastikan nama atau NISN benar."
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun resolveSchoolByNpsn(
+        db: FirebaseDatabase,
+        npsn: String,
+        callback: (DataSnapshot?, String?) -> Unit
+    ) {
         val directSchoolRef = db.getReference("schools/$npsn")
         directSchoolRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(directSnapshot: DataSnapshot) {
                 if (directSnapshot.exists()) {
-                    proceedWithSchool(directSnapshot, npsn, nisn, name, deviceId, callback, db)
-                } else {
-                    // 2. Fallback: cari di child "npsn" (String) pada root 'schools'
-                    val schoolsRef = db.getReference("schools")
-                    schoolsRef.orderByChild("npsn").equalTo(npsn).addListenerForSingleValueEvent(object : ValueEventListener {
+                    callback(directSnapshot, null)
+                    return
+                }
+
+                val schoolsRef = db.getReference("schools")
+                schoolsRef.orderByChild("npsn").equalTo(npsn)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(snapshot: DataSnapshot) {
-                            if (!snapshot.exists()) {
-                                // Coba cari sebagai Long/Integer siapa tau di DB tersimpan sebagai angka
-                                val npsnNum = npsn.toLongOrNull()
-                                if (npsnNum != null) {
-                                    schoolsRef.orderByChild("npsn").equalTo(npsnNum.toDouble()).addListenerForSingleValueEvent(object : ValueEventListener {
-                                        override fun onDataChange(numSnapshot: DataSnapshot) {
-                                            if (!numSnapshot.exists()) {
-                                                callback(null, "Sekolah dengan NPSN $npsn tidak ditemukan.")
-                                                return
-                                            }
-                                            proceedWithSchool(numSnapshot.children.first(), npsn, nisn, name, deviceId, callback, db)
-                                        }
-                                        override fun onCancelled(error: DatabaseError) { callback(null, error.message) }
-                                    })
-                                } else {
-                                    callback(null, "Sekolah dengan NPSN $npsn tidak ditemukan.")
-                                }
+                            if (snapshot.exists()) {
+                                callback(snapshot.children.first(), null)
                                 return
                             }
-                            proceedWithSchool(snapshot.children.first(), npsn, nisn, name, deviceId, callback, db)
+
+                            val npsnNum = npsn.toLongOrNull()
+                            if (npsnNum == null) {
+                                callback(null, "Sekolah dengan NPSN $npsn tidak ditemukan.")
+                                return
+                            }
+
+                            schoolsRef.orderByChild("npsn").equalTo(npsnNum.toDouble())
+                                .addListenerForSingleValueEvent(object : ValueEventListener {
+                                    override fun onDataChange(numSnapshot: DataSnapshot) {
+                                        if (numSnapshot.exists()) {
+                                            callback(numSnapshot.children.first(), null)
+                                        } else {
+                                            callback(null, "Sekolah dengan NPSN $npsn tidak ditemukan.")
+                                        }
+                                    }
+
+                                    override fun onCancelled(error: DatabaseError) {
+                                        callback(null, "Gagal menghubungi database: ${error.message}")
+                                    }
+                                })
                         }
+
                         override fun onCancelled(error: DatabaseError) {
                             callback(null, "Gagal menghubungi database: ${error.message}")
                         }
                     })
-                }
             }
+
             override fun onCancelled(error: DatabaseError) {
                 callback(null, "Gagal menghubungi database: ${error.message}")
             }
         })
     }
 
-    private fun proceedWithSchool(
-        schoolSnapshot: DataSnapshot,
-        npsn: String,
+    private fun findStudentByNisn(
+        studentsRef: DatabaseReference,
         nisn: String,
-        name: String,
-        deviceId: String,
-        callback: (TokenResult?, String?) -> Unit,
-        db: FirebaseDatabase
+        callback: (DataSnapshot?, String?) -> Unit
     ) {
-        val schoolId = schoolSnapshot.key ?: ""
-        val schoolName = schoolSnapshot.child("schoolName").getValue(String::class.java) ?: schoolSnapshot.child("name").getValue(String::class.java) ?: ""
-        val studentsRef = db.getReference("gas/schools/$schoolId/students")
+        studentsRef.orderByChild("nisn").equalTo(nisn)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(nisnSnapshot: DataSnapshot) {
+                    if (nisnSnapshot.exists()) {
+                        callback(nisnSnapshot.children.first(), null)
+                        return
+                    }
 
-        val usernameCandidate = name.trim().lowercase().replace("\\s+".toRegex(), "_").replace(Regex("[^a-z0-9_]"), "")
-        
-        // 2. Resolve identity by username first
-        studentsRef.orderByChild("username").equalTo(usernameCandidate).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(studentSnapshot: DataSnapshot) {
-                if (studentSnapshot.exists()) {
-                    bindAndReturn(studentSnapshot.children.first(), schoolId, schoolName, npsn, deviceId, callback)
-                } else {
-                    // 3. Fallback resolve identity by nisn
-                    studentsRef.orderByChild("nisn").equalTo(nisn).addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(nisnSnapshot: DataSnapshot) {
-                            if (nisnSnapshot.exists()) {
-                                bindAndReturn(nisnSnapshot.children.first(), schoolId, schoolName, npsn, deviceId, callback)
-                            } else {
-                                // Also try exact match on student node key (some structures use nisn as key)
-                                studentsRef.child(nisn).addListenerForSingleValueEvent(object : ValueEventListener {
-                                    override fun onDataChange(directNisnSnapshot: DataSnapshot) {
-                                        if (directNisnSnapshot.exists()) {
-                                            bindAndReturn(directNisnSnapshot, schoolId, schoolName, npsn, deviceId, callback)
-                                        } else {
-                                            callback(null, "Siswa tidak ditemukan. Pastikan Username/Nama atau NISN benar.")
-                                        }
-                                    }
-                                    override fun onCancelled(error: DatabaseError) { callback(null, error.message) }
-                                })
+                    val nisnNumber = nisn.toLongOrNull()
+                    if (nisnNumber == null) {
+                        findStudentByKey(studentsRef, nisn, callback)
+                        return
+                    }
+
+                    studentsRef.orderByChild("nisn").equalTo(nisnNumber.toDouble())
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(numericSnapshot: DataSnapshot) {
+                                if (numericSnapshot.exists()) {
+                                    callback(numericSnapshot.children.first(), null)
+                                    return
+                                }
+
+                                findStudentByKey(studentsRef, nisn, callback)
                             }
-                        }
-                        override fun onCancelled(error: DatabaseError) { callback(null, error.message) }
-                    })
+
+                            override fun onCancelled(error: DatabaseError) {
+                                callback(null, error.message)
+                            }
+                        })
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(null, error.message)
+                }
+            })
+    }
+
+    private fun findStudentByKey(
+        studentsRef: DatabaseReference,
+        nisn: String,
+        callback: (DataSnapshot?, String?) -> Unit
+    ) {
+        studentsRef.child(nisn).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(directNisnSnapshot: DataSnapshot) {
+                if (directNisnSnapshot.exists()) {
+                    callback(directNisnSnapshot, null)
+                } else {
+                    callback(null, "Siswa dengan NISN $nisn tidak ditemukan.")
                 }
             }
-            override fun onCancelled(error: DatabaseError) { callback(null, error.message) }
+
+            override fun onCancelled(error: DatabaseError) {
+                callback(null, error.message)
+            }
         })
+    }
+
+    private fun findStudentByUsername(
+        studentsRef: DatabaseReference,
+        name: String,
+        callback: (DataSnapshot?, String?) -> Unit
+    ) {
+        val usernameCandidate = name.trim()
+            .lowercase()
+            .replace("\\s+".toRegex(), "_")
+            .replace(Regex("[^a-z0-9_]"), "")
+
+        if (usernameCandidate.isBlank()) {
+            callback(null, "Nama siswa tidak valid.")
+            return
+        }
+
+        studentsRef.orderByChild("username").equalTo(usernameCandidate)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(studentSnapshot: DataSnapshot) {
+                    if (studentSnapshot.exists()) {
+                        callback(studentSnapshot.children.first(), null)
+                    } else {
+                        callback(null, "Siswa tidak ditemukan. Pastikan nama atau NISN benar.")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(null, error.message)
+                }
+            })
+    }
+
+    private fun extractStudentLookup(
+        studentSnapshot: DataSnapshot,
+        schoolId: String,
+        schoolName: String,
+        schoolNpsn: String
+    ): StudentLookupResult {
+        val studentNisn = studentSnapshot.child("nisn").getValue(String::class.java)
+            ?: studentSnapshot.key
+            ?: ""
+        val studentName = studentSnapshot.child("name").getValue(String::class.java)
+            ?: studentSnapshot.child("nama").getValue(String::class.java)
+            ?: ""
+        val studentUsername = studentSnapshot.child("username").getValue(String::class.java)
+            ?.trim()
+            .orEmpty()
+        val className = studentSnapshot.child("class").getValue(String::class.java)
+            ?: studentSnapshot.child("kelas").getValue(String::class.java)
+            ?: ""
+
+        return StudentLookupResult(
+            nisn = studentNisn,
+            studentName = studentName,
+            studentUsername = studentUsername,
+            className = className,
+            schoolId = schoolId,
+            schoolName = schoolName,
+            schoolNpsn = schoolNpsn,
+            studentKey = studentSnapshot.key ?: studentNisn
+        )
     }
 
     private fun bindAndReturn(
@@ -149,9 +348,6 @@ class StudentAuthService {
         deviceId: String,
         callback: (TokenResult?, String?) -> Unit
     ) {
-        val studentNisn = studentSnapshot.child("nisn").getValue(String::class.java) ?: studentSnapshot.key ?: ""
-        val studentName = studentSnapshot.child("name").getValue(String::class.java) ?: studentSnapshot.child("nama").getValue(String::class.java) ?: ""
-        val className = studentSnapshot.child("class").getValue(String::class.java) ?: studentSnapshot.child("kelas").getValue(String::class.java) ?: ""
         val registeredDeviceId = studentSnapshot.child("device_uuid").getValue(String::class.java) ?: studentSnapshot.child("deviceId").getValue(String::class.java) ?: studentSnapshot.child("device").getValue(String::class.java)
 
         if (!registeredDeviceId.isNullOrEmpty() && !registeredDeviceId.trim().equals(deviceId.trim(), ignoreCase = true)) {
@@ -164,17 +360,23 @@ class StudentAuthService {
         studentSnapshot.ref.child("device").setValue(deviceId)
         studentSnapshot.ref.child("lastLoginEduLock").setValue(System.currentTimeMillis())
 
-        // We return a "fake" token since we don't use Custom Token anymore in native-mobile-gas flow.
-        // We just use anonymous auth. We pass "ANONYMOUS_AUTH" as token.
-        callback(TokenResult(
-            token = "ANONYMOUS_AUTH",
+        val studentLookup = extractStudentLookup(
+            studentSnapshot = studentSnapshot,
             schoolId = schoolId,
             schoolName = schoolName,
-            schoolNpsn = schoolNpsn,
-            nisn = studentNisn,
-            studentName = studentName,
-            className = className,
-            studentKey = studentSnapshot.key ?: studentNisn
+            schoolNpsn = schoolNpsn
+        )
+
+        callback(TokenResult(
+            token = "ANONYMOUS_AUTH",
+            schoolId = studentLookup.schoolId,
+            schoolName = studentLookup.schoolName,
+            schoolNpsn = studentLookup.schoolNpsn,
+            nisn = studentLookup.nisn,
+            studentName = studentLookup.studentName,
+            studentUsername = studentLookup.studentUsername,
+            className = studentLookup.className,
+            studentKey = studentLookup.studentKey
         ), null)
     }
 }

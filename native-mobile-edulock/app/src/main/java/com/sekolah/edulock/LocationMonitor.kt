@@ -146,29 +146,97 @@ class LocationMonitor(private val context: Context, private val prefsManager: Pr
         if (currentLocation == null) {
             return prefsManager.isRecentGeofenceInside()
         }
-        
-        val schoolLat = prefsManager.schoolLatitude
-        val schoolLon = prefsManager.schoolLongitude
+
+        val distanceInMeters = distanceToSchoolMeters(currentLocation)
         val schoolRadius = prefsManager.schoolRadius
-        
-        val results = FloatArray(1)
-        Location.distanceBetween(
-            currentLocation.latitude, currentLocation.longitude,
-            schoolLat, schoolLon,
-            results
-        )
-        
-        val distanceInMeters = results[0]
         if (distanceInMeters <= schoolRadius) return true
 
         if (prefsManager.isRecentGeofenceOutside()) return false
 
         // Hybrid konservatif: izinkan toleransi kecil untuk noise GPS jika event ENTER/DWELL masih segar.
         if (prefsManager.isRecentGeofenceInside()) {
-            val hybridMarginMeters = maxOf(50.0, schoolRadius * 0.15)
-            return distanceInMeters <= schoolRadius + hybridMarginMeters
+            return distanceInMeters <= schoolRadius + nearSchoolBufferMeters()
         }
 
         return false
+    }
+
+    fun nearSchoolBufferMeters(): Double {
+        return maxOf(50.0, prefsManager.schoolRadius * 0.15)
+    }
+
+    fun distanceToSchoolMeters(location: Location): Float {
+        val results = FloatArray(1)
+        Location.distanceBetween(
+            location.latitude,
+            location.longitude,
+            prefsManager.schoolLatitude,
+            prefsManager.schoolLongitude,
+            results
+        )
+        return results[0]
+    }
+
+    /** Within school radius or the hybrid near-school buffer. */
+    fun isNearSchool(location: Location): Boolean {
+        return distanceToSchoolMeters(location) <= prefsManager.schoolRadius + nearSchoolBufferMeters()
+    }
+
+    /**
+     * Persist / clear "near school" evidence from a fix.
+     * Fresh fix clearly outside clears presence so sick-at-home (GPS on) stays fail-open.
+     */
+    fun updateSchoolPresenceFromLocation(location: Location?, now: Long = System.currentTimeMillis()) {
+        if (location == null) return
+        if (isNearSchool(location)) {
+            prefsManager.markNearSchool(now)
+        } else {
+            prefsManager.clearNearSchoolPresence()
+        }
+    }
+
+    /**
+     * Indication the student "should be at school" for GPS-off / offline hard protection:
+     * sticky inside, recent geofence ENTER/DWELL, persisted last-near-school, or stale last-known near school.
+     */
+    fun hasSchoolPresenceIndication(now: Long = System.currentTimeMillis()): Boolean {
+        if (prefsManager.isInsideSchoolZone) return true
+
+        // Longer freshness than hybrid location (2 min): presence survives GPS kill after ENTER.
+        if (prefsManager.isRecentGeofenceInside(now, freshnessMs = 30 * 60 * 1000L)) return true
+
+        if (prefsManager.hasRecentNearSchoolPresence(now)) return true
+
+        val staleNear = getLastKnownLocationAnyAge(
+            maxAgeMs = PreferencesManager.NEAR_SCHOOL_PRESENCE_FRESHNESS_MS
+        )
+        if (staleNear != null && isNearSchool(staleNear)) {
+            prefsManager.markNearSchool(now)
+            return true
+        }
+        return false
+    }
+
+    fun shouldEnforcePresenceProtection(now: Long = System.currentTimeMillis()): Boolean {
+        return hasSchoolPresenceIndication(now)
+    }
+
+    /** Last-known fix without the 2-minute "fresh" filter (presence evidence only). */
+    private fun getLastKnownLocationAnyAge(maxAgeMs: Long): Location? {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return null
+        }
+        val now = System.currentTimeMillis()
+        val candidates = listOfNotNull(
+            locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER),
+            locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER),
+            lastLocation
+        ).filter { kotlin.math.abs(now - it.time) <= maxAgeMs }
+
+        if (candidates.isEmpty()) return null
+        return candidates.sortedWith(
+            compareBy<Location> { if (it.hasAccuracy()) it.accuracy else Float.MAX_VALUE }
+                .thenByDescending { it.time }
+        ).firstOrNull()
     }
 }

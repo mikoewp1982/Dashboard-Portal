@@ -26,6 +26,8 @@ class PreferencesManager(context: Context) {
         private const val KEY_IS_REGISTERED = "is_registered"
         private const val KEY_SCHOOL_ID = "school_id"
         private const val KEY_SCHOOL_NPSN = "school_npsn"
+        private const val KEY_STUDENT_REMOTE_KEY = "student_remote_key"
+        private const val KEY_STUDENT_USERNAME = "student_username"
         private const val KEY_SCHOOL_LAT = "school_lat"
         private const val KEY_SCHOOL_LON = "school_lon"
         private const val KEY_SCHOOL_RADIUS = "school_radius"
@@ -72,8 +74,12 @@ class PreferencesManager(context: Context) {
         private const val KEY_DAILY_ATTENDANCE_STATUS = "daily_attendance_status"
         private const val KEY_LAST_GEOFENCE_TRANSITION = "last_geofence_transition"
         private const val KEY_LAST_GEOFENCE_TRANSITION_AT = "last_geofence_transition_at"
+        private const val KEY_LAST_NEAR_SCHOOL_AT = "last_near_school_at"
         private const val KEY_IS_PET_DEAD = "is_pet_dead"
         private const val KEY_LAST_PET_DEAD_ACK_AT = "last_pet_dead_ack_at"
+
+        /** Default TTL for "last fix near school" presence evidence (covers a school day). */
+        const val NEAR_SCHOOL_PRESENCE_FRESHNESS_MS = 12 * 60 * 60 * 1000L
     }
 
     var isForceUpdateRequired: Boolean
@@ -128,6 +134,26 @@ class PreferencesManager(context: Context) {
         val transitionAt = lastGeofenceTransitionAt
         if (transitionAt <= 0L || now - transitionAt > freshnessMs) return false
         return lastGeofenceTransition == "EXIT"
+    }
+
+    var lastNearSchoolAt: Long
+        get() = prefs.getLong(KEY_LAST_NEAR_SCHOOL_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_LAST_NEAR_SCHOOL_AT, value).apply()
+
+    fun markNearSchool(now: Long = System.currentTimeMillis()) {
+        lastNearSchoolAt = now
+    }
+
+    fun clearNearSchoolPresence() {
+        lastNearSchoolAt = 0L
+    }
+
+    fun hasRecentNearSchoolPresence(
+        now: Long = System.currentTimeMillis(),
+        freshnessMs: Long = NEAR_SCHOOL_PRESENCE_FRESHNESS_MS
+    ): Boolean {
+        val at = lastNearSchoolAt
+        return at > 0L && now - at <= freshnessMs
     }
 
     var appSwitchTimestamp: Long
@@ -252,6 +278,14 @@ class PreferencesManager(context: Context) {
         get() = prefs.getString(KEY_SCHOOL_NPSN, "")?.trim() ?: ""
         set(value) = prefs.edit().putString(KEY_SCHOOL_NPSN, value.trim()).apply()
 
+    var studentRemoteKey: String
+        get() = prefs.getString(KEY_STUDENT_REMOTE_KEY, "")?.trim() ?: ""
+        set(value) = prefs.edit().putString(KEY_STUDENT_REMOTE_KEY, value.trim()).apply()
+
+    var studentUsername: String
+        get() = prefs.getString(KEY_STUDENT_USERNAME, "")?.trim() ?: ""
+        set(value) = prefs.edit().putString(KEY_STUDENT_USERNAME, value.trim()).apply()
+
     var deviceId: String
         get() = prefs.getString(KEY_DEVICE_ID, "") ?: ""
         set(value) = prefs.edit().putString(KEY_DEVICE_ID, value).apply()
@@ -348,15 +382,32 @@ class PreferencesManager(context: Context) {
     }
 
     // Save student registration
-    fun saveStudentRegistration(studentId: Long, nisn: String, name: String, className: String, deviceId: String) {
+    fun saveStudentRegistration(
+        studentId: Long,
+        nisn: String,
+        name: String,
+        className: String,
+        deviceId: String,
+        remoteStudentKey: String = "",
+        username: String = ""
+    ) {
         prefs.edit().apply {
             putLong(KEY_STUDENT_ID, studentId)
             putString(KEY_NISN, nisn)
             putString(KEY_STUDENT_NAME, name)
             putString(KEY_CLASS, className)
             putString(KEY_DEVICE_ID, deviceId)
+            putString(KEY_STUDENT_REMOTE_KEY, remoteStudentKey.trim())
+            putString(KEY_STUDENT_USERNAME, username.trim())
             putBoolean(KEY_IS_REGISTERED, true)
             putBoolean(KEY_FIRST_LAUNCH, false)
+        }.apply()
+    }
+
+    fun saveStudentRemoteIdentity(remoteStudentKey: String, username: String) {
+        prefs.edit().apply {
+            putString(KEY_STUDENT_REMOTE_KEY, remoteStudentKey.trim())
+            putString(KEY_STUDENT_USERNAME, username.trim())
         }.apply()
     }
 }

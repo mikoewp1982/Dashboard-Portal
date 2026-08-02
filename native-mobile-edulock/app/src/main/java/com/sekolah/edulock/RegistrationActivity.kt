@@ -2,6 +2,10 @@ package com.sekolah.edulock
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -19,11 +23,18 @@ class RegistrationActivity : AppCompatActivity() {
 
     private lateinit var prefsManager: PreferencesManager
     private lateinit var dbHelper: DatabaseHelper
+    private lateinit var forceUpdateGate: ForceUpdateGate
     private val auth by lazy { SchoolServiceGuard.auth(this) }
     private val studentAuthService: StudentAuthService by lazy { StudentAuthService() }
+    private val lookupHandler = Handler(Looper.getMainLooper())
+    private var pendingLookupRunnable: Runnable? = null
+    private var lookupSequence = 0
+    private var lastResolvedLookupKey: String? = null
 
     companion object {
         private const val SCHOOL_DISABLED_TITLE = "Layanan Sekolah Nonaktif"
+        private const val NAME_HINT_DEFAULT = "Terisi otomatis dari database"
+        private const val NAME_HINT_LOADING = "Mencari nama siswa..."
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +50,7 @@ class RegistrationActivity : AppCompatActivity() {
 
         prefsManager = PreferencesManager(this)
         dbHelper = DatabaseHelper(this)
+        forceUpdateGate = ForceUpdateGate(this)
 
         // Cek apakah user sudah register
         if (prefsManager.isRegistered) {
@@ -63,6 +75,16 @@ class RegistrationActivity : AppCompatActivity() {
         setupListeners()
     }
 
+    override fun onStart() {
+        super.onStart()
+        forceUpdateGate.start()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        forceUpdateGate.stop()
+    }
+
     private fun initViews() {
         etNPSN = findViewById(R.id.etNPSN)
         etNISN = findViewById(R.id.etNISN)
@@ -71,6 +93,19 @@ class RegistrationActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
+        val studentLookupWatcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+
+            override fun afterTextChanged(s: Editable?) {
+                scheduleStudentLookup()
+            }
+        }
+
+        etNPSN.addTextChangedListener(studentLookupWatcher)
+        etNISN.addTextChangedListener(studentLookupWatcher)
+
         btnRegister.setOnClickListener {
             val npsn = etNPSN.text.toString().trim()
             val nisn = etNISN.text.toString().trim()
@@ -80,6 +115,73 @@ class RegistrationActivity : AppCompatActivity() {
                 verifyStudentWithServer(npsn, nisn, name)
             }
         }
+    }
+
+    private fun scheduleStudentLookup() {
+        pendingLookupRunnable?.let(lookupHandler::removeCallbacks)
+        lookupSequence += 1
+
+        val npsn = etNPSN.text.toString().trim()
+        val nisn = etNISN.text.toString().trim()
+        val lookupKey = buildLookupKey(npsn, nisn)
+
+        if (lookupKey != lastResolvedLookupKey) {
+            etName.setText("")
+            etName.error = null
+            etName.hint = NAME_HINT_DEFAULT
+        }
+
+        if (npsn.isBlank() || nisn.isBlank()) {
+            lastResolvedLookupKey = null
+            return
+        }
+
+        if (lookupKey == lastResolvedLookupKey && etName.text.toString().trim().isNotBlank()) {
+            return
+        }
+
+        val currentSequence = lookupSequence
+        etName.hint = NAME_HINT_LOADING
+        pendingLookupRunnable = Runnable {
+            lookupStudentName(npsn, nisn, lookupKey, currentSequence)
+        }
+        lookupHandler.postDelayed(pendingLookupRunnable!!, 400)
+    }
+
+    private fun lookupStudentName(
+        npsn: String,
+        nisn: String,
+        lookupKey: String,
+        requestSequence: Int
+    ) {
+        studentAuthService.lookupStudent(npsn, nisn) { result, error ->
+            runOnUiThread {
+                val currentKey = buildLookupKey(
+                    etNPSN.text.toString().trim(),
+                    etNISN.text.toString().trim()
+                )
+                if (requestSequence != lookupSequence || currentKey != lookupKey) {
+                    return@runOnUiThread
+                }
+
+                if (result == null) {
+                    lastResolvedLookupKey = null
+                    etName.setText("")
+                    etName.hint = NAME_HINT_DEFAULT
+                    etName.error = error ?: "Nama siswa tidak ditemukan."
+                    return@runOnUiThread
+                }
+
+                lastResolvedLookupKey = lookupKey
+                etName.error = null
+                etName.hint = NAME_HINT_DEFAULT
+                etName.setText(result.studentName)
+            }
+        }
+    }
+
+    private fun buildLookupKey(npsn: String, nisn: String): String {
+        return "$npsn|$nisn"
     }
 
     private fun verifyStudentWithServer(npsn: String, nisn: String, name: String) {
@@ -105,10 +207,16 @@ class RegistrationActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
 
-                // Kita sudah signInAnonymously di StudentAuthService, jadi tidak perlu signInWithCustomToken
+                // Kita sudah signInAnonymously di StudentAuthService
                 prefsManager.schoolId = result.schoolId
                 prefsManager.schoolNpsn = result.schoolNpsn
-                registerStudent(result.nisn, result.studentName.ifBlank { name }, result.className, result.studentKey)
+                registerStudent(
+                    result.nisn,
+                    result.studentName.ifBlank { name },
+                    result.className,
+                    result.studentKey,
+                    result.studentUsername
+                )
             }
         }
     }
@@ -134,7 +242,7 @@ class RegistrationActivity : AppCompatActivity() {
     }
 
     private fun ensureStudentSignedIn(onReady: () -> Unit) {
-        if (auth.currentUser != null) {
+        if (auth.currentUser != null && prefsManager.studentRemoteKey.isNotBlank()) {
             onReady()
             return
         }
@@ -169,6 +277,7 @@ class RegistrationActivity : AppCompatActivity() {
                 // Sudah signInAnonymously, langsung update state
                 prefsManager.schoolId = result.schoolId
                 prefsManager.schoolNpsn = result.schoolNpsn
+                prefsManager.saveStudentRemoteIdentity(result.studentKey, result.studentUsername)
                 onReady()
             }
         }
@@ -231,22 +340,19 @@ class RegistrationActivity : AppCompatActivity() {
             return false
         }
         if (name.isEmpty()) {
-            etName.error = "Nama tidak boleh kosong"
+            etName.error = "Nama siswa belum ditemukan. Periksa NPSN dan NISN."
             return false
         }
         return true
     }
 
-    private fun showDeviceBoundDialog() {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("⚠️ AKUN SUDAH DIGUNAKAN")
-            .setMessage("Akun ini sudah aktif di perangkat lain!\n\nDemi keamanan dan mencegah kecurangan, satu akun hanya boleh aktif di satu HP.\n\nJika ini adalah HP baru Anda, silakan hubungi Guru/Admin untuk mereset akun, atau logout dari HP lama terlebih dahulu.")
-            .setPositiveButton("Mengerti", null)
-            .setCancelable(false)
-            .show()
-    }
-
-    private fun registerStudent(nisn: String, name: String, studentClass: String, studentKey: String) {
+    private fun registerStudent(
+        nisn: String,
+        name: String,
+        studentClass: String,
+        studentKey: String,
+        studentUsername: String
+    ) {
         // Simpan ke database lokal
         val id = dbHelper.insertStudent(nisn, name, studentClass)
 
@@ -254,10 +360,18 @@ class RegistrationActivity : AppCompatActivity() {
             val deviceId = prefsManager.getDeviceBindingId(this)
             prefsManager.deviceId = deviceId
 
-            // Simpan ke Shared Preferences menggunakan helper method
-            prefsManager.saveStudentRegistration(id, nisn, name, studentClass, deviceId)
+            // Simpan ke Shared Preferences
+            prefsManager.saveStudentRegistration(
+                id,
+                nisn,
+                name,
+                studentClass,
+                deviceId,
+                studentKey,
+                studentUsername
+            )
 
-            // Update Device UUID ke Firebase untuk Binding
+            // Update Device UUID & Telemetry awal ke Firebase
             updateFirebaseDeviceBinding(studentKey, deviceId)
 
             Toast.makeText(this, "Registrasi Berhasil", Toast.LENGTH_SHORT).show()
@@ -293,5 +407,27 @@ class RegistrationActivity : AppCompatActivity() {
             .addOnFailureListener {
                 Toast.makeText(this, "Gagal binding device ke server", Toast.LENGTH_SHORT).show()
             }
+
+        try {
+            val reporter = FirebaseReporter(this, prefsManager)
+            reporter.sendStatusUpdate(
+                latitude = 0.0,
+                longitude = 0.0,
+                isInsideZone = true,
+                trustScore = 100,
+                isGpsActive = false,
+                isInternetActive = true,
+                statusMessage = "Online / Fresh Registration",
+                isAccessibilityEnabled = false,
+                isDeviceAdminEnabled = false,
+                isProtectionActive = prefsManager.isProtectionActive,
+                isPermissionActive = false,
+                complianceStatus = "NON_COMPLIANT",
+                protectionHealth = "ACCESSIBILITY_OFF",
+                lastProtectionCheckAt = System.currentTimeMillis(),
+                appVersionCode = BuildConfig.VERSION_CODE
+            )
+        } catch (_: Exception) {
+        }
     }
 }

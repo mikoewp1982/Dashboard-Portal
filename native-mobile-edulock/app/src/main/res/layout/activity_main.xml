@@ -325,51 +325,11 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
-                    <!-- Current time (large) -->
+                    <!-- Masuk & Pulang -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Waktu Saat Ini"
-                            android:textSize="10sp"
-                            android:textColor="#CCE0FF"
-                            android:letterSpacing="0.05" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginTop="2dp">
-
-                            <TextView
-                                android:id="@+id/tvCurrentTime"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="00:00:00"
-                                android:textSize="18sp"
-                                android:textStyle="bold"
-                                android:textColor="#FFFFFF" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Vertical divider -->
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="36dp"
-                        android:background="#33FFFFFF"
-                        android:layout_marginStart="10dp"
-                        android:layout_marginEnd="10dp" />
-
-                    <!-- Masuk & Pulang -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:orientation="vertical">
 
                         <!-- Jam Masuk -->
@@ -396,7 +356,6 @@
                                 android:textColor="#FFB3B3" />
                         </LinearLayout>
 
-                        <!-- Jam Pulang -->
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -419,10 +378,45 @@
                                 android:textColor="#B3FFD9" />
                         </LinearLayout>
                     </LinearLayout>
+
+                    <!-- Vertical divider -->
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="48dp"
+                        android:background="#33FFFFFF"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp" />
+
+                    <!-- Current time -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="end">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Waktu Saat Ini"
+                            android:textSize="10sp"
+                            android:textColor="#CCE0FF"
+                            android:letterSpacing="0.05" />
+
+                        <TextView
+                            android:id="@+id/tvCurrentTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="00:00:00"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="#FFFFFF" />
+                    </LinearLayout>
                 </LinearLayout>
 
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            </com.google.android.material.card.MaterialCardView>
 
         <!-- Permission Status Card (Initially Hidden) -->
         <com.google.android.material.card.MaterialCardView

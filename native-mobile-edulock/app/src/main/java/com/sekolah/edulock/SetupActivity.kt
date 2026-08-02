@@ -25,9 +25,10 @@ class SetupActivity : AppCompatActivity() {
     private lateinit var btnSetupAdmin: Button
     private lateinit var btnSetupAccessibility: Button
     private lateinit var btnSetupOverlay: Button
-    private lateinit var btnSetupBattery: Button // New Button
+    private lateinit var btnSetupBattery: Button
     private lateinit var btnStartApp: Button
     private lateinit var prefsManager: PreferencesManager
+    private lateinit var forceUpdateGate: ForceUpdateGate
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var compName: ComponentName
 
@@ -43,11 +44,22 @@ class SetupActivity : AppCompatActivity() {
         setContentView(R.layout.activity_setup)
 
         prefsManager = PreferencesManager(this)
+        forceUpdateGate = ForceUpdateGate(this)
         devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         compName = ComponentName(this, DeviceAdminReceiver::class.java)
 
         initViews()
         setupListeners()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        forceUpdateGate.start()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        forceUpdateGate.stop()
     }
 
     override fun onResume() {
@@ -56,6 +68,44 @@ class SetupActivity : AppCompatActivity() {
         prefsManager.settingsGraceUntil = 0L
         prefsManager.deviceAdminRequestUntil = 0L
         checkStatus()
+        triggerTelemetryUpdate()
+    }
+
+    private fun triggerTelemetryUpdate() {
+        try {
+            val nisn = prefsManager.nisn
+            val schoolId = prefsManager.schoolId
+            val deviceId = prefsManager.deviceId
+            if (nisn.isNotBlank() && schoolId.isNotBlank() && deviceId.isNotBlank()) {
+                val reporter = FirebaseReporter(this, prefsManager)
+                val isAdminActive = devicePolicyManager.isAdminActive(compName)
+                val isAccessibilityEnabled = isAccessibilityServiceEnabled()
+                val health = when {
+                    !isAccessibilityEnabled -> "ACCESSIBILITY_OFF"
+                    !isAdminActive -> "DEVICE_ADMIN_OFF"
+                    else -> "HEALTHY"
+                }
+                val compliance = if (health == "HEALTHY") "COMPLIANT" else "NON_COMPLIANT"
+                reporter.sendStatusUpdate(
+                    latitude = 0.0,
+                    longitude = 0.0,
+                    isInsideZone = true,
+                    trustScore = 100,
+                    isGpsActive = isLocationGranted(),
+                    isInternetActive = true,
+                    statusMessage = "Online / Setup in progress",
+                    isAccessibilityEnabled = isAccessibilityEnabled,
+                    isDeviceAdminEnabled = isAdminActive,
+                    isProtectionActive = prefsManager.isProtectionActive,
+                    isPermissionActive = false,
+                    complianceStatus = compliance,
+                    protectionHealth = health,
+                    lastProtectionCheckAt = System.currentTimeMillis(),
+                    appVersionCode = BuildConfig.VERSION_CODE
+                )
+            }
+        } catch (_: Exception) {
+        }
     }
 
     private fun initViews() {
@@ -64,7 +114,7 @@ class SetupActivity : AppCompatActivity() {
         btnSetupAdmin = findViewById(R.id.btnSetupAdmin)
         btnSetupAccessibility = findViewById(R.id.btnSetupAccessibility)
         btnSetupOverlay = findViewById(R.id.btnSetupOverlay)
-        btnSetupBattery = findViewById(R.id.btnSetupBattery) // Bind new button
+        btnSetupBattery = findViewById(R.id.btnSetupBattery)
         btnStartApp = findViewById(R.id.btnStartApp)
     }
 
@@ -96,6 +146,7 @@ class SetupActivity : AppCompatActivity() {
         btnStartApp.setOnClickListener {
             if (areAllPermissionsGranted()) {
                 prefsManager.isSetupCompleted = true
+                triggerTelemetryUpdate()
                 startActivity(Intent(this, MainActivity::class.java))
                 finish()
             } else {
@@ -141,7 +192,6 @@ class SetupActivity : AppCompatActivity() {
             try {
                 startActivity(intent)
             } catch (e: Exception) {
-                // Fallback to settings
                 Toast.makeText(this, "Buka Pengaturan Baterai manual", Toast.LENGTH_SHORT).show()
             }
         }
@@ -163,7 +213,7 @@ class SetupActivity : AppCompatActivity() {
             button.isEnabled = false
         } else {
             button.text = "AKTIFKAN"
-            button.setBackgroundColor(ContextCompat.getColor(this, R.color.primary)) // Fallback to default
+            button.setBackgroundColor(ContextCompat.getColor(this, R.color.primary))
             button.isEnabled = true
         }
     }
@@ -227,15 +277,11 @@ class SetupActivity : AppCompatActivity() {
             try {
                 prefsManager.isSettingsOpen = true
                 prefsManager.settingsGraceUntil = System.currentTimeMillis() + 120_000L
-                // Gunakan intent umum tanpa URI package untuk kompatibilitas maksimal
                 val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-                
-                // Cek apakah ada activity yang bisa menangani intent ini
                 if (intent.resolveActivity(packageManager) != null) {
                     startActivity(intent)
                     Toast.makeText(this, "Silakan cari 'EduLock' dan aktifkan izin", Toast.LENGTH_LONG).show()
                 } else {
-                    // Jika tidak ada intent handler standar, coba buka settings utama
                     Toast.makeText(this, "Menu Overlay tidak ditemukan. Silakan buka Pengaturan -> Aplikasi -> Akses Khusus -> Tampil di atas aplikasi lain.", Toast.LENGTH_LONG).show()
                     startActivity(Intent(Settings.ACTION_SETTINGS))
                 }
@@ -245,5 +291,4 @@ class SetupActivity : AppCompatActivity() {
             }
         }
     }
-
 }

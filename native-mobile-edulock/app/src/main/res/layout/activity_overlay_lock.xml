@@ -12,7 +12,7 @@
         android:id="@+id/tvLockMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="GPS dimatikan! Silakan aktifkan GPS untuk melanjutkan."
+        android:text="Perangkat perlu dipulihkan sebelum bisa dipakai lagi."
         android:textSize="20sp"
         android:textColor="#D32F2F"
         android:textStyle="bold"
@@ -23,7 +23,7 @@
         android:id="@+id/btnAction"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Buka Pengaturan GPS"
+        android:text="Buka Pengaturan"
         android:layout_below="@id/tvLockMessage"
         android:layout_marginTop="24dp"/>
 

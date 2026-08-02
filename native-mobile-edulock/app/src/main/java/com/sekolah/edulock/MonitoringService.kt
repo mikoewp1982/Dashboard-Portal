@@ -31,6 +31,16 @@ import com.google.firebase.database.ValueEventListener
 import org.json.JSONObject
 
 class MonitoringService : Service() {
+    data class ProtectionTelemetry(
+        val isAccessibilityEnabled: Boolean,
+        val isDeviceAdminEnabled: Boolean,
+        val isProtectionActive: Boolean,
+        val isPermissionActive: Boolean,
+        val complianceStatus: String,
+        val protectionHealth: String,
+        val checkedAt: Long,
+        val appVersionCode: Int
+    )
 
     private lateinit var prefsManager: PreferencesManager
     private lateinit var permissionManager: PermissionManager
@@ -84,6 +94,7 @@ class MonitoringService : Service() {
     private var overlayLockView: View? = null
     private lateinit var windowManager: WindowManager
     private var hasTriggeredSchoolServiceExit = false
+    private val petDeadReminderIntervalMs = 10 * 60 * 1000L
     
     // Receiver untuk mendeteksi layar nyala (Screen ON) secara dinamis
     private val screenReceiver = object : android.content.BroadcastReceiver() {
@@ -196,6 +207,7 @@ class MonitoringService : Service() {
         val isGpsActive = currentLocation != null
         val isSchoolTime = scheduleManager.isSchoolTime()
         val isAfterSchool = scheduleManager.isAfterSchoolHours()
+        val protectionTelemetry = buildProtectionTelemetry(isSchoolTime)
         // ==========================================
         // 1. CEK MODE DARURAT (EMERGENCY UNLOCK)
         // ==========================================
@@ -233,10 +245,16 @@ class MonitoringService : Service() {
 
         val isSettingsGrace =
             (prefsManager.isSettingsOpen || now < prefsManager.settingsGraceUntil || now < prefsManager.deviceAdminRequestUntil) && isSettingsPackage
+        val isDeviceAdminRecoveryActive =
+            !protectionTelemetry.isDeviceAdminEnabled || now < prefsManager.deviceAdminRequestUntil
 
         if (currentLocation != null) {
             val isInsideNow = locationMonitor.isInsideSchoolArea()
-            
+
+            // Persist near-school evidence (or clear it when a fresh fix proves outside).
+            // Sticky isInsideSchoolZone remains separate for full in-school lockdown / keluar-area.
+            locationMonitor.updateSchoolPresenceFromLocation(currentLocation, now)
+
             // CEK KHUSUS EMULATOR / FAKE LOCATION
             // Jika LocationMonitor sudah mengembalikan fake location (isForcedLocation), maka isInsideNow = true.
             
@@ -260,6 +278,7 @@ class MonitoringService : Service() {
                 
                 if (!isSchoolTime) {
                     prefsManager.isInsideSchoolZone = false
+                    prefsManager.clearNearSchoolPresence()
                 }
             }
             
@@ -283,7 +302,15 @@ class MonitoringService : Service() {
             trustScore = trustScore,
             isGpsActive = isGpsActive,
             isInternetActive = isInternet,
-            statusMessage = statusMsg
+            statusMessage = statusMsg,
+            isAccessibilityEnabled = protectionTelemetry.isAccessibilityEnabled,
+            isDeviceAdminEnabled = protectionTelemetry.isDeviceAdminEnabled,
+            isProtectionActive = protectionTelemetry.isProtectionActive,
+            isPermissionActive = protectionTelemetry.isPermissionActive,
+            complianceStatus = protectionTelemetry.complianceStatus,
+            protectionHealth = protectionTelemetry.protectionHealth,
+            lastProtectionCheckAt = protectionTelemetry.checkedAt,
+            appVersionCode = protectionTelemetry.appVersionCode
         )
 
         // ==========================================
@@ -324,13 +351,10 @@ class MonitoringService : Service() {
         // CEK WAJIB: Layanan Aksesibilitas aktif saat proteksi ON
         // Jika OFF, arahkan siswa untuk mengaktifkan kembali dengan aman dan tidak berulang terlalu sering
         try {
-            val am = getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
-            val enabledServices = am.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
-            val isAccessibilityEnabled = enabledServices.any {
-                it.resolveInfo.serviceInfo.packageName == packageName &&
-                it.resolveInfo.serviceInfo.name.endsWith(AntiUninstallService::class.java.simpleName)
-            }
-            if (!isAccessibilityEnabled && !isSettingsGrace) {
+            if (!protectionTelemetry.isAccessibilityEnabled &&
+                !isSettingsGrace &&
+                !isDeviceAdminRecoveryActive
+            ) {
                 if (isSchoolTime && prefsManager.isInsideSchoolZone && !prefsManager.isHolidayMode) {
                     if (now - lastAccessibilityLockTime > 1_500) {
                         lastAccessibilityLockTime = now
@@ -353,11 +377,9 @@ class MonitoringService : Service() {
         // ==========================================
         // 5.5 CEK KEMATIAN PET (HUKUMAN KEDISIPLINAN)
         // ==========================================
-        if (prefsManager.isPetDead) {
+        if (!isSchoolTime && prefsManager.isPetDead) {
             val lastAck = prefsManager.lastPetDeadAckAt
-            // Tampilkan lagi setiap 10 menit (600000 ms)
-            val NAGGING_INTERVAL = 10 * 60 * 1000L
-            if (now - lastAck > NAGGING_INTERVAL) {
+            if (lastAck <= 0L || now - lastAck >= petDeadReminderIntervalMs) {
                 hideOverlayLock() // bersihkan lock lain
                 val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
                 intent.setPackage(packageName)
@@ -389,6 +411,7 @@ class MonitoringService : Service() {
 
             if (isAfterSchool || !scheduleManager.isEffectiveSchoolDayToday()) {
                 prefsManager.isInsideSchoolZone = false
+                prefsManager.clearNearSchoolPresence()
             }
             return
         }
@@ -412,18 +435,33 @@ class MonitoringService : Service() {
         }
 
         // ==========================================
-        // 7. PROTEKSI UTAMA (Hanya jika Di Sekolah)
+        // 7. PROTEKSI UTAMA
+        // Sticky inside → full lockdown. Near-school presence (without sticky) → GPS/offline only.
+        // Never-near-school (sick at home) → fail-open for GPS/net off.
         // ==========================================
-        
-        // 7.1. Cek Status Siswa "DI LUAR SEKOLAH"
+
+        val isPermissionActive = permissionManager.isPermissionActive()
+        val hasPresence = locationMonitor.shouldEnforcePresenceProtection(now)
+
+        // 7.1. Belum sticky inside: jangan full app-lock / keluar-area, tapi tetap
+        //     tegakkan GPS-off / offline jika ada indikasi kehadiran dekat sekolah.
         if (!prefsManager.isInsideSchoolZone) {
             hideOverlayLock()
+            if (isPermissionActive) {
+                return
+            }
+            if (hasPresence) {
+                enforceGpsAndOfflinePresenceProtection(currentLocation)
+            } else if (currentLocation == null) {
+                android.util.Log.d(
+                    "MonitoringService",
+                    "GPS unavailable without school presence indication — fail-open"
+                )
+            }
             return
         }
 
         // 7.2. Aggressive Re-launch (Hanya jika di dalam sekolah & proteksi aktif)
-        val isPermissionActive = permissionManager.isPermissionActive()
-
         if (isPermissionActive) {
             hideOverlayLock()
             if (now - lastPermissionReleaseAt > 3000L) {
@@ -479,45 +517,52 @@ class MonitoringService : Service() {
             }
         }
 
-        // 7.3. Cek GPS Dimatikan
+        // 7.3–7.5 GPS off / keluar area / offline (sticky inside)
+        enforceGpsAndOfflinePresenceProtection(currentLocation, checkLeaveArea = true)
+    }
+
+    /**
+     * Hard warn/lock for GPS-off and prolonged offline when school presence is indicated.
+     * @param checkLeaveArea also enforce "keluar area" (sticky-inside path only).
+     */
+    private fun enforceGpsAndOfflinePresenceProtection(
+        currentLocation: android.location.Location?,
+        checkLeaveArea: Boolean = false
+    ) {
         if (currentLocation == null) {
             val lastGpsTime = prefsManager.lastGpsActiveTimestamp
             val currentTime = System.currentTimeMillis()
             val gpsOfflineDuration = currentTime - lastGpsTime
             val gpsWarnMs = prefsManager.gpsOffWarnMs.coerceAtLeast(0L)
             val gpsLockMs = prefsManager.gpsOffLockMs.coerceAtLeast(0L)
-            
-            if (gpsLockMs == 0L) {
-                 triggerLockdown("GPS MATI DI SEKOLAH!\nLockdown langsung.")
-            } else if (gpsOfflineDuration > gpsLockMs) {
-                 triggerLockdown("GPS MATI DI SEKOLAH!\nSudah lebih dari ${gpsLockMs / 60000} menit.")
-            } else if (gpsWarnMs > 0L && gpsOfflineDuration > gpsWarnMs) {
-                 val remainingMs = gpsLockMs - gpsOfflineDuration
-                 if (gpsLockMs > 0L && remainingMs > 0L) {
-                     showToast("PERINGATAN! GPS mati. Lockdown dalam ${remainingMs / 1000} detik.")
-                 } else {
-                     showToast("PERINGATAN! GPS mati. Lockdown sebentar lagi.")
-                 }
-            }
-            return
-        }
 
-        // 7.4. Cek Keluar Area
-        if (!locationMonitor.isInsideSchoolArea()) {
-             if (gracePeriodManager.isGracePeriodActive()) {
+            if (gpsLockMs == 0L) {
+                triggerLockdown("GPS MATI DI SEKOLAH!\nLockdown langsung.")
+            } else if (gpsOfflineDuration > gpsLockMs) {
+                triggerLockdown("GPS MATI DI SEKOLAH!\nSudah lebih dari ${gpsLockMs / 60000} menit.")
+            } else if (gpsWarnMs > 0L && gpsOfflineDuration > gpsWarnMs) {
+                val remainingMs = gpsLockMs - gpsOfflineDuration
+                if (gpsLockMs > 0L && remainingMs > 0L) {
+                    showToast("PERINGATAN! GPS mati. Lockdown dalam ${remainingMs / 1000} detik.")
+                } else {
+                    showToast("PERINGATAN! GPS mati. Lockdown sebentar lagi.")
+                }
+            }
+            // GPS null: still track offline below (student may kill both).
+        } else if (checkLeaveArea && !locationMonitor.isInsideSchoolArea()) {
+            if (gracePeriodManager.isGracePeriodActive()) {
                 showToast("Peringatan: Anda di luar area! Sisa waktu toleransi: ${gracePeriodManager.getRemainingTime() / 1000} detik")
             } else {
                 triggerLockdown("KELUAR AREA SEKOLAH!\nKembali ke zona aman.")
             }
         }
 
-        // 7.5. Cek Internet
         offlineMonitor.checkInternetAndTrack(
             onWarningTriggered = { remainingMs ->
                 showToast("PERINGATAN! Internet mati. Lockdown dalam ${remainingMs / 1000} detik.")
             },
             onLockdownTriggered = {
-                triggerLockdown("KONEKSI HILANG!\nAnda offline lebih dari 10 menit.")
+                triggerLockdown("KONEKSI HILANG!\nAnda offline lebih dari 20 menit.")
             }
         )
     }
@@ -939,6 +984,13 @@ class MonitoringService : Service() {
 
                         if (shouldEnforce) {
                             prefsManager.isInsideSchoolZone = true
+
+                            // LANGSUNG overlay lock agar TikTok/app lain langsung tertutup secara visual
+                            showOverlayLock("PERANGKAT TERKUNCI!\nProteksi Sekolah Diaktifkan.")
+
+                            // Reset grace period agar performChecks tidak skip
+                            prefsManager.appSwitchTimestamp = 0L
+
                             try {
                                 showLockScreen("Proteksi diaktifkan kembali. EduLock mengunci perangkat.")
                                 lockEnforcer.relaunchEduLock()
@@ -946,10 +998,24 @@ class MonitoringService : Service() {
                             } catch (e: Exception) {
                                 android.util.Log.e("MonitoringService", "Gagal mengunci dari listener: ${e.message}")
                             }
+
+                            // Retry enforcement beberapa kali untuk memastikan app benar-benar terkunci
+                            handler.postDelayed({
+                                try {
+                                    lockEnforcer.relaunchEduLock()
+                                    lockEnforcer.requestKiosk()
+                                } catch (_: Exception) {}
+                            }, 500)
+                            handler.postDelayed({
+                                try {
+                                    lockEnforcer.relaunchEduLock()
+                                    lockEnforcer.requestKiosk()
+                                } catch (_: Exception) {}
+                            }, 1500)
                         }
 
                         handler.post { performChecks() }
-                        handler.postDelayed({ performChecks() }, 1000)
+                        handler.postDelayed({ performChecks() }, 2000)
                     } else {
                         showToast("🔕 Mode Senyap (Silent) Aktif")
                         updateNotification("Mode Senyap", "Monitoring Dinonaktifkan oleh Admin")
@@ -1048,6 +1114,69 @@ class MonitoringService : Service() {
         } catch (_: Exception) {
         }
         return defaultValue
+    }
+
+    private fun buildProtectionTelemetry(isSchoolTime: Boolean): ProtectionTelemetry {
+        val checkedAt = System.currentTimeMillis()
+        val isAccessibilityEnabled = isAccessibilityServiceEnabled()
+        val isDeviceAdminEnabled = devicePolicyManager.isAdminActive(compName)
+        val isProtectionActive = prefsManager.isProtectionActive
+        val isPermissionActive = permissionManager.isPermissionActive()
+        val isPaused = !isProtectionActive || prefsManager.isHolidayMode
+
+        val protectionHealth = when {
+            isPaused && prefsManager.isHolidayMode -> "HOLIDAY_MODE"
+            isPaused -> "PAUSED"
+            !isAccessibilityEnabled && !isDeviceAdminEnabled -> "BOTH_OFF"
+            !isAccessibilityEnabled -> "ACCESSIBILITY_OFF"
+            !isDeviceAdminEnabled -> "DEVICE_ADMIN_OFF"
+            isPermissionActive && isSchoolTime -> "TEMP_PERMISSION_ACTIVE"
+            else -> "OK"
+        }
+
+        val complianceStatus = when {
+            isPaused -> "PAUSED"
+            isAccessibilityEnabled && isDeviceAdminEnabled -> "COMPLIANT"
+            else -> "NON_COMPLIANT"
+        }
+
+        return ProtectionTelemetry(
+            isAccessibilityEnabled = isAccessibilityEnabled,
+            isDeviceAdminEnabled = isDeviceAdminEnabled,
+            isProtectionActive = isProtectionActive,
+            isPermissionActive = isPermissionActive,
+            complianceStatus = complianceStatus,
+            protectionHealth = protectionHealth,
+            checkedAt = checkedAt,
+            appVersionCode = resolveAppVersionCode()
+        )
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        return try {
+            val am = getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
+            val enabledServices = am.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+            enabledServices.any {
+                it.resolveInfo.serviceInfo.packageName == packageName &&
+                    it.resolveInfo.serviceInfo.name.endsWith(AntiUninstallService::class.java.simpleName)
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun resolveAppVersionCode(): Int {
+        return try {
+            val packageInfo = packageManager.getPackageInfo(packageName, 0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode.toInt()
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.versionCode
+            }
+        } catch (_: Exception) {
+            0
+        }
     }
 
     private fun startSchoolConfigListener() {
@@ -1588,12 +1717,26 @@ class MonitoringService : Service() {
     private fun startPetStatusListener() {
         if (petStatusListener != null) return
 
-        val studentId = prefsManager.studentId.toString()
         val nisn = prefsManager.nisn
+        val localStudentId = prefsManager.studentId.toString()
+        val remoteStudentKey = prefsManager.studentRemoteKey
+        val remoteUsername = prefsManager.studentUsername
+        val derivedUsername = prefsManager.studentName.trim()
+            .lowercase()
+            .replace("\\s+".toRegex(), "_")
+            .replace(Regex("[^a-z0-9_]"), "")
         val schoolId = prefsManager.schoolId.trim().lowercase()
 
         val database = SchoolServiceGuard.database(this)
-        val aliases = linkedSetOf(studentId, nisn).filter { it.isNotBlank() && it != "-1" }.toSet()
+        val aliases = linkedSetOf(
+            remoteStudentKey,
+            nisn,
+            remoteUsername,
+            derivedUsername,
+            localStudentId
+        ).map { it.trim() }
+            .filter { it.isNotBlank() && it != "-1" }
+            .toSet()
         if (aliases.isEmpty()) return
 
         val ref = database.getReference("virtual_pets")
@@ -1613,8 +1756,12 @@ class MonitoringService : Service() {
                 for (child in snapshot.children) {
                     val petStudentId = child.child("studentId").getValue(String::class.java).orEmpty().trim()
                     val petNisn = child.child("nisn").getValue(String::class.java).orEmpty().trim()
+                    val petUsername = child.child("username").getValue(String::class.java).orEmpty().trim()
                     val petKey = child.key.orEmpty().trim()
-                    val matches = aliases.contains(petStudentId) || aliases.contains(petNisn) || aliases.contains(petKey)
+                    val matches = aliases.contains(petStudentId) ||
+                        aliases.contains(petNisn) ||
+                        aliases.contains(petUsername) ||
+                        aliases.contains(petKey)
                     if (!matches && schoolId.isNotBlank()) continue
 
                     val updatedAt = child.child("updatedAt").getValue(Long::class.java) ?: 0L
@@ -1650,7 +1797,8 @@ class MonitoringService : Service() {
                 }
             }
 
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+            }
         }
         petStatusQuery?.addValueEventListener(petStatusListener!!)
     }
