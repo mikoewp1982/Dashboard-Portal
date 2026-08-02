@@ -21,6 +21,34 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-02 11:46 - Tampilkan versi APK terkini di halaman Force Update Control (web) dari apk-manifest
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Flavor terdampak: `web-admin`
+- Tujuan perubahan: Menampilkan versionCode/versionName APK yang sedang tersedia di server (`web/public/apk`) pada kolom GAS dan EduLock agar admin mudah menaikkan nilai force update tanpa menebak.
+- File utama yang diubah:
+  - `web/src/app/super-admin/mobile-apps/page.tsx`
+  - `web/scripts/sync-public-apk.ps1`
+  - `web/public/apk/apk-manifest.json`
+- Fitur lama yang wajib ikut dicek:
+  - halaman `Super Admin → Kontrol Aplikasi Mobile` tetap bisa load & simpan min version
+  - angka `Versi saat ini` muncul untuk GAS dan EduLock (jika file APK tersedia)
+- Build yang dijalankan:
+  - `npm run build`
+- Hasil build:
+  - sukses
+- Output APK:
+  - tidak ada
+- Disalin ke:
+  - tidak ada
+- Regression check yang dijalankan:
+  - `apk-manifest.json` kini menyertakan metadata EduLock (package/version)
+  - build Next.js sukses setelah fetch manifest di client component
+- Belum diuji:
+  - verifikasi tampilan di hosting live setelah deploy
+- Catatan:
+  - Sumber versi adalah `web/public/apk/apk-manifest.json` (hasil dari `sync-public-apk.ps1`), jadi angka mengikuti APK yang memang tersimpan/terdistribusi di server.
+
 ## 2026-08-02 11:24 - Ubah ikon sidebar web GAS ke static import agar tidak 404 di live
 - Pelaksana: Assistant
 - Jenis perubahan: `docs`

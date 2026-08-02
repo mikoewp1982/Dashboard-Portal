@@ -156,8 +156,9 @@ foreach ($target in $selectedTargets) {
     $destinationSignerDigest = $null
     $destinationHash = $null
 
+    $sourceMeta = Get-ApkMetadata -ApkPath $sourcePath
+
     if ($target.Key -eq "gas") {
-        $sourceMeta = Get-ApkMetadata -ApkPath $sourcePath
         if ($sourceMeta.packageName -ne $target.ExpectedPackageName) {
             throw "Package GAS siswa tidak sesuai. Ditemukan '$($sourceMeta.packageName)', seharusnya '$($target.ExpectedPackageName)'."
         }

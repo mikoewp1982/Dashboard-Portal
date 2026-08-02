@@ -12,6 +12,12 @@ export default function MobileAppsControlPage() {
   const [gasVersion, setGasVersion] = useState<number>(0);
   const [edulockVersion, setEdulockVersion] = useState<number>(0);
   const [updateMessage, setUpdateMessage] = useState<string>("");
+
+  const [currentGasVersionCode, setCurrentGasVersionCode] = useState<number | null>(null);
+  const [currentGasVersionName, setCurrentGasVersionName] = useState<string>("");
+  const [currentEduLockVersionCode, setCurrentEduLockVersionCode] = useState<number | null>(null);
+  const [currentEduLockVersionName, setCurrentEduLockVersionName] = useState<string>("");
+  const [apkManifestUpdatedAt, setApkManifestUpdatedAt] = useState<string>("");
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -33,7 +39,42 @@ export default function MobileAppsControlPage() {
         setIsLoading(false);
       }
     }
+
+    async function loadApkManifest() {
+      try {
+        const response = await fetch(`/apk/apk-manifest.json?t=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) return;
+
+        const data = (await response.json()) as {
+          updatedAt?: string;
+          files?: Record<
+            string,
+            {
+              versionCode?: number;
+              versionName?: string;
+            }
+          >;
+        };
+
+        setApkManifestUpdatedAt(data.updatedAt || "");
+
+        const gas = data.files?.["GAS-Siswa-release.apk"];
+        if (typeof gas?.versionCode === "number") {
+          setCurrentGasVersionCode(gas.versionCode);
+          setCurrentGasVersionName(gas.versionName || "");
+        }
+
+        const edulock = data.files?.["EduLock-studentRelease.apk"];
+        if (typeof edulock?.versionCode === "number") {
+          setCurrentEduLockVersionCode(edulock.versionCode);
+          setCurrentEduLockVersionName(edulock.versionName || "");
+        }
+      } catch {
+      }
+    }
+
     loadSettings();
+    loadApkManifest();
   }, []);
 
   const handleSave = async () => {
@@ -119,6 +160,19 @@ export default function MobileAppsControlPage() {
                       </div>
                       <div className="flex-1">
                         <label className="text-xs font-semibold uppercase tracking-widest text-blue-300">Aplikasi GAS (Absensi)</label>
+                        <div className="mt-2 text-xs text-blue-200/80">
+                          Versi saat ini:{" "}
+                          {currentGasVersionCode !== null ? (
+                            <span className="font-semibold text-blue-100">
+                              {currentGasVersionName ? `${currentGasVersionName} ` : ""}({currentGasVersionCode})
+                            </span>
+                          ) : (
+                            <span className="text-blue-200/60">-</span>
+                          )}
+                          {apkManifestUpdatedAt ? (
+                            <span className="ml-2 text-blue-200/50">(Update {apkManifestUpdatedAt})</span>
+                          ) : null}
+                        </div>
                         <input
                           type="number"
                           value={gasVersion}
@@ -136,6 +190,19 @@ export default function MobileAppsControlPage() {
                       </div>
                       <div className="flex-1">
                         <label className="text-xs font-semibold uppercase tracking-widest text-purple-300">Aplikasi EduLock (MDM)</label>
+                        <div className="mt-2 text-xs text-purple-200/80">
+                          Versi saat ini:{" "}
+                          {currentEduLockVersionCode !== null ? (
+                            <span className="font-semibold text-purple-100">
+                              {currentEduLockVersionName ? `${currentEduLockVersionName} ` : ""}({currentEduLockVersionCode})
+                            </span>
+                          ) : (
+                            <span className="text-purple-200/60">-</span>
+                          )}
+                          {apkManifestUpdatedAt ? (
+                            <span className="ml-2 text-purple-200/50">(Update {apkManifestUpdatedAt})</span>
+                          ) : null}
+                        </div>
                         <input
                           type="number"
                           value={edulockVersion}
