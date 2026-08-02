@@ -21,6 +21,114 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-02 11:24 - Ubah ikon sidebar web GAS ke static import agar tidak 404 di live
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `web-admin`
+- Tujuan perubahan: Mengatasi ikon sidebar GAS yang rusak di hosting live karena URL file `public/icons/gas/*` tidak tersaji di runtime live walaupun normal di lokal. Solusi diubah ke static import Next.js agar aset ikon ikut dibundle ke output build.
+- File utama yang diubah:
+  - `web/src/components/gas/shared/GasSidebar.tsx`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - ikon sidebar `Manajemen Presensi`
+  - ikon sidebar `Presensi Sholat`
+  - ikon sidebar `Monitoring E-Library`
+  - ikon sidebar `7 KAIH`
+  - ikon sidebar `Virtual Pet Monitor`
+  - ikon sidebar `Rekap Kedisiplinan`
+  - ikon sidebar `Laporan Masuk`
+  - ikon sidebar `Broadcast Notifikasi`
+- Build yang dijalankan:
+  - `npm run build`
+- Hasil build:
+  - sukses
+- Output APK:
+  - tidak ada
+- Disalin ke:
+  - tidak ada
+- Regression check yang dijalankan:
+  - verifikasi URL live `/icons/gas/kedisiplinan.png` sebelumnya `404`
+  - build Next.js sukses setelah pindah ke static import
+- Belum diuji:
+  - verifikasi visual langsung di dashboard web live setelah redeploy
+- Catatan:
+  - Akar masalah ada di penyajian aset `public/icons/gas` pada hosting live, bukan di layout sidebar.
+
+## 2026-08-02 11:17 - Perbesar lagi ikon menu siswa dengan skala render lebih agresif
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Membuat ikon menu siswa tampil lebih besar lagi karena revisi sebelumnya masih belum cukup dominan di layar HP.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt`
+  - `native-mobile-gas/app/build.gradle.kts`
+- Fitur lama yang wajib ikut dicek:
+  - ukuran ikon `Absensi`
+  - ukuran ikon `Presensi Sholat`
+  - ukuran ikon `Lentera Digital`
+  - ukuran ikon `7 KAIH`
+  - ukuran ikon `Virtual Pet`
+  - ukuran ikon `Kedisiplinan`
+  - ukuran ikon `Layanan Aduan`
+  - ukuran ikon `Notifikasi`
+  - ukuran ikon `Tools`
+  - ukuran ikon `Catat Pelanggaran`
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-v1.0.24-23016-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23016`
+  - versionName: `1.0.24-siswa`
+- Hash SHA-256:
+  - `779AD60C39A38A12106C1E7955D61A61BDA633F0280F93D49B862CC7389803F8`
+- Regression check yang dijalankan:
+  - review skala render ikon di `StudentFeatureCard`
+  - build `assembleSiswaRelease` sukses
+- Belum diuji:
+  - verifikasi visual di HP siswa apakah ukuran ikon sekarang sudah pas
+- Catatan:
+  - Ikon diperbesar lagi dengan menaikkan tinggi panel, menghilangkan padding panel, dan menaikkan nilai `scale`.
+
+## 2026-08-02 11:10 - Besarkan lagi render ikon menu siswa agar isi gambar lebih dominan
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Memperbesar lagi ukuran visual ikon pada kartu menu siswa karena setelah penyesuaian UI sebelumnya, ikon masih terlihat terlalu kecil dibanding referensi.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt`
+  - `native-mobile-gas/app/build.gradle.kts`
+- Fitur lama yang wajib ikut dicek:
+  - dominasi ukuran ikon di panel menu siswa
+  - proporsi ikon terhadap frame kartu
+  - ketajaman detail ikon setelah skala diperbesar
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-v1.0.23-23015-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23015`
+  - versionName: `1.0.23-siswa`
+- Hash SHA-256:
+  - `D3A7F39DA2C596FF8EF98CE1384D04E6D7B956D2357DD5358E05622613B6FDEA`
+- Regression check yang dijalankan:
+  - review modifier render ikon di `StudentFeatureCard`
+  - build `assembleSiswaRelease` sukses
+- Belum diuji:
+  - verifikasi visual di HP siswa apakah ukuran ikon kini sudah sesuai referensi
+- Catatan:
+  - Pendekatan kali ini memperbesar render gambar langsung dengan `scale`, sehingga ruang kosong bawaan PNG tidak terlalu terasa.
+
 ## 2026-08-02 11:04 - Perbarui ikon menu dashboard web GAS dengan aset baru
 - Pelaksana: Assistant
 - Jenis perubahan: `docs`

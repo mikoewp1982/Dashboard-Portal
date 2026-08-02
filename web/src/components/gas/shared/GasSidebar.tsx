@@ -1,9 +1,18 @@
 "use client";
 
 import type { ComponentType } from "react";
+import type { StaticImageData } from "next/image";
 import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import gasAbsensiIcon from "../../../../public/icons/gas/absensi.png";
+import gasPresensiSholatIcon from "../../../../public/icons/gas/presensi-sholat.png";
+import gasKedisiplinanIcon from "../../../../public/icons/gas/kedisiplinan.png";
+import gasLenteraDigitalIcon from "../../../../public/icons/gas/lentera-digital.png";
+import gasVirtualPetIcon from "../../../../public/icons/gas/virtual-pet.png";
+import gasSevenKaihIcon from "../../../../public/icons/gas/7-kaih.png";
+import gasLayananAduanIcon from "../../../../public/icons/gas/layanan-aduan.png";
+import gasNotifikasiIcon from "../../../../public/icons/gas/notifikasi.png";
 import {
   AlertTriangle,
   BookOpen,
@@ -26,17 +35,17 @@ type GasSidebarProps = {
 };
 
 const iconImageMap = {
-  attendance: "/icons/gas/absensi.png",
-  "attendance-report": "/icons/gas/absensi.png",
-  "presensi-sholat": "/icons/gas/presensi-sholat.png",
-  "prayer-monitoring": "/icons/gas/presensi-sholat.png",
-  discipline: "/icons/gas/kedisiplinan.png",
-  library: "/icons/gas/lentera-digital.png",
-  "virtual-pet": "/icons/gas/virtual-pet.png",
-  "seven-habits": "/icons/gas/7-kaih.png",
-  "halo-spentgapa": "/icons/gas/layanan-aduan.png",
-  notifications: "/icons/gas/notifikasi.png",
-} satisfies Partial<Record<GasTab, string>>;
+  attendance: gasAbsensiIcon,
+  "attendance-report": gasAbsensiIcon,
+  "presensi-sholat": gasPresensiSholatIcon,
+  "prayer-monitoring": gasPresensiSholatIcon,
+  discipline: gasKedisiplinanIcon,
+  library: gasLenteraDigitalIcon,
+  "virtual-pet": gasVirtualPetIcon,
+  "seven-habits": gasSevenKaihIcon,
+  "halo-spentgapa": gasLayananAduanIcon,
+  notifications: gasNotifikasiIcon,
+} satisfies Partial<Record<GasTab, StaticImageData>>;
 
 const iconMap = {
   dashboard: LayoutDashboard,
