@@ -21,6 +21,214 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-02 11:04 - Perbarui ikon menu dashboard web GAS dengan aset baru
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `web-admin`
+- Tujuan perubahan: Menerapkan aset ikon baru pada sidebar dashboard web GAS agar menu monitoring dan presensi memakai visual yang sama dengan paket ikon terbaru.
+- File utama yang diubah:
+  - `web/src/components/gas/shared/GasSidebar.tsx`
+  - `web/public/icons/gas/absensi.png`
+  - `web/public/icons/gas/presensi-sholat.png`
+  - `web/public/icons/gas/lentera-digital.png`
+  - `web/public/icons/gas/7-kaih.png`
+  - `web/public/icons/gas/virtual-pet.png`
+  - `web/public/icons/gas/kedisiplinan.png`
+  - `web/public/icons/gas/layanan-aduan.png`
+  - `web/public/icons/gas/notifikasi.png`
+- Fitur lama yang wajib ikut dicek:
+  - ikon sidebar `Manajemen Presensi`
+  - ikon sidebar `Presensi Sholat`
+  - ikon sidebar `Monitoring E-Library`
+  - ikon sidebar `7 KAIH`
+  - ikon sidebar `Virtual Pet Monitor`
+  - ikon sidebar `Rekap Kedisiplinan`
+  - ikon sidebar `Laporan Masuk`
+  - ikon sidebar `Broadcast Notifikasi`
+- Build yang dijalankan:
+  - tidak ada build baru khusus untuk entry ini
+- Hasil build:
+  - tidak build
+- Output APK:
+  - tidak ada
+- Disalin ke:
+  - tidak ada
+- Regression check yang dijalankan:
+  - diff review `GasSidebar.tsx`
+  - verifikasi aset ikon tersedia di `web/public/icons/gas`
+- Belum diuji:
+  - verifikasi visual langsung di dashboard web live sesudah deploy
+- Catatan:
+  - Perubahan ini khusus untuk web dashboard GAS, bukan APK GAS siswa.
+
+## 2026-08-02 11:03 - Samakan gaya kartu menu beranda GAS Siswa dengan referensi visual baru
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menyesuaikan UI kartu menu beranda GAS Siswa agar lebih dekat dengan referensi visual yang diberikan user, dengan tetap mempertahankan detail seperti bingkai halus, panel ikon besar, dan capsule label glossy.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt`
+  - `native-mobile-gas/app/build.gradle.kts`
+- Fitur lama yang wajib ikut dicek:
+  - bentuk kartu menu siswa
+  - ukuran panel ikon
+  - tampilan label menu di bawah ikon
+  - proporsi visual ikon baru terhadap kartu
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-v1.0.22-23014-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23014`
+  - versionName: `1.0.22-siswa`
+- Hash SHA-256:
+  - `49058C9AD0AC0424E9E28306958AB3A499B841661282B1852424B289DAD27806`
+- Regression check yang dijalankan:
+  - review ulang komponen `StudentFeatureCard`
+  - build `assembleSiswaRelease` sukses
+- Belum diuji:
+  - verifikasi visual langsung di HP siswa apakah jarak, glow, dan capsule label sudah cukup mirip dengan referensi
+- Catatan:
+  - Fokus perubahan ada pada styling kartu menu, bukan mengganti ulang aset ikon.
+
+## 2026-08-02 10:55 - Besarkan tampilan ikon menu beranda GAS Siswa agar mendekati proporsi versi lama
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Memperbesar tampilan ikon pada kartu menu beranda GAS Siswa karena aset ikon baru terlihat terlalu kecil saat dirender di aplikasi.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt`
+  - `native-mobile-gas/app/build.gradle.kts`
+- Fitur lama yang wajib ikut dicek:
+  - ukuran ikon menu `Absensi`
+  - ukuran ikon menu `Presensi Sholat`
+  - ukuran ikon menu `Lentera Digital`
+  - ukuran ikon menu `7 KAIH`
+  - ukuran ikon menu `Virtual Pet`
+  - ukuran ikon menu `Kedisiplinan`
+  - ukuran ikon menu `Layanan Aduan`
+  - ukuran ikon menu `Notifikasi`
+  - ukuran ikon menu `Tools`
+  - ukuran ikon menu `Catat Pelanggaran`
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-v1.0.21-23013-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23013`
+  - versionName: `1.0.21-siswa`
+- Hash SHA-256:
+  - `F134E2E02BF33FE259FD214421A37C9078DF82E000D7D10CBDB00C02C63A0EAF`
+- Regression check yang dijalankan:
+  - review ukuran card dan box ikon di `HomeScreen.kt`
+  - build `assembleSiswaRelease` sukses
+- Belum diuji:
+  - verifikasi visual langsung di HP siswa untuk memastikan proporsinya sudah pas
+- Catatan:
+  - Box ikon dibesarkan, padding ikon diperkecil, dan gambar dibuat mengisi area lebih penuh agar ikon baru tidak terlihat mungil.
+
+## 2026-08-02 10:47 - Perbarui ikon menu beranda APK GAS Siswa dengan aset baru
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Mengganti ikon menu beranda pada APK GAS Siswa agar memakai aset baru yang disediakan user dari folder `E:\Aplikasi Android\Update\Icon\New`, karena sebelumnya salah diterapkan ke web dashboard.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_absensi.png`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_presensi_sholat.png`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_lentera_digital.png`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_kaih7.png`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_virtual_pet.png`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_kedisiplinan.png`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_layanan_aduan.png`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_notifikasi.png`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_tools.png`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_catat_pelanggaran.png`
+  - `native-mobile-gas/app/build.gradle.kts`
+- Fitur lama yang wajib ikut dicek:
+  - ikon menu `Absensi`
+  - ikon menu `Presensi Sholat`
+  - ikon menu `Lentera Digital`
+  - ikon menu `7 KAIH`
+  - ikon menu `Virtual Pet`
+  - ikon menu `Kedisiplinan`
+  - ikon menu `Layanan Aduan`
+  - ikon menu `Notifikasi`
+  - ikon menu `Tools`
+  - ikon menu `Catat Pelanggaran`
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-v1.0.20-23012-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23012`
+  - versionName: `1.0.20-siswa`
+- Hash SHA-256:
+  - `4D8600196DE1FACB6F95691536DFF015AA3078A2B3219209A8C9F30E6E6D311B`
+- Regression check yang dijalankan:
+  - review mapping ikon menu siswa di `HomeScreen.kt`
+  - build `assembleSiswaRelease` sukses
+- Belum diuji:
+  - verifikasi visual langsung di perangkat siswa untuk ukuran grid ikon dan crop gambar
+- Catatan:
+  - `Tools` kini tidak lagi memakai ikon vector default, tetapi memakai aset gambar baru.
+  - `Catat Pelanggaran` kini memakai ikon khusus sendiri, tidak lagi menumpang ikon `Kedisiplinan`.
+
+## 2026-08-02 10:04 - Kunci Presensi Sholat siswa setelah status sholat hari ini tercatat
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menutup celah pada menu `Presensi Sholat` siswa yang sebelumnya masih membiarkan tombol ditekan berulang pada hari yang sama. Setelah status `PRAY` hari ini tercatat, tombol sekarang terkunci, label tombol berubah, dan siswa melihat pesan bahwa ia sudah melaksanakan sholat beserta jamnya.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/PrayerScreen.kt`
+  - `native-mobile-gas/app/build.gradle.kts`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Presensi Sholat` siswa saat presensi pertama berhasil
+  - tombol `Presensi Sholat` harus nonaktif jika hari ini sudah berstatus `PRAY`
+  - pesan sukses harus menegaskan bahwa siswa sudah melaksanakan sholat hari ini
+  - jam pada riwayat hari ini tidak boleh berubah lagi karena klik ulang dari siswa
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-v1.0.19-23011-release.apk`
+- Metadata APK:
+  - package: `com.satupintu.mobile.siswa`
+  - versionCode: `23011`
+  - versionName: `1.0.19-siswa`
+- Hash SHA-256:
+  - `99C59B0F824A3AA8B6430B38AA8F3363709B1853542985D2EE088F00CDCE9459`
+- Regression check yang dijalankan:
+  - review guard `hasPrayedToday` pada layar siswa
+  - build `assembleSiswaRelease` sukses
+  - hash file output build dan kedua file di folder `Final` identik
+- Belum diuji:
+  - uji HP nyata: presensi pertama sukses lalu tombol harus berubah menjadi `Sudah Sholat Hari Ini`
+  - uji HP nyata: tutup-buka layar sesudah submit dan pastikan status terkunci tetap muncul
+  - uji HP nyata: guru/manual update pada hari yang sama tidak menimbulkan state membingungkan di layar siswa
+- Catatan:
+  - build ini hanya disalin ke folder `Final`; file publik `web/public/apk` belum disentuh karena user baru meminta build lokal.
+
 ## 2026-08-02 09:38 - Portal tutorial GAS siswa: rapikan posisi & tampilan text box (callout) panduan login
 - Pelaksana: Assistant
 - Jenis perubahan: `docs`

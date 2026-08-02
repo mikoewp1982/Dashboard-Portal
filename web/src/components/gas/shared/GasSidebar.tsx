@@ -25,6 +25,19 @@ type GasSidebarProps = {
   onTabChange: (tab: GasTab) => void;
 };
 
+const iconImageMap = {
+  attendance: "/icons/gas/absensi.png",
+  "attendance-report": "/icons/gas/absensi.png",
+  "presensi-sholat": "/icons/gas/presensi-sholat.png",
+  "prayer-monitoring": "/icons/gas/presensi-sholat.png",
+  discipline: "/icons/gas/kedisiplinan.png",
+  library: "/icons/gas/lentera-digital.png",
+  "virtual-pet": "/icons/gas/virtual-pet.png",
+  "seven-habits": "/icons/gas/7-kaih.png",
+  "halo-spentgapa": "/icons/gas/layanan-aduan.png",
+  notifications: "/icons/gas/notifikasi.png",
+} satisfies Partial<Record<GasTab, string>>;
+
 const iconMap = {
   dashboard: LayoutDashboard,
   students: Users,
@@ -57,6 +70,7 @@ export function GasSidebar({ activeTab, onTabChange }: GasSidebarProps) {
     }
   ) => {
     const Icon = options?.icon ?? iconMap[tab];
+    const iconSrc = iconImageMap[tab];
     const isActive = activeTab === tab;
     const level = options?.level ?? "normal";
 
@@ -78,7 +92,17 @@ export function GasSidebar({ activeTab, onTabChange }: GasSidebarProps) {
                 : "px-4 py-2.5 text-slate-300 hover:bg-white/10 hover:text-white"
         }`}
       >
-        <Icon className={`${level === "section" ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "text-blue-300" : ""}`} />
+        {iconSrc ? (
+          <Image
+            src={iconSrc}
+            alt={label}
+            width={level === "section" ? 20 : 18}
+            height={level === "section" ? 20 : 18}
+            className={`shrink-0 object-contain ${isActive ? "drop-shadow-[0_6px_14px_rgba(56,189,248,0.35)]" : ""}`}
+          />
+        ) : (
+          <Icon className={`${level === "section" ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "text-blue-300" : ""}`} />
+        )}
         <span className={level === "section" ? "text-sm font-semibold" : "text-sm"}>{label}</span>
         {options?.trailingChevron ? (
           <ChevronRight className="ml-auto h-4 w-4 opacity-50" />
@@ -135,7 +159,13 @@ export function GasSidebar({ activeTab, onTabChange }: GasSidebarProps) {
                   : "text-slate-300 hover:bg-white/10 hover:text-white"
               }`}
             >
-              <Clock className={`h-4 w-4 ${isPresensiGroupActive ? "text-blue-300" : ""}`} />
+              <Image
+                src={iconImageMap.attendance ?? "/Icon_GAS.png"}
+                alt="Manajemen Presensi"
+                width={18}
+                height={18}
+                className={`shrink-0 object-contain ${isPresensiGroupActive ? "drop-shadow-[0_6px_14px_rgba(56,189,248,0.35)]" : ""}`}
+              />
               <span>Manajemen Presensi</span>
               {isPresensiGroupExpanded ? (
                 <ChevronDown className="ml-auto h-4 w-4 opacity-60" />
