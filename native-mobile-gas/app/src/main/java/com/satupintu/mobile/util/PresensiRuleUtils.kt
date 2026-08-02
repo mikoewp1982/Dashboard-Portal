@@ -1,4 +1,4 @@
-﻿package com.satupintu.mobile.util
+package com.satupintu.mobile.util
 
 import com.google.firebase.database.DataSnapshot
 import java.text.SimpleDateFormat
@@ -125,7 +125,6 @@ fun isValidSchoolDay(
     defaultEndTime: String = "13:30"
 ): Boolean {
     if (isFutureDay(calendar)) return false
-    if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) return false
     if (findHoliday(holidays, toDateKey(calendar)) != null) return false
     val rule = resolveScheduleRule(calendar.get(Calendar.DAY_OF_WEEK), schedules, defaultStartTime, defaultEndTime)
     return !rule.isHoliday
@@ -139,7 +138,6 @@ fun isValidPrayerDay(
     defaultEndTime: String = "12:30"
 ): Boolean {
     if (isFutureDay(calendar)) return false
-    if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) return false
     if (findHoliday(holidays, toDateKey(calendar)) != null) return false
     val rule = resolveScheduleRule(calendar.get(Calendar.DAY_OF_WEEK), schedules, defaultStartTime, defaultEndTime)
     return !rule.isHoliday

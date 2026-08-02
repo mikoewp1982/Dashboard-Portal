@@ -964,7 +964,9 @@ class PrincipalDashboardViewModel : ViewModel() {
             logs = scopedAttendance,
             monthRange = selectedAttendanceRecapRange,
             selectedMonth = selectedAttendanceRecapMonth,
-            selectedYear = selectedAttendanceRecapYear
+            selectedYear = selectedAttendanceRecapYear,
+            schedules = attendanceSchedules,
+            holidays = holidays
         )
         val prayerSummary = if (isPrayerDayValid) {
             buildPrayerSummary(scopedStudents, scopedPrayer, todayRange.first, todayRange.second)
@@ -999,7 +1001,9 @@ class PrincipalDashboardViewModel : ViewModel() {
             attendanceLogs = scopedAttendance,
             monthRange = selectedAttendanceRecapRange,
             selectedMonth = selectedAttendanceRecapMonth,
-            selectedYear = selectedAttendanceRecapYear
+            selectedYear = selectedAttendanceRecapYear,
+            schedules = attendanceSchedules,
+            holidays = holidays
         )
         val prayerRecapClassSummaries = buildPrayerRecapClassSummaries(
             students = scopedStudents,
@@ -1102,10 +1106,12 @@ class PrincipalDashboardViewModel : ViewModel() {
         logs: List<PrincipalAttendanceRecord>,
         monthRange: Pair<Long, Long>,
         selectedMonth: Int,
-        selectedYear: Int
+        selectedYear: Int,
+        schedules: Map<Int, DayScheduleRule>,
+        holidays: List<HolidayRule>
     ): PrincipalAttendanceSummary {
         if (students.isEmpty()) return PrincipalAttendanceSummary()
-        val recapDateKeys = buildAttendanceRecapDateKeys(monthRange, selectedMonth, selectedYear)
+        val recapDateKeys = buildAttendanceRecapDateKeys(monthRange, selectedMonth, selectedYear, schedules, holidays)
         if (recapDateKeys.isEmpty()) {
             return PrincipalAttendanceSummary(totalStudents = students.size)
         }
@@ -1478,10 +1484,12 @@ class PrincipalDashboardViewModel : ViewModel() {
         attendanceLogs: List<PrincipalAttendanceRecord>,
         monthRange: Pair<Long, Long>,
         selectedMonth: Int,
-        selectedYear: Int
+        selectedYear: Int,
+        schedules: Map<Int, DayScheduleRule>,
+        holidays: List<HolidayRule>
     ): List<PrincipalClassSummary> {
         if (students.isEmpty()) return emptyList()
-        val recapDateKeys = buildAttendanceRecapDateKeys(monthRange, selectedMonth, selectedYear)
+        val recapDateKeys = buildAttendanceRecapDateKeys(monthRange, selectedMonth, selectedYear, schedules, holidays)
         if (recapDateKeys.isEmpty()) {
             return students
                 .groupBy { it.className.ifBlank { "-" } }
@@ -1932,7 +1940,9 @@ class PrincipalDashboardViewModel : ViewModel() {
     private fun buildAttendanceRecapDateKeys(
         monthRange: Pair<Long, Long>,
         selectedMonth: Int,
-        selectedYear: Int
+        selectedYear: Int,
+        schedules: Map<Int, DayScheduleRule>,
+        holidays: List<HolidayRule>
     ): List<String> {
         val result = mutableListOf<String>()
         val calendar = Calendar.getInstance().apply {
@@ -1957,7 +1967,7 @@ class PrincipalDashboardViewModel : ViewModel() {
         val month = calendar.get(Calendar.MONTH)
         while (calendar.get(Calendar.MONTH) == month) {
             if (selectedYear == currentYear && selectedMonth == currentMonth && calendar.timeInMillis > today.timeInMillis) break
-            if (calendar.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) {
+            if (isValidSchoolDay(calendar, schedules, holidays)) {
                 result.add(toDateKey(calendar.timeInMillis))
             }
             calendar.add(Calendar.DAY_OF_MONTH, 1)

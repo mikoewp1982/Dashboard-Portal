@@ -23,8 +23,8 @@ android {
         applicationId = "com.satupintu.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1028
-        versionName = "1.0.11"
+        versionCode = 1029
+        versionName = "1.0.13"
         buildConfigField("String", "MOBILE_BOUNDARY", "\"${mobileBoundary}\"")
         buildConfigField("String", "ALLOWED_FIREBASE_PROJECT_IDS", "\"${allowedFirebaseProjectIds}\"")
 
@@ -36,6 +36,7 @@ android {
         create("siswa") {
             dimension = "audience"
             minSdk = 23
+            versionCode = 23005
             resValue("string", "app_name", "GAS Siswa")
             applicationIdSuffix = ".siswa"
             versionNameSuffix = "-siswa"

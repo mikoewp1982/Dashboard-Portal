@@ -18,6 +18,407 @@ Field berikut wajib dipakai di setiap entri:
 - Tujuan perubahan
 - File utama yang diubah
 - Fitur lama yang wajib ikut dicek
+
+---
+
+## 2026-08-02 07:44 - Finalisasi rilis GAS siswa 1.0.13-siswa (23005), sinkronisasi APK publik, siap deploy App Hosting
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Merilis perbaikan final untuk bug hari Minggu efektif, penjelasan force update agar siswa install manual APK terbaru, dan memastikan link unduhan publik mengarah ke artefak APK yang sama dengan folder `Final`.
+- File utama yang diubah:
+  - `native-mobile-gas/app/build.gradle.kts`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/ForceUpdateScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/util/PresensiRuleUtils.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/PrayerScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/PrincipalDashboardViewModel.kt`
+  - `web/public/apk/GAS-Siswa-release.apk`
+  - `web/public/apk/apk-manifest.json`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Absensi` siswa membaca hari efektif sekolah dari web admin, termasuk saat Minggu diaktifkan
+  - `Presensi Sholat` siswa mengikuti rule hari efektif yang sama
+  - layar `Force Update` menegaskan bahwa siswa harus install manual APK terbaru
+  - file `Final` dan `web/public/apk` identik agar link unduhan publik tidak stale
+  - build baru tetap bisa di-install di atas APK siswa `23004`
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+  - `npm run sync:apk:gas`
+- Hasil build: sukses (`BUILD SUCCESSFUL`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk`
+- Regression check yang dijalankan:
+  - metadata APK release: `com.satupintu.mobile.siswa`, `1.0.13-siswa`, `versionCode 23005`
+  - hash APK output build, `Final`, dan `web/public/apk` sama: `6182A3C142228AC3E0420925EA9A2E389C3C9A4CE8F41E0FD659B067B58D9157`
+  - `apk-manifest.json` publik terbarui ke `versionCode 23005`
+- Belum diuji:
+  - unduh dari domain live sesudah rollout App Hosting selesai
+  - update manual di HP siswa di atas build `23004` menggunakan file hasil unduh domain live
+- Catatan:
+  - entry ini menjadi acuan final sebelum commit/push ke `main` untuk memicu deploy App Hosting
+
+## 2026-08-02 07:39 - Perjelas instruksi force update GAS siswa agar siswa install manual APK terbaru
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menyesuaikan perilaku force update dengan alur operasional sekolah. Saat force update aktif, layar kunci sekarang menegaskan bahwa siswa harus mengunduh lalu meng-install manual file APK GAS terbaru di HP, bukan mengharapkan update otomatis dari dalam aplikasi.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/ForceUpdateScreen.kt`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - layar `Force Update` tetap mengunci aplikasi saat `min_version_code_gas` lebih tinggi dari versi terpasang
+  - instruksi yang tampil tidak menyesatkan siswa ke ekspektasi update otomatis
+  - tombol `TUTUP APLIKASI` tetap berfungsi
+- Build yang dijalankan:
+  - `:app:compileSiswaDebugKotlin`
+- Hasil build: sukses (`BUILD SUCCESSFUL`)
+- Output APK: tidak ada APK baru
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - review teks default `Force Update` siswa
+  - `:app:compileSiswaDebugKotlin` berhasil tanpa error; tersisa warning lama yang tidak terkait perubahan ini
+- Belum diuji:
+  - uji HP: naikkan `min_version_code_gas` dari web admin lalu pastikan layar force update menampilkan instruksi instal manual APK terbaru
+- Catatan:
+  - perubahan ini sengaja tidak menambahkan tombol update otomatis dari dalam app
+
+## 2026-08-02 07:31 - Tambah guard sinkronisasi APK GAS siswa agar update rilis lebih aman
+- Pelaksana: Assistant
+- Jenis perubahan: `tooling`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Mengurangi risiko siswa gagal update di rilis berikutnya dengan menambahkan validasi otomatis pada skrip sinkronisasi APK web. Guard baru memastikan `GAS Siswa` tidak lagi tersinkron ke `web/public/apk` bila `versionCode` turun, tetap sama tetapi isi APK berubah, atau signature berbeda dari file publik sebelumnya.
+- File utama yang diubah:
+  - `web/scripts/sync-public-apk.ps1`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
+  - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - `npm run sync:apk:gas` tetap bisa menyalin APK dari `Final` ke `web/public/apk`
+  - metadata `apk-manifest.json` untuk GAS siswa terisi `packageName`, `versionCode`, `versionName`, `signerSha256`
+  - sinkronisasi diblokir bila ada percobaan menimpa file publik dengan `versionCode` yang lebih rendah
+- Build yang dijalankan:
+  - tidak ada build APK baru
+  - `powershell -ExecutionPolicy Bypass -File web/scripts/sync-public-apk.ps1 -App gas`
+- Hasil build: tidak build; validasi skrip sinkronisasi sukses
+- Output APK:
+  - sumber tetap `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk`
+- Regression check yang dijalankan:
+  - skrip sinkronisasi berhasil membaca metadata APK GAS siswa (`com.satupintu.mobile.siswa`, `1.0.12-siswa`, `23004`)
+  - skrip sinkronisasi berhasil membaca signer SHA-256 release GAS
+  - `web/public/apk/apk-manifest.json` berhasil diperbarui dengan metadata versi dan signer
+- Belum diuji:
+  - simulasi negatif: pakai APK GAS siswa dengan `versionCode` lebih rendah untuk memastikan guard benar-benar memblokir sinkronisasi
+  - push/deploy web live setelah file publik berubah
+- Catatan:
+  - guard ini fokus ke distribusi `GAS Siswa` karena package `com.satupintu.mobile.siswa` punya riwayat jalur `legacySiswa` dan pernah mengalami file publik stale
+
+## 2026-08-02 07:12 - Sinkronisasi APK final GAS siswa ke web public setelah ditemukan file stale
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Mengatasi kemungkinan user tetap mengunduh APK lama dari portal/web. Audit menunjukkan `web/public/apk/GAS-Siswa-release.apk` masih tertinggal di `versionCode 1028`, sedangkan file final terbaru di folder distribusi sudah `versionCode 23004`.
+- File utama yang diubah:
+  - `web/public/apk/GAS-Siswa-release.apk`
+  - `debug-gas-apk-install.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - download APK siswa dari portal/web harus mengambil file terbaru
+  - update APK dari file hasil unduh portal harus membaca `versionCode 23004`
+  - menu `Absensi` tetap membawa fix hari Minggu efektif
+- Build yang dijalankan:
+  - tidak ada build baru; hanya sinkronisasi artefak hasil build final terakhir
+- Hasil build: tidak build
+- Output APK:
+  - sumber: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk` (ditimpa pada `2026-08-02 07:12`)
+- Regression check yang dijalankan:
+  - verifikasi metadata file final: `versionCode 23004`, `versionName 1.0.12-siswa`
+  - verifikasi metadata file web public lama: `versionCode 1028`, `versionName 1.0.11-siswa`
+  - verifikasi hash file final dan web public sebelumnya berbeda
+- Belum diuji:
+  - uji HP: unduh ulang dari portal lalu update APK di atas app lama
+  - jika masih gagal setelah memakai file web/public yang sudah sinkron, audit lanjutan harus fokus ke signature APK yang terpasang di HP
+- Catatan:
+  - ini sesuai petunjuk pada checklist proyek bahwa setiap update APK berikutnya harus sinkron dari `Final` ke `web/public/apk` sebelum commit/push
+
+## 2026-08-02 07:05 - Compatibility bump GAS siswa agar bisa update dari jalur legacy
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Mengatasi update gagal yang masih terjadi di HP setelah bump ke `1029` dengan menaikkan `versionCode` flavor `siswa` ke atas build kompatibilitas lama `legacySiswa` (`23003`). Temuan dari catatan dan output lokal menunjukkan `legacySiswa` memakai package yang sama `com.satupintu.mobile.siswa`, sertifikat yang sama, tetapi `versionCode 23003`, sehingga build `1029` tetap dianggap downgrade oleh Android pada perangkat yang pernah dipasangi jalur legacy.
+- File utama yang diubah:
+  - `native-mobile-gas/app/build.gradle.kts`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - update APK `GAS Siswa` langsung di atas build siswa standar `1028`
+  - update APK `GAS Siswa` langsung di atas build kompatibilitas `legacySiswa 23003`
+  - data lokal siswa tetap aman setelah update
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses (`BUILD SUCCESSFUL in 2m 26s`)
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` (menimpa file final sebelumnya pada `2026-08-02 07:09`)
+- Regression check yang dijalankan:
+  - audit metadata `legacySiswa` lokal (`com.satupintu.mobile.siswa`, `versionCode 23003`)
+  - audit metadata `siswaRelease` final sebelumnya (`versionCode 1029`)
+  - verifikasi metadata final sesudah overwrite: `versionCode 23004`, `versionName 1.0.12-siswa`
+- Belum diuji:
+  - uji HP: update dari build legacy ke build final baru
+  - uji HP: installer tidak lagi menolak dengan pesan `Aplikasi tidak terinstal`
+- Catatan:
+  - ini adalah bump kompatibilitas yang sengaja melampaui jalur `legacySiswa`
+  - package dan sertifikat tetap sama; hanya `versionCode` flavor `siswa` yang dinaikkan agar Android menerima update lintas jalur build lama
+
+## 2026-08-02 07:00 - Bump versi GAS siswa agar APK bisa update menimpa build lama di HP
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Mengatasi kegagalan install update di HP dengan menaikkan `versionCode/versionName` APK GAS siswa, karena build fix Minggu sebelumnya masih memakai `versionCode` yang sama (`1028`) dengan APK distribusi lama sehingga installer Android berpotensi menolak pembaruan.
+- File utama yang diubah:
+  - `native-mobile-gas/app/build.gradle.kts`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - update APK `GAS Siswa` langsung di atas APK lama tanpa uninstall
+  - data login/sesi lokal siswa tetap aman setelah update
+  - menu `Absensi` siswa tetap membawa fix hari Minggu efektif
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses (`BUILD SUCCESSFUL in 2m 35s`)
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` (menimpa file final sebelumnya pada `2026-08-02 06:52`)
+- Regression check yang dijalankan:
+  - audit metadata APK lama vs APK baru
+  - verifikasi akar masalah install mengarah ke `versionCode` yang masih sama
+  - verifikasi metadata final sesudah overwrite: `versionCode 1029`, `versionName 1.0.12-siswa`
+- Belum diuji:
+  - uji HP: install update langsung di atas APK GAS siswa yang sudah terpasang
+  - uji HP: pastikan installer tidak lagi memunculkan `Aplikasi tidak terinstal`
+- Catatan:
+  - package name tetap `com.satupintu.mobile.siswa`
+  - sertifikat signing tetap sama; yang dinaikkan hanya versi aplikasi agar Android mengenali file ini sebagai update yang lebih baru
+
+## 2026-08-02 06:35 - Hari Minggu aktif di rule presensi GAS kembali dihormati APK siswa
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`, `kepala`
+- Tujuan perubahan: Memperbaiki logika APK GAS siswa yang masih meng-hardcode hari Minggu sebagai libur, sehingga saat admin menyalakan Minggu pada `Manajemen Presensi -> Pengaturan Sistem`, menu `Absensi` dan turunan rekap yang memakai rule yang sama tetap membaca Minggu sebagai hari efektif sesuai konfigurasi sekolah.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/util/PresensiRuleUtils.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/PrayerScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/PrincipalDashboardViewModel.kt`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Absensi` siswa saat hari Minggu diaktifkan admin
+  - `Presensi Sholat` siswa saat hari Minggu diaktifkan admin
+  - rekap presensi bulanan kepala sekolah untuk sekolah yang mengaktifkan Minggu
+  - fallback default saat schedules kosong tetap menjadikan Minggu libur
+- Build yang dijalankan:
+  - `:app:compileSiswaDebugKotlin`
+  - `:app:compileGuruDebugKotlin`
+  - `:app:compileKepalaDebugKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses (`compile debug lintas flavor sukses, assemble siswa release sukses in 2m 26s`)
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` (menimpa file final sebelumnya pada `2026-08-02 06:46`)
+- Regression check yang dijalankan:
+  - audit alur simpan rule dari web admin ke RTDB
+  - audit pembacaan rule di APK GAS siswa
+  - compile Kotlin debug flavor `siswa`, `guru`, dan `kepala` setelah patch
+  - assemble release flavor `siswa`
+  - verifikasi file hasil build dan file final memiliki ukuran identik `20,521,140 bytes`
+- Belum diuji:
+  - uji HP nyata: admin nyalakan Minggu lalu buka menu `Absensi` siswa di hari Minggu
+  - uji HP nyata: cek `Presensi Sholat` siswa bila Minggu sengaja diaktifkan
+  - uji kepala sekolah: rekap bulanan harus menghitung Minggu aktif sebagai hari efektif
+- Catatan:
+  - akar masalah yang ditemukan: web admin sudah benar menyimpan `isHoliday: !isEnabled`, tetapi APK siswa masih memiliki hardcode `Calendar.SUNDAY -> libur` sebelum membaca rule RTDB
+
+## 2026-08-02 01:20 - Portal tutorial GAS siswa dipublikasikan dengan menu visual interaktif
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Membangun portal tutorial instalasi dan penggunaan GAS siswa di web lengkap dengan alias URL pendek, panduan visual login, izin lokasi, daftar 10 menu utama, serta sub-bagian visual untuk menu seperti `Lentera Digital`, `Layanan Aduan`, `7 KAIH`, `Virtual Pet`, dan `Tools`.
+- File utama yang diubah:
+  - `web/src/app/g/page.tsx`
+  - `web/src/app/gas/page.tsx`
+  - `web/src/app/gas/install/page.tsx`
+  - `web/public/apk/GAS-Siswa-release.apk`
+  - `web/public/tutorial/gas-siswa/**`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - halaman tutorial GAS siswa di route `/gas/install`
+  - redirect alias pendek `/g`
+  - tombol unduh APK `GAS-Siswa-release.apk`
+  - navigasi daftar 10 menu ke sub-bagian penggunaan
+- Build yang dijalankan:
+  - tidak ada build APK baru
+  - deploy repo web melalui push `main`
+- Hasil build: tidak ada APK baru; portal tutorial GAS siswa sudah dipush ke repository dengan commit `7545b955`
+- Output APK: tidak ada APK baru
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - audit route `/g` dan `/gas/install`
+  - verifikasi aset tutorial visual termuat dari `web/public/tutorial/gas-siswa`
+  - verifikasi daftar 10 menu bisa diarahkan ke bagian penggunaan masing-masing
+- Belum diuji:
+  - uji buka portal GAS siswa dari browser HP nyata pada jaringan sekolah
+- Update verifikasi:
+  - route `/g` dan `/gas/install` sudah aktif live tanpa `404` (App Hosting production) pada `2026-08-02`
+- Catatan:
+  - URL live utama GAS siswa: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/g`
+  - URL fallback GAS siswa: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/gas/install`
+  - perubahan ini hanya menyentuh portal tutorial web dan distribusi file APK publik, bukan build APK GAS siswa baru
+
+## 2026-08-01 23:08 - Kategori Lentera siswa disamakan dengan kategori utama web terbaru
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menyinkronkan master kategori katalog `Lentera Digital` di APK GAS siswa dengan web e-perpus terbaru, termasuk menambahkan kategori utama `ENSIKLOPEDIA` dan `SAINS & TEKNOLOGI`, menormalkan pembacaan kategori buku lama, lalu membangun APK siswa baru dan menimpa file final distribusi.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/model/Book.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/StudentLibraryViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/StudentLibraryScreen.kt`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Lentera Digital -> Katalog Buku`
+  - dropdown kategori katalog siswa
+  - label kategori pada kartu buku
+  - kompatibilitas kategori lama seperti `NON-FIKSI > Ensiklopedia`
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` (menimpa file final sebelumnya)
+- Regression check yang dijalankan:
+  - compile Kotlin `siswaRelease`
+  - assemble `siswaRelease`
+  - verifikasi file output APK terbentuk
+  - verifikasi file final berhasil tertimpa di folder `Final`
+- Belum diuji:
+  - uji HP: dropdown kategori harus menampilkan `Semua + 9 kategori utama web`
+  - uji HP: pilih `ENSIKLOPEDIA` dan `SAINS & TEKNOLOGI` harus langsung memfilter buku yang benar
+  - uji HP: buku lama dengan kategori string seperti `NON-FIKSI > Ensiklopedia` harus tetap masuk kategori `ENSIKLOPEDIA`
+  - uji HP: kategori kosong tetap stabil dibuka
+- Catatan:
+  - APK siswa sekarang tidak lagi membangun daftar kategori dari data dinamis di luar master web; urutan kategori sengaja dipatok agar sama dengan web e-perpus
+  - `displayCategory` buku sekarang dinormalisasi ke kategori utama web agar label pada kartu buku tidak lagi menampilkan string kategori lama yang campur subkategori
+
+---
+
+## 2026-08-01 22:58 - Sinkronisasi dokumen target integrasi kategori Lentera siswa ke web terbaru
+- Pelaksana: Assistant
+- Jenis perubahan: `no-build`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Menyelaraskan dokumen pegangan build GAS setelah web e-perpus meresmikan katalog terpisah, rak kategori, logo/favicon baru, serta kategori utama baru `ENSIKLOPEDIA` dan `SAINS & TEKNOLOGI`. Fokus kerja aktif berikutnya ditetapkan: kategori katalog `Lentera Digital` di APK GAS siswa harus sama dengan kategori utama di web.
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/REGRESSION_CHECKLIST.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Lentera Digital -> Katalog Buku`
+  - master kategori katalog siswa
+  - filter kategori / dropdown katalog siswa
+  - konsistensi kategori utama antara web e-perpus dan APK siswa
+- Build yang dijalankan:
+  - tidak ada (`sinkronisasi dokumen dan penajaman target implementasi berikutnya`)
+- Hasil build: tidak dijalankan
+- Output APK: -
+- Disalin ke:
+  - -
+- Regression check yang dijalankan:
+  - review dokumen `BUILD_LOG.md`, `README.md`, `REGRESSION_CHECKLIST.md`, dan `CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Belum diuji:
+  - APK GAS siswa belum diperbarui ke master kategori web terbaru
+  - uji HP: dropdown katalog siswa belum diverifikasi untuk kategori `ENSIKLOPEDIA`
+  - uji HP: dropdown katalog siswa belum diverifikasi untuk kategori `SAINS & TEKNOLOGI`
+- Catatan:
+  - Master kategori web e-perpus terbaru yang harus diikuti APK siswa: `FIKSI & SASTRA`, `BUKU PELAJARAN`, `NON-FIKSI`, `ENSIKLOPEDIA`, `SAINS & TEKNOLOGI`, `PENGEMBANGAN DIRI`, `MINAT`, `MAJALAH`, `LAINNYA`
+  - Entry ini sengaja bertipe `no-build` karena perubahan yang benar-benar dijalankan hari ini masih berada di web e-perpus dan dokumentasi; implementasi APK siswa adalah pekerjaan aktif berikutnya
+
+---
+
+## 2026-07-31 21:22 - Profil Lentera siswa disamakan ke nama dan NISN yang benar
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Membetulkan tab `Profil` pada `Lentera Digital` agar menampilkan nama siswa yang sedang login dan `NISN` yang benar, bukan lagi label generik `Profil Siswa` dengan push-key Firebase.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/StudentLibraryScreen.kt`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Lentera Digital -> Profil`
+  - pembacaan `nama siswa`
+  - pembacaan `NISN`
+  - fallback lookup identitas siswa dari database
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk` (menimpa file final lama)
+- Belum diuji:
+  - uji HP: tab `Profil` harus menampilkan nama siswa aktif, bukan `Profil Siswa`
+  - uji HP: `NISN` yang tampil harus sesuai data siswa, bukan push-key
+  - uji HP: bila sesi login belum membawa `NISN`, layar tetap berhasil melengkapi identitas dari database
+
+---
+
+## 2026-07-31 21:14 - Katalog Lentera siswa dirapikan lagi untuk kontras dropdown dan logo
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `siswa`
+- Tujuan perubahan: Membuat teks dropdown kategori katalog lebih kontras di atas background biru gelap, sekaligus mengganti placeholder kotak putih pada header `Lentera Digital` dengan aset logo PNG asli.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/StudentLibraryScreen.kt`
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_lentera_digital.png`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Lentera Digital -> Katalog Buku`
+  - dropdown kategori pada mode terang/gelap latar biru
+  - header logo Lentera dan state kosong katalog
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk` (menimpa file final lama)
+- Belum diuji:
+  - uji HP: semua item dropdown tetap terbaca jelas saat menu dibuka
+  - uji HP: logo baru tampil proporsional dan tidak pecah di header katalog
+  - uji HP: state kosong katalog tetap terlihat rapi dengan logo baru
 - Build yang dijalankan
 - Hasil build
 - Output APK
@@ -46,6 +447,171 @@ Field berikut wajib dipakai di setiap entri:
 - Catatan:
 
 ---
+
+## 2026-07-31 20:58 - Filter kategori katalog siswa diubah menjadi dropdown
+- Pelaksana: Assistant
+- Jenis perubahan: `refactor`
+- Tujuan perubahan: Merapikan filter kategori katalog `Lentera Digital` di GAS siswa dengan mengganti deretan chip horizontal menjadi dropdown full-width yang lebih cocok untuk layar HP.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/StudentLibraryScreen.kt`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Lentera Digital -> Katalog Buku`
+  - pemilihan kategori buku
+  - pencarian buku setelah kategori dipilih
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk` (menimpa file final lama)
+- Regression check yang dijalankan:
+  - compile Kotlin sesudah penggantian komponen filter kategori
+  - assemble release flavor `siswa`
+  - verifikasi metadata output tetap `versionCode 1028` dan `versionName 1.0.11-siswa`
+- Belum diuji:
+  - uji HP: dropdown kategori bisa dibuka dan ditutup dengan stabil
+  - uji HP: pilih kategori berbeda harus langsung memfilter katalog
+  - uji HP: label `Minat & Bakat` tetap tampil benar untuk kategori `MINAT`
+- Catatan: Secara data, master kategori tetap sama. Perubahan ini murni pada presentasi filter agar tampilan katalog lebih rapi di mobile.
+
+## 2026-07-31 20:51 - Kategori katalog siswa disamakan ke master e-perpus
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Mengubah chip kategori katalog `Lentera Digital` di GAS siswa agar tidak lagi mengikuti kategori dinamis dari data buku yang kebetulan ada, tetapi selalu menampilkan master kategori e-perpus sekolah seperti web admin/web siswa.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/StudentLibraryViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/StudentLibraryScreen.kt`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Lentera Digital -> Katalog Buku`
+  - filter kategori katalog
+  - hasil pencarian setelah pilih kategori
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk` (menimpa file final lama)
+- Regression check yang dijalankan:
+  - compile Kotlin sesudah perubahan kategori katalog
+  - assemble release flavor `siswa`
+  - verifikasi data Firestore `books` saat ini berjumlah 12 judul
+  - verifikasi kategori data nyata saat ini hanya tersebar di `FIKSI & SASTRA`, `PENGEMBANGAN DIRI`, dan `NON-FIKSI`
+- Belum diuji:
+  - uji HP: chip kategori katalog harus menampilkan master kategori lengkap, bukan hanya 3 kategori yang sedang terisi data
+  - uji HP: pilih kategori kosong seperti `BUKU PELAJARAN` harus tetap stabil dan menampilkan empty state
+  - uji HP: kategori `MINAT` harus tampil sebagai label `Minat & Bakat`
+- Catatan: Penyebab keluhan "masih 3" bukan karena data buku dibatasi di APK. Firestore `books` berisi 12 judul, tetapi data aktif saat ini memang hanya berada di 3 kategori. APK lama membangun chip kategori dari data nyata, sehingga yang tampak hanya 3 kategori.
+
+## 2026-07-31 20:38 - Reader PDF siswa menulis reading_log untuk menghidupkan pet
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menyambungkan pembaca PDF Lentera Digital di GAS siswa ke node `student_activities/{studentId}/reading_log/{tanggal}` supaya durasi baca benar-benar tercatat dan bisa dipakai `Virtual Pet` untuk menghitung kenyang berdasarkan bacaan nyata.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/NativePdfReaderScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/ReadingActivityRepository.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/VirtualPetViewModel.kt`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Lentera Digital -> Baca PDF`
+  - `Virtual Pet -> E-Perpus`
+  - quest `Membaca Buku 30 Menit`
+  - reward/coin pet setelah membaca
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk` (menimpa file final lama)
+- Regression check yang dijalankan:
+  - compile Kotlin setelah penambahan logging reader PDF
+  - assemble release flavor `siswa`
+  - verifikasi metadata output tetap `versionCode 1028` dan `versionName 1.0.11-siswa`
+  - verifikasi file final lama berhasil tertimpa
+- Belum diuji:
+  - uji HP: baca PDF 1-2 menit lalu keluar, harus muncul entry baru di `student_activities/.../reading_log/{hari_ini}`
+  - uji HP: baca akumulatif 30 menit, `Virtual Pet` harus menjadi kenyang penuh
+  - uji HP: pause/background aplikasi saat membaca tidak boleh menambah durasi secara palsu
+  - uji HP: buka ulang reader di hari yang sama harus melanjutkan akumulasi durasi harian
+- Catatan: Logging baca sekarang dikirim per menit selama reader aktif, lalu sisa durasi ikut diflush saat layar dipause/ditutup agar pet membaca data riil dari backend, bukan hanya asumsi UI. Build final terakhir untuk entry ini kembali ditimpa pada `20:42` dengan mirroring ke alias identitas siswa dari sesi login.
+
+## 2026-07-31 20:28 - Rumus pet literasi harian 30 menit dan bonus bulanan
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Tujuan perubahan: Menjadikan `readingDuration` 30 menit sebagai satu-satunya rumus makan pet siswa, memisahkan submit tugas literasi dari rasa lapar harian, dan menambahkan bonus quest literasi bulanan yang hanya bisa selesai sekali per periode bulan berjalan.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/VirtualPetViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/VirtualPetRepository.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/model/VirtualPet.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/VirtualPetScreen.kt`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - `Virtual Pet -> E-Perpus`
+  - `Virtual Pet -> Literasi Bulanan`
+  - auto reward quest pet
+  - leveling/coin pet setelah reward quest
+- Build yang dijalankan:
+  - `:app:compileSiswaReleaseKotlin`
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk` (menimpa file final lama)
+- Regression check yang dijalankan:
+  - compile Kotlin flavor `siswaRelease`
+  - assemble release siswa
+  - verifikasi metadata output: `versionCode 1028`, `versionName 1.0.11-siswa`
+  - verifikasi file final lama berhasil tertimpa di folder `Final`
+- Belum diuji:
+  - uji HP: baca tepat 30 menit harus membuat `Hunger = 0`
+  - uji HP: quest `Membaca Buku 30 Menit` memberi `+50 Koin` dan `+25 XP`
+  - uji HP: submit tugas literasi bulanan memberi `+200 Koin` dan `+100 XP` hanya sekali pada bulan yang sama
+  - uji HP: masuk bulan baru harus membuka lagi quest bonus bulanan
+- Catatan: Quest pet sekarang memakai `periodKey` agar quest harian reset per tanggal dan quest bonus literasi reset per bulan, sehingga hadiah bulanan tidak ikut terulang setiap hari.
+
+## 2026-07-31 20:10 - Build ulang GAS siswa dan copy ke folder Final
+- Pelaksana: Assistant
+- Jenis perubahan: `no-build`
+- Tujuan perubahan: Membuat ulang APK `GAS Siswa` dari state lokal saat ini lalu menaruh salinannya ke folder distribusi `Final` sesuai permintaan user.
+- Flavor terdampak: `siswa`
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+- Fitur lama yang wajib ikut dicek:
+  - login siswa
+  - beranda siswa
+  - Lentera Digital / katalog buku
+  - Virtual Pet siswa
+  - 7 KAIH siswa
+- Build yang dijalankan:
+  - `:app:assembleSiswaRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk`
+- Regression check yang dijalankan:
+  - verifikasi `assembleSiswaRelease` sukses
+  - verifikasi metadata output: `versionCode 1028`, `versionName 1.0.11-siswa`
+  - verifikasi file hasil copy ada di folder `Final`
+- Belum diuji:
+  - uji perangkat fisik pada build `2026-07-31_20-10`
+  - verifikasi manual seluruh perubahan lokal siswa yang saat ini ikut terpaket di APK
+- Catatan: Turn ini fokus pada packaging APK dari state lokal yang sudah ada, bukan menambah perubahan source baru di modul `native-mobile-gas`.
 
 ## 2026-07-31 00:20 - Hardening web admin GAS untuk spinner 7 KAIH
 - Pelaksana: Assistant

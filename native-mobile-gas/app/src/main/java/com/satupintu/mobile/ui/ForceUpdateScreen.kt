@@ -62,7 +62,8 @@ fun ForceUpdateScreen(customMessage: String? = null) {
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = customMessage.takeIf { !it.isNullOrBlank() } ?: "Versi aplikasi Anda sudah usang dan tidak aman.\n\nSilakan buka Grup WhatsApp Kelas / Sekolah untuk mendownload dan meng-install APK versi terbaru.",
+            text = customMessage.takeIf { !it.isNullOrBlank() }
+                ?: "Versi aplikasi Anda sudah usang dan tidak aman.\n\nSilakan download file APK GAS terbaru dari admin / Grup WhatsApp Kelas / Sekolah, lalu install manual APK yang sudah diperbarui di HP ini.\n\nUpdate tidak dilakukan otomatis dari dalam aplikasi.",
             style = MaterialTheme.typography.bodyLarge,
             color = Color.White,
             textAlign = TextAlign.Center,

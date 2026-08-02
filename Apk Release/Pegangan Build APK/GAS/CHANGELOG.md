@@ -32,10 +32,28 @@ Tambahkan nama pelaksana jika perlu:
 - Fixed: Tab `Peringkat` pada `Virtual Pet` web admin dirapikan agar wrapper tabel tetap stabil saat data ranking tampil.
 
 ### Siswa
+- Changed: Layar `Force Update` GAS siswa sekarang menegaskan bahwa update dilakukan dengan cara download lalu install manual file APK terbaru di HP, bukan update otomatis dari dalam aplikasi.
+- Fixed: Build `GAS Siswa` sekarang memakai compatibility version bump agar tetap bisa di-install sebagai update pada perangkat yang sebelumnya terpasang jalur `legacySiswa`.
+- Fixed: Versi paket `GAS Siswa` dinaikkan agar APK bugfix terbaru bisa di-install sebagai update di atas build lama tanpa uninstall manual.
+- Fixed: GAS Siswa tidak lagi menganggap hari Minggu selalu libur; jika admin mengaktifkan Minggu pada pengaturan presensi sekolah, menu `Absensi` kini mengikuti rule RTDB yang tersimpan.
+- Fixed: `Presensi Sholat` siswa kini konsisten dengan rule hari efektif sekolah dan tidak lagi memaksa Minggu sebagai libur saat sekolah sengaja mengaktifkannya.
+- Added: Portal tutorial GAS siswa di web sekarang tersedia dengan alias URL pendek `/g` dan fallback `/gas/install`, lengkap dengan tombol unduh APK publik, langkah instalasi, dan panduan visual dasar.
+- Added: Bagian `Penggunaan Menu GAS` sekarang menampilkan daftar 10 menu utama yang bisa diklik untuk membuka panduan penggunaan visual masing-masing di halaman yang sama.
+- Added: Contoh visual penggunaan sudah mulai dicatat untuk menu `Lentera Digital`, `Layanan Aduan`, `7 KAIH`, `Virtual Pet`, dan `Tools` agar siswa lebih mudah mengikuti alur dari browser sebelum membuka APK.
+- Changed: Master kategori katalog `Lentera Digital` pada GAS Siswa sekarang disamakan penuh dengan kategori utama web e-perpus terbaru: `FIKSI & SASTRA`, `BUKU PELAJARAN`, `NON-FIKSI`, `ENSIKLOPEDIA`, `SAINS & TEKNOLOGI`, `PENGEMBANGAN DIRI`, `MINAT`, `MAJALAH`, dan `LAINNYA`.
+- Fixed: Katalog `Lentera Digital` pada GAS Siswa sekarang menormalkan buku lama ke kategori utama web, sehingga data seperti `NON-FIKSI > Ensiklopedia` tetap terbaca sebagai `ENSIKLOPEDIA` di filter dan label kartu buku.
+- Fixed: Tab `Profil` pada `Lentera Digital` sekarang menampilkan nama siswa aktif dan `NISN` yang benar, tidak lagi menampilkan label generik `Profil Siswa` dengan ID push-key.
+- Fixed: Kontras teks pada dropdown kategori `Lentera Digital` di GAS Siswa diperkuat agar item menu terbaca jelas di atas background biru gelap.
+- Changed: Logo `Lentera Digital` pada halaman katalog GAS Siswa sekarang memakai aset `ic_menu_lentera_digital.png`, tidak lagi tampil sebagai kotak putih placeholder.
 - Changed: Login APK GAS Siswa diubah menjadi pola `NPSN -> NISN -> Nama Siswa`, dan nama siswa terisi otomatis dari database.
 - Changed: Urutan menu beranda GAS Siswa diubah menjadi `Absensi -> Presensi Sholat -> Lentera Digital -> 7 KAIH -> Virtual Pet -> Kedisiplinan -> Layanan Aduan -> Notifikasi -> Tools`, dan `Catat Pelanggaran` tetap khusus OSIS di posisi paling akhir.
+- Changed: Filter kategori katalog `Lentera Digital` pada GAS Siswa sekarang memakai dropdown full-width agar tampilan mobile lebih rapi dibanding deretan chip horizontal.
+- Fixed: Reader PDF Lentera Digital pada GAS Siswa sekarang benar-benar menulis `reading_log` ke `student_activities` per siswa, sehingga durasi baca nyata bisa dipakai untuk menghidupkan dan mengenyangkan `Virtual Pet`.
 - Changed: Status aktivitas `E-Perpus` pada `Virtual Pet` sekarang memakai target `30 menit membaca hari ini`, dan progress kenyang ikut penuh di 30 menit.
 - Changed: Card `Pencapaian -> Literasi Aktif` pada `Virtual Pet` sekarang ikut memakai target `30 menit`, sehingga subtitle dan progress tidak lagi menampilkan teks lama `60 menit`.
+- Changed: `readingDuration` 30 menit sekarang menjadi satu-satunya rumus makan pet siswa; submit tugas/laporan literasi tidak lagi mempengaruhi rasa lapar harian pet.
+- Added: Quest `Bonus Literasi Bulanan` pada `Virtual Pet` memberi `+200 Koin` dan `+100 XP` saat siswa mengirim tugas/laporan literasi bulanan sekolah.
+- Fixed: Quest pet sekarang memakai periode harian/bulanan yang benar, sehingga bonus literasi bulanan tidak ikut reset dan terklaim ulang setiap hari.
 - Fixed: Hak akses petugas OSIS pada GAS Siswa sekarang dipantau realtime dari node sekolah aktif, sehingga menu `Catat Pelanggaran` otomatis hilang ketika siswa dihapus dari `Manajemen Petugas OSIS`.
 - Removed: Card `Prestasi` di menu Kedisiplinan siswa dihapus.
 - Fixed: Overlay `pet mati` pada GAS Siswa sekarang benar-benar memblokir seluruh interaksi sehingga siswa tidak bisa memakai aplikasi sampai pet direvive.
@@ -55,6 +73,7 @@ Tambahkan nama pelaksana jika perlu:
 - Fixed: Rekap bulanan guru tidak lagi salah baca data karena mismatch identitas siswa, `LATE` sekarang dihitung sebagai `Hadir` seperti di Web Admin, tanggal masa depan tidak lagi dihitung sebagai `Alpa`, dan log dengan alias ID berbeda (`recordId/id/nisn/username`) sekarang tetap masuk ke siswa yang benar.
 
 ### Kepala
+- Fixed: Rekap kehadiran bulanan kepala sekolah sekarang menghormati rule hari efektif dari pengaturan presensi sekolah, termasuk saat Minggu sengaja diaktifkan.
 
 ### Legacy / Universal
 

@@ -6,9 +6,29 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-07-31 00:20
+Update terakhir: 2026-08-02 07:44
 
 ## 0. Web Admin / Dashboard
+
+### Distribusi APK via web
+- [x] Alur resmi distribusi APK web sudah dicatat di `Pegangan Build APK/PANDUAN_DEPLOY_WEB.md`
+- [x] Sumber distribusi internal tetap `D:\Dashboard Portal\Apk Release\Final`
+- [x] Folder yang benar-benar dibaca web live adalah `D:\Dashboard Portal\web\public\apk`
+- [x] Skrip sinkronisasi sudah disiapkan di `web/scripts/sync-public-apk.ps1`
+- [x] Shortcut sinkronisasi sudah tersedia via `npm run sync:apk`, `npm run sync:apk:gas`, dan `npm run sync:apk:edulock`
+- [x] Sinkronisasi dari `Final` ke `web/public/apk` sudah dijalankan lagi pada `2026-08-02 07:44` untuk GAS siswa
+- [x] Skrip sinkronisasi GAS siswa sekarang juga memverifikasi `packageName`, `versionCode`, `versionName`, hash, dan signature agar file publik tidak lagi tertinggal atau menimpa build dengan versi yang salah
+- [ ] Jika nama file APK berubah, link tombol unduh di halaman web harus ikut diperbarui
+- [ ] Ingat: siswa tidak otomatis mengunduh ulang APK hanya karena file server diganti; mereka tetap perlu menekan tombol unduh lagi atau dipaksa update dari sisi aplikasi
+
+### Web e-perpus sekolah
+- [x] Halaman katalog `Lentera Digital` di web e-perpus sudah dipisah dari halaman `Kelola Buku`
+- [x] Filter kategori web e-perpus sudah diubah menjadi rak kategori
+- [x] Logo sidebar dan favicon web e-perpus sudah memakai aset Lentera terbaru
+- [x] Kategori utama web e-perpus sekarang sudah mencakup `ENSIKLOPEDIA`
+- [x] Kategori utama web e-perpus sekarang sudah mencakup `SAINS & TEKNOLOGI`
+- [ ] Cek web live: halaman `admin/books/lentera-catalog` menampilkan kategori utama terbaru dengan urutan yang benar
+- [ ] Cek web live: pilih `ENSIKLOPEDIA` dan `SAINS & TEKNOLOGI` di katalog web harus memfilter data tanpa error
 
 ### Monitoring admin sekolah
 - [x] Monitoring super admin sekarang menggabungkan data `schools` dan `admin_profiles` agar admin sekolah yang login via jalur runtime tetap terbaca
@@ -69,13 +89,19 @@ Build acuan:
 - [x] User sudah mengonfirmasi overlay `pet mati` muncul pada pengujian post-fix
 - [x] Instrumentasi debug sementara sudah dicabut kembali dari APK final
 - [x] Interval reminder `pet mati` sudah dikembalikan ke normal `10 menit`
+- [x] Tombol 5 (Tampil di Atas Aplikasi Lain) dan Tombol 6 (Izin Latar Belakang) pada Konfigurasi Awal EduLock siswa sekarang bisa diakses tanpa ditendang keluar, karena `AntiUninstallService` membebaskan akses Settings saat `isSetupCompleted` masih `false` atau `isSettingsGrace` aktif
 - [x] Device Admin yang dimatikan akan langsung memicu siswa ditendang kembali ke EduLock
-- [x] Upaya masuk ke menu `Aplikasi admin perangkat` sudah diblok dan diarahkan balik
+- [x] Upaya masuk ke menu `Aplikasi admin perangkat` sudah diblok dan diarahkan balik saat proteksi aktif sesudah setup selesai
 - [x] Telemetry proteksi (`Accessibility`, `Device Admin`, compliance status) dikirim ke backend monitoring
 - [ ] Cek di HP: APK build `20-08` berhasil terpasang sebagai update di atas build `20-02`
 - [ ] Cek di HP: setelah menekan `Saya Mengerti` pada build final, overlay pet mati muncul lagi maksimal 10 menit kemudian
 - [ ] Cek di HP: buka menu `Aplikasi admin perangkat`, siswa harus langsung keluar dari menu itu
 - [ ] Cek di HP: proteksi tetap hidup konsisten saat app di-background lalu dibuka lagi
+- [x] **Enforcement Instan saat Proteksi ON**: Saat admin menghidupkan `Status Proteksi Sekolah`, HP siswa langsung terkunci **tanpa menunggu siswa menutup aplikasi aktif** (TikTok, Instagram, dll). Perbaikan mencakup:
+  - Overlay lock hitam langsung ditampilkan menutupi app aktif
+  - Grace period `appSwitchTimestamp` di-reset ke `0L` agar `performChecks()` tidak skip
+  - `relaunchEduLock()` + `requestKiosk()` dipanggil 3 kali berturut-turut (0ms, 500ms, 1500ms) untuk memastikan HP benar-benar terkunci
+- [ ] Cek di HP: buka TikTok/Instagram → admin nyalakan proteksi → HP harus langsung terkunci tanpa siswa menutup TikTok
 
 ### Monitoring realtime ke web
 - [x] Heartbeat perangkat dikirim lebih rapat ke `active_devices`
@@ -89,24 +115,40 @@ Build acuan:
 
 Build acuan:
 - `D:\Dashboard Portal\Apk Release\OK_4\GAS-Siswa-2026-07-30_19-13-release.apk`
+- `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` (ditimpa lagi pada `2026-08-02 07:43`, versi `1.0.13-siswa` / `versionCode 23005`)
+- `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk` (disinkronkan lagi dari `Final` pada `2026-08-02 07:44`; hash sekarang harus identik dengan file `Final`)
 
 ### Login siswa
 - [x] Login siswa diubah menjadi urutan `NPSN -> NISN -> Nama Siswa`
 - [x] Kolom `Nama Siswa` dibuat read-only
 - [x] Nama siswa terisi otomatis dari database setelah `NPSN` dan `NISN` valid
+- [x] Versi paket APK `GAS Siswa` dinaikkan lagi agar file terbaru bisa di-install sebagai update di atas build lama
+- [x] Ditemukan petunjuk bahwa jalur `legacySiswa` memakai package yang sama tetapi `versionCode 23003`, sehingga build siswa biasa harus melampaui angka itu agar update tidak ditolak di sebagian HP
+- [x] Ditemukan juga bahwa file `web/public/apk/GAS-Siswa-release.apk` sempat tertinggal di `versionCode 1028`; file itu sudah disinkronkan ulang dari `Final`
+- [x] Pengaman proses rilis sekarang menolak sinkronisasi GAS siswa bila `versionCode` turun, tetap sama tetapi isi APK berubah, atau signature berbeda dari file publik sebelumnya
+- [x] `versionCode` siswa sudah dinaikkan lagi ke `23005` agar perubahan layar force update tetap bisa di-install di atas build `23004`
 - [ ] Cek di HP: `NPSN benar + NISN benar` harus memunculkan nama siswa otomatis
 - [ ] Cek di HP: `NPSN benar + NISN salah` tidak boleh memunculkan nama siswa
 - [ ] Cek di HP: login siswa tetap berhasil setelah nama siswa terisi otomatis
+- [ ] Cek di HP: update APK langsung di atas build lama berhasil tanpa pesan `Aplikasi tidak terinstal`
+- [ ] Cek di HP: update APK langsung di atas build `legacySiswa` juga berhasil tanpa uninstall
+- [ ] Cek di HP: bila APK diunduh dari portal/web, file yang terpasang sekarang benar-benar build `23005`, bukan file stale lama
 
 ### Compliance dengan EduLock
+- [x] Telemetry Realtime EduLock ke Web Admin diperbaiki: saat EduLock baru di-install / di-install ulang, telemetry status `ONLINE` langsung dikirim seketika saat registrasi selesai & selama halaman `SetupActivity` (onboarding izin HP) dibuka. Web Admin tidak lagi tertahan di status `TERIKAT / Offline` (misal *7283 min lalu*) saat siswa sedang melengkapi konfigurasi.
 - [x] GAS siswa tidak boleh dipakai bila EduLock tidak terpasang
 - [x] Gate dicek sejak aplikasi mulai, termasuk sebelum siswa lolos masuk ke area utama
+- [x] Pengecekan instalasi EduLock dibuat sangat agresif: dipasang `LifecycleEventObserver` pada `ON_RESUME` sehingga saat EduLock di-uninstall lalu siswa membuka GAS dari Recent Apps / Switcher, overlay merah langsung muncul seketika tanpa perlu menghapus Recent Apps
 - [x] Overlay compliance sudah dibuat benar-benar memblokir sentuhan ke UI di bawahnya
 - [ ] Cek di HP: uninstall EduLock lalu buka GAS siswa, akses harus tertahan penuh
 - [ ] Cek di HP: layar login GAS siswa juga harus ikut tertahan bila EduLock tidak aktif
 - [ ] Cek di HP: overlay tidak boleh bisa ditembus sentuhan
 
 ### Fitur siswa lain
+- [x] `Absensi` siswa tidak lagi memaksa hari Minggu sebagai libur; jika admin mengaktifkan Minggu di pengaturan presensi sekolah, APK sekarang mengikuti rule RTDB
+- [x] `Presensi Sholat` siswa juga tidak lagi memaksa hari Minggu sebagai libur bila sekolah sengaja mengaktifkannya
+- [x] Layar `Force Update` GAS siswa sekarang memperjelas bahwa siswa harus download lalu install manual APK terbaru di HP, bukan menunggu update otomatis dari dalam aplikasi
+- [x] Logika **Device Binding (1 Akun 1 Device)** pada APK GAS Siswa disamakan persis dengan EduLock: menggunakan pencocokan Fingerprint Hardware `ANDROID_ID` case-insensitive & varian SHA-256 sehingga siswa yang meng-install ulang GAS di HP miliknya sendiri tidak akan lagi terkunci/tertolak, namun jika dicoba di HP teman tetap 100% terblokir.
 - [x] Laporan 7 KAIH terkunci setelah tombol kirim dipakai
 - [x] Reader Lentera Digital sudah diperbaiki agar zoom/pan lebih nyaman
 - [x] Card `Prestasi` di menu Kedisiplinan siswa dihapus
@@ -118,8 +160,22 @@ Build acuan:
 - [x] Status aktivitas `E-Perpus` di `Virtual Pet` sekarang memakai target `30 menit membaca hari ini`
 - [x] Tab `Peringkat` di `Virtual Pet` diperkuat dengan alias siswa `recordId/id/nisn/username` agar ranking tetap tampil walau format ID pet lama berbeda
 - [x] Card `Pencapaian -> Literasi Aktif` di `Virtual Pet` sekarang juga sudah memakai teks target `30 menit`, bukan lagi teks lama `60 menit`
+- [x] `readingDuration` 30 menit sekarang menjadi satu-satunya rumus makan pet siswa; submit tugas literasi tidak lagi mempengaruhi lapar harian
+- [x] Quest `Membaca Buku 30 Menit` sekarang menjadi misi harian pet dengan hadiah `+50 Koin` dan `+25 XP`
+- [x] Quest `Bonus Literasi Bulanan` sekarang memberi `+200 Koin` dan `+100 XP` saat siswa mengirim tugas/laporan literasi bulanan sekolah
+- [x] Quest bonus literasi sekarang memakai periode bulanan agar hadiah tidak terklaim ulang setiap hari
+- [x] Reader PDF Lentera Digital sekarang menulis durasi baca nyata ke `student_activities/{studentId}/reading_log/{tanggal}` secara periodik dan saat layar ditutup
+- [x] Kategori katalog `Lentera Digital` di APK siswa sudah pernah disamakan ke master kategori e-perpus versi awal, tidak lagi hanya mengikuti 3 kategori yang sedang terisi data
+- [x] Filter kategori katalog `Lentera Digital` sekarang diubah dari chip horizontal menjadi dropdown full-width agar lebih rapi di mobile
+- [x] Kontras teks dropdown kategori katalog `Lentera Digital` sudah diperkuat agar item menu tidak tenggelam di background gelap
+- [x] Logo `Lentera Digital` pada halaman katalog sudah diganti ke aset `ic_menu_lentera_digital.png`
+- [x] Tab `Profil` pada `Lentera Digital` sekarang membaca nama siswa aktif dan `NISN` yang benar, tidak lagi menampilkan push-key sebagai `NISN`
 - [x] Menu `Catat Pelanggaran` di GAS siswa sekarang mengikuti status petugas OSIS secara realtime; jika siswa dihapus dari `Manajemen Petugas OSIS`, menu harus hilang otomatis
+- [x] Master kategori katalog `Lentera Digital` di APK siswa sekarang mengikuti kategori utama web e-perpus terbaru
+- [x] Kategori baru `ENSIKLOPEDIA` dan `SAINS & TEKNOLOGI` sudah disinkronkan ke filter katalog APK GAS siswa
 - [ ] Cek di HP: laporan 7 KAIH minggu berjalan tidak bisa diedit ulang setelah dikirim
+- [ ] Cek di HP: saat admin menyalakan Minggu sebagai hari efektif, menu `Absensi` siswa di hari Minggu tidak lagi menampilkan status `Libur`
+- [ ] Cek di HP: saat admin menyalakan Minggu sebagai hari efektif, `Presensi Sholat` siswa di hari Minggu juga ikut aktif sesuai rule sekolah
 - [ ] Cek di HP: PDF Lentera tetap nyaman dibaca di beberapa ukuran file
 - [ ] Cek di HP: menu Kedisiplinan tidak menampilkan card `Prestasi`
 - [ ] Cek di HP: saat pet mati, siswa tidak bisa berinteraksi dengan UI GAS sama sekali
@@ -127,6 +183,20 @@ Build acuan:
 - [ ] Cek di HP akun OSIS: menu `Catat Pelanggaran` muncul paling akhir sesudah `Tools`
 - [ ] Cek di HP: dari `Virtual Pet -> Status Aktivitas Hari Ini -> Literasi`, siswa langsung masuk ke `Tugas Literasi`
 - [ ] Cek di HP: dari `Virtual Pet -> E-Perpus`, status berubah penuh saat mencapai 30 menit membaca
+- [ ] Cek di HP: dropdown kategori katalog menampilkan `Semua + 9 kategori utama web` secara konsisten
+- [ ] Cek di HP: dropdown kategori bisa dibuka/tutup dengan stabil dan tetap nyaman disentuh
+- [ ] Cek di HP: semua teks item dropdown kategori terbaca jelas saat menu terbuka
+- [ ] Cek di HP: logo Lentera baru tampil normal di header katalog
+- [ ] Cek di HP: tab `Profil` menampilkan nama siswa aktif yang sesuai akun login
+- [ ] Cek di HP: `NISN` di tab `Profil` sesuai data siswa, bukan ID acak Firebase
+- [ ] Cek di HP: kategori baru `ENSIKLOPEDIA` dan `SAINS & TEKNOLOGI` tampil dan memfilter buku dengan benar
+- [ ] Cek di HP: kategori kosong seperti `BUKU PELAJARAN`, `MAJALAH`, atau kategori baru lain tetap aman dibuka
+- [ ] Cek di HP: baca PDF 1-2 menit lalu keluar, data `reading_log` hari ini benar-benar bertambah di backend
+- [ ] Cek di HP: tepat saat durasi baca mencapai 30 menit, `Hunger` pet harus turun ke `0` dan progress kenyang penuh
+- [ ] Cek di HP: pause atau pindah app saat reader masih terbuka tidak boleh menambah durasi palsu
+- [ ] Cek di HP: quest `Membaca Buku 30 Menit` memberi `+50 Koin` dan `+25 XP` sekali per hari
+- [ ] Cek di HP: submit tugas literasi bulanan memberi `+200 Koin` dan `+100 XP` sekali pada bulan yang sama
+- [ ] Cek di HP: setelah hadiah bonus bulanan diklaim, buka ulang `Virtual Pet` di hari lain dalam bulan yang sama tidak boleh memberi bonus kedua
 - [ ] Cek di HP: tab `Pencapaian` dan `Peringkat` di `Virtual Pet` sama-sama bisa dibuka dan menampilkan data nyata
 - [ ] Cek di HP: card `Pencapaian -> Literasi Aktif` menampilkan `30 menit` secara konsisten pada subtitle dan progress
 - [ ] Cek di HP: saat siswa dihapus dari `Manajemen Petugas OSIS`, menu `Catat Pelanggaran` hilang otomatis tanpa perlu login ulang
@@ -203,10 +273,18 @@ Build acuan:
 ## 5. Rumah APK Final
 
 - [x] Folder `D:\Dashboard Portal\Apk Release\OK_4` sudah dijadikan rumah file APK terbaru
+- [x] Folder `D:\Dashboard Portal\Apk Release\Final` sekarang berisi copy build review `GAS-Siswa-2026-07-31_20-10-release.apk`
+- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk` sudah ditimpa dengan build pet literasi final pada `2026-07-31 20:28`
+- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk` sudah ditimpa lagi dengan build perbaikan profil Lentera pada `2026-07-31 21:22`
 - [x] File EduLock siswa terbaru di `OK_4` sudah diperbarui ke build `2026-07-30_20-08`
 - [x] File GAS siswa terbaru di `OK_4` mengacu ke build `2026-07-30_17-27`
 - [x] File GAS guru terbaru di `OK_4` mengacu ke build `2026-07-30_17-47`
 - [x] File GAS kepala terbaru di `OK_4` masih mengacu ke build terbaru yang tersedia
+- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-01 23:08` dengan build sinkronisasi kategori Lentera terbaru
+- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 06:46` dengan build fix hari Minggu efektif presensi
+- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 06:52` setelah bump versi ke `1.0.12-siswa` (`versionCode 1029`) agar bisa update menimpa APK lama di HP
+- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 07:09` dengan compatibility bump `versionCode 23004` agar tetap bisa update dari jalur `legacySiswa 23003`
+- [x] File `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 07:12` agar tidak lagi membagikan build stale `1028`
 
 ## 6. Prioritas Uji Perangkat Nanti
 

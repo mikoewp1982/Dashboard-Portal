@@ -178,11 +178,10 @@ private fun isPrayerEffectiveDay(calendar: Calendar, schedules: Map<String, Bool
     targetStart.set(Calendar.SECOND, 0)
     targetStart.set(Calendar.MILLISECOND, 0)
     if (targetStart.timeInMillis > todayStart) return false
-    if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) return false
     if (holidays.contains(toYmd(calendar))) return false
 
     val dayKey = calendar.get(Calendar.DAY_OF_WEEK).toString()
-    if (schedules.isEmpty()) return true
+    if (schedules.isEmpty()) return calendar.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY
     val isHoliday = schedules[dayKey] ?: true
     return !isHoliday
 }
@@ -701,8 +700,7 @@ fun PrayerScreen(
     val dayKey = remember { cal.get(Calendar.DAY_OF_WEEK).toString() }
 
     val isHolidayBySchedule = when {
-        cal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY -> true
-        schedules.isEmpty() -> false
+        schedules.isEmpty() -> cal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
         schedules[dayKey] == null -> true
         else -> schedules[dayKey] == true
     }
