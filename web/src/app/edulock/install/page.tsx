@@ -100,7 +100,7 @@ const visualSteps = [
       {
         title: "Jika sesuai, tekan tombol Masuk",
         body: "Lanjutkan setelah data siswa benar.",
-        positionClassName: "left-[10%] bottom-[6%] max-w-[42%]",
+        positionClassName: "right-[4%] bottom-[6%] max-w-[42%]",
         arrowClassName: "left-[38%] bottom-[20%] h-12 w-12 border-r-4 border-b-4",
         arrowRotationClassName: "-rotate-45",
       },

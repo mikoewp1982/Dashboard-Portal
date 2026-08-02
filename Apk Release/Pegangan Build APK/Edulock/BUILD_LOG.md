@@ -1,0 +1,664 @@
+# Build Log EduLock Siswa
+
+Dokumen ini adalah log operasional wajib untuk setiap perubahan **APK EduLock siswa**.
+
+## Aturan Pakai
+1. Tambahkan entry baru paling atas.
+2. Tulis scope terdampak. Secara default dokumen ini mencatat `student`.
+3. Tulis jujur build yang benar-benar dijalankan.
+4. Jika tidak build, tulis alasannya.
+5. Gunakan format baku yang sama agar riwayat perubahan EduLock mudah ditelusuri.
+
+## Format Baku Entry
+Field berikut wajib dipakai di setiap entri:
+- Waktu
+- Pelaksana
+- Jenis perubahan: `feature`, `fix`, `refactor`, `docs`, atau `no-build`
+- Scope terdampak
+- Tujuan perubahan
+- File utama yang diubah
+- Fitur lama yang wajib ikut dicek
+- Build yang dijalankan
+- Hasil build
+- Output APK
+- Disalin ke
+- Regression check yang dijalankan
+- Belum diuji
+- Catatan
+
+---
+
+## 2026-08-02 09:55 - Rapikan posisi callout tombol Masuk pada tutorial EduLock web
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Tujuan perubahan: Menyamakan posisi box petunjuk `Jika sesuai, tekan tombol Masuk` agar sejajar ke sisi kanan seperti dua callout di atasnya pada halaman tutorial EduLock.
+- Scope terdampak: `student-web`
+- File utama yang diubah:
+  - `web/src/app/edulock/install/page.tsx`
+- Fitur lama yang wajib ikut dicek:
+  - layout callout visual login pada route `/edulock/install`
+  - posisi box `Masukan NISN kalian`
+  - posisi box `Nama siswa terisi otomatis`
+  - posisi box `Jika sesuai, tekan tombol Masuk`
+- Build yang dijalankan:
+  - tidak ada build APK baru
+- Hasil build:
+  - tidak build
+- Output APK:
+  - tidak ada
+- Disalin ke:
+  - tidak ada
+- Regression check yang dijalankan:
+  - review class `positionClassName` callout login di halaman tutorial EduLock
+- Belum diuji:
+  - verifikasi visual langsung di halaman live sesudah deploy
+- Catatan:
+  - Perubahan ini hanya menyentuh portal tutorial web, bukan APK EduLock.
+
+## Template Entry
+
+### YYYY-MM-DD HH:mm - Judul Singkat
+- Pelaksana:
+- Jenis perubahan:
+- Tujuan perubahan:
+- Scope terdampak:
+- File utama yang diubah:
+- Fitur lama yang wajib ikut dicek:
+- Build yang dijalankan:
+- Hasil build:
+- Output APK:
+- Disalin ke:
+- Regression check yang dijalankan:
+- Belum diuji:
+- Catatan:
+
+### 2026-08-02 01:35 - Penyempurnaan tutorial web EduLock siswa dan pencatatan rollout live
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Tujuan perubahan: Merapikan halaman tutorial instalasi EduLock siswa di web agar lebih mudah dipahami saat dibuka dari browser, termasuk membersihkan panah anotasi, membenahi teks panduan login, memindahkan kotak dialog `Masukan NISN kalian` ke area kolom NISN, dan mencatat URL live yang dipakai untuk distribusi siswa.
+- Scope terdampak: `student`, `web-admin (edulock)`
+- File utama yang diubah:
+  - `web/src/app/edulock/install/page.tsx`
+  - `Apk Release/Pegangan Build APK/Edulock/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/Edulock/CHANGELOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - halaman tutorial instalasi EduLock siswa di route `/edulock/install`
+  - redirect alias pendek `/e`
+  - tampilan panduan visual login siswa
+- Build yang dijalankan:
+  - tidak ada build APK
+  - deploy repo web melalui push `main`
+- Hasil build: tidak ada APK baru; perubahan web sudah dipush ke repository dengan commit `1b25d25f`
+- Output APK: tidak ada APK baru
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - lint `web/src/app/edulock/install/page.tsx`
+  - audit posisi kotak panduan login siswa
+  - audit bahwa panah anotasi di halaman EduLock sudah dihapus
+- Belum diuji:
+- Update verifikasi:
+  - route `/e` sudah aktif live (redirect ke `/edulock/install`) dan konten termuat normal di App Hosting production pada `2026-08-02`
+- Belum diuji:
+  - uji buka tutorial EduLock siswa dari browser HP nyata pada jaringan sekolah (cek layout visual final)
+- Catatan:
+  - URL live utama EduLock siswa: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/e`
+  - URL fallback EduLock siswa: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/edulock/install`
+  - perubahan ini hanya menyentuh portal tutorial web, bukan APK EduLock siswa
+
+### 2026-08-01 23:40 - Pencatatan URL pendek tutorial instalasi EduLock siswa
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Tujuan perubahan: Mencatat jalur distribusi web terbaru untuk siswa agar admin tidak bingung antara URL lama tutorial instalasi EduLock dan alias pendek yang baru dipakai saat membagikan link ke browser siswa.
+- Scope terdampak: `student`, `web-admin (edulock)`
+- File utama yang diubah:
+  - `web/src/app/e/page.tsx`
+  - `web/src/app/edulock/install/page.tsx`
+  - `Apk Release/Pegangan Build APK/Edulock/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/Edulock/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/Edulock/README.md`
+- Fitur lama yang wajib ikut dicek:
+  - halaman tutorial instalasi EduLock siswa di route `/edulock/install`
+  - tombol unduh APK `EduLock-studentRelease.apk`
+  - redirect alias pendek `/e`
+- Build yang dijalankan:
+  - tidak ada build APK
+  - `npm run build` pada folder `web` sudah sukses saat verifikasi route `/e`
+- Hasil build: tidak ada build APK baru; verifikasi build web sukses dan route `/e` terdeteksi di output Next.js
+- Output APK: tidak ada APK baru
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - audit dokumentasi bahwa URL utama siswa kini memakai alias pendek `/e`
+  - verifikasi source route pendek `web/src/app/e/page.tsx` melakukan redirect ke `/edulock/install`
+- Belum diuji:
+  - rollout App Hosting production hingga URL live `/e` benar-benar aktif
+- Catatan:
+  - URL utama yang akan dibagikan ke siswa: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/e`
+  - URL fallback tetap tersedia di route `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/edulock/install`
+### 2026-08-01 20:12 - Telemetry Realtime Instan EduLock saat Registrasi & Setup
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Memastikan status perangkat di Admin Web (`active_devices`) langsung berubah menjadi `ONLINE` seketika saat registrasi selesai & selama halaman `SetupActivity` (onboarding izin HP) dibuka, sehingga status di web admin tidak lagi tertahan di status `TERIKAT / Offline` (sisa data uninstall lama) saat siswa sedang melengkapi konfigurasi.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/RegistrationActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/SetupActivity.kt`
+- Fitur lama yang wajib ikut dicek:
+  - registrasi siswa (NPSN -> NISN -> Nama)
+  - halaman onboarding 6 izin HP (`SetupActivity`)
+  - telemetry `active_devices` realtime di Admin Web
+- Build yang dijalankan:
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses (`BUILD SUCCESSFUL in 2m 22s`)
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\EduLock-studentRelease.apk`
+- Regression check yang dijalankan:
+  - compile & build APK `studentRelease`
+  - verifikasi pemicu telemetry di `updateFirebaseDeviceBinding` & `SetupActivity.onResume()`
+- Belum diuji:
+  - uji perangkat fisik pada instalasi bersih dari awal
+- Catatan:
+  - Sebelumnya telemetry `MonitoringService` baru terpicu setelah `MainActivity` terbuka. Perbaikan ini menambahkan pemicu telemetry awal sejak `RegistrationActivity` dan `SetupActivity`.
+
+### 2026-07-30 22:11 - Overlay pet mati dibatasi hanya di luar jam sekolah
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Mengurangi beban enforcement EduLock saat jam efektif sekolah dengan membatasi overlay peringatan `pet mati` hanya aktif di luar jam sekolah.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PetDeadLockActivity.kt`
+- Fitur lama yang wajib ikut dicek:
+  - overlay `pet mati` muncul di luar jam sekolah
+  - overlay `pet mati` tidak muncul saat jam sekolah
+  - overlay `pet mati` tertutup otomatis saat masuk jam sekolah / mode libur / proteksi off
+- Build yang dijalankan:
+  - `:app:compileStudentDebugKotlin`
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_22-11-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_22-11-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin flavor `student`
+  - build release flavor `student`
+  - verifikasi file APK terbaru di folder `OK_4`
+- Belum diuji:
+  - transisi tepat saat pergantian jam sekolah di perangkat fisik
+  - reminder ulang 10 menit di luar jam sekolah pada perangkat fisik
+- Catatan:
+  - `PetDeadLockActivity` sekarang ikut menutup diri saat menerima `ACTION_DISMISS_LOCKSCREEN` atau saat aplikasi mendeteksi jam sekolah/libur/proteksi nonaktif.
+
+### 2026-07-30 22:00 - Hardening flow izin dan buka GAS agar tidak ditarik balik lifecycle
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Mencegah EduLock melakukan `relaunch` paksa saat siswa masih berada di flow resmi `Minta Izin Penggunaan HP` atau `Buka APK GAS Siswa`.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MainActivity.kt`
+- Fitur lama yang wajib ikut dicek:
+  - klik `Minta Izin Penggunaan HP`
+  - input kode manual
+  - scan barcode izin
+  - klik `Buka APK GAS Siswa`
+  - enforcement saat pindah ke aplikasi terlarang
+- Build yang dijalankan:
+  - `:app:compileStudentDebugKotlin`
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_22-00-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_22-00-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin flavor `student`
+  - build release flavor `student`
+  - verifikasi file APK terbaru di folder `OK_4`
+- Belum diuji:
+  - alur penuh klik tombol izin di perangkat fisik
+  - alur pindah dari EduLock ke GAS Siswa dan kembali lagi di perangkat fisik
+- Catatan: Pendekatan diubah mengikuti pola yang user minta: lifecycle activity tidak lagi menjadi titik `relaunch` paksa; enforcement agresif didelegasikan ke `MonitoringService` setelah target app benar-benar terdeteksi, sementara flow resmi diberi grace period dan lock-task cooldown singkat.
+
+### 2026-07-30 21:43 - Perbaikan tombol utama MainActivity tertutup overlay setup
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Memastikan tombol `Minta Izin Penggunaan HP` dan `Buka APK GAS Siswa` kembali bisa disentuh saat siswa sudah masuk ke `MainActivity`.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MainActivity.kt`
+- Fitur lama yang wajib ikut dicek:
+  - kembali dari halaman Settings/Aksesibilitas
+  - tombol `Minta Izin Penggunaan HP`
+  - tombol `Buka APK GAS Siswa`
+  - proteksi setup saat masih berada di halaman pengaturan sistem
+- Build yang dijalankan:
+  - `:app:compileStudentDebugKotlin`
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_21-43-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_21-43-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin flavor `student`
+  - build release flavor `student`
+  - verifikasi file APK hasil copy di folder `OK_4`
+- Belum diuji:
+  - sentuhan tombol pada perangkat fisik setelah kembali dari flow setup
+  - perpindahan dari EduLock ke GAS Siswa pada perangkat fisik
+- Catatan: Fix menambahkan pembersihan agresif terhadap `SetupProtectionService`/lock overlay sementara setiap kali `MainActivity` kembali aktif, tanpa menghapus fungsi proteksi saat user masih berada di halaman Settings.
+
+---
+
+## 2026-07-30 20:30 - Guard error boundary halaman EduLock web (antisipasi blank)
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menghindari halaman EduLock terlihat blank saat terjadi error runtime dengan menambahkan error boundary khusus route `/dashboard/edulock`.
+- Scope terdampak: `web-admin (edulock)`
+- File utama yang diubah:
+  - `web/src/app/dashboard/edulock/error.tsx`
+- Fitur lama yang wajib ikut dicek:
+  - semua tab EduLock tetap bisa dibuka (dashboard/monitoring/codes/geofencing/students/classes/violations/settings)
+  - jika terjadi error, UI menampilkan tombol `Muat Ulang` dan `Kembali ke Dashboard`
+- Build yang dijalankan:
+  - tidak build APK
+  - `npm run dev` (verifikasi lokal)
+- Hasil build: tidak ada build APK; verifikasi dev server lokal berjalan
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - buka `/dashboard/edulock?tab=settings` dan pastikan UI tidak blank
+- Belum diuji:
+  - skenario error runtime nyata (mis. API down) untuk memastikan fallback selalu tampil
+- Catatan: Entry ini dicatat di pegangan EduLock karena isu muncul pada halaman EduLock web, meski tidak ada perubahan APK.
+
+## 2026-07-30 20:08 - Cleanup final sesudah overlay pet mati terverifikasi
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menutup sesi debug setelah user mengonfirmasi overlay `pet mati` berhasil muncul, sekaligus mengembalikan kode ke kondisi production yang bersih.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/build.gradle.kts`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LockEnforcer.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PetDeadLockActivity.kt`
+  - `web/src/app/api/admin/virtual-pet/route.ts`
+  - `web/src/hooks/gas/virtual-pet/useGasVirtualPet.ts`
+  - `web/src/components/gas/virtual-pet/GasPetPanel.tsx`
+  - `web/src/components/gas/virtual-pet/GasPetLeaderboardTab.tsx`
+- Fitur lama yang wajib ikut dicek:
+  - overlay `pet mati` saat `Status Proteksi Sekolah` aktif
+  - interval reminder normal 10 menit setelah tombol `Saya Mengerti`
+  - panel admin `Virtual Pet` tanpa tombol uji coba sementara
+- Build yang dijalankan:
+  - `:app:assembleStudentRelease`
+  - `npm run build` pada folder `web`
+- Hasil build: sukses
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_20-08-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_20-08-release.apk`
+- Regression check yang dijalankan:
+  - user mengonfirmasi overlay `pet mati` sudah muncul pada build post-fix
+  - build web sukses setelah tombol `Paksa Mati` dan banner mode uji dihapus
+  - build release EduLock sukses setelah instrumentasi debug dicabut dan interval reminder dikembalikan ke 10 menit
+  - server debug dihentikan dan file sesi debug dihapus
+- Belum diuji:
+  - deploy ulang web admin production tanpa tool uji, bila nanti diminta
+  - uji lapangan pengingat ulang 10 menit setelah cleanup final
+- Catatan: Dari hasil verifikasi user, overlay `pet mati` bergantung pada `Status Proteksi Sekolah` dalam keadaan aktif.
+
+## 2026-07-30 20:02 - Fix alias identitas pet mati dan build post-fix
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Memperbaiki root cause overlay `pet mati` yang tidak muncul karena EduLock memakai `studentId` lokal SQLite sebagai alias pencarian pet, bukan identitas backend siswa.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/build.gradle.kts`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PreferencesManager.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/StudentAuthService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/RegistrationActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LockEnforcer.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PetDeadLockActivity.kt`
+  - `debug-pet-overlay-missing.md`
+- Fitur lama yang wajib ikut dicek:
+  - sinkronisasi identitas siswa saat login/register EduLock
+  - listener status `virtual_pets`
+  - reminder overlay `pet mati`
+  - launch `PetDeadLockActivity`
+- Build yang dijalankan:
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_20-02-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_20-02-release.apk`
+- Regression check yang dijalankan:
+  - analisis log pre-fix membuktikan listener hidup tetapi berhenti sebelum `Pet status decision computed`
+  - build post-fix sukses setelah penyimpanan `studentKey` dan `username` backend ditambahkan
+  - versi APK dinaikkan ke `1.3.3 (versionCode 29)` agar bisa dipasang menimpa build debug sebelumnya
+  - log file debug post-fix dikosongkan ulang sebelum reproduksi berikutnya
+- Belum diuji:
+  - uji perangkat fisik bahwa build `20-02` sekarang masuk ke cabang `post-fix` dan memunculkan overlay
+  - uji perangkat fisik bahwa tombol `Saya Mengerti` tetap memberi jeda lalu overlay muncul lagi maksimal 1 menit
+- Catatan: Instrumentasi debug masih dipertahankan sampai user mengonfirmasi hasil akhir, lalu seluruh artefak debug dan tool uji sementara akan dibersihkan.
+
+## 2026-07-30 19:47 - Build debug overlay pet mati untuk reproduksi runtime
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menyiapkan APK uji EduLock siswa yang sudah membawa instrumentasi runtime untuk membuktikan apakah listener pet, cabang `performChecks()`, atau launch `PetDeadLockActivity` yang gagal saat overlay `pet mati` tidak muncul.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/build.gradle.kts`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LockEnforcer.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PetDeadLockActivity.kt`
+  - `debug-pet-overlay-missing.md`
+- Fitur lama yang wajib ikut dicek:
+  - listener status `virtual_pets` di EduLock siswa
+  - cabang reminder `pet mati` 1 menit
+  - peluncuran `PetDeadLockActivity`
+  - tombol `Paksa Mati` dan `Hidupkan` pada web admin `Virtual Pet`
+- Build yang dijalankan:
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_19-47-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_19-47-release.apk`
+- Regression check yang dijalankan:
+  - build release EduLock siswa sukses setelah instrumentasi runtime aktif
+  - server debug `pet-overlay-missing` terkonfirmasi hidup dan masih kosong (`log_count: 0`) sebelum reproduksi baru
+  - versi APK dinaikkan ke `1.3.2 (versionCode 28)` agar bisa dipasang di atas build uji sebelumnya
+- Belum diuji:
+  - uji perangkat fisik dengan APK `19-47` bahwa event debug benar-benar masuk ke `.dbg/trae-debug-log-pet-overlay-missing.ndjson`
+  - verifikasi apakah overlay `pet mati` akhirnya muncul atau tetap gagal
+- Catatan: Ini masih build investigasi. Setelah akar masalah terbukti dan fix final selesai, seluruh instrumentasi debug dan tool uji sementara wajib dibersihkan.
+
+## 2026-07-30 19:30 - Tool uji pet mati dari web admin dan reminder 1 menit
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menyiapkan simulasi end-to-end untuk overlay `pet mati` pada EduLock siswa dengan dua komponen: tombol `Paksa Mati` sementara di web admin `Virtual Pet` dan interval pengingat di APK EduLock yang dipercepat menjadi 1 menit agar pengujian cepat.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `web/src/app/api/admin/virtual-pet/route.ts`
+  - `web/src/hooks/gas/virtual-pet/useGasVirtualPet.ts`
+  - `web/src/components/gas/virtual-pet/GasPetPanel.tsx`
+  - `web/src/components/gas/virtual-pet/GasPetLeaderboardTab.tsx`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+- Fitur lama yang wajib ikut dicek:
+  - overlay `pet mati` di EduLock siswa
+  - tombol `Hidupkan` di panel web admin `Virtual Pet`
+  - listener status pet realtime dari node `virtual_pets`
+  - akses web admin `Virtual Pet` sekolah aktif
+- Build yang dijalankan:
+  - `npm run build` pada folder `web`
+  - `:app:assembleRelease`
+- Hasil build: sukses
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_19-30-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_19-30-release.apk`
+- Regression check yang dijalankan:
+  - build web admin sukses setelah tambah aksi `Paksa Mati`
+  - build release EduLock sukses setelah interval reminder diubah ke 1 menit
+  - review API admin: aksi `force-dead` mengubah status pet ke `DEAD`, menurunkan stat vital ke nol, dan membersihkan `manualReviveUntil`
+  - review UI web: tool uji ditempatkan di tab `Global Leaderboard` agar semua siswa bisa dipilih
+- Belum diuji:
+  - uji perangkat fisik bahwa tombol `Paksa Mati` benar-benar memunculkan overlay di HP siswa
+  - uji perangkat fisik bahwa setelah tombol `Saya Mengerti` ditekan, overlay muncul lagi maksimal 1 menit kemudian
+  - pembersihan tool uji coba setelah verifikasi berhasil
+- Catatan: Tool uji ini bersifat sementara dan harus dibersihkan kembali setelah verifikasi selesai agar panel admin production tetap bersih.
+
+## 2026-07-30 08:52 - Pengetatan proteksi dan telemetry monitoring EduLock siswa
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Merapikan card jam sekolah, memastikan pengingat pet mati tetap muncul tiap 10 menit di luar jam sekolah, menendang siswa keluar dari menu Device Admin, dan menghidupkan telemetry monitoring agar panel realtime web benar-benar terhubung ke HP siswa.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/res/layout/activity_main.xml`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MainActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/AntiUninstallService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/DeviceAdminReceiver.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/FirebaseReporter.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `web/src/hooks/edulock/useEduLockOverview.ts`
+  - `web/src/components/edulock/panels/EduLockMonitoringPanel.tsx`
+- Fitur lama yang wajib ikut dicek:
+  - dashboard utama EduLock siswa
+  - proteksi overlay dan kiosk
+  - listener status proteksi ke web
+  - alur uninstall resmi yang diizinkan admin
+- Build yang dijalankan:
+  - `:app:assembleStudentRelease`
+  - `npm run build` pada folder `web`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_08-52-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_08-52-release.apk`
+- Regression check yang dijalankan:
+  - build release EduLock siswa sukses
+  - build dashboard web sukses
+  - review telemetry `active_devices` untuk status proteksi dan heartbeat
+  - review blok akses halaman Device Admin dari Accessibility Service
+- Belum diuji:
+  - uji perangkat fisik saat siswa benar-benar membuka menu `Aplikasi admin perangkat`
+  - verifikasi visual pixel-perfect langsung di HP pada card `Jam Sekolah`
+  - verifikasi panel realtime web saat HP siswa online/offline berpindah secara live
+- Catatan: `OK_4` diperbarui ulang agar file EduLock siswa terbaru yang aktif adalah build `2026-07-30 08:52`.
+
+## 2026-07-30 08:27 - Perapihan urutan login dan auto-isi nama siswa
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Mengubah urutan field registrasi siswa menjadi NPSN, NISN, lalu Nama Siswa serta membuat nama siswa terisi otomatis dari database berdasarkan kombinasi NPSN dan NISN.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/res/layout/activity_registration.xml`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/RegistrationActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/StudentAuthService.kt`
+- Fitur lama yang wajib ikut dicek:
+  - login / registrasi siswa
+  - validasi identitas siswa ke Firebase
+  - binding device saat registrasi
+- Build yang dijalankan:
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_08-27-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_08-27-release.apk`
+- Regression check yang dijalankan:
+  - build release siswa sukses
+  - review alur lookup nama siswa berdasarkan NPSN dan NISN
+  - review urutan field pada layout registrasi
+- Belum diuji:
+  - uji interaksi langsung di perangkat fisik
+  - skenario NISN yang tidak terdaftar atau NPSN salah pada tenant riil
+- Catatan: Entry ini dicatat di pegangan `Edulock`, bukan `GAS`, karena perubahan hanya menyentuh APK EduLock siswa.
+
+## 2026-07-30 07:56 - Standardisasi BUILD_LOG EduLock
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Tujuan perubahan: Membakukan satu format entry BUILD_LOG untuk semua perubahan APK EduLock agar catatan lintas orang tetap konsisten.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/Edulock/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - tidak ada perubahan perilaku APK
+- Build yang dijalankan:
+  - tidak ada
+- Hasil build: tidak build karena hanya perubahan dokumen
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - verifikasi format baku field log
+- Belum diuji:
+  - tidak relevan
+- Catatan: Entry ini menjadi acuan format untuk log EduLock berikutnya.
+
+## 2026-07-30 08:00 - Penyempitan scope pegangan ke EduLock siswa
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Tujuan perubahan: Menegaskan bahwa pegangan build ini hanya untuk APK EduLock siswa karena admin hanyalah wrapper web.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/Edulock/README.md`
+  - `Apk Release/Pegangan Build APK/Edulock/ARCHITECTURE.md`
+  - `Apk Release/Pegangan Build APK/Edulock/CONTRIBUTING.md`
+  - `Apk Release/Pegangan Build APK/Edulock/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/Edulock/RELEASE.md`
+  - `Apk Release/Pegangan Build APK/Edulock/pull_request_template.md`
+  - `Apk Release/Pegangan Build APK/Edulock/build.yml`
+  - `Apk Release/Pegangan Build APK/Edulock/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - tidak ada perubahan perilaku APK
+- Build yang dijalankan:
+  - tidak ada
+- Hasil build: tidak build karena hanya perubahan dokumen
+- Output APK: tidak ada
+- Disalin ke: tidak ada
+- Regression check yang dijalankan:
+  - verifikasi seluruh dokumen EduLock sudah fokus ke siswa
+- Belum diuji:
+  - tidak relevan
+- Catatan: Admin wrapper web tidak lagi diperlakukan sebagai scope utama pegangan build native.
+
+## 2026-07-29 23:25 - Aktivasi izin per kelas dari admin
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Tujuan perubahan: Menambah mode izin per kelas di web admin EduLock dan memastikan APK siswa membaca session admin secara realtime.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PermissionManager.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MainActivity.kt`
+- Fitur lama yang wajib ikut dicek:
+  - izin manual via kode
+  - listener session realtime
+  - aktivasi proteksi siswa
+- Build yang dijalankan:
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-29_23-25-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-29_23-25-release.apk`
+- Regression check yang dijalankan:
+  - build release siswa
+  - verifikasi session admin realtime dari sisi kode
+- Belum diuji:
+  - seluruh skenario lapangan pada perangkat fisik
+- Catatan: perubahan ini tidak membangun ulang GAS.
+
+## 2026-07-29 22:30 - Enforcement jam sesi izin pada APK EduLock
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Membuat jam mulai dan jam akhir pada kode izin benar-benar dipakai sebagai aturan validasi, bukan hanya tampilan.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PermissionManager.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PermissionCodeActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/BarcodeScannerActivity.kt`
+- Fitur lama yang wajib ikut dicek:
+  - input kode manual
+  - scan barcode
+  - expiry kode
+  - durasi izin
+- Build yang dijalankan:
+  - compile/check internal saat implementasi
+- Hasil build: implementasi selesai, tetapi pada tahap itu build penuh belum dijadikan patokan karena ada blocker lama di area lain
+- Output APK: belum ada release final tercatat pada tahap perubahan ini
+- Disalin ke: belum ada
+- Regression check yang dijalankan:
+  - audit logika validasi waktu sesi
+  - audit trimming durasi agar tidak melewati jam akhir
+- Belum diuji:
+  - uji perangkat fisik penuh
+  - semua kombinasi waktu di lapangan
+- Catatan: Setelah fase ini, perubahan EduLock berlanjut ke perbaikan lain sampai akhirnya build release siswa berhasil pada entry berikutnya.
+
+## 2026-07-30 22:52 - Rapikan prompt Device Admin vs Accessibility pada APK EduLock
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menghilangkan prompt ganda saat `Device Admin` dimatikan dan memastikan overlay recovery menampilkan tombol yang sesuai dengan target masalahnya.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/DeviceAdminReceiver.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MainActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/OverlayLockActivity.kt`
+  - `native-mobile-edulock/app/src/main/res/layout/activity_overlay_lock.xml`
+- Fitur lama yang wajib ikut dicek:
+  - flow aktivasi ulang `Device Admin`
+  - flow aktivasi ulang `Accessibility`
+  - transisi balik dari halaman settings sistem ke `MainActivity`
+  - overlay recovery lokasi / accessibility / geofence
+- Build yang dijalankan:
+  - `:app:compileStudentReleaseKotlin`
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_22-52-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_22-52-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin flavor `studentRelease`
+  - assemble APK `studentRelease`
+  - audit gating bahwa `Accessibility` tidak lagi memaksa prompt saat `Device Admin` belum aktif atau masih dalam recovery window
+  - audit label tombol overlay agar mengikuti target `location`, `accessibility`, dan `geofence`
+- Belum diuji:
+  - skenario real device saat siswa mematikan `Device Admin` lalu langsung kembali ke EduLock
+  - skenario real device saat `Accessibility` dan `Device Admin` sama-sama mati
+- Catatan:
+  - `DeviceAdminReceiver.onDisableRequested()` tidak lagi menarik layar secara agresif dari halaman sistem; recovery dikembalikan ke `MainActivity`.
+  - `MonitoringService` sekarang menahan enforcement `Accessibility` selama flow `Device Admin` belum pulih agar user tidak melihat dua prompt sekaligus.
+
+## 2026-07-30 23:11 - Aktifkan wiring Force Update Control pada APK EduLock
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Membuat panel `Force Update Control` dari Super Admin benar-benar mengunci EduLock saat `min_version_code_edulock` lebih tinggi dari `versionCode` APK yang terpasang.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/ForceUpdateGate.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/ForceUpdateActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/RegistrationActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/SetupActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MainActivity.kt`
+  - `native-mobile-edulock/app/src/main/AndroidManifest.xml`
+- Akar masalah yang ditemukan:
+  - `ForceUpdateActivity` sudah ada di source, tetapi belum terdaftar di manifest.
+  - `VersionCheckService` EduLock belum dipasang ke lifecycle activity utama, sehingga policy dari web tidak pernah dipantau seperti di APK GAS.
+- Fitur lama yang wajib ikut dicek:
+  - registrasi siswa
+  - onboarding / setup awal
+  - `MainActivity` mode siswa
+  - pelepasan layar force update saat policy diturunkan atau APK sudah diperbarui
+- Build yang dijalankan:
+  - `:app:compileStudentReleaseKotlin`
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Edulock\EduLock-Siswa-2026-07-30_23-11-release.apk`
+  - `D:\Dashboard Portal\Apk Release\OK_4\EduLock-Siswa-2026-07-30_23-11-release.apk`
+- Regression check yang dijalankan:
+  - compile Kotlin flavor `studentRelease`
+  - assemble APK `studentRelease`
+  - audit path RTDB `app_settings/android`
+  - audit bahwa `min_version_code_edulock` dan `update_message_edulock` sekarang aktif dari `RegistrationActivity`, `SetupActivity`, `MainActivity`, dan `ForceUpdateActivity`
+- Belum diuji:
+  - skenario real device saat Super Admin menaikkan `min_version_code_edulock` ketika EduLock sedang terbuka di `MainActivity`
+  - skenario real device saat policy force update diturunkan kembali ketika layar force update sedang tampil
+- Catatan:
+  - Jalur EduLock sekarang setara dengan GAS: policy force update dipantau live dari RTDB, bukan hanya tersedia sebagai source mati.
