@@ -54,8 +54,8 @@ const installSteps = [
     body: "Saat aplikasi terbuka, siswa akan melihat halaman login EduLock dan siap memasukkan akun yang diberikan sekolah.",
   },
   {
-    title: "Klik tombol Masuk",
-    body: "Setelah akun diisi dengan benar, tekan tombol Masuk untuk melanjutkan proses aktivasi awal aplikasi.",
+    title: "Klik tombol Daftar",
+    body: "Setelah akun diisi dengan benar, tekan tombol Daftar untuk melanjutkan proses aktivasi awal aplikasi.",
   },
   {
     title: "Setup konfigurasi lalu mulai aplikasi",
@@ -78,33 +78,10 @@ const visualSteps = [
     imageAlt: "Logo aplikasi EduLock",
   },
   {
-    title: "2. Masuk ke halaman login lalu klik Masuk",
-    body: "Saat halaman login muncul, isi akun siswa yang dibagikan sekolah, kemudian tekan tombol Masuk untuk lanjut.",
+    title: "2. Masuk ke halaman login lalu klik Daftar",
+    body: "Saat halaman login muncul, isi akun siswa yang dibagikan sekolah, kemudian tekan tombol Daftar untuk lanjut.",
     imageSrc: edulockLoginImage,
     imageAlt: "Halaman login aplikasi EduLock",
-    callouts: [
-      {
-        title: "Masukan NISN kalian",
-        body: "Isi kolom NISN dengan NISN kalian.",
-        positionClassName: "right-[4%] top-[40%] max-w-[42%]",
-        arrowClassName: "left-[36%] top-[41%] h-12 w-12 border-r-4 border-t-4",
-        arrowRotationClassName: "rotate-45",
-      },
-      {
-        title: "Nama siswa terisi otomatis",
-        body: "Pastikan nama Anda sesuai. Jika tidak sesuai, hubungi Admin.",
-        positionClassName: "right-[4%] top-[50%] max-w-[42%]",
-        arrowClassName: "right-[34%] top-[61%] h-12 w-12 border-l-4 border-t-4",
-        arrowRotationClassName: "-rotate-45",
-      },
-      {
-        title: "Jika sesuai, tekan tombol Masuk",
-        body: "Lanjutkan setelah data siswa benar.",
-        positionClassName: "right-[4%] bottom-[6%] max-w-[42%]",
-        arrowClassName: "left-[38%] bottom-[20%] h-12 w-12 border-r-4 border-b-4",
-        arrowRotationClassName: "-rotate-45",
-      },
-    ],
   },
   {
     title: "3. Selesaikan setup konfigurasi lalu mulai aplikasi",
@@ -251,24 +228,6 @@ export default function EduLockInstallPage() {
                             height={900}
                             className="h-auto w-full object-contain"
                           />
-                          {"callouts" in step && step.callouts ? (
-                            <div className="pointer-events-none absolute inset-0">
-                              {step.callouts.map((callout) => (
-                                <div key={callout.title}>
-                                  <div
-                                    className={`absolute rounded-2xl border-2 border-red-400 bg-white/95 px-3 py-2 shadow-lg ${callout.positionClassName}`}
-                                  >
-                                    <div className="text-xs font-black uppercase tracking-[0.16em] text-red-700">
-                                      {callout.title}
-                                    </div>
-                                    <p className="mt-1 text-[11px] font-semibold leading-4 text-slate-800">
-                                      {callout.body}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : null}
                         </div>
                       </div>
                     </div>

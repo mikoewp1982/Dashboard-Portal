@@ -89,44 +89,12 @@ const visualSteps = [
     body: "Isi NPSN dan NISN. Nama siswa akan terisi otomatis jika data cocok.",
     imageSrc: gasLoginImage,
     imageAlt: "Halaman login GAS Siswa",
-    callouts: [
-      {
-        title: "Isi NISN kalian",
-        body: "Isi kolom NISN dengan NISN kalian.",
-        positionClassName: "right-[6%] top-[44%] max-w-[46%]",
-        arrowClassName: "left-[32%] top-[56%] h-10 w-10 border-r-4 border-t-4",
-        arrowRotationClassName: "rotate-45",
-      },
-      {
-        title: "Nama terisi otomatis",
-        body: "Pastikan nama Anda sesuai. Jika tidak sesuai, hubungi Admin.",
-        positionClassName: "right-[6%] top-[55%] max-w-[46%]",
-        arrowClassName: "right-[22%] top-[74%] h-10 w-10 border-l-4 border-t-4",
-        arrowRotationClassName: "-rotate-45",
-      },
-      {
-        title: "Jika sesuai, tekan Masuk",
-        body: "Lanjutkan setelah data siswa benar.",
-        positionClassName: "right-[6%] bottom-[10%] max-w-[46%]",
-        arrowClassName: "left-[48%] bottom-[24%] h-9 w-9 border-r-4 border-b-4",
-        arrowRotationClassName: "-rotate-45",
-      },
-    ],
   },
   {
     title: "3. Izin lokasi (Saat aplikasi digunakan)",
     body: 'Saat muncul izin lokasi, pilih "Saat aplikasi digunakan".',
     imageSrc: gasLocationPermissionImage,
     imageAlt: "Izin lokasi GAS Siswa",
-    callouts: [
-      {
-        title: 'Klik "SAAT APLIKASI DIGUNAKAN"',
-        body: "Pilih opsi ini agar lokasi bisa terbaca saat GAS dipakai.",
-        positionClassName: "left-[12%] top-[63%] max-w-[76%]",
-        arrowClassName: "",
-        arrowRotationClassName: "",
-      },
-    ],
   },
 ];
 
@@ -464,24 +432,6 @@ export default function GasStudentInstallPage() {
                             height={900}
                             className="h-auto w-full object-contain"
                           />
-                          {"callouts" in step && step.callouts ? (
-                            <div className="pointer-events-none absolute inset-0">
-                              {step.callouts.map((callout) => (
-                                <div key={callout.title}>
-                                  <div
-                                    className={`absolute rounded-2xl border border-red-500/70 bg-white/95 px-3 py-2 text-left shadow-[0_12px_30px_rgba(0,0,0,0.28)] ring-1 ring-red-400/25 backdrop-blur-sm ${callout.positionClassName}`}
-                                  >
-                                    <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-red-700">
-                                      {callout.title}
-                                    </div>
-                                    <p className="mt-1 text-[11px] font-semibold leading-4 text-slate-800">
-                                      {callout.body}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : null}
                         </div>
                       </div>
                     </div>
