@@ -3,6 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import edulockLoginImage from "../../../../public/tutorial/edulock/halaman-login.jpeg";
+import edulockLogoImage from "../../../../public/tutorial/edulock/logo-aplikasi.png";
+import edulockSetupImage from "../../../../public/tutorial/edulock/setup-konfigurasi.jpeg";
 
 export const metadata: Metadata = {
   title: "Tutorial Instalasi EduLock Siswa",
@@ -71,13 +74,13 @@ const visualSteps = [
   {
     title: "1. Buka logo aplikasi EduLock",
     body: "Setelah APK berhasil dipasang, cari ikon EduLock di layar HP siswa lalu tekan untuk membuka aplikasi.",
-    imageSrc: "/tutorial/edulock/logo-aplikasi.png",
+    imageSrc: edulockLogoImage,
     imageAlt: "Logo aplikasi EduLock",
   },
   {
     title: "2. Masuk ke halaman login lalu klik Masuk",
     body: "Saat halaman login muncul, isi akun siswa yang dibagikan sekolah, kemudian tekan tombol Masuk untuk lanjut.",
-    imageSrc: "/tutorial/edulock/halaman-login.jpeg",
+    imageSrc: edulockLoginImage,
     imageAlt: "Halaman login aplikasi EduLock",
     callouts: [
       {
@@ -106,7 +109,7 @@ const visualSteps = [
   {
     title: "3. Selesaikan setup konfigurasi lalu mulai aplikasi",
     body: "Ikuti petunjuk setup konfigurasi yang tampil di layar sampai selesai, kemudian lanjutkan ke tahap mulai aplikasi.",
-    imageSrc: "/tutorial/edulock/setup-konfigurasi.jpeg",
+    imageSrc: edulockSetupImage,
     imageAlt: "Halaman setup konfigurasi EduLock",
   },
 ];
@@ -172,7 +175,7 @@ export default function EduLockInstallPage() {
               <div className="w-full max-w-md rounded-[28px] border border-cyan-300/20 bg-slate-950/50 p-6 shadow-[0_24px_60px_rgba(8,47,73,0.45)]">
                 <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-cyan-400/15 ring-1 ring-cyan-300/20">
                   <Image
-                    src="/Logo EduLock.png"
+                    src={edulockLogoImage}
                     alt="Logo EduLock"
                     width={72}
                     height={72}

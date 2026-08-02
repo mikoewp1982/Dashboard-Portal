@@ -3,6 +3,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import gas7KaihImage from "../../../../public/tutorial/gas-siswa/7-kaih/1.jpeg";
+import gasLoginImage from "../../../../public/tutorial/gas-siswa/halaman-login.jpeg";
+import gasLocationPermissionImage from "../../../../public/tutorial/gas-siswa/izin-lokasi.jpeg";
+import gasAduanStep1Image from "../../../../public/tutorial/gas-siswa/layanan-aduan/1.jpeg";
+import gasAduanStep2Image from "../../../../public/tutorial/gas-siswa/layanan-aduan/2.jpeg";
+import gasLenteraStep1Image from "../../../../public/tutorial/gas-siswa/lentera-digital/1.jpeg";
+import gasLenteraStep2Image from "../../../../public/tutorial/gas-siswa/lentera-digital/2.jpeg";
+import gasLenteraStep3Image from "../../../../public/tutorial/gas-siswa/lentera-digital/3.jpeg";
+import gasLenteraStep4Image from "../../../../public/tutorial/gas-siswa/lentera-digital/4.jpeg";
+import gasLenteraStep5Image from "../../../../public/tutorial/gas-siswa/lentera-digital/5.jpeg";
+import gasLogoImage from "../../../../public/tutorial/gas-siswa/logo-aplikasi.png";
+import gasMenuImage from "../../../../public/tutorial/gas-siswa/menu-gas.png";
+import gasToolsImage from "../../../../public/tutorial/gas-siswa/tools/1.jpeg";
+import gasVirtualPetImage from "../../../../public/tutorial/gas-siswa/virtual-pet/1.jpeg";
 
 export const metadata: Metadata = {
   title: "Tutorial Instalasi GAS Siswa",
@@ -63,13 +77,13 @@ const visualSteps = [
   {
     title: "1. Buka logo aplikasi GAS",
     body: "Cari ikon GAS di layar HP siswa lalu tekan untuk membuka aplikasi.",
-    imageSrc: "/tutorial/gas-siswa/logo-aplikasi.png",
+    imageSrc: gasLogoImage,
     imageAlt: "Logo aplikasi GAS",
   },
   {
     title: "2. Isi data login siswa",
     body: "Isi NPSN dan NISN. Nama siswa akan terisi otomatis jika data cocok.",
-    imageSrc: "/tutorial/gas-siswa/halaman-login.jpeg",
+    imageSrc: gasLoginImage,
     imageAlt: "Halaman login GAS Siswa",
     callouts: [
       {
@@ -98,7 +112,7 @@ const visualSteps = [
   {
     title: "3. Izin lokasi (Saat aplikasi digunakan)",
     body: 'Saat muncul izin lokasi, pilih "Saat aplikasi digunakan".',
-    imageSrc: "/tutorial/gas-siswa/izin-lokasi.jpeg",
+    imageSrc: gasLocationPermissionImage,
     imageAlt: "Izin lokasi GAS Siswa",
     callouts: [
       {
@@ -145,27 +159,27 @@ const gasMenuItems = [
     visualSteps: [
       {
         title: "1. Buka Lentera Digital",
-        imageSrc: "/tutorial/gas-siswa/lentera-digital/1.jpeg",
+        imageSrc: gasLenteraStep1Image,
         imageAlt: "Lentera Digital - Katalog buku",
       },
       {
         title: "2. Pilih kategori buku",
-        imageSrc: "/tutorial/gas-siswa/lentera-digital/2.jpeg",
+        imageSrc: gasLenteraStep2Image,
         imageAlt: "Lentera Digital - Pilih kategori",
       },
       {
         title: "3. Buka Tugas Literasi",
-        imageSrc: "/tutorial/gas-siswa/lentera-digital/3.jpeg",
+        imageSrc: gasLenteraStep3Image,
         imageAlt: "Lentera Digital - Tugas literasi",
       },
       {
         title: "4. Isi laporan tugas",
-        imageSrc: "/tutorial/gas-siswa/lentera-digital/4.jpeg",
+        imageSrc: gasLenteraStep4Image,
         imageAlt: "Lentera Digital - Form laporan",
       },
       {
         title: "5. Cek riwayat laporan",
-        imageSrc: "/tutorial/gas-siswa/lentera-digital/5.jpeg",
+        imageSrc: gasLenteraStep5Image,
         imageAlt: "Lentera Digital - Riwayat laporan",
       },
     ],
@@ -183,7 +197,7 @@ const gasMenuItems = [
       {
         title: "1. Buka halaman 7 KAIH",
         body: "Silahkan check list 7 KAIH sesuai yang kalian kerjakan, pastikan memilih dengan jujur. Jika sudah lanjutkan klik tombol kirim laporan.",
-        imageSrc: "/tutorial/gas-siswa/7-kaih/1.jpeg",
+        imageSrc: gas7KaihImage,
         imageAlt: "7 KAIH - Halaman utama",
       },
     ],
@@ -201,7 +215,7 @@ const gasMenuItems = [
       {
         title: "1. Buka halaman Virtual Pet",
         body: "Pastikan 4 kartu kebiasaan itu kalian laksanakan, agar Pet kalian tetap sehat.",
-        imageSrc: "/tutorial/gas-siswa/virtual-pet/1.jpeg",
+        imageSrc: gasVirtualPetImage,
         imageAlt: "Virtual Pet - Halaman utama",
       },
     ],
@@ -228,12 +242,12 @@ const gasMenuItems = [
     visualSteps: [
       {
         title: "1. Buka halaman Layanan Aduan",
-        imageSrc: "/tutorial/gas-siswa/layanan-aduan/1.jpeg",
+        imageSrc: gasAduanStep1Image,
         imageAlt: "Layanan Aduan - Halaman utama",
       },
       {
         title: "2. Isi dan kirim laporan aduan",
-        imageSrc: "/tutorial/gas-siswa/layanan-aduan/2.jpeg",
+        imageSrc: gasAduanStep2Image,
         imageAlt: "Layanan Aduan - Form laporan",
       },
     ],
@@ -261,7 +275,7 @@ const gasMenuItems = [
       {
         title: "1. Buka halaman Tools",
         body: "Gunakan Kamus Bahasa Inggris - Indonesia dan juga Kamus Bahasa Jawa - Indonesia, untuk menunjang kegiatan belajar kalian.",
-        imageSrc: "/tutorial/gas-siswa/tools/1.jpeg",
+        imageSrc: gasToolsImage,
         imageAlt: "Tools - Halaman utama",
       },
     ],
@@ -345,7 +359,7 @@ export default function GasStudentInstallPage() {
               <div className="w-full max-w-md rounded-[28px] border border-sky-300/20 bg-slate-950/50 p-6 shadow-[0_24px_60px_rgba(7,89,133,0.45)]">
                 <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-sky-400/15 ring-1 ring-sky-300/20">
                   <Image
-                    src="/tutorial/gas-siswa/logo-aplikasi.png"
+                    src={gasLogoImage}
                     alt="Logo GAS"
                     width={72}
                     height={72}
@@ -516,7 +530,7 @@ export default function GasStudentInstallPage() {
             <div className="p-4 sm:p-5">
               <div className="mx-auto max-w-[420px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 sm:max-w-[460px]">
                 <Image
-                  src="/tutorial/gas-siswa/menu-gas.png"
+                  src={gasMenuImage}
                   alt="Menu utama GAS Siswa"
                   width={1200}
                   height={1200}
