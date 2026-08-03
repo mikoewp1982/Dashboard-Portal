@@ -15,6 +15,7 @@
     "sync:apk:edulock": "powershell -ExecutionPolicy Bypass -File .\\scripts\\sync-public-apk.ps1 -App edulock"
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "firebase": "^12.16.0",
     "firebase-admin": "^14.1.0",
     "lucide-react": "^1.24.0",

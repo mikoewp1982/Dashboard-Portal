@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import ExcelJS from "exceljs";
 import { adminDb } from "@/lib/firebase-admin";
 import { normalizeSchoolId } from "@/lib/gas/schoolId";
 import {
@@ -43,7 +44,7 @@ const MONTH_NAMES = [
   "Desember",
 ];
 
-/** Column headers — parity with APK `TeacherRecapViewModel.buildSpreadsheetXml`. */
+/** Column headers ÔÇö parity with APK `TeacherRecapViewModel.buildSpreadsheetXml`. */
 const RECAP_HEADERS = [
   "No",
   "NISN",
@@ -106,16 +107,6 @@ function periodLabelFromDates(startDate: string, endDate: string): string {
   }
   if (start && endDate) return `${start} s.d. ${endDate}`;
   return "Periode";
-}
-
-function escapeXml(input: string | null | undefined): string {
-  if (!input) return "-";
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
 }
 
 function normalizePrayerStatus(raw: unknown): string {
@@ -189,105 +180,112 @@ function eachDayMs(startMs: number, endMs: number): number[] {
   return days;
 }
 
-function buildSpreadsheetXml(
+/** Real OOXML (.xlsx) ÔÇö APK parity sheet/columns/styling via ExcelJS. */
+async function buildRecapXlsxBuffer(
   className: string,
   periodText: string,
   rows: StudentRecapRow[]
-): string {
-  const sb: string[] = [];
-  sb.push(`<?xml version="1.0" encoding="UTF-8"?>`);
-  sb.push(`<?mso-application progid="Excel.Sheet"?>`);
-  sb.push(`<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"`);
-  sb.push(` xmlns:o="urn:schemas-microsoft-com:office:office"`);
-  sb.push(` xmlns:x="urn:schemas-microsoft-com:office:excel"`);
-  sb.push(` xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"`);
-  sb.push(` xmlns:html="http://www.w3.org/TR/REC-html40">`);
+): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Rangkuman Kelas");
 
-  sb.push(` <Styles>`);
-  sb.push(`  <Style ss:ID="Default" ss:Name="Normal">`);
-  sb.push(`   <Alignment ss:Vertical="Center"/>`);
-  sb.push(`   <Font ss:FontName="Arial" ss:Size="10"/>`);
-  sb.push(`  </Style>`);
-  sb.push(`  <Style ss:ID="Header">`);
-  sb.push(
-    `   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>`
-  );
-  sb.push(
-    `   <Font ss:FontName="Arial" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>`
-  );
-  sb.push(`   <Interior ss:Color="#0F7BFF" ss:Pattern="Solid"/>`);
-  sb.push(`  </Style>`);
-  sb.push(`  <Style ss:ID="TitleStyle">`);
-  sb.push(
-    `   <Font ss:FontName="Arial" ss:Size="14" ss:Bold="1" ss:Color="#0F2A43"/>`
-  );
-  sb.push(`  </Style>`);
-  sb.push(`  <Style ss:ID="SubTitleStyle">`);
-  sb.push(
-    `   <Font ss:FontName="Arial" ss:Size="11" ss:Bold="1" ss:Color="#0F7BFF"/>`
-  );
-  sb.push(`  </Style>`);
-  sb.push(` </Styles>`);
+  sheet.columns = [
+    { width: 5 },
+    { width: 14 },
+    { width: 28 },
+    { width: 10 },
+    { width: 10 },
+    { width: 10 },
+    { width: 10 },
+    { width: 10 },
+    { width: 10 },
+    { width: 14 },
+    { width: 12 },
+    { width: 12 },
+    { width: 16 },
+    { width: 16 },
+    { width: 14 },
+  ];
 
-  sb.push(` <Worksheet ss:Name="Rangkuman Kelas">`);
-  sb.push(`  <Table>`);
+  const titleRow = sheet.getRow(1);
+  titleRow.height = 24;
+  sheet.mergeCells(1, 1, 1, RECAP_HEADERS.length);
+  const titleCell = titleRow.getCell(1);
+  titleCell.value = `REKAPITULASI KELAS ${className.toUpperCase()}`;
+  titleCell.font = {
+    name: "Arial",
+    size: 14,
+    bold: true,
+    color: { argb: "FF0F2A43" },
+  };
+  titleCell.alignment = { vertical: "middle" };
 
-  sb.push(`   <Row ss:Height="24">`);
-  sb.push(
-    `    <Cell ss:StyleID="TitleStyle"><Data ss:Type="String">REKAPITULASI KELAS ${escapeXml(
-      className.toUpperCase()
-    )}</Data></Cell>`
-  );
-  sb.push(`   </Row>`);
-  sb.push(`   <Row ss:Height="20">`);
-  sb.push(
-    `    <Cell ss:StyleID="SubTitleStyle"><Data ss:Type="String">Periode ${escapeXml(
-      periodText
-    )}</Data></Cell>`
-  );
-  sb.push(`   </Row>`);
-  sb.push(`   <Row></Row>`);
+  const subRow = sheet.getRow(2);
+  subRow.height = 20;
+  sheet.mergeCells(2, 1, 2, RECAP_HEADERS.length);
+  const subCell = subRow.getCell(1);
+  subCell.value = `Periode ${periodText}`;
+  subCell.font = {
+    name: "Arial",
+    size: 11,
+    bold: true,
+    color: { argb: "FF0F7BFF" },
+  };
+  subCell.alignment = { vertical: "middle" };
 
-  sb.push(`   <Row ss:Height="28">`);
-  for (const h of RECAP_HEADERS) {
-    sb.push(
-      `    <Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`
-    );
-  }
-  sb.push(`   </Row>`);
+  const headerRow = sheet.getRow(4);
+  headerRow.height = 28;
+  RECAP_HEADERS.forEach((header, idx) => {
+    const cell = headerRow.getCell(idx + 1);
+    cell.value = header;
+    cell.font = {
+      name: "Arial",
+      size: 11,
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF0F7BFF" },
+    };
+    cell.alignment = {
+      horizontal: "center",
+      vertical: "middle",
+      wrapText: true,
+    };
+  });
 
-  for (const r of rows) {
-    sb.push(`   <Row ss:Height="20">`);
-    sb.push(`    <Cell><Data ss:Type="Number">${r.index}</Data></Cell>`);
-    sb.push(
-      `    <Cell><Data ss:Type="String">${escapeXml(r.nisn)}</Data></Cell>`
-    );
-    sb.push(
-      `    <Cell><Data ss:Type="String">${escapeXml(r.name)}</Data></Cell>`
-    );
-    sb.push(
-      `    <Cell><Data ss:Type="String">${escapeXml(r.className)}</Data></Cell>`
-    );
-    sb.push(`    <Cell><Data ss:Type="Number">${r.hadir}</Data></Cell>`);
-    sb.push(`    <Cell><Data ss:Type="Number">${r.izin}</Data></Cell>`);
-    sb.push(`    <Cell><Data ss:Type="Number">${r.sakit}</Data></Cell>`);
-    sb.push(`    <Cell><Data ss:Type="Number">${r.alpa}</Data></Cell>`);
-    sb.push(`    <Cell><Data ss:Type="Number">${r.sholatSudah}</Data></Cell>`);
-    sb.push(`    <Cell><Data ss:Type="Number">${r.sholatTidak}</Data></Cell>`);
-    sb.push(`    <Cell><Data ss:Type="Number">${r.sholatIzin}</Data></Cell>`);
-    sb.push(`    <Cell><Data ss:Type="Number">${r.sholatHalangan}</Data></Cell>`);
-    sb.push(`    <Cell><Data ss:Type="Number">${r.totalBuku}</Data></Cell>`);
-    sb.push(`    <Cell><Data ss:Type="Number">${r.totalMenitBaca}</Data></Cell>`);
-    sb.push(
-      `    <Cell><Data ss:Type="Number">${r.poinPelanggaran}</Data></Cell>`
-    );
-    sb.push(`   </Row>`);
-  }
+  rows.forEach((r, rowIdx) => {
+    const dataRow = sheet.getRow(5 + rowIdx);
+    dataRow.height = 20;
+    const values: Array<string | number> = [
+      r.index,
+      r.nisn || "-",
+      r.name || "-",
+      r.className || "-",
+      r.hadir,
+      r.izin,
+      r.sakit,
+      r.alpa,
+      r.sholatSudah,
+      r.sholatTidak,
+      r.sholatIzin,
+      r.sholatHalangan,
+      r.totalBuku,
+      r.totalMenitBaca,
+      r.poinPelanggaran,
+    ];
+    values.forEach((value, colIdx) => {
+      const cell = dataRow.getCell(colIdx + 1);
+      cell.value = value;
+      cell.font = { name: "Arial", size: 10 };
+      cell.alignment = { vertical: "middle" };
+    });
+  });
 
-  sb.push(`  </Table>`);
-  sb.push(` </Worksheet>`);
-  sb.push(`</Workbook>`);
-  return sb.join("\n");
+  const arrayBuffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(arrayBuffer);
 }
 
 function rowsToJsonSummary(rows: StudentRecapRow[]) {
@@ -539,7 +537,7 @@ export async function GET(req: NextRequest) {
       recap.totalMenitBaca += dur > 0 ? dur : 15;
     }
 
-    // Discipline — Poin Pelanggaran only (APK parity)
+    // Discipline ÔÇö Poin Pelanggaran only (APK parity)
     const rulesSnap = await adminDb
       .ref(`discipline_rules_by_school/${scope}`)
       .once("value");
@@ -597,17 +595,16 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const xmlContent = buildSpreadsheetXml(className, periodText, rows);
-    const buffer = Buffer.from(xmlContent, "utf8");
+    const buffer = await buildRecapXlsxBuffer(className, periodText, rows);
     const safeClassName = (className || "WaliKelas").replace(/[^a-zA-Z0-9_-]/g, "_");
     const safePeriod = periodText.replace(/[^a-zA-Z0-9_-]/g, "_");
     const fileName = `Rekapitulasi_${safeClassName}_${safePeriod}.xlsx`;
 
-    return new Response(buffer, {
+    return new Response(new Uint8Array(buffer), {
       status: 200,
       headers: {
-        // Match APK MediaStore MIME; SpreadsheetML opens in Excel/LibreOffice.
-        "Content-Type": "application/vnd.ms-excel",
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${fileName}"`,
         "Cache-Control": "no-store",
       },
