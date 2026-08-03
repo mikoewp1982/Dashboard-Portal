@@ -1,26 +1,311 @@
 import { NextRequest, NextResponse } from "next/server";
+import ExcelJS from "exceljs";
 import { adminDb } from "@/lib/firebase-admin";
 import { normalizeSchoolId } from "@/lib/gas/schoolId";
 import {
   TeacherAuthError,
   verifyTeacherRequest,
 } from "@/lib/guru/verifyTeacherRequest";
-import { loadHomeroomStudents } from "@/lib/guru/loadClassRoster";
+import {
+  asLong,
+  loadAttendanceRules,
+  loadHomeroomStudents,
+} from "@/lib/guru/loadClassRoster";
 import { normalizeClassName } from "@/lib/guru/normalizeClass";
-import * as XLSX from "xlsx";
+import {
+  endOfDay,
+  isValidPrayerDay,
+  isValidSchoolDay,
+  startOfDay,
+  toDateKey,
+} from "@/lib/guru/presensiRules";
+import {
+  isNonMuslim,
+  normalizeIdentity,
+  preferredStudentIdentity,
+  studentIdentityCandidates,
+  type GuruStudent,
+} from "@/lib/guru/studentIdentity";
 
 export const dynamic = "force-dynamic";
 
-function normalizeIdentity(value: string | null | undefined): string {
-  return (value || "").trim();
+const MONTH_NAMES = [
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
+];
+
+/** Column headers — parity with APK `TeacherRecapViewModel.buildSpreadsheetXml`. */
+const RECAP_HEADERS = [
+  "No",
+  "NISN",
+  "Nama Siswa",
+  "Kelas",
+  "Hadir (H)",
+  "Izin (I)",
+  "Sakit (S)",
+  "Alpa (A)",
+  "Sholat (S)",
+  "Tidak Sholat (TS)",
+  "Izin Sholat (I)",
+  "Halangan (H)",
+  "Literasi (Total Buku)",
+  "Literasi (Total Menit)",
+  "Poin Pelanggaran",
+] as const;
+
+type StudentRecapRow = {
+  index: number;
+  nisn: string;
+  name: string;
+  className: string;
+  hadir: number;
+  izin: number;
+  sakit: number;
+  alpa: number;
+  sholatSudah: number;
+  sholatTidak: number;
+  sholatIzin: number;
+  sholatHalangan: number;
+  totalBuku: number;
+  totalMenitBaca: number;
+  poinPelanggaran: number;
+};
+
+type DayStatus = { status: string; dateMs: number };
+
+function parseDateBound(value: string, endOfDayFlag: boolean): number {
+  const trimmed = (value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return endOfDayFlag ? endOfDay(Date.now()) : startOfDay(Date.now());
+  }
+  const ms = Date.parse(
+    `${trimmed}${endOfDayFlag ? "T23:59:59.999+07:00" : "T00:00:00.000+07:00"}`
+  );
+  return Number.isFinite(ms)
+    ? ms
+    : endOfDayFlag
+      ? endOfDay(Date.now())
+      : startOfDay(Date.now());
 }
 
-function parseDateBound(value: string, endOfDay: boolean): number {
-  const trimmed = (value || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return endOfDay ? Date.now() : 0;
-  const suffix = endOfDay ? "T23:59:59.999+07:00" : "T00:00:00.000+07:00";
-  const ms = Date.parse(`${trimmed}${suffix}`);
-  return Number.isFinite(ms) ? ms : endOfDay ? Date.now() : 0;
+function periodLabelFromDates(startDate: string, endDate: string): string {
+  const start = (startDate || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(start)) {
+    const [y, m] = start.split("-").map(Number);
+    const monthName = MONTH_NAMES[(m || 1) - 1] || "Bulan";
+    return `${monthName} ${y}`;
+  }
+  if (start && endDate) return `${start} s.d. ${endDate}`;
+  return "Periode";
+}
+
+function normalizePrayerStatus(raw: unknown): string {
+  const status = String(raw || "")
+    .trim()
+    .toUpperCase();
+  if (["PRAY", "SHOLAT", "SUDAH", "HADIR", "PRESENT", "PRAYED"].includes(status)) {
+    return "PRAY";
+  }
+  if (["PERMIT", "IZIN"].includes(status)) return "PERMIT";
+  if (["HALANGAN", "HAID", "MENS", "MSTR"].includes(status)) return "HALANGAN";
+  if (
+    ["NOT_PRAY", "TIDAK", "TIDAK_SHOLAT", "TIDAK SHOLAT", "BELUM", ""].includes(status)
+  ) {
+    return "NOT_PRAY";
+  }
+  return "NOT_PRAY";
+}
+
+function extractRecordDateMs(row: Record<string, unknown>, key?: string | null): number {
+  const candidates = [
+    row.date,
+    row.createdAt,
+    row.timestamp,
+    row.submittedAt,
+    row.recordedAt,
+  ];
+  for (const c of candidates) {
+    const ms = asLong(c);
+    if (ms > 0) return ms;
+  }
+  const match = String(key || "").match(/20\d{2}-\d{2}-\d{2}/);
+  if (match) {
+    const ms = asLong(match[0]);
+    if (ms > 0) return ms;
+  }
+  return 0;
+}
+
+async function loadScopedChildren(
+  primaryPath: string,
+  fallbackPath: string
+): Promise<Array<{ key: string; row: Record<string, unknown> }>> {
+  // APK merges both trees and dedupes by record key.
+  const [primary, fallback] = await Promise.all([
+    adminDb.ref(primaryPath).once("value"),
+    adminDb.ref(fallbackPath).once("value"),
+  ]);
+  const out: Array<{ key: string; row: Record<string, unknown> }> = [];
+  const seen = new Set<string>();
+  for (const source of [primary, fallback]) {
+    if (!source.exists()) continue;
+    source.forEach((child) => {
+      const key = child.key || "";
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push({ key, row: (child.val() || {}) as Record<string, unknown> });
+    });
+  }
+  return out;
+}
+
+function eachDayMs(startMs: number, endMs: number): number[] {
+  const days: number[] = [];
+  let cursor = startOfDay(startMs);
+  const end = endOfDay(endMs);
+  while (cursor <= end) {
+    days.push(cursor);
+    cursor += 24 * 60 * 60 * 1000;
+  }
+  return days;
+}
+
+/** Real OOXML (.xlsx) — APK parity sheet/columns/styling via ExcelJS. */
+async function buildRecapXlsxBuffer(
+  className: string,
+  periodText: string,
+  rows: StudentRecapRow[]
+): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Rangkuman Kelas");
+
+  sheet.columns = [
+    { width: 5 },
+    { width: 14 },
+    { width: 28 },
+    { width: 10 },
+    { width: 10 },
+    { width: 10 },
+    { width: 10 },
+    { width: 10 },
+    { width: 10 },
+    { width: 14 },
+    { width: 12 },
+    { width: 12 },
+    { width: 16 },
+    { width: 16 },
+    { width: 14 },
+  ];
+
+  const titleRow = sheet.getRow(1);
+  titleRow.height = 24;
+  sheet.mergeCells(1, 1, 1, RECAP_HEADERS.length);
+  const titleCell = titleRow.getCell(1);
+  titleCell.value = `REKAPITULASI KELAS ${className.toUpperCase()}`;
+  titleCell.font = {
+    name: "Arial",
+    size: 14,
+    bold: true,
+    color: { argb: "FF0F2A43" },
+  };
+  titleCell.alignment = { vertical: "middle" };
+
+  const subRow = sheet.getRow(2);
+  subRow.height = 20;
+  sheet.mergeCells(2, 1, 2, RECAP_HEADERS.length);
+  const subCell = subRow.getCell(1);
+  subCell.value = `Periode ${periodText}`;
+  subCell.font = {
+    name: "Arial",
+    size: 11,
+    bold: true,
+    color: { argb: "FF0F7BFF" },
+  };
+  subCell.alignment = { vertical: "middle" };
+
+  const headerRow = sheet.getRow(4);
+  headerRow.height = 28;
+  RECAP_HEADERS.forEach((header, idx) => {
+    const cell = headerRow.getCell(idx + 1);
+    cell.value = header;
+    cell.font = {
+      name: "Arial",
+      size: 11,
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF0F7BFF" },
+    };
+    cell.alignment = {
+      horizontal: "center",
+      vertical: "middle",
+      wrapText: true,
+    };
+  });
+
+  rows.forEach((r, rowIdx) => {
+    const dataRow = sheet.getRow(5 + rowIdx);
+    dataRow.height = 20;
+    const values: Array<string | number> = [
+      r.index,
+      r.nisn || "-",
+      r.name || "-",
+      r.className || "-",
+      r.hadir,
+      r.izin,
+      r.sakit,
+      r.alpa,
+      r.sholatSudah,
+      r.sholatTidak,
+      r.sholatIzin,
+      r.sholatHalangan,
+      r.totalBuku,
+      r.totalMenitBaca,
+      r.poinPelanggaran,
+    ];
+    values.forEach((value, colIdx) => {
+      const cell = dataRow.getCell(colIdx + 1);
+      cell.value = value;
+      cell.font = { name: "Arial", size: 10 };
+      cell.alignment = { vertical: "middle" };
+    });
+  });
+
+  const arrayBuffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
+function rowsToJsonSummary(rows: StudentRecapRow[]) {
+  return rows.map((r) => ({
+    No: r.index,
+    NISN: r.nisn || "-",
+    "Nama Siswa": r.name || "-",
+    Kelas: r.className || "-",
+    "Hadir (H)": r.hadir,
+    "Izin (I)": r.izin,
+    "Sakit (S)": r.sakit,
+    "Alpa (A)": r.alpa,
+    "Sholat (S)": r.sholatSudah,
+    "Tidak Sholat (TS)": r.sholatTidak,
+    "Izin Sholat (I)": r.sholatIzin,
+    "Halangan (H)": r.sholatHalangan,
+    "Literasi (Total Buku)": r.totalBuku,
+    "Literasi (Total Menit)": r.totalMenitBaca,
+    "Poin Pelanggaran": r.poinPelanggaran,
+  }));
 }
 
 export async function GET(req: NextRequest) {
@@ -38,7 +323,6 @@ export async function GET(req: NextRequest) {
     const endDate = searchParams.get("endDate") || "";
     const format = (searchParams.get("format") || "excel").toLowerCase();
 
-    // Prefer authenticated teacher scope; allow query override only when it matches.
     const querySchoolId = normalizeSchoolId(searchParams.get("schoolId") || "");
     const schoolId = teacher.schoolId;
     if (querySchoolId && querySchoolId !== schoolId) {
@@ -63,221 +347,240 @@ export async function GET(req: NextRequest) {
     const students = await loadHomeroomStudents(schoolId, className);
     students.sort((a, b) => (a.name || "").localeCompare(b.name || "", "id"));
 
-    const studentByIdentity = new Map<string, (typeof students)[number]>();
-    students.forEach((student) => {
-      const aliases = [
-        normalizeIdentity(student.id),
-        normalizeIdentity(student.nisn),
-        normalizeIdentity(student.username),
-      ].filter((a) => a.length > 0);
+    const startMs = parseDateBound(startDate, false);
+    const endMs = parseDateBound(endDate, true);
+    const periodText = periodLabelFromDates(startDate, endDate);
+    const scope = normalizeSchoolId(schoolId);
 
-      aliases.forEach((alias) => {
-        if (!studentByIdentity.has(alias)) {
-          studentByIdentity.set(alias, student);
-        }
+    const aliasToStudent = new Map<string, GuruStudent>();
+    students.forEach((student) => {
+      studentIdentityCandidates(student).forEach((alias) => {
+        const key = alias.toLowerCase();
+        if (key && !aliasToStudent.has(key)) aliasToStudent.set(key, student);
       });
     });
 
-    const startMs = parseDateBound(startDate, false);
-    const endMs = parseDateBound(endDate, true);
-    const normalizedSchoolId = schoolId;
-
-    // Attendance
-    const attendanceMap = new Map<
-      string,
-      { hadir: number; izin: number; sakit: number; alpa: number }
-    >();
-    students.forEach((s) =>
-      attendanceMap.set(s.id, { hadir: 0, izin: 0, sakit: 0, alpa: 0 })
-    );
-
-    const attSnap = await adminDb.ref("attendance").once("value");
-    if (attSnap.exists()) {
-      attSnap.forEach((child) => {
-        const rec = child.val() || {};
-        const date = Number(rec.date || rec.createdAt || 0);
-        if (startMs && date < startMs) return;
-        if (endMs && date > endMs) return;
-
-        const recSchool = normalizeSchoolId(rec.schoolId);
-        if (normalizedSchoolId && recSchool && recSchool !== normalizedSchoolId) return;
-
-        const matchedStudent =
-          studentByIdentity.get(normalizeIdentity(rec.studentId)) ||
-          studentByIdentity.get(normalizeIdentity(rec.nisn));
-
-        if (matchedStudent) {
-          const stats = attendanceMap.get(matchedStudent.id) || {
-            hadir: 0,
-            izin: 0,
-            sakit: 0,
-            alpa: 0,
-          };
-          const status = String(rec.status || "").toUpperCase();
-          if (status === "HADIR" || status === "PRESENT") stats.hadir++;
-          else if (status === "IZIN" || status === "PERMIT") stats.izin++;
-          else if (status === "SAKIT" || status === "SICK") stats.sakit++;
-          else if (status === "ALPA" || status === "ABSENT") stats.alpa++;
-          attendanceMap.set(matchedStudent.id, stats);
-        }
-      });
+    function resolveStudent(row: Record<string, unknown>): GuruStudent | undefined {
+      const candidates = [
+        row.studentId,
+        row.nisn,
+        row.studentNisn,
+        row.username,
+      ]
+        .map((v) => normalizeIdentity(v).toLowerCase())
+        .filter(Boolean);
+      for (const c of candidates) {
+        const hit = aliasToStudent.get(c);
+        if (hit) return hit;
+      }
+      return undefined;
     }
 
-    // Prayer
-    const prayerMap = new Map<string, { totalHadir: number }>();
-    students.forEach((s) => prayerMap.set(s.id, { totalHadir: 0 }));
-
-    const prayerSnap = await adminDb.ref("prayer_attendance").once("value");
-    if (prayerSnap.exists()) {
-      prayerSnap.forEach((child) => {
-        const rec = child.val() || {};
-        const date = Number(rec.date || rec.createdAt || 0);
-        if (startMs && date < startMs) return;
-        if (endMs && date > endMs) return;
-
-        const recSchool = normalizeSchoolId(rec.schoolId);
-        if (normalizedSchoolId && recSchool && recSchool !== normalizedSchoolId) return;
-
-        const matchedStudent =
-          studentByIdentity.get(normalizeIdentity(rec.studentId)) ||
-          studentByIdentity.get(normalizeIdentity(rec.nisn));
-
-        if (matchedStudent) {
-          const stats = prayerMap.get(matchedStudent.id) || { totalHadir: 0 };
-          const status = String(rec.status || "").toUpperCase();
-          if (status === "HADIR" || status === "PRESENT" || status === "PRAYED") {
-            stats.totalHadir++;
-          }
-          prayerMap.set(matchedStudent.id, stats);
-        }
-      });
-    }
-
-    // Literacy
-    const literacyMap = new Map<string, { totalBooks: number; totalMinutes: number }>();
-    students.forEach((s) => literacyMap.set(s.id, { totalBooks: 0, totalMinutes: 0 }));
-
-    const litSnap = await adminDb
-      .ref(`literacy_logs_by_school/${normalizedSchoolId}`)
-      .once("value");
-    const litSourceSnap = litSnap.exists()
-      ? litSnap
-      : await adminDb.ref("literacy_logs").once("value");
-
-    if (litSourceSnap.exists()) {
-      litSourceSnap.forEach((child) => {
-        const rec = child.val() || {};
-        const date = Number(rec.createdAt || rec.date || 0);
-        if (startMs && date < startMs) return;
-        if (endMs && date > endMs) return;
-
-        const recSchool = normalizeSchoolId(rec.schoolId);
-        if (normalizedSchoolId && recSchool && recSchool !== normalizedSchoolId) return;
-
-        const matchedStudent =
-          studentByIdentity.get(normalizeIdentity(rec.studentId)) ||
-          studentByIdentity.get(normalizeIdentity(rec.nisn));
-
-        if (matchedStudent) {
-          const stats = literacyMap.get(matchedStudent.id) || {
-            totalBooks: 0,
-            totalMinutes: 0,
-          };
-          stats.totalBooks += 1;
-          stats.totalMinutes += Number(rec.durationMinutes || rec.duration || 15);
-          literacyMap.set(matchedStudent.id, stats);
-        }
-      });
-    }
-
-    // Discipline
-    const disciplineMap = new Map<
-      string,
-      { violationPoints: number; achievementPoints: number }
-    >();
-    students.forEach((s) =>
-      disciplineMap.set(s.id, { violationPoints: 0, achievementPoints: 0 })
-    );
-
-    const rulesSnap = await adminDb
-      .ref(`discipline_rules_by_school/${normalizedSchoolId}`)
-      .once("value");
-    const rulesSourceSnap = rulesSnap.exists()
-      ? rulesSnap
-      : await adminDb.ref("discipline_rules").once("value");
-    const rulesCategories = new Map<number, string>();
-    if (rulesSourceSnap.exists()) {
-      rulesSourceSnap.forEach((child) => {
-        const r = child.val() || {};
-        const id = Number(r.id || child.key || 0);
-        if (id) rulesCategories.set(id, String(r.category || "").toUpperCase());
-      });
-    }
-
-    const discSnap = await adminDb.ref("discipline_records").once("value");
-    if (discSnap.exists()) {
-      discSnap.forEach((child) => {
-        const rec = child.val() || {};
-        const status = String(rec.status || "").toUpperCase();
-        if (status && status !== "APPROVED") return;
-
-        const date = Number(rec.date || rec.createdAt || 0);
-        if (startMs && date < startMs) return;
-        if (endMs && date > endMs) return;
-
-        const recSchool = normalizeSchoolId(rec.schoolId);
-        if (normalizedSchoolId && recSchool && recSchool !== normalizedSchoolId) return;
-
-        const matchedStudent =
-          studentByIdentity.get(normalizeIdentity(rec.studentId)) ||
-          studentByIdentity.get(normalizeIdentity(rec.nisn));
-
-        if (matchedStudent) {
-          const stats = disciplineMap.get(matchedStudent.id) || {
-            violationPoints: 0,
-            achievementPoints: 0,
-          };
-          const category =
-            rulesCategories.get(Number(rec.ruleId || 0)) ||
-            (Number(rec.points || 0) > 0 ? "VIOLATION" : "");
-          const points = Number(rec.points || 0);
-          if (category === "VIOLATION") stats.violationPoints += points;
-          else if (category === "ACHIEVEMENT") stats.achievementPoints += points;
-          disciplineMap.set(matchedStudent.id, stats);
-        }
-      });
-    }
-
-    const summaryRows = students.map((s, index) => {
-      const att = attendanceMap.get(s.id) || {
+    const studentRows = new Map<string, StudentRecapRow>();
+    const studentsByKey = new Map<string, GuruStudent>();
+    students.forEach((student, idx) => {
+      const rowKey = preferredStudentIdentity(student) || `row_${idx}`;
+      studentRows.set(rowKey, {
+        index: idx + 1,
+        nisn: student.nisn || student.id || "-",
+        name: student.name || "-",
+        className: student.className || className || "-",
         hadir: 0,
         izin: 0,
         sakit: 0,
         alpa: 0,
-      };
-      const pr = prayerMap.get(s.id) || { totalHadir: 0 };
-      const lit = literacyMap.get(s.id) || { totalBooks: 0, totalMinutes: 0 };
-      const disc = disciplineMap.get(s.id) || {
-        violationPoints: 0,
-        achievementPoints: 0,
-      };
-
-      return {
-        No: index + 1,
-        NISN: s.nisn || "-",
-        "Nama Siswa": s.name || "-",
-        Kelas: s.className || className || "-",
-        "Hadir (Hari)": att.hadir,
-        "Izin (Hari)": att.izin,
-        "Sakit (Hari)": att.sakit,
-        "Alpa (Hari)": att.alpa,
-        "Presensi Sholat (Total)": pr.totalHadir,
-        "Literasi (Total Buku)": lit.totalBooks,
-        "Literasi (Total Menit)": lit.totalMinutes,
-        "Poin Pelanggaran": disc.violationPoints,
-        "Poin Prestasi": disc.achievementPoints,
-      };
+        sholatSudah: 0,
+        sholatTidak: 0,
+        sholatIzin: 0,
+        sholatHalangan: 0,
+        totalBuku: 0,
+        totalMenitBaca: 0,
+        poinPelanggaran: 0,
+      });
+      studentsByKey.set(rowKey, student);
     });
+
+    function rowKeyFor(student: GuruStudent): string {
+      return preferredStudentIdentity(student);
+    }
+
+    const rules = await loadAttendanceRules(schoolId);
+    const days = eachDayMs(startMs, endMs);
+
+    // Attendance: latest status per student per day; missing effective day = Alpa
+    const attendanceByStudentDay = new Map<string, Map<string, DayStatus>>();
+    const attRecords = await loadScopedChildren(
+      `attendance_by_school/${scope}`,
+      "attendance"
+    );
+    const attSeen = new Set<string>();
+    for (const { key, row } of attRecords) {
+      if (!key || attSeen.has(key)) continue;
+      attSeen.add(key);
+      const recSchool = normalizeSchoolId(row.schoolId);
+      if (scope && recSchool && recSchool !== scope) continue;
+      const dateMs = extractRecordDateMs(row, key);
+      if (dateMs <= 0 || dateMs < startMs || dateMs > endMs) continue;
+      const student = resolveStudent(row);
+      if (!student) continue;
+      const status = String(row.status || "")
+        .trim()
+        .toUpperCase();
+      if (!status) continue;
+      const rk = rowKeyFor(student);
+      const dayKey = toDateKey(dateMs);
+      const byDay = attendanceByStudentDay.get(rk) || new Map<string, DayStatus>();
+      const current = byDay.get(dayKey);
+      if (!current || dateMs >= current.dateMs) {
+        byDay.set(dayKey, { status, dateMs });
+      }
+      attendanceByStudentDay.set(rk, byDay);
+    }
+
+    for (const [rk] of studentsByKey) {
+      const row = studentRows.get(rk);
+      if (!row) continue;
+      const byDay = attendanceByStudentDay.get(rk) || new Map();
+      for (const dayMs of days) {
+        const date = new Date(dayMs);
+        if (!isValidSchoolDay(date, rules.schedules, rules.holidays)) continue;
+        const dayKey = toDateKey(dayMs);
+        const raw = byDay.get(dayKey)?.status;
+        if (!raw) {
+          row.alpa += 1;
+          continue;
+        }
+        // Match APK TeacherRecapViewModel: LATE/TERLAMBAT count as Hadir; unknown ignored.
+        const upper = raw.trim().toUpperCase();
+        if (
+          ["PRESENT", "HADIR", "TEPAT WAKTU", "ON TIME", "LATE", "TERLAMBAT"].includes(
+            upper
+          )
+        ) {
+          row.hadir += 1;
+        } else if (["SICK", "SAKIT"].includes(upper)) {
+          row.sakit += 1;
+        } else if (["PERMIT", "IZIN", "LEAVE"].includes(upper)) {
+          row.izin += 1;
+        } else if (["ABSENT", "ALPA", "ALPHA"].includes(upper)) {
+          row.alpa += 1;
+        }
+      }
+    }
+
+    // Prayer: latest status per student per prayer day; missing = Tidak Sholat
+    const prayerByStudentDay = new Map<string, Map<string, DayStatus>>();
+    const prayerRecords = await loadScopedChildren(
+      `prayer_attendance_by_school/${scope}`,
+      "prayer_attendance"
+    );
+    const prayerSeen = new Set<string>();
+    for (const { key, row } of prayerRecords) {
+      if (!key || prayerSeen.has(key)) continue;
+      prayerSeen.add(key);
+      const recSchool = normalizeSchoolId(row.schoolId);
+      if (scope && recSchool && recSchool !== scope) continue;
+      const dateMs = extractRecordDateMs(row, key);
+      if (dateMs <= 0 || dateMs < startMs || dateMs > endMs) continue;
+      const student = resolveStudent(row);
+      if (!student) continue;
+      const status = String(row.status || "")
+        .trim()
+        .toUpperCase();
+      if (!status) continue;
+      const rk = rowKeyFor(student);
+      const dayKey = toDateKey(dateMs);
+      const byDay = prayerByStudentDay.get(rk) || new Map<string, DayStatus>();
+      const current = byDay.get(dayKey);
+      if (!current || dateMs >= current.dateMs) {
+        byDay.set(dayKey, { status, dateMs });
+      }
+      prayerByStudentDay.set(rk, byDay);
+    }
+
+    for (const [rk, student] of studentsByKey) {
+      const row = studentRows.get(rk);
+      if (!row) continue;
+      if (isNonMuslim(student.religion)) continue;
+      const byDay = prayerByStudentDay.get(rk) || new Map();
+      for (const dayMs of days) {
+        const date = new Date(dayMs);
+        if (!isValidPrayerDay(date, rules.schedules, rules.holidays)) continue;
+        const dayKey = toDateKey(dayMs);
+        const bucket = normalizePrayerStatus(byDay.get(dayKey)?.status);
+        if (bucket === "PRAY") row.sholatSudah += 1;
+        else if (bucket === "PERMIT") row.sholatIzin += 1;
+        else if (bucket === "HALANGAN") row.sholatHalangan += 1;
+        else row.sholatTidak += 1;
+      }
+    }
+
+    // Literacy
+    const litRecords = await loadScopedChildren(
+      `literacy_logs_by_school/${scope}`,
+      "literacy_logs"
+    );
+    const litSeen = new Set<string>();
+    for (const { key, row } of litRecords) {
+      if (!key || litSeen.has(key)) continue;
+      litSeen.add(key);
+      const recSchool = normalizeSchoolId(row.schoolId);
+      if (scope && recSchool && recSchool !== scope) continue;
+      const dateMs = extractRecordDateMs(row, key);
+      if (dateMs > 0 && (dateMs < startMs || dateMs > endMs)) continue;
+      const student = resolveStudent(row);
+      if (!student) continue;
+      const recap = studentRows.get(rowKeyFor(student));
+      if (!recap) continue;
+      recap.totalBuku += 1;
+      const dur = asLong(row.durationMinutes ?? row.duration);
+      recap.totalMenitBaca += dur > 0 ? dur : 15;
+    }
+
+    // Discipline — Poin Pelanggaran only (APK parity)
+    const rulesSnap = await adminDb
+      .ref(`discipline_rules_by_school/${scope}`)
+      .once("value");
+    const rulesSource = rulesSnap.exists()
+      ? rulesSnap
+      : await adminDb.ref("discipline_rules").once("value");
+    const ruleCategories = new Map<number, string>();
+    if (rulesSource.exists()) {
+      rulesSource.forEach((child) => {
+        const r = (child.val() || {}) as Record<string, unknown>;
+        const id = Number(r.id || child.key || 0);
+        if (id) ruleCategories.set(id, String(r.category || "").toUpperCase());
+      });
+    }
+
+    const discRecords = await loadScopedChildren(
+      `discipline_records_by_school/${scope}`,
+      "discipline_records"
+    );
+    const discSeen = new Set<string>();
+    for (const { key, row } of discRecords) {
+      if (!key || discSeen.has(key)) continue;
+      discSeen.add(key);
+      const recSchool = normalizeSchoolId(row.schoolId);
+      if (scope && recSchool && recSchool !== scope) continue;
+      const status = String(row.status || "")
+        .trim()
+        .toUpperCase();
+      if (status && status !== "APPROVED") continue;
+      const dateMs = extractRecordDateMs(row, key);
+      if (dateMs > 0 && (dateMs < startMs || dateMs > endMs)) continue;
+      const student = resolveStudent(row);
+      if (!student) continue;
+      const recap = studentRows.get(rowKeyFor(student));
+      if (!recap) continue;
+      const ruleId = Number(row.ruleId || 0);
+      const points = Number(row.points || 0);
+      const category =
+        ruleCategories.get(ruleId) || (points > 0 ? "VIOLATION" : "");
+      if (category === "VIOLATION") recap.poinPelanggaran += points;
+    }
+
+    const rows = Array.from(studentRows.values());
 
     if (format === "json") {
       return NextResponse.json({
@@ -285,40 +588,19 @@ export async function GET(req: NextRequest) {
         totalStudents: students.length,
         className,
         schoolId,
-        period: { startDate, endDate },
-        summary: summaryRows,
+        period: { startDate, endDate, label: periodText },
+        headers: [...RECAP_HEADERS],
+        sheetName: "Rangkuman Kelas",
+        summary: rowsToJsonSummary(rows),
       });
     }
 
-    const wb = XLSX.utils.book_new();
-    const wsSummary = XLSX.utils.json_to_sheet(
-      summaryRows.length > 0
-        ? summaryRows
-        : [
-            {
-              No: "-",
-              NISN: "-",
-              "Nama Siswa": "Tidak ada siswa untuk kelas ini",
-              Kelas: className,
-              "Hadir (Hari)": 0,
-              "Izin (Hari)": 0,
-              "Sakit (Hari)": 0,
-              "Alpa (Hari)": 0,
-              "Presensi Sholat (Total)": 0,
-              "Literasi (Total Buku)": 0,
-              "Literasi (Total Menit)": 0,
-              "Poin Pelanggaran": 0,
-              "Poin Prestasi": 0,
-            },
-          ]
-    );
-    XLSX.utils.book_append_sheet(wb, wsSummary, "Rangkuman Kelas");
-
-    const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    const buffer = await buildRecapXlsxBuffer(className, periodText, rows);
     const safeClassName = (className || "WaliKelas").replace(/[^a-zA-Z0-9_-]/g, "_");
-    const fileName = `Rekapitulasi_${safeClassName}_${startDate || "Awal"}_sd_${endDate || "Akhir"}.xlsx`;
+    const safePeriod = periodText.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const fileName = `Rekapitulasi_${safeClassName}_${safePeriod}.xlsx`;
 
-    return new Response(buffer, {
+    return new Response(new Uint8Array(buffer), {
       status: 200,
       headers: {
         "Content-Type":
