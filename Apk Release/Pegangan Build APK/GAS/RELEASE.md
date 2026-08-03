@@ -1,4 +1,4 @@
-﻿# Release Process GAS
+# Release Process GAS
 
 Dokumen ini adalah alur build release APK `GAS` yang sesuai kondisi proyek saat ini.
 
@@ -97,7 +97,9 @@ Versi dasar saat dokumen ini dirapikan:
 - Build final siswa terbaru yang sudah dicatat saat ini adalah `1.0.30-siswa (23022)` di folder `D:\Dashboard Portal\Apk Release\Final`.
 
 ## 11. Catatan Distribusi GAS Guru
-- Build acuan terbaru: `1.0.30-guru (versionCode 1038)`.
+- Build acuan terbaru: `1.0.30-guru (versionCode 1038)` (commit `ebfeb7b8`, 2026-08-03).
 - File Final tunggal: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` (hindari salinan bertanggal ganda di Final).
 - Salinan kerja: `Apk Release/GAS/app-guru-release.apk`.
+- Fitur notifikasi 2026-08-03: `LITERACY_INCOMPLETE` + `PET_DEAD` untuk siswa wali/diampu; aduan/literasi pending lama tetap ada; badge di menu Notifikasi; belum FCM (tray hanya saat app hidup).
 - Guru **tidak** disinkronkan ke `web/public/apk` jalur tutorial siswa.
+

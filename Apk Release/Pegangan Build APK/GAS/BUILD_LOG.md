@@ -1,4 +1,4 @@
-﻿# Build Log GAS
+# Build Log GAS
 
 Dokumen ini adalah log operasional wajib untuk setiap perubahan APK `GAS`.
 
@@ -21,21 +21,53 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-03 10:50 - Docs: lengkapi catatan notifikasi guru (scope, badge, batasan FCM)
+
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `guru` (dokumentasi saja)
+- Tujuan perubahan: Melengkapi pegangan progres 2026-08-03 agar eksplisit mencatat scope wali/diampu, badge Notifikasi, retensi notifikasi lama, batasan tanpa FCM, path APK Final, dan hash commit `ebfeb7b8`.
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+  - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
+- Fitur lama yang wajib ikut dicek:
+  - tidak ada perubahan kode pada entri docs ini
+- Build yang dijalankan:
+  - tidak ada (docs-only)
+- Hasil build:
+  - n/a
+- Output APK:
+  - n/a (APK Guru sudah ada di Final dari build 10:14 / commit `ebfeb7b8`)
+- Disalin ke:
+  - n/a
+- Regression check yang dijalankan:
+  - review teks pegangan vs perilaku yang sudah di-ship
+- Belum diuji:
+  - sama seperti entri build 10:14 (uji perangkat masih pending)
+- Catatan:
+  - Sumber badge di `HomeScreen.kt` mungkin masih ada di working tree jika belum ikut commit `ebfeb7b8`; perilaku badge tetap dicatat sebagai bagian kontrak fitur hari ini.
+
+---
 ## 2026-08-03 10:14 - GAS Guru: notifikasi literasi belum + pet mati
 
 - Pelaksana: Assistant
 - Jenis perubahan: `feature`
 - Flavor terdampak: `guru`
-- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa wali/diampu yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), mempertahankan notifikasi aduan/literasi pending yang sudah ada, menampilkan badge di menu Notifikasi, lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
 - File utama yang diubah:
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherNotificationViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/utils/NotificationHelper.kt`
   - `Apk Release/Final/GAS-Guru-release.apk`
   - `Apk Release/GAS/app-guru-release.apk`
 - Fitur lama yang wajib ikut dicek:
-  - notifikasi literasi / bullying guru yang sudah ada
+  - notifikasi literasi pending / laporan aduan (bullying) guru yang sudah ada tetap tampil
   - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
-  - login dan beranda guru
+  - login dan beranda guru + badge angka di menu Notifikasi
 - Build yang dijalankan:
   - `./gradlew :app:clean :app:assembleGuruRelease`
 - Hasil build:
@@ -50,8 +82,12 @@ Field berikut wajib dipakai di setiap entri:
 - Belum diuji:
   - uji perangkat: munculnya notifikasi literasi belum dan pet mati, serta deep-link kartu notifikasi
 - Catatan:
+  - Scope: notifikasi literasi belum + pet mati hanya untuk siswa wali kelas / diampu (roster supervised), bukan seluruh sekolah.
+  - Notifikasi lama (aduan/bullying + literasi pending) tetap dipertahankan.
+  - Badge angka unread muncul di kartu menu `Notifikasi` beranda guru.
+  - Batasan: belum ada FCM/push server; tray system notification hanya aktif selama proses/listener app hidup (bukan push saat app dimatikan).
+  - Commit fitur + APK: `ebfeb7b8`.
   - Tidak sinkron ke `web/public/apk` (Guru bukan jalur unduh tutorial siswa).
-
 ---
 ## 2026-08-02 19:20 - Perbaiki unduh APK tutorial 404 di App Hosting standalone
 - Pelaksana: Assistant
@@ -88,6 +124,7 @@ Field berikut wajib dipakai di setiap entri:
   - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
   - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
   - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/Edulock/CHANGELOG.md`
   - `Apk Release/Pegangan Build APK/Edulock/BUILD_LOG.md`
@@ -189,6 +226,7 @@ Field berikut wajib dipakai di setiap entri:
 - File utama yang diubah:
   - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
   - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
 - Fitur lama yang wajib ikut dicek:
@@ -807,6 +845,7 @@ Field berikut wajib dipakai di setiap entri:
   - `native-mobile-gas/app/build.gradle.kts`
   - `Apk Release/Pegangan Build APK/GAS/README.md`
   - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
   - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
   - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
@@ -846,6 +885,7 @@ Field berikut wajib dipakai di setiap entri:
 - File utama yang diubah:
   - `Apk Release/Pegangan Build APK/GAS/RINGKASAN_MASALAH_UPDATE_APK_MANUAL.md`
   - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
 - Fitur lama yang wajib ikut dicek:
   - tidak ada perubahan perilaku aplikasi
@@ -894,6 +934,7 @@ Field berikut wajib dipakai di setiap entri:
 - File utama yang diubah:
   - `Apk Release/Pegangan Build APK/GAS/CATATAN_MASALAH_UPDATE_APK_MANUAL.md`
   - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
 - Fitur lama yang wajib ikut dicek:
   - tidak ada perubahan perilaku aplikasi
@@ -926,6 +967,7 @@ Field berikut wajib dipakai di setiap entri:
   - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
   - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
   - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
 - Fitur lama yang wajib ikut dicek:
@@ -1031,6 +1073,7 @@ Field berikut wajib dipakai di setiap entri:
   - `web/scripts/sync-public-apk.ps1`
   - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
   - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
 - Fitur lama yang wajib ikut dicek:
@@ -1268,16 +1311,18 @@ Field berikut wajib dipakai di setiap entri:
 - Pelaksana: Assistant
 - Jenis perubahan: `feature`
 - Flavor terdampak: `guru`
-- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa wali/diampu yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), mempertahankan notifikasi aduan/literasi pending yang sudah ada, menampilkan badge di menu Notifikasi, lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
 - File utama yang diubah:
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherNotificationViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/utils/NotificationHelper.kt`
   - `Apk Release/Final/GAS-Guru-release.apk`
   - `Apk Release/GAS/app-guru-release.apk`
 - Fitur lama yang wajib ikut dicek:
-  - notifikasi literasi / bullying guru yang sudah ada
+  - notifikasi literasi pending / laporan aduan (bullying) guru yang sudah ada tetap tampil
   - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
-  - login dan beranda guru
+  - login dan beranda guru + badge angka di menu Notifikasi
 - Build yang dijalankan:
   - `./gradlew :app:clean :app:assembleGuruRelease`
 - Hasil build:
@@ -1303,6 +1348,7 @@ Field berikut wajib dipakai di setiap entri:
 - File utama yang diubah:
   - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
   - `Apk Release/Pegangan Build APK/GAS/README.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
   - `Apk Release/Pegangan Build APK/GAS/REGRESSION_CHECKLIST.md`
   - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
 - Fitur lama yang wajib ikut dicek:
@@ -1333,16 +1379,18 @@ Field berikut wajib dipakai di setiap entri:
 - Pelaksana: Assistant
 - Jenis perubahan: `feature`
 - Flavor terdampak: `guru`
-- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa wali/diampu yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), mempertahankan notifikasi aduan/literasi pending yang sudah ada, menampilkan badge di menu Notifikasi, lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
 - File utama yang diubah:
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherNotificationViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/utils/NotificationHelper.kt`
   - `Apk Release/Final/GAS-Guru-release.apk`
   - `Apk Release/GAS/app-guru-release.apk`
 - Fitur lama yang wajib ikut dicek:
-  - notifikasi literasi / bullying guru yang sudah ada
+  - notifikasi literasi pending / laporan aduan (bullying) guru yang sudah ada tetap tampil
   - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
-  - login dan beranda guru
+  - login dan beranda guru + badge angka di menu Notifikasi
 - Build yang dijalankan:
   - `./gradlew :app:clean :app:assembleGuruRelease`
 - Hasil build:
@@ -1395,16 +1443,18 @@ Field berikut wajib dipakai di setiap entri:
 - Pelaksana: Assistant
 - Jenis perubahan: `feature`
 - Flavor terdampak: `guru`
-- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa wali/diampu yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), mempertahankan notifikasi aduan/literasi pending yang sudah ada, menampilkan badge di menu Notifikasi, lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
 - File utama yang diubah:
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherNotificationViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/utils/NotificationHelper.kt`
   - `Apk Release/Final/GAS-Guru-release.apk`
   - `Apk Release/GAS/app-guru-release.apk`
 - Fitur lama yang wajib ikut dicek:
-  - notifikasi literasi / bullying guru yang sudah ada
+  - notifikasi literasi pending / laporan aduan (bullying) guru yang sudah ada tetap tampil
   - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
-  - login dan beranda guru
+  - login dan beranda guru + badge angka di menu Notifikasi
 - Build yang dijalankan:
   - `./gradlew :app:clean :app:assembleGuruRelease`
 - Hasil build:
@@ -1482,16 +1532,18 @@ Field berikut wajib dipakai di setiap entri:
 - Pelaksana: Assistant
 - Jenis perubahan: `feature`
 - Flavor terdampak: `guru`
-- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa wali/diampu yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), mempertahankan notifikasi aduan/literasi pending yang sudah ada, menampilkan badge di menu Notifikasi, lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
 - File utama yang diubah:
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherNotificationViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/utils/NotificationHelper.kt`
   - `Apk Release/Final/GAS-Guru-release.apk`
   - `Apk Release/GAS/app-guru-release.apk`
 - Fitur lama yang wajib ikut dicek:
-  - notifikasi literasi / bullying guru yang sudah ada
+  - notifikasi literasi pending / laporan aduan (bullying) guru yang sudah ada tetap tampil
   - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
-  - login dan beranda guru
+  - login dan beranda guru + badge angka di menu Notifikasi
 - Build yang dijalankan:
   - `./gradlew :app:clean :app:assembleGuruRelease`
 - Hasil build:
@@ -2113,16 +2165,18 @@ Field berikut wajib dipakai di setiap entri:
 - Pelaksana: Assistant
 - Jenis perubahan: `feature`
 - Flavor terdampak: `guru`
-- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa wali/diampu yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), mempertahankan notifikasi aduan/literasi pending yang sudah ada, menampilkan badge di menu Notifikasi, lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
 - File utama yang diubah:
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
   - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherNotificationViewModel.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/utils/NotificationHelper.kt`
   - `Apk Release/Final/GAS-Guru-release.apk`
   - `Apk Release/GAS/app-guru-release.apk`
 - Fitur lama yang wajib ikut dicek:
-  - notifikasi literasi / bullying guru yang sudah ada
+  - notifikasi literasi pending / laporan aduan (bullying) guru yang sudah ada tetap tampil
   - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
-  - login dan beranda guru
+  - login dan beranda guru + badge angka di menu Notifikasi
 - Build yang dijalankan:
   - `./gradlew :app:clean :app:assembleGuruRelease`
 - Hasil build:

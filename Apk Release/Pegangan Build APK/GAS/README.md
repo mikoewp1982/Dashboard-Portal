@@ -8,9 +8,9 @@ Folder ini adalah pegangan operasional untuk semua perubahan APK `GAS` pada proy
 - Root project name: `SatuPintuNativeMobile`
 - Application ID dasar: `com.satupintu.mobile`
 - Versi saat dokumen ini dirapikan:
-  - `defaultConfig versionCode = 1029`
-  - `defaultConfig versionName = 1.0.13`
-  - `flavor siswa versionCode = 23005`
+  - `defaultConfig versionCode = 1038`
+  - `defaultConfig versionName = 1.0.30`
+  - `flavor siswa versionCode = 23022`
   - `flavor legacySiswa versionCode = 23003`
 
 ## Flavor Aktual
@@ -51,6 +51,8 @@ Detail aturan penempatan kode ada di [ARCHITECTURE.md](./ARCHITECTURE.md).
 - [BUILD_LOG.md](./BUILD_LOG.md): log operasional setiap build/perubahan
 - [REGRESSION_CHECKLIST.md](./REGRESSION_CHECKLIST.md): daftar cek fitur lama agar tidak tertinggal
 - [RELEASE.md](./RELEASE.md): alur build release yang dipakai sekarang
+- [CATATAN_MASALAH_UPDATE_APK_MANUAL.md](./CATATAN_MASALAH_UPDATE_APK_MANUAL.md): ringkasan masalah update manual APK siswa untuk bahan diskusi internal
+- [RINGKASAN_MASALAH_UPDATE_APK_MANUAL.md](./RINGKASAN_MASALAH_UPDATE_APK_MANUAL.md): versi singkat yang siap dibagikan ke tim
 
 ## Output APK yang Dipakai Saat Ini
 - Guru: `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
@@ -61,10 +63,14 @@ Detail aturan penempatan kode ada di [ARCHITECTURE.md](./ARCHITECTURE.md).
 Secara praktik saat ini, hasil final yang akan diuji user biasanya disalin ke:
 
 ```text
-D:\Dashboard Portal\Apk Release\OK_4
+D:\Dashboard Portal\Apk Release\Final
 ```
 
 Jika user meminta folder lain, catat di [BUILD_LOG.md](./BUILD_LOG.md).
+
+Rilis final terbaru yang sudah dicatat saat ini:
+- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` (`1.0.30-siswa` / `versionCode 23022`)
+- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` (`1.0.30-guru` / `versionCode 1038`, commit `ebfeb7b8`) — notifikasi literasi belum + pet mati (scope wali/diampu), badge Notifikasi; tanpa FCM (tray saat app hidup)
 
 ## Perintah Build yang Paling Sering Dipakai
 
@@ -78,6 +84,7 @@ Jika user meminta folder lain, catat di [BUILD_LOG.md](./BUILD_LOG.md).
 - Untuk `GAS Siswa`, `versionCode` release harus selalu naik untuk package `com.satupintu.mobile.siswa`.
 - Riwayat proyek ini sudah memakai jalur kompatibilitas `legacySiswa` dengan `versionCode 23003`, jadi release siswa reguler tidak boleh kembali ke angka di bawah itu.
 - Sebelum APK dibagikan lewat portal/web, jalankan `npm run sync:apk:gas` dari folder `web`.
+- Per 2026-08-02 sore, build final siswa terbaru di folder `Final` sudah `1.0.30-siswa (23022)`; jika file publik web belum ikut disinkronkan, anggap link unduh web masih tertinggal pada artefak lama.
 - Skrip sinkronisasi web sekarang akan:
   - membaca metadata APK (`packageName`, `versionCode`, `versionName`)
   - menolak sinkronisasi jika `versionCode` GAS siswa turun

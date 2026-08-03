@@ -1,4 +1,4 @@
-﻿# Checklist Perubahan APK Terkini
+# Checklist Perubahan APK Terkini
 
 Dokumen ini dipakai sebagai pegangan uji perangkat tahap berikutnya.
 
@@ -6,7 +6,7 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-03 10:14
+Update terakhir: 2026-08-03 10:50
 
 ## Temuan portal tutorial web
 
@@ -314,9 +314,18 @@ Build acuan:
 ### Notifikasi guru
 - [x] Notifikasi guru sekarang ikut mengenali alias siswa `recordId/id/nisn/username` untuk modul literasi dan bullying
 - [x] Listener notifikasi guru menambahkan tipe `LITERACY_INCOMPLETE` (literasi belum selesai) dan `PET_DEAD` (virtual pet mati)
+- [x] Scope literasi belum + pet mati dibatasi siswa wali kelas / diampu (roster supervised), bukan seluruh sekolah
+- [x] Notifikasi lama (aduan/bullying + literasi pending) tetap dipertahankan bersama tipe baru
+- [x] Badge angka muncul di kartu menu `Notifikasi` beranda guru
 - [x] Layar notifikasi guru menampilkan ikon/warna khusus untuk literasi belum dan pet mati, plus navigasi ke Literasi / Data Siswa
 - [x] APK Guru Final diganti ke nama tunggal `GAS-Guru-release.apk` (`1.0.30-guru` / `1038`); file bertanggal `2026-07-30_17-47` di Final dihapus agar tidak membingungkan
+- [x] Ship tercatat di commit `ebfeb7b8` (fitur + APK + pegangan awal)
+- [x] Batasan dicatat: belum ada FCM; tray notification hanya saat app/listener hidup
 - [ ] Cek di HP: notifikasi tugas literasi siswa tetap masuk ke guru walau `studentId` log tersimpan sebagai alias selain NISN
 - [ ] Cek di HP: notifikasi laporan bullying siswa tetap masuk ke guru walau `reporterId/victimId/perpetratorId` tersimpan sebagai alias selain NISN
-- [ ] Cek di HP: siswa dengan literasi outstanding memunculkan notifikasi `literasi belum` di guru
+- [ ] Cek di HP: siswa wali/diampu dengan literasi outstanding memunculkan notifikasi `literasi belum` di guru
+- [ ] Cek di HP: siswa di luar wali/diampu tidak memunculkan literasi belum / pet mati ke guru tersebut
 - [ ] Cek di HP: siswa dengan virtual pet mati memunculkan notifikasi `pet mati` dan tap membuka Data Siswa
+- [ ] Cek di HP: badge angka di menu Notifikasi sesuai jumlah item di daftar
+- [ ] Cek di HP: aduan/literasi pending lama tetap muncul setelah update
+
