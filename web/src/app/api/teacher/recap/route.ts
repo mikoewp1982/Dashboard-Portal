@@ -193,10 +193,10 @@ export async function GET(req: NextRequest) {
     // Discipline
     const disciplineMap = new Map<
       string,
-      { violationPoints: number; achievementPoints: number }
+      { violationPoints: number; achievementPoints: number; violations: string[] }
     >();
     students.forEach((s) =>
-      disciplineMap.set(s.id, { violationPoints: 0, achievementPoints: 0 })
+      disciplineMap.set(s.id, { violationPoints: 0, achievementPoints: 0, violations: [] })
     );
 
     const rulesSnap = await adminDb
@@ -206,11 +206,15 @@ export async function GET(req: NextRequest) {
       ? rulesSnap
       : await adminDb.ref("discipline_rules").once("value");
     const rulesCategories = new Map<number, string>();
+    const rulesNames = new Map<number, string>();
     if (rulesSourceSnap.exists()) {
       rulesSourceSnap.forEach((child) => {
         const r = child.val() || {};
         const id = Number(r.id || child.key || 0);
-        if (id) rulesCategories.set(id, String(r.category || "").toUpperCase());
+        if (id) {
+          rulesCategories.set(id, String(r.category || "").toUpperCase());
+          rulesNames.set(id, String(r.ruleName || ""));
+        }
       });
     }
 
@@ -236,12 +240,17 @@ export async function GET(req: NextRequest) {
           const stats = disciplineMap.get(matchedStudent.id) || {
             violationPoints: 0,
             achievementPoints: 0,
+            violations: []
           };
           const category =
             rulesCategories.get(Number(rec.ruleId || 0)) ||
             (Number(rec.points || 0) > 0 ? "VIOLATION" : "");
           const points = Number(rec.points || 0);
-          if (category === "VIOLATION") stats.violationPoints += points;
+          if (category === "VIOLATION") {
+            stats.violationPoints += points;
+            const ruleName = rec.ruleNameSnapshot || rulesNames.get(Number(rec.ruleId || 0)) || "Pelanggaran";
+            stats.violations.push(ruleName);
+          }
           else if (category === "ACHIEVEMENT") stats.achievementPoints += points;
           disciplineMap.set(matchedStudent.id, stats);
         }
@@ -260,6 +269,7 @@ export async function GET(req: NextRequest) {
       const disc = disciplineMap.get(s.id) || {
         violationPoints: 0,
         achievementPoints: 0,
+        violations: []
       };
 
       return {
@@ -274,6 +284,7 @@ export async function GET(req: NextRequest) {
         "Presensi Sholat (Total)": pr.totalHadir,
         "Literasi (Total Buku)": lit.totalBooks,
         "Literasi (Total Menit)": lit.totalMinutes,
+        "Pelanggaran": disc.violations.join(", ") || "-",
         "Poin Pelanggaran": disc.violationPoints,
         "Poin Prestasi": disc.achievementPoints,
       };
@@ -307,6 +318,7 @@ export async function GET(req: NextRequest) {
               "Presensi Sholat (Total)": 0,
               "Literasi (Total Buku)": 0,
               "Literasi (Total Menit)": 0,
+              "Pelanggaran": "-",
               "Poin Pelanggaran": 0,
               "Poin Prestasi": 0,
             },

@@ -665,12 +665,12 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
         StudentFeatureItem(title = "Kedisiplinan", iconRes = R.drawable.ic_menu_kedisiplinan, route = "discipline", color = accentViolet),
         StudentFeatureItem(title = "Layanan Aduan", iconRes = R.drawable.ic_menu_layanan_aduan, route = "halo_spentgapa", color = accentRed),
         StudentFeatureItem(title = "Notifikasi", iconRes = R.drawable.ic_menu_notifikasi, route = "notifications", color = accentOrange),
-        StudentFeatureItem(title = "Tools", iconRes = R.drawable.ic_menu_tools, route = "tools", color = accentGold)
+        StudentFeatureItem(title = "Tools", iconVector = Icons.Default.BuildCircle, route = "tools", color = accentGold)
     )
     val studentFeatures = if (isOsis) {
         baseStudentFeatures + StudentFeatureItem(
             title = "Catat Pelanggaran",
-            iconRes = R.drawable.ic_menu_catat_pelanggaran,
+            iconRes = R.drawable.ic_menu_kedisiplinan,
             route = "osis_discipline",
             color = accentRed
         )
