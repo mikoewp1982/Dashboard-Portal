@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Bell, Home, LogOut, Users, AlertTriangle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 
+/** Primary shortcuts; full APK menu grid lives on Beranda. */
 const navItems = [
   { href: "/guru", label: "Beranda", icon: Home, exact: true },
   { href: "/guru/siswa", label: "Siswa", icon: Users },

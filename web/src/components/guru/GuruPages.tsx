@@ -111,7 +111,7 @@ export function GuruNotifikasiView() {
         <section className="rounded-3xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-white">Kotak Notifikasi</h2>
+              <h2 className="text-lg font-bold text-white">Notifikasi</h2>
               <p className="mt-1 text-sm text-slate-300">
                 {unreadCount > 0 ? `${unreadCount} belum dibaca` : "Semua sudah dibaca"}
               </p>
