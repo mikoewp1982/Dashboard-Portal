@@ -1,4 +1,5 @@
 /** School-day / prayer-day rules — parity with APK `PresensiRuleUtils.kt`. */
+/** All calendar math uses Asia/Jakarta so App Hosting (UTC) matches teacher devices (WIB). */
 
 export type DayScheduleRule = {
   dayId: number;
@@ -12,23 +13,52 @@ export type HolidayRule = {
   description: string;
 };
 
-export function toDateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+const JAKARTA_TZ = "Asia/Jakarta";
+const JAKARTA_OFFSET = "+07:00";
+
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+/** YYYY-MM-DD in Asia/Jakarta for an instant. */
+export function toDateKey(input: Date | number): string {
+  const ms = typeof input === "number" ? input : input.getTime();
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: JAKARTA_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(ms));
+}
+
+export function calendarDateToMs(dateKey: string): number {
+  return Date.parse(`${dateKey}T00:00:00${JAKARTA_OFFSET}`);
 }
 
 export function startOfDay(ms: number): number {
-  const d = new Date(ms);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
+  return calendarDateToMs(toDateKey(ms));
 }
 
 export function endOfDay(ms: number): number {
-  const d = new Date(ms);
-  d.setHours(23, 59, 59, 999);
-  return d.getTime();
+  return Date.parse(`${toDateKey(ms)}T23:59:59.999${JAKARTA_OFFSET}`);
+}
+
+/**
+ * Accepts epoch ms or YYYY-MM-DD. Always resolves to Asia/Jakarta midnight
+ * for that calendar day (avoids UTC host shifting WIB midnight to previous day).
+ */
+export function parseDateParam(value: string | number | null | undefined): number {
+  if (value == null || value === "") return startOfDay(Date.now());
+  const raw = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return calendarDateToMs(raw);
+  }
+  if (/^\d+$/.test(raw)) {
+    const n = Number(raw);
+    return Number.isFinite(n) ? startOfDay(n) : startOfDay(Date.now());
+  }
+  const parsed = Date.parse(raw);
+  return Number.isNaN(parsed) ? startOfDay(Date.now()) : startOfDay(parsed);
 }
 
 export function parseScheduleSnapshot(raw: unknown): Record<number, DayScheduleRule> {
@@ -63,17 +93,18 @@ export function parseHolidaySnapshot(raw: unknown): HolidayRule[] {
   return result;
 }
 
-function isFutureDay(calendar: Date, today = new Date()): boolean {
-  return startOfDay(calendar.getTime()) > startOfDay(today.getTime());
+function isFutureDay(calendarMs: number, todayMs = Date.now()): boolean {
+  return startOfDay(calendarMs) > startOfDay(todayMs);
 }
 
 function findHoliday(holidays: HolidayRule[], dateKey: string): HolidayRule | undefined {
   return holidays.find((h) => h.date === dateKey);
 }
 
-/** JS: getDay() Sunday=0 … Saturday=6. Android Calendar: Sunday=1 … Saturday=7. */
-function toAndroidDayOfWeek(date: Date): number {
-  return date.getDay() + 1;
+/** Android Calendar: Sunday=1 … Saturday=7, evaluated in Asia/Jakarta. */
+function toAndroidDayOfWeek(ms: number): number {
+  const noon = Date.parse(`${toDateKey(ms)}T12:00:00${JAKARTA_OFFSET}`);
+  return new Date(noon).getUTCDay() + 1;
 }
 
 function resolveScheduleRule(
@@ -103,10 +134,11 @@ export function isValidSchoolDay(
   defaultStartTime = "07:00",
   defaultEndTime = "13:30"
 ): boolean {
-  if (isFutureDay(date)) return false;
-  if (findHoliday(holidays, toDateKey(date))) return false;
+  const ms = date.getTime();
+  if (isFutureDay(ms)) return false;
+  if (findHoliday(holidays, toDateKey(ms))) return false;
   const rule = resolveScheduleRule(
-    toAndroidDayOfWeek(date),
+    toAndroidDayOfWeek(ms),
     schedules,
     defaultStartTime,
     defaultEndTime
@@ -121,10 +153,11 @@ export function isValidPrayerDay(
   defaultStartTime = "12:00",
   defaultEndTime = "12:30"
 ): boolean {
-  if (isFutureDay(date)) return false;
-  if (findHoliday(holidays, toDateKey(date))) return false;
+  const ms = date.getTime();
+  if (isFutureDay(ms)) return false;
+  if (findHoliday(holidays, toDateKey(ms))) return false;
   const rule = resolveScheduleRule(
-    toAndroidDayOfWeek(date),
+    toAndroidDayOfWeek(ms),
     schedules,
     defaultStartTime,
     defaultEndTime
@@ -133,17 +166,37 @@ export function isValidPrayerDay(
 }
 
 export function createStoredTimestampForSelectedDate(selectedDateMs: number, nowMs = Date.now()): number {
-  const selected = new Date(selectedDateMs);
-  const now = new Date(nowMs);
-  selected.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-  return selected.getTime();
+  const dateKey = toDateKey(selectedDateMs);
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: JAKARTA_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(nowMs));
+  const pick = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)?.value || "00";
+  let hour = pick("hour");
+  // en-GB can emit "24" for midnight in some engines
+  if (hour === "24") hour = "00";
+  return Date.parse(
+    `${dateKey}T${hour}:${pick("minute")}:${pick("second")}${JAKARTA_OFFSET}`
+  );
 }
 
 export function daysInMonth(year: number, monthIndex: number): number {
-  return new Date(year, monthIndex + 1, 0).getDate();
+  return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
 }
 
 export function lastCountableDay(year: number, monthIndex: number, today = new Date()): number {
-  const isCurrent = today.getFullYear() === year && today.getMonth() === monthIndex;
-  return isCurrent ? today.getDate() : daysInMonth(year, monthIndex);
+  const [ty, tm, td] = toDateKey(today).split("-").map(Number);
+  const isCurrent = ty === year && tm === monthIndex + 1;
+  return isCurrent ? td : daysInMonth(year, monthIndex);
+}
+
+/** Noon Asia/Jakarta for a Y/M/D (monthIndex 0-based). Safe for day-of-week checks. */
+export function jakartaCivilDateMs(year: number, monthIndex: number, day: number): number {
+  return Date.parse(
+    `${year}-${pad2(monthIndex + 1)}-${pad2(day)}T12:00:00${JAKARTA_OFFSET}`
+  );
 }

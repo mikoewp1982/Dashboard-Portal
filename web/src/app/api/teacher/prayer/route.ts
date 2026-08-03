@@ -10,7 +10,9 @@ import {
   createStoredTimestampForSelectedDate,
   endOfDay,
   isValidPrayerDay,
+  jakartaCivilDateMs,
   lastCountableDay,
+  parseDateParam,
   startOfDay,
   toDateKey,
 } from "@/lib/guru/presensiRules";
@@ -42,16 +44,6 @@ type MonthlyStats = {
   permitCount: number;
   halanganCount: number;
 };
-
-function parseDateParam(value: string | null): number {
-  if (!value) return startOfDay(Date.now());
-  if (/^\d+$/.test(value)) {
-    const n = Number(value);
-    return Number.isFinite(n) ? startOfDay(n) : startOfDay(Date.now());
-  }
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? startOfDay(Date.now()) : startOfDay(parsed);
-}
 
 async function loadPrayerLogs(schoolId: string): Promise<PrayerLog[]> {
   const scope = normalizeSchoolId(schoolId);
@@ -162,7 +154,7 @@ function buildMonthlyRecap(
     let halanganCount = 0;
 
     for (let day = 1; day <= lastDay; day++) {
-      const date = new Date(year, month, day);
+      const date = new Date(jakartaCivilDateMs(year, month, day));
       if (!isValidPrayerDay(date, schedules, holidays)) continue;
       const dayStart = startOfDay(date.getTime());
       const dayEnd = endOfDay(date.getTime());
@@ -304,7 +296,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const dateMs = parseDateParam(body.date != null ? String(body.date) : null);
+    const dateMs = parseDateParam(body.date != null ? String(body.date) : undefined);
     const students = await loadHomeroomStudents(teacher.schoolId, teacher.className);
     const byKey = new Map<string, GuruStudent>();
     students.forEach((s) => {

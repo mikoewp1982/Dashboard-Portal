@@ -94,7 +94,7 @@ export function GuruSholatInteractive() {
     try {
       const params = new URLSearchParams({
         mode: "daily",
-        date: String(selectedDate),
+        date: toDateInputValue(selectedDate),
       });
       if (search.trim()) params.set("q", search.trim());
       const data = await teacherFetch(`/api/teacher/prayer?${params.toString()}`);
@@ -201,7 +201,7 @@ export function GuruSholatInteractive() {
       const data = await teacherFetch("/api/teacher/prayer", {
         method: "POST",
         body: JSON.stringify({
-          date: selectedDate,
+          date: toDateInputValue(selectedDate),
           selections,
         }),
       });

@@ -87,7 +87,7 @@ export function GuruPresensiInteractive() {
     setError("");
     try {
       const data = await teacherFetch(
-        `/api/teacher/attendance?mode=daily&date=${encodeURIComponent(String(selectedDate))}`
+        `/api/teacher/attendance?mode=daily&date=${encodeURIComponent(toDateInputValue(selectedDate))}`
       );
       setItems(data.items || []);
       setManualSelections({});
@@ -172,7 +172,7 @@ export function GuruPresensiInteractive() {
       const data = await teacherFetch("/api/teacher/attendance", {
         method: "POST",
         body: JSON.stringify({
-          date: selectedDate,
+          date: toDateInputValue(selectedDate),
           selections: manualSelections,
         }),
       });

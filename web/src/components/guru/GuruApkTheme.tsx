@@ -150,9 +150,14 @@ export function StatusCheckCell({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="flex h-12 flex-1 items-center justify-center border-r border-white/40 last:border-r-0 disabled:opacity-40"
+      aria-pressed={selected}
+      className={`flex h-12 min-h-[48px] flex-1 touch-manipulation items-center justify-center border-r border-white/40 transition-colors last:border-r-0 disabled:cursor-not-allowed disabled:opacity-35 ${
+        selected ? "bg-white/25" : "active:bg-white/10"
+      }`}
     >
-      {selected ? <Check className="h-4 w-4" style={{ color }} strokeWidth={3} /> : null}
+      {selected ? (
+        <Check className="h-5 w-5 drop-shadow-sm" style={{ color }} strokeWidth={3.5} />
+      ) : null}
     </button>
   );
 }

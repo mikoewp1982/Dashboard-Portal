@@ -8,10 +8,14 @@ import {
 import { asLong, loadAttendanceRules, loadHomeroomStudents } from "@/lib/guru/loadClassRoster";
 import {
   createStoredTimestampForSelectedDate,
+  daysInMonth,
   endOfDay,
   isValidSchoolDay,
+  jakartaCivilDateMs,
   lastCountableDay,
+  parseDateParam,
   startOfDay,
+  toDateKey,
 } from "@/lib/guru/presensiRules";
 import {
   attendanceIdentityKey,
@@ -47,16 +51,6 @@ type MonthlyStats = {
   permitCount: number;
   absentCount: number;
 };
-
-function parseDateParam(value: string | null): number {
-  if (!value) return startOfDay(Date.now());
-  if (/^\d+$/.test(value)) {
-    const n = Number(value);
-    return Number.isFinite(n) ? startOfDay(n) : startOfDay(Date.now());
-  }
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? startOfDay(Date.now()) : startOfDay(parsed);
-}
 
 async function loadAttendanceRange(
   schoolId: string,
@@ -183,7 +177,7 @@ function buildMonthlyRecap(
       .filter(Boolean);
     const canonical = aliases.map((a) => aliasMap.get(a)).find(Boolean);
     if (!canonical) return;
-    const day = new Date(rec.date).getDate();
+    const day = Number(toDateKey(rec.date).slice(-2));
     const dayMap = byStudentDay.get(canonical) || new Map<number, AttendanceRecord>();
     const current = dayMap.get(day);
     if (!current || rec.date > current.date) {
@@ -202,7 +196,7 @@ function buildMonthlyRecap(
     const dayMap = byStudentDay.get(canonical) || new Map();
 
     for (let day = 1; day <= lastDay; day++) {
-      const date = new Date(year, month, day);
+      const date = new Date(jakartaCivilDateMs(year, month, day));
       if (!isValidSchoolDay(date, schedules, holidays)) continue;
       const dayLog = dayMap.get(day);
       const status = normalizeAttendanceMonthStatus(dayLog?.status);
@@ -236,8 +230,8 @@ export async function GET(req: NextRequest) {
       const now = new Date();
       const month = Number(params.get("month") ?? now.getMonth());
       const year = Number(params.get("year") ?? now.getFullYear());
-      const start = startOfDay(new Date(year, month, 1).getTime());
-      const end = endOfDay(new Date(year, month + 1, 0).getTime());
+      const start = startOfDay(jakartaCivilDateMs(year, month, 1));
+      const end = endOfDay(jakartaCivilDateMs(year, month, daysInMonth(year, month)));
       const [records, rules] = await Promise.all([
         loadAttendanceRange(teacher.schoolId, start, end),
         loadAttendanceRules(teacher.schoolId),
