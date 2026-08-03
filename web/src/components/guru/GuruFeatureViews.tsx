@@ -5,13 +5,13 @@ import { Download } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSupervisedStudents } from "@/hooks/guru/useSupervisedStudents";
 import { useTeacherNotificationInbox } from "@/hooks/guru/useTeacherNotificationInbox";
-import { useDisciplineClassRecords } from "@/hooks/guru/useClassDayStatus";
 import { teacherFetchRaw } from "@/lib/guru/teacherFetch";
 import { GuruShell } from "./GuruShell";
 import { GuruPresensiInteractive } from "./GuruPresensiInteractive";
 import { GuruSholatInteractive } from "./GuruSholatInteractive";
 import { GuruLiterasiInteractive } from "./GuruLiterasiInteractive";
 import { GuruKaihInteractive } from "./GuruKaihInteractive";
+import { GuruKedisiplinanInteractive } from "./GuruKedisiplinanInteractive";
 
 function localYmd(year: number, monthIndex: number, day: number) {
   const y = String(year);
@@ -37,51 +37,6 @@ function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
     <section className="rounded-3xl border border-white/10 bg-white/5 p-4">
       <h2 className="text-lg font-bold text-white">{title}</h2>
       <p className="mt-1 text-sm text-slate-300">{subtitle}</p>
-    </section>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400">
-      {text}
-    </div>
-  );
-}
-
-function RecordList({
-  loading,
-  rows,
-  empty,
-}: {
-  loading: boolean;
-  rows: { id: string; title: string; subtitle: string; status: string; createdAt: number }[];
-  empty: string;
-}) {
-  if (loading) return <EmptyState text="Memuat data..." />;
-  if (rows.length === 0) return <EmptyState text={empty} />;
-
-  return (
-    <section className="space-y-2">
-      {rows.map((row) => (
-        <div key={row.id} className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-teal-300">
-              {row.status}
-            </span>
-            <span className="text-[10px] text-slate-500">
-              {new Date(row.createdAt).toLocaleString("id-ID", {
-                day: "2-digit",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          </div>
-          <div className="mt-1 text-sm font-semibold text-white">{row.title}</div>
-          <div className="mt-1 text-xs text-slate-400">{row.subtitle}</div>
-        </div>
-      ))}
     </section>
   );
 }
@@ -119,27 +74,9 @@ export function GuruKaihView() {
 }
 
 export function GuruKedisiplinanView() {
-  const user = useAuthStore((state) => state.user);
-  const { students, loading: loadingStudents } = useSupervisedStudents(user?.schoolId, user?.class);
-  const { rows, loading } = useDisciplineClassRecords(user?.schoolId, students);
-
   return (
     <FeatureShell>
-      <div className="space-y-4">
-        <PageHeader
-          title="Kedisiplinan"
-          subtitle={`Catatan pelanggaran siswa kelas ${user?.class || "wali"}`}
-        />
-        <RecordList
-          loading={loading || loadingStudents}
-          rows={rows}
-          empty="Belum ada catatan kedisiplinan untuk kelas ini."
-        />
-        <p className="text-[11px] leading-relaxed text-slate-500">
-          Input pelanggaran baru tetap tersedia penuh di APK. Di PWA saat ini menampilkan riwayat
-          kelas wali.
-        </p>
-      </div>
+      <GuruKedisiplinanInteractive />
     </FeatureShell>
   );
 }
