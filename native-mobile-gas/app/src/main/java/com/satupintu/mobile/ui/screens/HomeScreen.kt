@@ -21,12 +21,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -34,6 +36,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.satupintu.mobile.util.SecurityUtils
 import com.satupintu.mobile.utils.SecurePreferences
+import com.satupintu.mobile.ui.viewmodel.TeacherNotificationViewModel
 
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Brush
@@ -51,7 +54,8 @@ data class StudentFeatureItem(
     val iconRes: Int? = null,
     val route: String,
     val color: Color,
-    val subtitle: String = ""
+    val subtitle: String = "",
+    val badgeCount: Int = 0
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -162,6 +166,22 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     var userSchoolName by remember { mutableStateOf("") }
     var announcementText by remember { mutableStateOf("Memuat pengumuman...") }
     var isOsis by remember { mutableStateOf(false) }
+
+    val teacherNotificationViewModel: TeacherNotificationViewModel = viewModel()
+    val teacherNotifications by teacherNotificationViewModel.notifications.collectAsState()
+    val teacherNotifBadgeCount = teacherNotifications.size
+
+    LaunchedEffect(userRole) {
+        if (userRole == "Guru") {
+            val prefs = SecurePreferences.getSessionPrefs(context)
+            val teacherKey = SecurityUtils.getStoredTeacherKey(prefs)
+                .ifBlank { SecurityUtils.getStoredLoginKey(prefs) }
+            val schoolId = SecurityUtils.getStoredSchoolId(prefs)
+            if (teacherKey.isNotBlank() && schoolId.isNotBlank()) {
+                teacherNotificationViewModel.loadNotifications(teacherKey, schoolId)
+            }
+        }
+    }
 
     // Fetch User Data logic
     LaunchedEffect(Unit) {
@@ -666,7 +686,13 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
         StudentFeatureItem(title = "Literasi & Tugas", iconRes = R.drawable.ic_menu_lentera_digital, route = "teacher_literacy", color = accentViolet),
         StudentFeatureItem(title = "7 KAIH", iconRes = R.drawable.ic_menu_kaih7, route = "teacher_seven_habits", color = accentIndigo),
         StudentFeatureItem(title = "Layanan Aduan", iconRes = R.drawable.ic_menu_layanan_aduan, route = "teacher_bullying_reports", color = accentGold),
-        StudentFeatureItem(title = "Notifikasi", iconRes = R.drawable.ic_menu_notifikasi, route = "teacher_notifications", color = accentOrange)
+        StudentFeatureItem(
+            title = "Notifikasi",
+            iconRes = R.drawable.ic_menu_notifikasi,
+            route = "teacher_notifications",
+            color = accentOrange,
+            badgeCount = teacherNotifBadgeCount
+        )
     )
 
     val staffFeatures = listOf(
@@ -954,6 +980,23 @@ fun StudentFeatureCard(
                     )
                 )
         ) {
+            if (feature.badgeCount > 0) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp),
+                    shape = CircleShape,
+                    color = Color(0xFFDC2626)
+                ) {
+                    Text(
+                        text = if (feature.badgeCount > 99) "99+" else feature.badgeCount.toString(),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
             Column(
                 modifier = Modifier
                     .fillMaxSize()

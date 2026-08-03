@@ -21,6 +21,16 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-03 - Fix: commit UI badge Notifikasi di home Guru (follow-up `ebfeb7b8`)
+
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Flavor terdampak: `guru`
+- Tujuan perubahan: Menyertakan wire-up badge count Notifikasi di `HomeScreen` guru yang terlewat saat rilis `ebfeb7b8`.
+- File utama yang diubah: `native-mobile-gas/.../ui/screens/HomeScreen.kt`
+- Build yang dijalankan: tidak ada (UI wire-up only; APK Final sudah ada di `ebfeb7b8`)
+
+---
 ## 2026-08-03 10:50 - Docs: lengkapi catatan notifikasi guru (scope, badge, batasan FCM)
 
 - Pelaksana: Assistant
