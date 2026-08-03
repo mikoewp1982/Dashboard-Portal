@@ -12,10 +12,12 @@ export default function DashboardHomePage() {
   useEffect(() => {
     if (user?.role === "super_admin") {
       router.replace("/super-admin/dashboard");
+    } else if (user?.role === "teacher") {
+      router.replace("/guru");
     }
   }, [user, router]);
 
-  if (!user || user.role === "super_admin") {
+  if (!user || user.role === "super_admin" || user.role === "teacher") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0b1228] p-6 text-slate-400">
         Memuat data...

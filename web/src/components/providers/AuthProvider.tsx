@@ -46,6 +46,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         const npsn = claims.npsn as string | undefined;
         const schoolName = claims.schoolName as string | undefined;
         const mustChangePassword = claims.mustChangePassword === true;
+        const nuptk = typeof claims.nuptk === "string" ? claims.nuptk : undefined;
+        const teacherClass =
+          typeof claims.class === "string"
+            ? claims.class
+            : typeof claims.homeroomClass === "string"
+              ? claims.homeroomClass
+              : undefined;
         
         const portalUser: PortalUser = {
           id: currentUser.uid,
@@ -56,6 +63,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           npsn,
           schoolName,
           mustChangePassword,
+          nuptk,
+          class: teacherClass,
         };
 
         if (mounted) {
@@ -84,6 +93,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!loading) {
       const needsAuth = pathname.startsWith('/dashboard') || pathname.startsWith('/super-admin');
+      const isGuruPortal = pathname.startsWith('/guru');
       const passwordChangeBlocked = user?.role === 'admin' && user.mustChangePassword === true;
 
       if (!user && needsAuth) {
@@ -94,8 +104,24 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         router.push('/login');
       }
 
+      if (user?.role === 'teacher' && needsAuth) {
+        router.push('/guru');
+        return;
+      }
+
       if (user && !passwordChangeBlocked && (pathname === '/login' || pathname === '/')) {
-        router.push('/dashboard');
+        if (user.role === 'teacher') {
+          router.push('/guru');
+        } else if (user.role === 'super_admin') {
+          router.push('/super-admin/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+      }
+
+      // Admin/super_admin yang membuka portal guru tidak diganggu; guru tetap di /guru
+      if (user && user.role !== 'teacher' && isGuruPortal && pathname !== '/guru') {
+        // biarkan halaman install/info; sub-route guru untuk sesi guru saja digate di layout
       }
     }
   }, [user, loading, pathname, router]);
