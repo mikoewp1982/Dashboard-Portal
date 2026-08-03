@@ -20,7 +20,10 @@ function isReviewedStatus(status: string): boolean {
   return s === "GRADED" || s === "REVIEWED" || s === "CORRECTED" || s === "REJECTED";
 }
 
-async function loadLog(schoolId: string, logId: string) {
+async function loadLog(
+  schoolId: string,
+  logId: string
+): Promise<(Record<string, unknown> & { id: string }) | null> {
   const scope = normalizeSchoolId(schoolId);
   const scoped = await adminDb
     .ref(`literacy_logs_by_school/${scope}/${logId}`)

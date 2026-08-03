@@ -103,6 +103,7 @@ export function GuruLiterasiInteractive() {
     <ApkPageFrame
       title="Literasi Siswa"
       subtitle={`Wali Kelas ${user?.class || "..."}`}
+      backHref="/guru"
     >
       <ApkTabs
         tabs={["Perlu Dinilai", "Sudah Dinilai"]}

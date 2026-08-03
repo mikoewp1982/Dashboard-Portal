@@ -190,6 +190,7 @@ export function GuruPresensiInteractive() {
     <ApkPageFrame
       title="Rekapitulasi Kehadiran"
       subtitle={`Wali Kelas ${user?.class || "..."}`}
+      backHref="/guru"
     >
       <ApkTabs
         tabs={["Monitoring Harian", "Rekap Bulanan"]}

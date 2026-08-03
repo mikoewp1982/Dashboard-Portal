@@ -216,7 +216,11 @@ export function GuruSholatInteractive() {
   }
 
   return (
-    <ApkPageFrame title="Presensi Sholat" subtitle={`Wali Kelas ${user?.class || "..."}`}>
+    <ApkPageFrame
+      title="Presensi Sholat"
+      subtitle={`Wali Kelas ${user?.class || "..."}`}
+      backHref="/guru"
+    >
       <ApkTabs
         tabs={["Monitoring Harian", "Rekap Bulanan"]}
         active={tab}

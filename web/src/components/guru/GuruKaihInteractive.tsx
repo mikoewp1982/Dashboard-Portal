@@ -372,6 +372,7 @@ export function GuruKaihInteractive() {
     <ApkPageFrame
       title="7 KAIH"
       subtitle={`Wali Kelas ${user?.class || "..."}`}
+      backHref="/guru"
     >
       <ApkTabs
         tabs={["Monitoring", "Penilaian"]}
