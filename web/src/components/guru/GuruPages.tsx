@@ -1,16 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSupervisedStudents } from "@/hooks/guru/useSupervisedStudents";
 import { useTeacherNotificationInbox } from "@/hooks/guru/useTeacherNotificationInbox";
 import { GuruShell } from "./GuruShell";
 import { GuruPortalGate } from "./GuruPortalApp";
 import { GuruSiswaInteractive } from "./GuruSiswaInteractive";
-import { onValue, ref } from "firebase/database";
-import { useEffect } from "react";
-import { rtdb } from "@/lib/firebase/client";
-import { normalizeSchoolId } from "@/lib/gas/schoolId";
+import { GuruAduanInteractive } from "./GuruAduanInteractive";
 
 export { GuruPortalGate };
 
@@ -114,28 +110,9 @@ export function GuruNotifikasiView() {
   );
 }
 
-type AduanRow = {
-  id: string;
-  description: string;
-  status: string;
-  createdAt: number;
-};
-
 export function GuruAduanView() {
   const user = useAuthStore((state) => state.user);
   const { students, loading: loadingStudents } = useSupervisedStudents(user?.schoolId, user?.class);
-  const identitySet = useMemo(() => {
-    const set = new Set<string>();
-    students.forEach((student) => {
-      student.identities.forEach((id) => {
-        set.add(id.toLowerCase());
-      });
-    });
-    return set;
-  }, [students]);
-
-  const [rows, setRows] = useState<AduanRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const { unreadCount } = useTeacherNotificationInbox({
     schoolId: user?.schoolId,
     students,
@@ -143,87 +120,9 @@ export function GuruAduanView() {
     enableBrowserNotify: false,
   });
 
-  useEffect(() => {
-    const schoolId = normalizeSchoolId(user?.schoolId);
-    if (!schoolId) {
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-
-    const aduanRef = ref(rtdb, `gas/schools/${schoolId}/halo_spentgapa_reports`);
-    const unsub = onValue(aduanRef, (snapshot) => {
-      const next: AduanRow[] = [];
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          const row = (child.val() || {}) as Record<string, unknown>;
-          const identities = [
-            String(row.reporterId || ""),
-            String(row.victimId || ""),
-            String(row.perpetratorId || ""),
-          ]
-            .map((value) => value.trim().toLowerCase())
-            .filter(Boolean);
-          const relevant =
-            !identitySet.size || identities.some((id) => identitySet.has(id));
-          if (!relevant) return;
-          next.push({
-            id: child.key || "",
-            description: String(row.description || row.deskripsi || "Laporan aduan"),
-            status: String(row.status || "Belum Ditangani"),
-            createdAt: Number(row.createdAt || row.timestamp || Date.now()),
-          });
-        });
-      }
-      next.sort((a, b) => b.createdAt - a.createdAt);
-      setRows(next.slice(0, 50));
-      setLoading(false);
-    });
-
-    return () => unsub();
-  }, [identitySet, user?.schoolId]);
-
   return (
     <GuruShell unreadCount={unreadCount}>
-      <div className="space-y-4">
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-4">
-          <h2 className="text-lg font-bold text-white">Layanan Aduan</h2>
-          <p className="mt-1 text-sm text-slate-300">
-            Laporan yang melibatkan siswa kelas {user?.class || "wali"} Anda.
-          </p>
-        </section>
-
-        <section className="space-y-2">
-          {loading && (
-            <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400">
-              Memuat laporan...
-            </div>
-          )}
-          {!loading && rows.length === 0 && (
-            <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400">
-              Belum ada laporan aduan untuk kelas ini.
-            </div>
-          )}
-          {rows.map((row) => (
-            <div key={row.id} className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-300">
-                  {row.status || "Belum Ditangani"}
-                </span>
-                <span className="text-[10px] text-slate-500">
-                  {new Date(row.createdAt).toLocaleString("id-ID", {
-                    day: "2-digit",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-              <p className="mt-2 text-sm leading-relaxed text-slate-200">{row.description}</p>
-            </div>
-          ))}
-        </section>
-      </div>
+      <GuruAduanInteractive />
     </GuruShell>
   );
 }

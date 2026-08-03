@@ -1,6 +1,7 @@
 "use client";
 
-import { Check } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Check } from "lucide-react";
 
 export const MONTH_NAMES = [
   "Januari",
@@ -30,16 +31,31 @@ export function ApkPageFrame({
   title,
   subtitle,
   children,
+  backHref,
 }: {
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  backHref?: string;
 }) {
   return (
     <div className="-mx-4 -mt-4 min-h-[70dvh] bg-gradient-to-b from-[#12D6C6] via-[#0F7BFF] to-[#0F2A43] px-4 pb-8 pt-4">
       <header className="mb-3 rounded-2xl bg-gradient-to-r from-[#0F2A43] to-[#0F7BFF] px-4 py-3 shadow-lg">
-        <h2 className="text-lg font-bold text-white">{title}</h2>
-        <p className="text-xs text-white/80">{subtitle}</p>
+        <div className="flex items-start gap-2">
+          {backHref ? (
+            <Link
+              href={backHref}
+              aria-label="Kembali"
+              className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          ) : null}
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-white">{title}</h2>
+            <p className="text-xs text-white/80">{subtitle}</p>
+          </div>
+        </div>
       </header>
       {children}
     </div>
@@ -50,11 +66,34 @@ export function ApkTabs({
   tabs,
   active,
   onChange,
+  variant = "pill",
 }: {
   tabs: string[];
   active: number;
   onChange: (index: number) => void;
+  variant?: "pill" | "underline";
 }) {
+  if (variant === "underline") {
+    return (
+      <div className="mb-3 grid grid-cols-2 border-b border-black/20">
+        {tabs.map((tab, index) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => onChange(index)}
+            className={`px-2 py-3 text-sm font-semibold transition ${
+              active === index
+                ? "border-b-2 border-[#0F2A43] text-white"
+                : "border-b-2 border-transparent text-white/70 hover:text-white"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-black/15 p-1">
       {tabs.map((tab, index) => (
