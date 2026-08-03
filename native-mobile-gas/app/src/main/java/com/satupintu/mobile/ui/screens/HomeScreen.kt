@@ -21,12 +21,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.CircleShape
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -47,6 +49,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.layout.ContentScale
 import com.satupintu.mobile.R
 import com.satupintu.mobile.BuildConfig
+
+/** Shared home-menu icon box so guru/siswa tiles stay visually consistent. */
+private val HomeMenuIconMaxSize = 96.dp
+private val HomeMenuIconPanelHeight = 110.dp
 
 data class StudentFeatureItem(
     val title: String,
@@ -282,11 +288,19 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
         }
 
         fun checkOsisMembership(nisn: String) {
-            val key = nisn.trim()
-            if (key.isEmpty()) {
+            val aliases = (SecurityUtils.getStoredStudentAliases(prefs) + setOf(nisn.trim()))
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .toSet()
+            if (aliases.isEmpty()) {
                 isOsis = false
                 prefs.edit().putBoolean("user_is_osis_staff", false).apply()
                 return
+            }
+
+            fun updateOsisMembership(active: Boolean) {
+                isOsis = active
+                prefs.edit().putBoolean("user_is_osis_staff", active).apply()
             }
 
             fun parseActive(snapshot: DataSnapshot): Boolean {
@@ -303,73 +317,59 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                 return true
             }
 
-            fun processStaffResult(snapshot: DataSnapshot) {
-                if (snapshot.exists()) {
-                    val staffNode = if (snapshot.hasChildren() && !snapshot.hasChild("role") && !snapshot.hasChild("status") && !snapshot.hasChild("isActive") && !snapshot.hasChild("nisn")) {
-                        snapshot.children.first()
-                    } else {
-                        snapshot
+            fun findMatchingStaff(snapshot: DataSnapshot): DataSnapshot? {
+                if (!snapshot.exists()) return null
+
+                val isSingleStaffNode = snapshot.hasChild("role") ||
+                    snapshot.hasChild("status") ||
+                    snapshot.hasChild("isActive") ||
+                    snapshot.hasChild("nisn") ||
+                    snapshot.hasChild("username")
+
+                val candidates = if (isSingleStaffNode) snapshot.children.toList().let { listOf(snapshot) } else snapshot.children.toList()
+
+                return candidates.firstOrNull { node ->
+                    val identityCandidates = linkedSetOf(
+                        node.key.orEmpty(),
+                        node.child("nisn").getValue(String::class.java).orEmpty(),
+                        node.child("username").getValue(String::class.java).orEmpty(),
+                        node.child("id").getValue(String::class.java).orEmpty(),
+                        node.child("studentId").getValue(String::class.java).orEmpty()
+                    ).map { it.trim() }.filter { it.isNotBlank() }
+
+                    identityCandidates.any { candidate ->
+                        aliases.any { alias -> candidate.equals(alias, ignoreCase = true) }
                     }
-                    val active = parseActive(staffNode)
-                    isOsis = active
-                    prefs.edit().putBoolean("user_is_osis_staff", active).apply()
-                } else {
-                    isOsis = false
-                    prefs.edit().putBoolean("user_is_osis_staff", false).apply()
                 }
             }
 
-            fun searchMasterStaff() {
-                val masterStaffRef = db.getReference("master_staff")
-                masterStaffRef.orderByChild("nisn").equalTo(key)
-                    .addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            if (snapshot.exists()) {
-                                processStaffResult(snapshot)
-                            } else {
-                                masterStaffRef.child(key).addListenerForSingleValueEvent(object : ValueEventListener {
-                                    override fun onDataChange(directSnapshot: DataSnapshot) {
-                                        processStaffResult(directSnapshot)
-                                    }
-                                    override fun onCancelled(error: DatabaseError) { 
-                                        isOsis = false
-                                        prefs.edit().putBoolean("user_is_osis_staff", false).apply()
-                                    }
-                                })
-                            }
-                        }
-                        override fun onCancelled(error: DatabaseError) {
-                            isOsis = false
-                            prefs.edit().putBoolean("user_is_osis_staff", false).apply()
-                        }
-                    })
+            fun processRealtimeSnapshot(snapshot: DataSnapshot) {
+                val staffNode = findMatchingStaff(snapshot)
+                updateOsisMembership(staffNode?.let { parseActive(it) } == true)
             }
 
             if (sessionSchoolId.isNotBlank()) {
                 val staffRef = db.getReference("gas/schools/$sessionSchoolId/staff")
-                staffRef.orderByChild("nisn").equalTo(key)
-                    .addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            if (snapshot.exists()) {
-                                processStaffResult(snapshot)
-                            } else {
-                                staffRef.orderByChild("username").equalTo(key)
-                                    .addListenerForSingleValueEvent(object : ValueEventListener {
-                                        override fun onDataChange(unameSnapshot: DataSnapshot) {
-                                            if (unameSnapshot.exists()) {
-                                                processStaffResult(unameSnapshot)
-                                            } else {
-                                                searchMasterStaff()
-                                            }
-                                        }
-                                        override fun onCancelled(error: DatabaseError) { searchMasterStaff() }
-                                    })
-                            }
-                        }
-                        override fun onCancelled(error: DatabaseError) { searchMasterStaff() }
-                    })
+                staffRef.addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        processRealtimeSnapshot(snapshot)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        updateOsisMembership(false)
+                    }
+                })
             } else {
-                searchMasterStaff()
+                val masterStaffRef = db.getReference("master_staff")
+                masterStaffRef.addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        processRealtimeSnapshot(snapshot)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        updateOsisMembership(false)
+                    }
+                })
             }
         }
 
@@ -657,20 +657,20 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     val accentOrange = Color(0xFFC2410C)
 
     val baseStudentFeatures = listOf(
-        StudentFeatureItem(title = "Lentera Digital", iconRes = R.drawable.ic_menu_lentera_digital, route = "library", color = accentTeal),
-        StudentFeatureItem(title = "Tools", iconVector = Icons.Default.BuildCircle, route = "tools", color = accentGold),
         StudentFeatureItem(title = "Absensi", iconRes = R.drawable.ic_menu_absensi, route = "attendance", color = accentBlue),
         StudentFeatureItem(title = "Presensi Sholat", iconRes = R.drawable.ic_menu_presensi_sholat, route = "prayer", color = accentTeal),
-        StudentFeatureItem(title = "Kedisiplinan", iconRes = R.drawable.ic_menu_kedisiplinan, route = "discipline", color = accentViolet),
-        StudentFeatureItem(title = "Virtual Pet", iconRes = R.drawable.ic_menu_virtual_pet, route = "virtual_pet", color = accentGold),
+        StudentFeatureItem(title = "Lentera Digital", iconRes = R.drawable.ic_menu_lentera_digital, route = "library", color = accentTeal),
         StudentFeatureItem(title = "7 KAIH", iconRes = R.drawable.ic_menu_kaih7, route = "seven_habits", color = accentIndigo),
+        StudentFeatureItem(title = "Virtual Pet", iconRes = R.drawable.ic_menu_virtual_pet, route = "virtual_pet", color = accentGold),
+        StudentFeatureItem(title = "Kedisiplinan", iconRes = R.drawable.ic_menu_kedisiplinan, route = "discipline", color = accentViolet),
         StudentFeatureItem(title = "Layanan Aduan", iconRes = R.drawable.ic_menu_layanan_aduan, route = "halo_spentgapa", color = accentRed),
-        StudentFeatureItem(title = "Notifikasi", iconRes = R.drawable.ic_menu_notifikasi, route = "notifications", color = accentOrange)
+        StudentFeatureItem(title = "Notifikasi", iconRes = R.drawable.ic_menu_notifikasi, route = "notifications", color = accentOrange),
+        StudentFeatureItem(title = "Tools", iconRes = R.drawable.ic_menu_tools, route = "tools", color = accentGold)
     )
     val studentFeatures = if (isOsis) {
         baseStudentFeatures + StudentFeatureItem(
             title = "Catat Pelanggaran",
-            iconRes = R.drawable.ic_menu_kedisiplinan,
+            iconRes = R.drawable.ic_menu_catat_pelanggaran,
             route = "osis_discipline",
             color = accentRed
         )
@@ -682,9 +682,9 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
         StudentFeatureItem(title = "Data Siswa", iconRes = R.drawable.ic_menu_data_siswa, route = "teacher_student_list", color = accentBlue),
         StudentFeatureItem(title = "Presensi Siswa", iconRes = R.drawable.ic_menu_absensi, route = "teacher_attendance", color = accentTeal),
         StudentFeatureItem(title = "Presensi Sholat", iconRes = R.drawable.ic_menu_presensi_sholat, route = "teacher_prayer", color = accentIndigo),
-        StudentFeatureItem(title = "Kedisiplinan", iconRes = R.drawable.ic_menu_kedisiplinan, route = "teacher_discipline", color = accentRed),
         StudentFeatureItem(title = "Literasi & Tugas", iconRes = R.drawable.ic_menu_lentera_digital, route = "teacher_literacy", color = accentViolet),
         StudentFeatureItem(title = "7 KAIH", iconRes = R.drawable.ic_menu_kaih7, route = "teacher_seven_habits", color = accentIndigo),
+        StudentFeatureItem(title = "Kedisiplinan", iconRes = R.drawable.ic_menu_kedisiplinan, route = "teacher_discipline", color = accentRed),
         StudentFeatureItem(title = "Layanan Aduan", iconRes = R.drawable.ic_menu_layanan_aduan, route = "teacher_bullying_reports", color = accentGold),
         StudentFeatureItem(
             title = "Notifikasi",
@@ -692,7 +692,8 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
             route = "teacher_notifications",
             color = accentOrange,
             badgeCount = teacherNotifBadgeCount
-        )
+        ),
+        StudentFeatureItem(title = "Rekapitulasi", iconRes = R.drawable.ic_menu_rekapitulasi, route = "teacher_recap", color = accentBlue)
     )
 
     val staffFeatures = listOf(
@@ -958,15 +959,18 @@ fun StudentFeatureCard(
     onClick: (String) -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val outerShape = RoundedCornerShape(24.dp)
+    val panelShape = RoundedCornerShape(20.dp)
+    val pillShape = RoundedCornerShape(999.dp)
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(156.dp)
+            .height(174.dp)
             .clickable { onClick(feature.route) },
-        shape = RoundedCornerShape(22.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0B1F33).copy(alpha = 0.22f)),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.16f))
+        shape = outerShape,
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.18f))
     ) {
         Box(
             modifier = Modifier
@@ -974,10 +978,17 @@ fun StudentFeatureCard(
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF0B1F33).copy(alpha = 0.26f),
-                            feature.color.copy(alpha = 0.14f)
+                            Color(0xFF8DC4F6).copy(alpha = 0.30f),
+                            Color(0xFF4F9AE8).copy(alpha = 0.24f),
+                            Color(0xFF1F5EA8).copy(alpha = 0.34f)
                         )
-                    )
+                    ),
+                    shape = outerShape
+                )
+                .border(
+                    width = 1.dp,
+                    color = Color.White.copy(alpha = 0.12f),
+                    shape = outerShape
                 )
         ) {
             if (feature.badgeCount > 0) {
@@ -997,57 +1008,135 @@ fun StudentFeatureCard(
                     )
                 }
             }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.18f),
+                                Color.Transparent
+                            ),
+                            radius = 420f
+                        ),
+                        shape = outerShape
+                    )
+            )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(92.dp)
+                        .height(HomeMenuIconPanelHeight)
+                        .clip(panelShape)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.12f),
+                                    colorScheme.primary.copy(alpha = 0.10f),
+                                    Color(0xFF1C5A9A).copy(alpha = 0.18f)
+                                )
+                            ),
+                            shape = panelShape
+                        )
                         .border(
                             width = 1.dp,
-                            color = Color.White.copy(alpha = 0.14f),
-                            shape = RoundedCornerShape(18.dp)
-                        )
-                        .background(
-                            color = colorScheme.primary.copy(alpha = 0.18f),
-                            shape = RoundedCornerShape(18.dp)
-                        )
-                        .padding(10.dp),
+                            color = Color.White.copy(alpha = 0.20f),
+                            shape = panelShape
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (feature.iconRes != null) {
-                        Image(
-                            painter = painterResource(id = feature.iconRes),
-                            contentDescription = feature.title,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.size(84.dp)
-                        )
-                    } else if (feature.iconVector != null) {
-                        Icon(
-                            imageVector = feature.iconVector,
-                            contentDescription = feature.title,
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.White.copy(alpha = 0.06f),
+                                        Color.Transparent
+                                    )
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = Color.White.copy(alpha = 0.10f),
+                                shape = RoundedCornerShape(16.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (feature.iconRes != null) {
+                            Image(
+                                painter = painterResource(id = feature.iconRes),
+                                contentDescription = feature.title,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .size(HomeMenuIconMaxSize)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    // Mild boost for portrait assets that already include padding.
+                                    .scale(1.28f)
+                            )
+                        } else if (feature.iconVector != null) {
+                            Icon(
+                                imageVector = feature.iconVector,
+                                contentDescription = feature.title,
+                                tint = Color.White,
+                                modifier = Modifier.size(HomeMenuIconMaxSize)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth(0.92f)
+                        .height(34.dp),
+                    shape = pillShape,
+                    color = Color.Transparent,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.28f))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.White.copy(alpha = 0.18f),
+                                        Color(0xFF9FCAE9).copy(alpha = 0.20f),
+                                        Color(0xFF5D91CC).copy(alpha = 0.30f)
+                                    )
+                                ),
+                                shape = pillShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = feature.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Color.White,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            maxLines = 1
                         )
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
+                Spacer(modifier = Modifier.weight(1f))
+
+                if (feature.subtitle.isNotBlank()) {
                     Text(
-                        text = feature.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Color.White,
+                        text = feature.subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.72f),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        maxLines = 2
+                        maxLines = 1
                     )
                 }
             }
