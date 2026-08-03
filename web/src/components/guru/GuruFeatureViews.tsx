@@ -10,6 +10,7 @@ import { GuruShell } from "./GuruShell";
 import { GuruPresensiInteractive } from "./GuruPresensiInteractive";
 import { GuruSholatInteractive } from "./GuruSholatInteractive";
 import { GuruLiterasiInteractive } from "./GuruLiterasiInteractive";
+import { GuruKaihInteractive } from "./GuruKaihInteractive";
 
 function FeatureShell({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
@@ -102,23 +103,9 @@ export function GuruLiterasiView() {
 }
 
 export function GuruKaihView() {
-  const user = useAuthStore((state) => state.user);
-
   return (
     <FeatureShell>
-      <div className="space-y-4">
-        <PageHeader
-          title="7 KAIH"
-          subtitle={`Monitoring 7 kebiasaan anak Indonesia hebat · Kelas ${user?.class || "-"}`}
-        />
-        <section className="rounded-3xl border border-dashed border-teal-400/30 bg-teal-500/10 p-5">
-          <div className="text-sm font-semibold text-teal-50">Segera hadir di PWA</div>
-          <p className="mt-2 text-xs leading-relaxed text-teal-100/80">
-            Penilaian dan monitoring 7 KAIH lengkap tersedia di APK GAS Guru. Versi web akan
-            menyusul dengan alur yang sama.
-          </p>
-        </section>
-      </div>
+      <GuruKaihInteractive />
     </FeatureShell>
   );
 }
