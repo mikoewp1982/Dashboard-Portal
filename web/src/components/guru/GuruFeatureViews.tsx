@@ -5,13 +5,11 @@ import { Download } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSupervisedStudents } from "@/hooks/guru/useSupervisedStudents";
 import { useTeacherNotificationInbox } from "@/hooks/guru/useTeacherNotificationInbox";
-import {
-  useDisciplineClassRecords,
-  useLiteracyClassRecords,
-} from "@/hooks/guru/useClassDayStatus";
+import { useDisciplineClassRecords } from "@/hooks/guru/useClassDayStatus";
 import { GuruShell } from "./GuruShell";
 import { GuruPresensiInteractive } from "./GuruPresensiInteractive";
 import { GuruSholatInteractive } from "./GuruSholatInteractive";
+import { GuruLiterasiInteractive } from "./GuruLiterasiInteractive";
 
 function FeatureShell({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
@@ -96,23 +94,9 @@ export function GuruSholatView() {
 }
 
 export function GuruLiterasiView() {
-  const user = useAuthStore((state) => state.user);
-  const { students, loading: loadingStudents } = useSupervisedStudents(user?.schoolId, user?.class);
-  const { rows, loading } = useLiteracyClassRecords(user?.schoolId, students);
-
   return (
     <FeatureShell>
-      <div className="space-y-4">
-        <PageHeader
-          title="Literasi & Tugas"
-          subtitle={`Jurnal & tugas literasi siswa kelas ${user?.class || "wali"}`}
-        />
-        <RecordList
-          loading={loading || loadingStudents}
-          rows={rows}
-          empty="Belum ada jurnal literasi untuk kelas ini."
-        />
-      </div>
+      <GuruLiterasiInteractive />
     </FeatureShell>
   );
 }

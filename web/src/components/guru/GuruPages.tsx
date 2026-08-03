@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSupervisedStudents } from "@/hooks/guru/useSupervisedStudents";
 import { useTeacherNotificationInbox } from "@/hooks/guru/useTeacherNotificationInbox";
 import { GuruShell } from "./GuruShell";
 import { GuruPortalGate } from "./GuruPortalApp";
+import { GuruSiswaInteractive } from "./GuruSiswaInteractive";
 import { onValue, ref } from "firebase/database";
 import { useEffect } from "react";
 import { rtdb } from "@/lib/firebase/client";
@@ -28,63 +28,9 @@ export function GuruShellWithInbox({ children }: { children: React.ReactNode }) 
 }
 
 export function GuruSiswaView() {
-  const user = useAuthStore((state) => state.user);
-  const { students, loading } = useSupervisedStudents(user?.schoolId, user?.class);
-  const [query, setQuery] = useState("");
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return students;
-    return students.filter(
-      (student) =>
-        student.name.toLowerCase().includes(q) ||
-        student.nisn.toLowerCase().includes(q)
-    );
-  }, [query, students]);
-
   return (
     <GuruShellWithInbox>
-      <div className="space-y-4">
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-4">
-          <h2 className="text-lg font-bold text-white">Data Siswa</h2>
-          <p className="mt-1 text-sm text-slate-300">
-            Kelas {user?.class || "-"} · {loading ? "memuat..." : `${students.length} siswa`}
-          </p>
-          <div className="relative mt-3">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari nama atau NISN"
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/50 py-3 pl-10 pr-3 text-sm text-white outline-none focus:ring-2 focus:ring-teal-400/40"
-            />
-          </div>
-        </section>
-
-        <section className="space-y-2">
-          {loading && (
-            <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400">
-              Memuat daftar siswa...
-            </div>
-          )}
-          {!loading && filtered.length === 0 && (
-            <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400">
-              Belum ada siswa untuk kelas wali ini.
-            </div>
-          )}
-          {filtered.map((student) => (
-            <div
-              key={student.id}
-              className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3"
-            >
-              <div className="font-semibold text-white">{student.name}</div>
-              <div className="mt-1 text-xs text-slate-400">
-                NISN {student.nisn || "-"} · {student.className || user?.class || "-"}
-              </div>
-            </div>
-          ))}
-        </section>
-      </div>
+      <GuruSiswaInteractive />
     </GuruShellWithInbox>
   );
 }
