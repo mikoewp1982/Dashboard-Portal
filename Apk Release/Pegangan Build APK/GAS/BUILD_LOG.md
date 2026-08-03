@@ -21,6 +21,53 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-03 14:30 - Wrap-up sore: rebuild Final Guru (ikon) + docs PWA 9 menu
+
+- Pelaksana: Assistant
+- Jenis perubahan: `fix` + `docs`
+- Flavor terdampak: `guru` (APK + web PWA dokumentasi)
+- Tujuan perubahan: Menutup hari kerja 2026-08-03 sore — Final APK Guru pagi (`1038` / 10:14) belum memuat fix ikon `cb3bed4d` (14:01), jadi di-rebuild ke `1039` dan menimpa Final; mencatat audit lengkap Portal Guru PWA (9 menu APK-parity termasuk Kedisiplinan) plus batasan Web Push VAPID yang masih terbuka.
+- File utama yang diubah:
+  - `native-mobile-gas/app/build.gradle.kts` (`versionCode` `1039`, `versionName` `1.0.30`)
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_tools.png` (aset yang dibutuhkan compile HomeScreen)
+  - `native-mobile-gas/app/src/main/res/drawable/ic_menu_catat_pelanggaran.png`
+  - `Apk Release/Final/GAS-Guru-release.apk`
+  - `Apk Release/GAS/app-guru-release.apk`
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/RELEASE.md`
+  - `Apk Release/Pegangan Build APK/GAS/README.md`
+- Fitur lama yang wajib ikut dicek:
+  - ikon beranda guru (Data Siswa / Rekapitulasi tidak oversized)
+  - notifikasi literasi belum + pet mati + badge
+  - login + 9 menu PWA `/guru`
+- Build yang dijalankan:
+  - `./gradlew :app:assembleGuruRelease` (working tree bersih dari WIP lain; ikon `cb3bed4d` sudah di HEAD)
+- Hasil build:
+  - sukses; `com.satupintu.mobile.guru` `1.0.30-guru` (`versionCode 1039`)
+  - ukuran Final ~21,463,357 bytes; SHA256 `A6268DB1620C4D798F2302B2D146667537DB5032EB414CF7A186B3E485F50F06`
+- Output APK:
+  - `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- Disalin ke:
+  - `Apk Release/Final/GAS-Guru-release.apk`
+  - `Apk Release/GAS/app-guru-release.apk`
+- Regression check yang dijalankan:
+  - `aapt dump badging` → package/version `1039` / `1.0.30-guru`
+  - review commit rantai PWA hari ini vs checklist
+- Belum diuji:
+  - uji perangkat fisik APK `1039` (ikon + notifikasi)
+  - Safari iOS lapangan untuk PWA `/guru`
+  - background Web Push (VAPID/FCM belum)
+- Catatan progres bundle 2026-08-03:
+  - APK pagi notifikasi: `ebfeb7b8` (`1038`)
+  - PWA ship: `05c4fb14` → login DB: `06c784b8` / `112271dc` → menu home: `5680539b` → presensi: `b8db31af` → sholat TZ: `0f8aa2dc` → siswa/literasi: `90ca0faa` → 7 KAIH: `9232a30a` → rekap Excel: `b9a48343` → aduan: `034241fd` → kedisiplinan: `3876bf95` → ikon APK: `cb3bed4d` → polish: `7fb4580d`
+  - Kedisiplinan PWA **selesai** (bukan stub) via `3876bf95`
+  - URL live: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/guru`
+  - Tidak sinkron ke `web/public/apk` (Guru bukan jalur tutorial siswa)
+
+---
+
 ## 2026-08-03 11:10 - Docs + verify: Portal Guru PWA MVP live (`05c4fb14`)
 
 - Pelaksana: Assistant

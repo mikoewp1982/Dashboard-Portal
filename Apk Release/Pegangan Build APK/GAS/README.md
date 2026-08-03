@@ -8,9 +8,9 @@ Folder ini adalah pegangan operasional untuk semua perubahan APK `GAS` pada proy
 - Root project name: `SatuPintuNativeMobile`
 - Application ID dasar: `com.satupintu.mobile`
 - Versi saat dokumen ini dirapikan:
-  - `defaultConfig versionCode = 1038`
+  - `defaultConfig versionCode = 1039`
   - `defaultConfig versionName = 1.0.30`
-  - `flavor siswa versionCode = 23022`
+  - `flavor siswa versionCode = 23022` (distribusi Final; pastikan `build.gradle.kts` selaras saat build siswa)
   - `flavor legacySiswa versionCode = 23003`
 
 ## Flavor Aktual
@@ -70,7 +70,7 @@ Jika user meminta folder lain, catat di [BUILD_LOG.md](./BUILD_LOG.md).
 
 Rilis final terbaru yang sudah dicatat saat ini:
 - Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` (`1.0.30-siswa` / `versionCode 23022`)
-- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` (`1.0.30-guru` / `versionCode 1038`, commit `ebfeb7b8`) — notifikasi literasi belum + pet mati (scope wali/diampu), badge Notifikasi; tanpa FCM (tray saat app hidup)
+- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` (`1.0.30-guru` / `versionCode 1039`, rebuild 2026-08-03 ~14:30 + ikon `cb3bed4d`) — notifikasi literasi belum + pet mati (scope wali/diampu), badge Notifikasi, ikon Data Siswa/Rekapitulasi normal; tanpa FCM (tray saat app hidup). PWA Guru: `/guru` (9 menu parity; Web Push VAPID masih terbuka).
 
 ## Perintah Build yang Paling Sering Dipakai
 

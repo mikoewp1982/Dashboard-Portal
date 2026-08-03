@@ -6,7 +6,7 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-03 11:10
+Update terakhir: 2026-08-03 14:30
 
 ## Temuan portal tutorial web
 
@@ -259,7 +259,8 @@ Build acuan:
 ## 3. GAS Guru
 
 Build acuan:
-- `D:\Dashboard Portal\Apk Release\OK_4\GAS-Guru-2026-07-30_17-47-release.apk`
+- `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` (`1.0.30-guru` / `versionCode 1039`, rebuild ikon `2026-08-03 ~14:30`, menyertakan fix `cb3bed4d`)
+- Salinan kerja: `D:\Dashboard Portal\Apk Release\GAS\app-guru-release.apk`
 
 ### Tampilan data siswa dan presensi
 - [x] Nama siswa pada layar guru diizinkan tampil sampai 2 baris
@@ -318,19 +319,30 @@ Build acuan:
 - [x] Notifikasi lama (aduan/bullying + literasi pending) tetap dipertahankan bersama tipe baru
 - [x] Badge angka muncul di kartu menu `Notifikasi` beranda guru
 - [x] Layar notifikasi guru menampilkan ikon/warna khusus untuk literasi belum dan pet mati, plus navigasi ke Literasi / Data Siswa
-- [x] APK Guru Final diganti ke nama tunggal `GAS-Guru-release.apk` (`1.0.30-guru` / `1038`); file bertanggal `2026-07-30_17-47` di Final dihapus agar tidak membingungkan
-- [x] Ship tercatat di commit `ebfeb7b8` (fitur + APK + pegangan awal)
+- [x] APK Guru Final diganti ke nama tunggal `GAS-Guru-release.apk`; file bertanggal `2026-07-30_17-47` di Final dihapus agar tidak membingungkan
+- [x] Ship fitur notifikasi + APK pagi: commit `ebfeb7b8` (`1.0.30-guru` / `1038`, ~10:14)
+- [x] Ikon beranda `Data Siswa` dan `Rekapitulasi` dinormalisasi agar ukuran sejajar menu lain (commit `cb3bed4d`)
+- [x] Rebuild Final sore menyertakan fix ikon: `1.0.30-guru` / `versionCode 1039` (~14:30) ke `Apk Release/Final/GAS-Guru-release.apk` + `Apk Release/GAS/app-guru-release.apk`
 - [x] Batasan dicatat: belum ada FCM; tray notification hanya saat app/listener hidup
+- [ ] Cek di HP: setelah update ke `1039`, ikon `Data Siswa` dan `Rekapitulasi` di beranda tidak lagi membesar/oversized dibanding menu lain
 
 ### Portal Guru PWA (web `/guru`)
 - [x] MVP Portal Guru PWA di-ship ke `main` (commit `05c4fb14`) untuk Firebase App Hosting `gerbang-aplikasi-sekolah--kompas-5f0b4`
 - [x] Live path `/guru` merespons `200` HTML (verifikasi `2026-08-03 ~11:09` WIB setelah lag deploy ~6 menit)
 - [x] Aset PWA live: `/guru/manifest.json` dan `/sw-guru.js` merespons `200`
-- [x] Login portal: `NPSN + NUPTK` (nama guru dari database)
+- [x] Login portal: `NPSN + NUPTK` terintegrasi DB admin (bukan Auth network/signBlob mentah); fix `06c784b8` + `112271dc`
 - [x] Inbox notifikasi web: literasi belum, pet mati, aduan (scope wali/diampu)
 - [x] Dukungan Add to Home Screen (manifest + service worker ringan)
-- [ ] Background Web Push masih perlu VAPID/FCM (belum production-ready)
-- [ ] Cek Safari iOS: login NPSN+NUPTK, inbox notif tampil, Add to Home Screen berjalan
+- [x] Audit 9 menu beranda PWA = parity APK guru: Data Siswa+Pet, Presensi Siswa, Presensi Sholat, Literasi & Tugas, 7 KAIH, Kedisiplinan, Layanan Aduan, Notifikasi, Rekapitulasi (Excel)
+- [x] Presensi Siswa + Presensi Sholat interaktif (commit `b8db31af`); checklist sholat tahan timezone UTC App Hosting (`0f8aa2dc`)
+- [x] Data Siswa + Literasi & Tugas parity APK (`90ca0faa`)
+- [x] 7 KAIH interaktif parity APK (`9232a30a`)
+- [x] Rekapitulasi unduh Excel `/guru/rekap` dipulihkan dari 404 API (`b9a48343`)
+- [x] Layanan Aduan parity `TeacherBullyingScreen` (`034241fd`)
+- [x] Kedisiplinan / Monitoring Kedisiplinan parity `TeacherDisciplineScreen` (`3876bf95`) — bukan stub
+- [x] Polish navigasi menu live + typing API literasi (`7fb4580d`)
+- [ ] Background Web Push masih perlu VAPID/FCM (belum production-ready; push saat tab tertutup belum ada)
+- [ ] Cek Safari iOS: login NPSN+NUPTK, 9 menu + inbox notif tampil, Add to Home Screen berjalan
 - [ ] Cek di HP: notifikasi tugas literasi siswa tetap masuk ke guru walau `studentId` log tersimpan sebagai alias selain NISN
 - [ ] Cek di HP: notifikasi laporan bullying siswa tetap masuk ke guru walau `reporterId/victimId/perpetratorId` tersimpan sebagai alias selain NISN
 - [ ] Cek di HP: siswa wali/diampu dengan literasi outstanding memunculkan notifikasi `literasi belum` di guru

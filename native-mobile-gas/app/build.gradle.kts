@@ -23,8 +23,8 @@ android {
         applicationId = "com.satupintu.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1029
-        versionName = "1.0.13"
+        versionCode = 1039
+        versionName = "1.0.30"
         buildConfigField("String", "MOBILE_BOUNDARY", "\"${mobileBoundary}\"")
         buildConfigField("String", "ALLOWED_FIREBASE_PROJECT_IDS", "\"${allowedFirebaseProjectIds}\"")
 

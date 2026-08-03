@@ -72,13 +72,19 @@ Tambahkan nama pelaksana jika perlu:
 - Fixed: Tab `Peringkat` pada `Virtual Pet` sekarang lebih tahan terhadap mismatch identitas siswa karena ranking membaca alias `recordId/id/nisn/username`.
 
 ### Guru
-- Added: Portal Guru PWA MVP di web path `/guru` (commit `05c4fb14`) untuk iOS Safari/browser: login NPSN+NUPTK, inbox notifikasi (literasi belum, pet mati, aduan), Add to Home Screen via manifest + `sw-guru.js`.
+- Added: Portal Guru PWA di web path `/guru` (commit `05c4fb14`) untuk iOS Safari/browser: login NPSN+NUPTK terintegrasi DB, inbox notifikasi (literasi belum, pet mati, aduan), Add to Home Screen via manifest + `sw-guru.js`.
+- Added: Sembilan menu beranda PWA Guru parity APK: Data Siswa+Pet, Presensi Siswa, Presensi Sholat, Literasi & Tugas, 7 KAIH, Kedisiplinan, Layanan Aduan, Notifikasi, Rekapitulasi (unduh Excel).
+- Fixed: Login web Guru menghindari kegagalan `signBlob`/Auth network; diganti alur session + lookup DB admin (`06c784b8`, `112271dc`).
+- Fixed: Checklist `Presensi Sholat` PWA tetap benar di App Hosting yang berjalan UTC (`0f8aa2dc`).
+- Fixed: Endpoint unduh Excel rekap `/guru/rekap` tidak lagi `404` (`b9a48343`).
+- Changed: `Kedisiplinan` PWA sudah interaktif parity `TeacherDisciplineScreen` (`3876bf95`), bukan stub.
 - Known limitation: background Web Push masih perlu VAPID/FCM; belum push saat tab tertutup.
 - Added: Notifikasi guru `literasi belum selesai` (`LITERACY_INCOMPLETE`) untuk siswa wali/diampu agar guru bisa menindak tugas literasi outstanding.
 - Added: Notifikasi guru `virtual pet mati` (`PET_DEAD`) untuk siswa wali/diampu dengan navigasi ke `Data Siswa`.
 - Changed: Menu `Notifikasi` beranda guru menampilkan badge jumlah item.
 - Changed: Notifikasi aduan/bullying dan literasi pending yang sudah ada tetap dipertahankan bersama tipe baru.
-- Changed: Build distribusi manual GAS Guru ditimpa ke `1.0.30-guru (1038)` di `Apk Release/Final/GAS-Guru-release.apk` (nama tunggal, mengganti file bertanggal lama); commit `ebfeb7b8`.
+- Fixed: Ikon beranda APK `Data Siswa` dan `Rekapitulasi` dinormalisasi agar tidak oversized (`cb3bed4d`).
+- Changed: Build distribusi manual GAS Guru ditimpa ke `1.0.30-guru (1039)` di `Apk Release/Final/GAS-Guru-release.apk` (rebuild sore 2026-08-03 menyertakan fix ikon; nama tunggal Final tetap).
 - Known limitation: belum memakai FCM; notifikasi tray hanya muncul saat app/listener masih hidup.
 - Changed: Garis pemisah antar kolom pada `Data Siswa`, `Presensi Siswa`, dan `Presensi Sholat` guru dibuat lebih tegas agar tabel lebih mudah dibaca.
 - Changed: Login APK GAS Guru diubah mengikuti pola `NPSN -> NUPTK -> Nama Guru`, dan nama guru terisi otomatis dari database.
