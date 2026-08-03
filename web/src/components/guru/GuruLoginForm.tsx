@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { signInWithCustomToken } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 
 export function GuruLoginForm() {
@@ -16,20 +16,24 @@ export function GuruLoginForm() {
     setError("");
     setLoading(true);
     try {
+      const npsnValue = npsn.trim();
+      const nuptkValue = nuptk.trim();
       const response = await fetch("/api/teacher/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ npsn: npsn.trim(), nuptk: nuptk.trim() }),
+        body: JSON.stringify({ npsn: npsnValue, nuptk: nuptkValue }),
       });
       const payload = (await response.json().catch(() => ({}))) as {
         success?: boolean;
         message?: string;
-        customToken?: string;
+        email?: string;
       };
-      if (!response.ok || !payload.success || !payload.customToken) {
+      if (!response.ok || !payload.success || !payload.email) {
         throw new Error(payload.message || "Login gagal.");
       }
-      await signInWithCustomToken(auth, payload.customToken);
+      // Mirror admin login: client signs in with email/password so App Hosting
+      // never needs createCustomToken / iam.serviceAccounts.signBlob.
+      await signInWithEmailAndPassword(auth, payload.email, nuptkValue);
       await auth.currentUser?.getIdToken(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal masuk.");

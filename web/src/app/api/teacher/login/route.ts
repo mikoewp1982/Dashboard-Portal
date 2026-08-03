@@ -18,6 +18,15 @@ function readString(source: TeacherRow | null | undefined, ...keys: string[]) {
   return "";
 }
 
+function toUserFacingMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "Gagal login guru.";
+  // Avoid leaking App Hosting / IAM internals to end users.
+  if (/signBlob|iam\.serviceAccounts|create-custom-tokens/i.test(message)) {
+    return "Konfigurasi autentikasi server belum siap. Hubungi admin teknis.";
+  }
+  return message;
+}
+
 async function findTeacher(schoolId: string, nuptk: string): Promise<{ id: string; row: TeacherRow } | null> {
   const teachersRef = adminDb.ref(`gas/schools/${schoolId}/teachers`);
   const directSnap = await teachersRef.child(nuptk).get();
@@ -40,6 +49,18 @@ async function findTeacher(schoolId: string, nuptk: string): Promise<{ id: strin
   return null;
 }
 
+/**
+ * Teacher login for GAS Guru PWA.
+ *
+ * Intentionally uses email/password Auth (same pattern as admin bootstrap/login)
+ * instead of adminAuth.createCustomToken(). On Firebase App Hosting, ADC often
+ * lacks iam.serviceAccounts.signBlob, which breaks createCustomToken.
+ *
+ * Optional IAM alternative (not required after this change):
+ * Grant the App Hosting runtime service account
+ * roles/iam.serviceAccountTokenCreator on itself, or set FIREBASE_SERVICE_ACCOUNT_KEY
+ * / FIREBASE_CLIENT_EMAIL+FIREBASE_PRIVATE_KEY via App Hosting secrets.
+ */
 export async function POST(req: Request) {
   try {
     const body = (await req.json().catch(() => ({}))) as {
@@ -53,6 +74,13 @@ export async function POST(req: Request) {
     if (!npsn || !nuptk) {
       return NextResponse.json(
         { success: false, message: "NPSN dan NUPTK wajib diisi." },
+        { status: 400 }
+      );
+    }
+
+    if (nuptk.length < 6) {
+      return NextResponse.json(
+        { success: false, message: "NUPTK tidak valid." },
         { status: 400 }
       );
     }
@@ -82,6 +110,8 @@ export async function POST(req: Request) {
     const homeroomClass = readHomeroomClass(teacher.row);
     const resolvedNuptk = readString(teacher.row, "nuptk") || nuptk;
     const email = teacherAuthEmail(schoolId, resolvedNuptk);
+    // NUPTK is the teacher credential (same role as admin password / student NISN).
+    const password = nuptk;
 
     let uid = "";
     try {
@@ -90,10 +120,12 @@ export async function POST(req: Request) {
       await adminAuth.updateUser(uid, {
         displayName: teacherName,
         disabled: false,
+        password,
       });
     } catch {
       const created = await adminAuth.createUser({
         email,
+        password,
         displayName: teacherName,
         emailVerified: true,
         disabled: false,
@@ -111,19 +143,9 @@ export async function POST(req: Request) {
       teacherId: teacher.id,
     });
 
-    const customToken = await adminAuth.createCustomToken(uid, {
-      role: "teacher",
-      schoolId,
-      npsn: schoolContext.npsn || npsn,
-      schoolName: schoolContext.name || "",
-      nuptk: resolvedNuptk,
-      class: homeroomClass,
-      teacherId: teacher.id,
-    });
-
     return NextResponse.json({
       success: true,
-      customToken,
+      email,
       teacher: {
         id: teacher.id,
         name: teacherName,
@@ -139,7 +161,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: error instanceof Error ? error.message : "Gagal login guru.",
+        message: toUserFacingMessage(error),
       },
       { status: 500 }
     );
