@@ -4,6 +4,7 @@ export function normalizeClassName(value: unknown): string {
     .replace(/KELAS/g, "")
     .trim();
 
+  // Roman numerals first, then strip separators so "VII-C" / "VII C" / "7C" match.
   normalized = normalized
     .replace(/VIII/g, "8")
     .replace(/VII/g, "7")
@@ -13,7 +14,7 @@ export function normalizeClassName(value: unknown): string {
     .replace(/IV/g, "4")
     .replace(/VI/g, "6")
     .replace(/V/g, "5")
-    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9]/g, "")
     .trim();
 
   return normalized;

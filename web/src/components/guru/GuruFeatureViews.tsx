@@ -6,11 +6,19 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useSupervisedStudents } from "@/hooks/guru/useSupervisedStudents";
 import { useTeacherNotificationInbox } from "@/hooks/guru/useTeacherNotificationInbox";
 import { useDisciplineClassRecords } from "@/hooks/guru/useClassDayStatus";
+import { teacherFetchRaw } from "@/lib/guru/teacherFetch";
 import { GuruShell } from "./GuruShell";
 import { GuruPresensiInteractive } from "./GuruPresensiInteractive";
 import { GuruSholatInteractive } from "./GuruSholatInteractive";
 import { GuruLiterasiInteractive } from "./GuruLiterasiInteractive";
 import { GuruKaihInteractive } from "./GuruKaihInteractive";
+
+function localYmd(year: number, monthIndex: number, day: number) {
+  const y = String(year);
+  const m = String(monthIndex + 1).padStart(2, "0");
+  const d = String(day).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 function FeatureShell({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
@@ -173,10 +181,9 @@ export function GuruRekapView() {
     setBusy(true);
     setError("");
     try {
-      const start = new Date(year, month, 1);
-      const end = new Date(year, month + 1, 0);
-      const startDate = start.toISOString().slice(0, 10);
-      const endDate = end.toISOString().slice(0, 10);
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const startDate = localYmd(year, month, 1);
+      const endDate = localYmd(year, month, lastDay);
       const params = new URLSearchParams({
         schoolId: user.schoolId,
         className: user.class || "",
@@ -184,8 +191,15 @@ export function GuruRekapView() {
         endDate,
         format: "excel",
       });
-      const res = await fetch(`/api/teacher/recap?${params.toString()}`);
-      if (!res.ok) throw new Error("Gagal mengunduh rekapitulasi");
+      const res = await teacherFetchRaw(`/api/teacher/recap?${params.toString()}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({} as { message?: string }));
+        const detail =
+          typeof data?.message === "string" && data.message
+            ? data.message
+            : `HTTP ${res.status}`;
+        throw new Error(`Gagal mengunduh rekapitulasi: ${detail}`);
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
