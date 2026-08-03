@@ -87,14 +87,14 @@ const TEACHER_MENUS = [
   {
     href: "/guru/presensi",
     title: "Presensi Siswa",
-    desc: "Kehadiran hari ini",
+    desc: "Monitoring & rekap kehadiran",
     icon: CalendarCheck,
     tone: "bg-teal-500/15 text-teal-200",
   },
   {
     href: "/guru/sholat",
     title: "Presensi Sholat",
-    desc: "Presensi sholat hari ini",
+    desc: "Monitoring & rekap sholat",
     icon: Moon,
     tone: "bg-indigo-500/15 text-indigo-200",
   },

@@ -6,11 +6,12 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useSupervisedStudents } from "@/hooks/guru/useSupervisedStudents";
 import { useTeacherNotificationInbox } from "@/hooks/guru/useTeacherNotificationInbox";
 import {
-  useClassDayStatus,
   useDisciplineClassRecords,
   useLiteracyClassRecords,
 } from "@/hooks/guru/useClassDayStatus";
 import { GuruShell } from "./GuruShell";
+import { GuruPresensiInteractive } from "./GuruPresensiInteractive";
+import { GuruSholatInteractive } from "./GuruSholatInteractive";
 
 function FeatureShell({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
@@ -38,45 +39,6 @@ function EmptyState({ text }: { text: string }) {
     <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-400">
       {text}
     </div>
-  );
-}
-
-function DayStatusList({
-  loading,
-  rows,
-}: {
-  loading: boolean;
-  rows: { studentId: string; name: string; nisn: string; status: string }[];
-}) {
-  if (loading) return <EmptyState text="Memuat data hari ini..." />;
-  if (rows.length === 0) return <EmptyState text="Belum ada siswa untuk kelas wali ini." />;
-
-  return (
-    <section className="space-y-2">
-      {rows.map((row) => {
-        const pending = /belum/i.test(row.status);
-        return (
-          <div
-            key={row.studentId}
-            className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3"
-          >
-            <div className="min-w-0">
-              <div className="truncate font-semibold text-white">{row.name}</div>
-              <div className="text-xs text-slate-400">NISN {row.nisn || "-"}</div>
-            </div>
-            <span
-              className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                pending
-                  ? "bg-amber-500/15 text-amber-200"
-                  : "bg-emerald-500/15 text-emerald-200"
-              }`}
-            >
-              {row.status}
-            </span>
-          </div>
-        );
-      })}
-    </section>
   );
 }
 
@@ -118,41 +80,17 @@ function RecordList({
 }
 
 export function GuruPresensiView() {
-  const user = useAuthStore((state) => state.user);
-  const { students, loading: loadingStudents } = useSupervisedStudents(user?.schoolId, user?.class);
-  const { rows, loading } = useClassDayStatus(user?.schoolId, students, "attendance_by_school");
-
   return (
     <FeatureShell>
-      <div className="space-y-4">
-        <PageHeader
-          title="Presensi Siswa"
-          subtitle={`Kehadiran hari ini · Kelas ${user?.class || "-"}`}
-        />
-        <DayStatusList loading={loading || loadingStudents} rows={rows} />
-      </div>
+      <GuruPresensiInteractive />
     </FeatureShell>
   );
 }
 
 export function GuruSholatView() {
-  const user = useAuthStore((state) => state.user);
-  const { students, loading: loadingStudents } = useSupervisedStudents(user?.schoolId, user?.class);
-  const { rows, loading } = useClassDayStatus(
-    user?.schoolId,
-    students,
-    "prayer_attendance_by_school"
-  );
-
   return (
     <FeatureShell>
-      <div className="space-y-4">
-        <PageHeader
-          title="Presensi Sholat"
-          subtitle={`Presensi sholat hari ini · Kelas ${user?.class || "-"}`}
-        />
-        <DayStatusList loading={loading || loadingStudents} rows={rows} />
-      </div>
+      <GuruSholatInteractive />
     </FeatureShell>
   );
 }
