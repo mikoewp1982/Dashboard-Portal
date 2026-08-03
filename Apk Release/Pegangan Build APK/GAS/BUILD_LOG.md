@@ -1,4 +1,4 @@
-# Build Log GAS
+﻿# Build Log GAS
 
 Dokumen ini adalah log operasional wajib untuk setiap perubahan APK `GAS`.
 
@@ -21,6 +21,38 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-03 10:14 - GAS Guru: notifikasi literasi belum + pet mati
+
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Flavor terdampak: `guru`
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `Apk Release/Final/GAS-Guru-release.apk`
+  - `Apk Release/GAS/app-guru-release.apk`
+- Fitur lama yang wajib ikut dicek:
+  - notifikasi literasi / bullying guru yang sudah ada
+  - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
+  - login dan beranda guru
+- Build yang dijalankan:
+  - `./gradlew :app:clean :app:assembleGuruRelease`
+- Hasil build:
+  - sukses; `com.satupintu.mobile.guru` `1.0.30-guru` (`versionCode 1038`)
+- Output APK:
+  - `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- Disalin ke:
+  - `Apk Release/Final/GAS-Guru-release.apk` (mengganti `GAS-Guru-2026-07-30_17-47-release.apk` agar hanya satu file Guru di Final)
+  - `Apk Release/GAS/app-guru-release.apk`
+- Regression check yang dijalankan:
+  - compile + assemble `guruRelease` sukses; metadata package/version diverifikasi via `aapt dump badging`
+- Belum diuji:
+  - uji perangkat: munculnya notifikasi literasi belum dan pet mati, serta deep-link kartu notifikasi
+- Catatan:
+  - Tidak sinkron ke `web/public/apk` (Guru bukan jalur unduh tutorial siswa).
+
+---
 ## 2026-08-02 19:20 - Perbaiki unduh APK tutorial 404 di App Hosting standalone
 - Pelaksana: Assistant
 - Jenis perubahan: `fix`
@@ -1231,6 +1263,38 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-03 10:14 - GAS Guru: notifikasi literasi belum + pet mati
+
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Flavor terdampak: `guru`
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `Apk Release/Final/GAS-Guru-release.apk`
+  - `Apk Release/GAS/app-guru-release.apk`
+- Fitur lama yang wajib ikut dicek:
+  - notifikasi literasi / bullying guru yang sudah ada
+  - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
+  - login dan beranda guru
+- Build yang dijalankan:
+  - `./gradlew :app:clean :app:assembleGuruRelease`
+- Hasil build:
+  - sukses; `com.satupintu.mobile.guru` `1.0.30-guru` (`versionCode 1038`)
+- Output APK:
+  - `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- Disalin ke:
+  - `Apk Release/Final/GAS-Guru-release.apk` (mengganti `GAS-Guru-2026-07-30_17-47-release.apk` agar hanya satu file Guru di Final)
+  - `Apk Release/GAS/app-guru-release.apk`
+- Regression check yang dijalankan:
+  - compile + assemble `guruRelease` sukses; metadata package/version diverifikasi via `aapt dump badging`
+- Belum diuji:
+  - uji perangkat: munculnya notifikasi literasi belum dan pet mati, serta deep-link kartu notifikasi
+- Catatan:
+  - Tidak sinkron ke `web/public/apk` (Guru bukan jalur unduh tutorial siswa).
+
+---
 ## 2026-08-01 22:58 - Sinkronisasi dokumen target integrasi kategori Lentera siswa ke web terbaru
 - Pelaksana: Assistant
 - Jenis perubahan: `no-build`
@@ -1264,6 +1328,38 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-03 10:14 - GAS Guru: notifikasi literasi belum + pet mati
+
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Flavor terdampak: `guru`
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `Apk Release/Final/GAS-Guru-release.apk`
+  - `Apk Release/GAS/app-guru-release.apk`
+- Fitur lama yang wajib ikut dicek:
+  - notifikasi literasi / bullying guru yang sudah ada
+  - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
+  - login dan beranda guru
+- Build yang dijalankan:
+  - `./gradlew :app:clean :app:assembleGuruRelease`
+- Hasil build:
+  - sukses; `com.satupintu.mobile.guru` `1.0.30-guru` (`versionCode 1038`)
+- Output APK:
+  - `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- Disalin ke:
+  - `Apk Release/Final/GAS-Guru-release.apk` (mengganti `GAS-Guru-2026-07-30_17-47-release.apk` agar hanya satu file Guru di Final)
+  - `Apk Release/GAS/app-guru-release.apk`
+- Regression check yang dijalankan:
+  - compile + assemble `guruRelease` sukses; metadata package/version diverifikasi via `aapt dump badging`
+- Belum diuji:
+  - uji perangkat: munculnya notifikasi literasi belum dan pet mati, serta deep-link kartu notifikasi
+- Catatan:
+  - Tidak sinkron ke `web/public/apk` (Guru bukan jalur unduh tutorial siswa).
+
+---
 ## 2026-07-31 21:22 - Profil Lentera siswa disamakan ke nama dan NISN yang benar
 - Pelaksana: Assistant
 - Jenis perubahan: `fix`
@@ -1294,6 +1390,38 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-03 10:14 - GAS Guru: notifikasi literasi belum + pet mati
+
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Flavor terdampak: `guru`
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `Apk Release/Final/GAS-Guru-release.apk`
+  - `Apk Release/GAS/app-guru-release.apk`
+- Fitur lama yang wajib ikut dicek:
+  - notifikasi literasi / bullying guru yang sudah ada
+  - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
+  - login dan beranda guru
+- Build yang dijalankan:
+  - `./gradlew :app:clean :app:assembleGuruRelease`
+- Hasil build:
+  - sukses; `com.satupintu.mobile.guru` `1.0.30-guru` (`versionCode 1038`)
+- Output APK:
+  - `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- Disalin ke:
+  - `Apk Release/Final/GAS-Guru-release.apk` (mengganti `GAS-Guru-2026-07-30_17-47-release.apk` agar hanya satu file Guru di Final)
+  - `Apk Release/GAS/app-guru-release.apk`
+- Regression check yang dijalankan:
+  - compile + assemble `guruRelease` sukses; metadata package/version diverifikasi via `aapt dump badging`
+- Belum diuji:
+  - uji perangkat: munculnya notifikasi literasi belum dan pet mati, serta deep-link kartu notifikasi
+- Catatan:
+  - Tidak sinkron ke `web/public/apk` (Guru bukan jalur unduh tutorial siswa).
+
+---
 ## 2026-07-31 21:14 - Katalog Lentera siswa dirapikan lagi untuk kontras dropdown dan logo
 - Pelaksana: Assistant
 - Jenis perubahan: `fix`
@@ -1349,6 +1477,38 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-03 10:14 - GAS Guru: notifikasi literasi belum + pet mati
+
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Flavor terdampak: `guru`
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `Apk Release/Final/GAS-Guru-release.apk`
+  - `Apk Release/GAS/app-guru-release.apk`
+- Fitur lama yang wajib ikut dicek:
+  - notifikasi literasi / bullying guru yang sudah ada
+  - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
+  - login dan beranda guru
+- Build yang dijalankan:
+  - `./gradlew :app:clean :app:assembleGuruRelease`
+- Hasil build:
+  - sukses; `com.satupintu.mobile.guru` `1.0.30-guru` (`versionCode 1038`)
+- Output APK:
+  - `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- Disalin ke:
+  - `Apk Release/Final/GAS-Guru-release.apk` (mengganti `GAS-Guru-2026-07-30_17-47-release.apk` agar hanya satu file Guru di Final)
+  - `Apk Release/GAS/app-guru-release.apk`
+- Regression check yang dijalankan:
+  - compile + assemble `guruRelease` sukses; metadata package/version diverifikasi via `aapt dump badging`
+- Belum diuji:
+  - uji perangkat: munculnya notifikasi literasi belum dan pet mati, serta deep-link kartu notifikasi
+- Catatan:
+  - Tidak sinkron ke `web/public/apk` (Guru bukan jalur unduh tutorial siswa).
+
+---
 ## 2026-07-31 20:58 - Filter kategori katalog siswa diubah menjadi dropdown
 - Pelaksana: Assistant
 - Jenis perubahan: `refactor`
@@ -1948,6 +2108,38 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-03 10:14 - GAS Guru: notifikasi literasi belum + pet mati
+
+- Pelaksana: Assistant
+- Jenis perubahan: `feature`
+- Flavor terdampak: `guru`
+- Tujuan perubahan: Menambah notifikasi guru untuk siswa yang literasi belum selesai (`LITERACY_INCOMPLETE`) dan virtual pet mati (`PET_DEAD`), lalu merilis APK Guru ke folder Final dengan nama tunggal yang jelas.
+- File utama yang diubah:
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/service/TeacherNotificationListener.kt`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherNotificationScreen.kt`
+  - `Apk Release/Final/GAS-Guru-release.apk`
+  - `Apk Release/GAS/app-guru-release.apk`
+- Fitur lama yang wajib ikut dicek:
+  - notifikasi literasi / bullying guru yang sudah ada
+  - navigasi dari kartu notifikasi ke Literasi & Tugas / Data Siswa
+  - login dan beranda guru
+- Build yang dijalankan:
+  - `./gradlew :app:clean :app:assembleGuruRelease`
+- Hasil build:
+  - sukses; `com.satupintu.mobile.guru` `1.0.30-guru` (`versionCode 1038`)
+- Output APK:
+  - `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- Disalin ke:
+  - `Apk Release/Final/GAS-Guru-release.apk` (mengganti `GAS-Guru-2026-07-30_17-47-release.apk` agar hanya satu file Guru di Final)
+  - `Apk Release/GAS/app-guru-release.apk`
+- Regression check yang dijalankan:
+  - compile + assemble `guruRelease` sukses; metadata package/version diverifikasi via `aapt dump badging`
+- Belum diuji:
+  - uji perangkat: munculnya notifikasi literasi belum dan pet mati, serta deep-link kartu notifikasi
+- Catatan:
+  - Tidak sinkron ke `web/public/apk` (Guru bukan jalur unduh tutorial siswa).
+
+---
 ## 2026-07-30 10:58 - Rebuild GAS Guru & Siswa (paket integrasi terbaru)
 - Pelaksana: Assistant
 - Jenis perubahan: `fix`

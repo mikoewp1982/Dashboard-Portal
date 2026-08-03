@@ -20,6 +20,11 @@ class NotificationHelper(private val context: Context) {
         const val CHANNEL_NAME = "Notifikasi Guru"
         const val CHANNEL_DESC = "Notifikasi untuk tugas dan laporan baru"
         const val NOTIFICATION_ID = 1001
+        const val NOTIFICATION_ID_LITERACY_PENDING = 1001
+        const val NOTIFICATION_ID_BULLYING = 1002
+        const val NOTIFICATION_ID_LITERACY_INCOMPLETE = 1003
+        const val NOTIFICATION_ID_PET_DEAD = 1004
+        const val NOTIFICATION_ID_ANNOUNCEMENT = 1005
     }
 
     init {
@@ -38,20 +43,28 @@ class NotificationHelper(private val context: Context) {
         }
     }
 
-    fun showNotification(title: String, message: String) {
+    fun showNotification(
+        title: String,
+        message: String,
+        notificationId: Int = NOTIFICATION_ID
+    ) {
         // Intent to open the app when notification is clicked
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("route", "teacher_notifications")
         }
         val pendingIntent: PendingIntent = PendingIntent.getActivity(
-            context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            context,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher_round) // Fallback icon, ensure this exists
             .setContentTitle(title)
             .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
@@ -62,7 +75,7 @@ class NotificationHelper(private val context: Context) {
                     android.Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                notify(NOTIFICATION_ID, builder.build())
+                notify(notificationId, builder.build())
             }
         }
     }

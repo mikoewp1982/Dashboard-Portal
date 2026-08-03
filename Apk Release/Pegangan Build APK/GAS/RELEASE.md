@@ -1,4 +1,4 @@
-# Release Process GAS
+﻿# Release Process GAS
 
 Dokumen ini adalah alur build release APK `GAS` yang sesuai kondisi proyek saat ini.
 
@@ -60,7 +60,7 @@ GAS-Kepala-YYYY-MM-DD_HH-mm-release.apk
 Folder distribusi yang umum dipakai:
 
 ```text
-D:\Dashboard Portal\Apk Release\OK_4
+D:\Dashboard Portal\Apk Release\Final
 ```
 
 ## 6. Sesudah Build
@@ -85,12 +85,19 @@ Jika menyentuh area berikut, minimal compile 3 flavor utama:
 
 ## 9. Catatan Versi
 Versi dasar saat dokumen ini dirapikan:
-- `defaultConfig versionCode = 1029`
-- `defaultConfig versionName = 1.0.13`
-- `flavor siswa versionCode = 23005`
+- `defaultConfig versionCode = 1038`
+- `defaultConfig versionName = 1.0.30`
+- `flavor siswa versionCode = 23022`
 - `flavor legacySiswa versionCode = 23003`
 
 ## 10. Catatan Distribusi Aman GAS Siswa
 - `GAS Siswa` memakai `applicationId` `com.satupintu.mobile.siswa`.
 - Jalur `legacySiswa` pernah memakai `versionCode 23003` untuk package yang sama.
 - Karena itu, semua release `siswa` berikutnya wajib menjaga `versionCode` tetap monoton naik di atas riwayat distribusi package yang sama.
+- Build final siswa terbaru yang sudah dicatat saat ini adalah `1.0.30-siswa (23022)` di folder `D:\Dashboard Portal\Apk Release\Final`.
+
+## 11. Catatan Distribusi GAS Guru
+- Build acuan terbaru: `1.0.30-guru (versionCode 1038)`.
+- File Final tunggal: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` (hindari salinan bertanggal ganda di Final).
+- Salinan kerja: `Apk Release/GAS/app-guru-release.apk`.
+- Guru **tidak** disinkronkan ke `web/public/apk` jalur tutorial siswa.

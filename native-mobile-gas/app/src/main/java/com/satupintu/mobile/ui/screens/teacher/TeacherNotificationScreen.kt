@@ -12,6 +12,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,6 +38,7 @@ fun TeacherNotificationScreen(
     onBack: () -> Unit,
     onNavigateToBullying: () -> Unit,
     onNavigateToLiteracy: () -> Unit,
+    onNavigateToStudents: () -> Unit = {},
     viewModel: TeacherNotificationViewModel = viewModel()
 ) {
     val notifications by viewModel.notifications.collectAsState()
@@ -129,7 +132,9 @@ fun TeacherNotificationScreen(
                                 item = item,
                                 onClick = when (item.type) {
                                     NotificationType.BULLYING -> onNavigateToBullying
-                                    NotificationType.LITERACY -> onNavigateToLiteracy
+                                    NotificationType.LITERACY,
+                                    NotificationType.LITERACY_INCOMPLETE -> onNavigateToLiteracy
+                                    NotificationType.PET_DEAD -> onNavigateToStudents
                                     NotificationType.ANNOUNCEMENT -> null
                                 }
                             )
@@ -150,12 +155,16 @@ fun NotificationCard(
         NotificationType.ANNOUNCEMENT -> Icons.Default.Info
         NotificationType.BULLYING -> Icons.Default.Warning
         NotificationType.LITERACY -> Icons.Default.Book
+        NotificationType.LITERACY_INCOMPLETE -> Icons.Default.Schedule
+        NotificationType.PET_DEAD -> Icons.Default.Pets
     }
-    
+
     val iconColor = when (item.type) {
         NotificationType.ANNOUNCEMENT -> Color(0xFF12D6C6)
         NotificationType.BULLYING -> Color(0xFFF44336) // Red
         NotificationType.LITERACY -> Color(0xFF2196F3) // Blue
+        NotificationType.LITERACY_INCOMPLETE -> Color(0xFFF59E0B) // Amber
+        NotificationType.PET_DEAD -> Color(0xFFB91C1C) // Dark red
     }
     
     val timestamp = formatRelativeTime(item.timestamp)

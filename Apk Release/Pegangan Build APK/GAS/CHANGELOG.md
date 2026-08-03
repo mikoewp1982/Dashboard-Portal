@@ -1,4 +1,4 @@
-# Changelog GAS
+﻿# Changelog GAS
 
 Dokumen ini mencatat **perubahan perilaku atau fitur** pada APK `GAS`.
 
@@ -72,6 +72,9 @@ Tambahkan nama pelaksana jika perlu:
 - Fixed: Tab `Peringkat` pada `Virtual Pet` sekarang lebih tahan terhadap mismatch identitas siswa karena ranking membaca alias `recordId/id/nisn/username`.
 
 ### Guru
+- Added: Notifikasi guru `literasi belum selesai` (`LITERACY_INCOMPLETE`) agar guru bisa menindak siswa yang tugas literasinya masih outstanding.
+- Added: Notifikasi guru `virtual pet mati` (`PET_DEAD`) dengan navigasi ke `Data Siswa`.
+- Changed: Build distribusi manual GAS Guru ditimpa ke `1.0.30-guru (1038)` di `Apk Release/Final/GAS-Guru-release.apk` (nama tunggal, mengganti file bertanggal lama).
 - Changed: Garis pemisah antar kolom pada `Data Siswa`, `Presensi Siswa`, dan `Presensi Sholat` guru dibuat lebih tegas agar tabel lebih mudah dibaca.
 - Changed: Login APK GAS Guru diubah mengikuti pola `NPSN -> NUPTK -> Nama Guru`, dan nama guru terisi otomatis dari database.
 - Changed: Urutan menu beranda GAS Guru diubah menjadi `Data Siswa -> Presensi Siswa -> Presensi Sholat -> Literasi & Tugas -> 7 KAIH -> Kedisiplinan -> Layanan Aduan -> Notifikasi -> Rekapitulasi`.

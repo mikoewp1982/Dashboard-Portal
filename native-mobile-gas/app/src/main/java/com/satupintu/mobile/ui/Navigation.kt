@@ -1,4 +1,4 @@
-package com.satupintu.mobile.ui
+﻿package com.satupintu.mobile.ui
 
 import android.widget.Toast
 import androidx.compose.runtime.Composable
@@ -716,7 +716,8 @@ fun AppNavigation(
                     schoolId = schoolId,
                     onBack = { navController.popBackStack() },
                     onNavigateToBullying = { navController.navigate("teacher_bullying_reports") },
-                    onNavigateToLiteracy = { navController.navigate("teacher_literacy") }
+                    onNavigateToLiteracy = { navController.navigate("teacher_literacy") },
+                    onNavigateToStudents = { navController.navigate("teacher_student_list") }
                 )
             }
         }

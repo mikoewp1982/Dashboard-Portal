@@ -1,4 +1,4 @@
-# Checklist Perubahan APK Terkini
+﻿# Checklist Perubahan APK Terkini
 
 Dokumen ini dipakai sebagai pegangan uji perangkat tahap berikutnya.
 
@@ -6,7 +6,7 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-02 20:10
+Update terakhir: 2026-08-03 10:14
 
 ## Temuan portal tutorial web
 
@@ -313,46 +313,10 @@ Build acuan:
 
 ### Notifikasi guru
 - [x] Notifikasi guru sekarang ikut mengenali alias siswa `recordId/id/nisn/username` untuk modul literasi dan bullying
+- [x] Listener notifikasi guru menambahkan tipe `LITERACY_INCOMPLETE` (literasi belum selesai) dan `PET_DEAD` (virtual pet mati)
+- [x] Layar notifikasi guru menampilkan ikon/warna khusus untuk literasi belum dan pet mati, plus navigasi ke Literasi / Data Siswa
+- [x] APK Guru Final diganti ke nama tunggal `GAS-Guru-release.apk` (`1.0.30-guru` / `1038`); file bertanggal `2026-07-30_17-47` di Final dihapus agar tidak membingungkan
 - [ ] Cek di HP: notifikasi tugas literasi siswa tetap masuk ke guru walau `studentId` log tersimpan sebagai alias selain NISN
 - [ ] Cek di HP: notifikasi laporan bullying siswa tetap masuk ke guru walau `reporterId/victimId/perpetratorId` tersimpan sebagai alias selain NISN
-
-## 4. GAS Kepala
-
-Build acuan:
-- `D:\Dashboard Portal\Apk Release\OK_4\GAS-Kepala-2026-07-22_21-25-release.apk`
-
-### Status saat ini
-- [x] APK terbaru yang tersedia untuk `kepala` saat ini masih build `2026-07-22`
-- [ ] Tentukan apakah APK `kepala` perlu ikut diaudit/perbaikan pada gelombang berikutnya
-
-## 5. Rumah APK Final
-
-- [x] Folder `D:\Dashboard Portal\Apk Release\OK_4` sudah dijadikan rumah file APK terbaru
-- [x] Folder `D:\Dashboard Portal\Apk Release\Final` sekarang berisi copy build review `GAS-Siswa-2026-07-31_20-10-release.apk`
-- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk` sudah ditimpa dengan build pet literasi final pada `2026-07-31 20:28`
-- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-2026-07-31_20-10-release.apk` sudah ditimpa lagi dengan build perbaikan profil Lentera pada `2026-07-31 21:22`
-- [x] File EduLock siswa terbaru di `OK_4` sudah diperbarui ke build `2026-07-30_20-08`
-- [x] File GAS siswa terbaru di `OK_4` mengacu ke build `2026-07-30_17-27`
-- [x] File GAS guru terbaru di `OK_4` mengacu ke build `2026-07-30_17-47`
-- [x] File GAS kepala terbaru di `OK_4` masih mengacu ke build terbaru yang tersedia
-- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-01 23:08` dengan build sinkronisasi kategori Lentera terbaru
-- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 06:46` dengan build fix hari Minggu efektif presensi
-- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 06:52` setelah bump versi ke `1.0.12-siswa` (`versionCode 1029`) agar bisa update menimpa APK lama di HP
-- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 07:09` dengan compatibility bump `versionCode 23004` agar tetap bisa update dari jalur `legacySiswa 23003`
-- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 12:11` dengan build final `1.0.27-siswa` (`versionCode 23019`) untuk gate EduLock ketat berbasis device yang sama dan status hijau
-- [x] File `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 13:12` dengan build final `1.0.30-siswa` (`versionCode 23022`) untuk 1 akun 1 device + pemisahan binding `gasDeviceId`
-- [x] File `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk` sudah ditimpa lagi pada `2026-08-02 07:12` agar tidak lagi membagikan build stale `1028`
-- [x] File kanonik EduLock siswa di Final sekarang `EduLock-studentRelease.apk` (`1.3.4` / `30`, `3,787,940` bytes); duplikat bertanggal/versi di `Final` dibersihkan pada ship `24e3ffa6`
-- [x] File `D:\Dashboard Portal\web\public\apk\EduLock-studentRelease.apk` sudah disinkronkan dari Final pada ship `24e3ffa6`
-- [x] Handoff lapangan EduLock tersedia di `native-mobile-edulock/HANDOFF_LAPANGAN_EDULOCK.md` dan salinan Word `Apk Release/Final/HANDOFF_LAPANGAN_EDULOCK.docx`
-
-## 6. Prioritas Uji Perangkat Nanti
-
-Urutan yang disarankan saat mulai uji:
-- [ ] EduLock siswa: login otomatis `NPSN + NISN -> Nama`
-- [x] EduLock siswa: overlay `pet mati` berhasil diverifikasi saat proteksi sekolah aktif
-- [ ] EduLock siswa: blok menu `Aplikasi admin perangkat`
-- [ ] EduLock siswa build `1.3.4`: fail-closed presence (GPS off di sekolah vs di rumah)
-- [ ] Web monitoring EduLock: status HP live
-- [ ] GAS siswa: hard gate saat EduLock tidak ada / belum hijau di HP yang sama
-- [ ] GAS guru: login otomatis guru, garis pemisah tabel, dan pemisahan menu `Pelanggaran` / `Riwayat`
+- [ ] Cek di HP: siswa dengan literasi outstanding memunculkan notifikasi `literasi belum` di guru
+- [ ] Cek di HP: siswa dengan virtual pet mati memunculkan notifikasi `pet mati` dan tap membuka Data Siswa
