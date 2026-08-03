@@ -10,39 +10,14 @@ runConfig:
   # memoryMiB: 512
 
 # Environment variables and secrets.
+# Optional: inject Admin SDK private key so /api/teacher/login can mint customToken
+# locally (no IAM signBlob). Not required — login also returns a server-side
+# Identity Toolkit session that the browser persists when client Auth XHR fails.
 # env:
-  # Configure environment variables.
-  # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
-  # - variable: MESSAGE
-  #   value: Hello world!
-  #   availability:
-  #     - BUILD
-  #     - RUNTIME
-
-  # Grant access to secrets in Cloud Secret Manager.
-  # You can create secrets with the CLI command `firebase apphosting:secrets:set <secretName>`.
-  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
-  # - variable: MY_SECRET
-  #   secret: mySecretRef
-
-# --- Custom token / signBlob IAM (optional; teacher login no longer needs this) ---
-# createCustomToken() on App Hosting ADC requires the runtime service account to
-# sign JWTs. If any route still uses createCustomToken and you see:
-#   Permission 'iam.serviceAccounts.signBlob' denied
-# fix ONE of the following in GCP project kompas-5f0b4:
+#   - variable: FIREBASE_SERVICE_ACCOUNT_KEY
+#     secret: FIREBASE_SERVICE_ACCOUNT_KEY
+#     availability:
+#       - RUNTIME
 #
-# A) IAM role (Console):
-#    1. IAM & Admin → Service Accounts → open App Hosting / Cloud Run runtime SA
-#       (often firebase-app-hosting-compute@... or the Cloud Run service identity)
-#    2. Permissions → Grant Access → add the SAME service account email
-#    3. Role: Service Account Token Creator (roles/iam.serviceAccountTokenCreator)
-#    4. Save, then redeploy / wait a few minutes
-#
-# B) Or inject a service-account private key (do NOT commit JSON):
-#    firebase apphosting:secrets:set FIREBASE_SERVICE_ACCOUNT_KEY
-#    Then wire it in env: above as variable FIREBASE_SERVICE_ACCOUNT_KEY secret: ...
-#    (firebase-admin.ts already reads FIREBASE_SERVICE_ACCOUNT_KEY /
-#     FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY)
-#
-# GAS Guru /guru login uses email+password Auth instead, so A/B are not required
-# for teacher PWA login after the email/password change.
+# Create the secret (do NOT commit service-account.json):
+#   firebase apphosting:secrets:set FIREBASE_SERVICE_ACCOUNT_KEY --data-file service-account.json --force

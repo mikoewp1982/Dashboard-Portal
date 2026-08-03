@@ -185,7 +185,7 @@ export function GuruPortalGate({ children }: { children: React.ReactNode }) {
         <div className="max-w-sm rounded-3xl border border-white/10 bg-slate-950/60 p-5 text-center">
           <h2 className="text-lg font-bold text-white">Portal GAS Guru</h2>
           <p className="mt-2 text-sm text-slate-300">
-            Anda masuk sebagai <span className="font-semibold">{user.role}</span>. Keluar dulu, lalu login dengan NPSN + NUPTK guru.
+            Anda masuk sebagai <span className="font-semibold">{user.role}</span>. Keluar dulu, lalu login dengan NPSN + NUPTK guru (sama seperti APK).
           </p>
           <button
             type="button"

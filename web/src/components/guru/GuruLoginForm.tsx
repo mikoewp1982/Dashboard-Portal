@@ -1,15 +1,65 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { useEffect, useState } from "react";
+import { applyTeacherAuthSession } from "@/lib/guru/applyTeacherSession";
+
+type LookupState = {
+  loading: boolean;
+  name?: string;
+  message?: string;
+};
 
 export function GuruLoginForm() {
   const [npsn, setNpsn] = useState("");
   const [nuptk, setNuptk] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [lookup, setLookup] = useState<LookupState>({ loading: false });
+
+  useEffect(() => {
+    const npsnValue = npsn.trim();
+    const nuptkValue = nuptk.trim();
+    if (npsnValue.length < 6 || nuptkValue.length < 6) {
+      setLookup({ loading: false });
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setLookup({ loading: true });
+      try {
+        const response = await fetch("/api/teacher/lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ npsn: npsnValue, nuptk: nuptkValue }),
+        });
+        const payload = (await response.json().catch(() => ({}))) as {
+          success?: boolean;
+          name?: string;
+          message?: string;
+        };
+        if (cancelled) return;
+        if (!response.ok || !payload.success) {
+          setLookup({
+            loading: false,
+            message: payload.message || "Guru tidak ditemukan di database admin.",
+          });
+          return;
+        }
+        setLookup({ loading: false, name: payload.name || "" });
+      } catch {
+        if (!cancelled) {
+          setLookup({ loading: false, message: "Gagal memeriksa data guru." });
+        }
+      }
+    }, 450);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [npsn, nuptk]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -18,6 +68,10 @@ export function GuruLoginForm() {
     try {
       const npsnValue = npsn.trim();
       const nuptkValue = nuptk.trim();
+      if (!npsnValue || !nuptkValue) {
+        throw new Error("NPSN dan NUPTK wajib diisi (sama seperti APK GAS Guru).");
+      }
+
       const response = await fetch("/api/teacher/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -27,14 +81,28 @@ export function GuruLoginForm() {
         success?: boolean;
         message?: string;
         email?: string;
+        customToken?: string;
+        session?: {
+          localId: string;
+          email: string;
+          displayName?: string;
+          idToken: string;
+          refreshToken: string;
+          expiresIn: string;
+        };
+        teacher?: { name?: string };
       };
-      if (!response.ok || !payload.success || !payload.email) {
+
+      if (!response.ok || !payload.success) {
         throw new Error(payload.message || "Login gagal.");
       }
-      // Mirror admin login: client signs in with email/password so App Hosting
-      // never needs createCustomToken / iam.serviceAccounts.signBlob.
-      await signInWithEmailAndPassword(auth, payload.email, nuptkValue);
-      await auth.currentUser?.getIdToken(true);
+
+      await applyTeacherAuthSession({
+        email: payload.email,
+        password: nuptkValue,
+        customToken: payload.customToken,
+        session: payload.session,
+      });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal masuk.");
     } finally {
@@ -58,7 +126,8 @@ export function GuruLoginForm() {
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-white">GAS Guru</h1>
           <p className="mt-2 text-sm text-teal-100/80">
-            Portal wali kelas untuk iPhone &amp; browser. Login dengan NPSN + NUPTK.
+            Portal wali kelas untuk iPhone &amp; browser. Login sama seperti APK: NPSN + NUPTK
+            (hanya guru terdaftar &amp; aktif di database admin).
           </p>
         </div>
 
@@ -73,21 +142,43 @@ export function GuruLoginForm() {
               onChange={(e) => setNpsn(e.target.value)}
               inputMode="numeric"
               autoComplete="username"
-              placeholder="Masukkan NPSN"
+              placeholder="Masukkan NPSN sekolah"
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none ring-teal-400/40 placeholder:text-slate-500 focus:ring-2"
             />
           </label>
 
           <label className="block space-y-1.5">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">NUPTK Guru</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">NUPTK</span>
             <input
               value={nuptk}
               onChange={(e) => setNuptk(e.target.value)}
+              inputMode="numeric"
               autoComplete="current-password"
-              placeholder="Masukkan NUPTK"
+              placeholder="Masukkan NUPTK (password login)"
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none ring-teal-400/40 placeholder:text-slate-500 focus:ring-2"
             />
           </label>
+
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              Nama Guru
+            </div>
+            <div className="mt-1 text-sm text-white">
+              {lookup.loading
+                ? "Mencari nama guru..."
+                : lookup.name
+                  ? lookup.name
+                  : "Terisi otomatis dari database admin"}
+            </div>
+            {!lookup.loading && lookup.message && (
+              <div className="mt-1 text-xs text-rose-200">{lookup.message}</div>
+            )}
+            {!lookup.loading && lookup.name && (
+              <div className="mt-1 text-xs text-teal-200/80">
+                Nama guru terhubung otomatis dari Manajemen Guru/Wali Kelas.
+              </div>
+            )}
+          </div>
 
           {error && (
             <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
@@ -106,10 +197,11 @@ export function GuruLoginForm() {
 
         <div className="mt-6 space-y-2 text-center text-xs leading-relaxed text-slate-400">
           <p>
-            Di iPhone/iPad: buka Safari → Bagikan → <strong className="text-slate-200">Add to Home Screen</strong>.
+            Kredensial mengikuti APK GAS Guru: isi NPSN dan NUPTK. Nama guru hanya tampilan dari
+            database admin (bukan username ketik manual).
           </p>
           <p>
-            Notifikasi push iOS butuh iOS 16.4+, dipasang sebagai Home Screen app, dan izin pengguna.
+            Di iPhone/iPad: buka Safari → Bagikan → <strong className="text-slate-200">Add to Home Screen</strong>.
           </p>
         </div>
       </div>

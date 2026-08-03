@@ -1,65 +1,76 @@
 import { NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { adminAuth } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 import { normalizeSchoolId } from "@/lib/gas/schoolId";
 import { readHomeroomClass } from "@/lib/guru/normalizeClass";
-import { teacherAuthEmail } from "@/lib/guru/teacherAuthEmail";
+import { teacherAuthEmail, teacherAuthEmailCandidates } from "@/lib/guru/teacherAuthEmail";
+import {
+  findTeacher,
+  isTeacherActive,
+  readTeacherString,
+} from "@/lib/guru/findTeacher";
+import { createTeacherCustomToken } from "@/lib/guru/mintTeacherCustomToken";
+import { signInTeacherWithPassword } from "@/lib/guru/signInTeacherPassword";
 
 export const dynamic = "force-dynamic";
 
-type TeacherRow = Record<string, unknown>;
-
-function readString(source: TeacherRow | null | undefined, ...keys: string[]) {
-  if (!source) return "";
-  for (const key of keys) {
-    const value = String(source[key] ?? "").trim();
-    if (value) return value;
-  }
-  return "";
-}
-
 function toUserFacingMessage(error: unknown) {
   const message = error instanceof Error ? error.message : "Gagal login guru.";
-  // Avoid leaking App Hosting / IAM internals to end users.
   if (/signBlob|iam\.serviceAccounts|create-custom-tokens/i.test(message)) {
     return "Konfigurasi autentikasi server belum siap. Hubungi admin teknis.";
   }
   return message;
 }
 
-async function findTeacher(schoolId: string, nuptk: string): Promise<{ id: string; row: TeacherRow } | null> {
-  const teachersRef = adminDb.ref(`gas/schools/${schoolId}/teachers`);
-  const directSnap = await teachersRef.child(nuptk).get();
-  if (directSnap.exists()) {
-    return { id: directSnap.key || nuptk, row: (directSnap.val() || {}) as TeacherRow };
+async function ensureTeacherAuthUser(options: {
+  email: string;
+  password: string;
+  displayName: string;
+  emailCandidates?: string[];
+}) {
+  const candidates = options.emailCandidates?.length
+    ? options.emailCandidates
+    : [options.email];
+
+  for (const candidate of candidates) {
+    try {
+      const existing = await adminAuth.getUserByEmail(candidate);
+      await adminAuth.updateUser(existing.uid, {
+        email: options.email,
+        displayName: options.displayName,
+        disabled: false,
+        password: options.password,
+        emailVerified: true,
+      });
+      return existing.uid;
+    } catch {
+      // try next candidate / create
+    }
   }
 
-  const byNuptk = await teachersRef.orderByChild("nuptk").equalTo(nuptk).limitToFirst(1).get();
-  if (byNuptk.exists()) {
-    const entry = Object.entries(byNuptk.val() as Record<string, TeacherRow>)[0];
-    if (entry) return { id: entry[0], row: entry[1] || {} };
-  }
-
-  const byUsername = await teachersRef.orderByChild("username").equalTo(nuptk).limitToFirst(1).get();
-  if (byUsername.exists()) {
-    const entry = Object.entries(byUsername.val() as Record<string, TeacherRow>)[0];
-    if (entry) return { id: entry[0], row: entry[1] || {} };
-  }
-
-  return null;
+  const created = await adminAuth.createUser({
+    email: options.email,
+    password: options.password,
+    displayName: options.displayName,
+    emailVerified: true,
+    disabled: false,
+  });
+  return created.uid;
 }
 
 /**
  * Teacher login for GAS Guru PWA.
  *
- * Intentionally uses email/password Auth (same pattern as admin bootstrap/login)
- * instead of adminAuth.createCustomToken(). On Firebase App Hosting, ADC often
- * lacks iam.serviceAccounts.signBlob, which breaks createCustomToken.
+ * Validates against the same RTDB master as admin Database → Guru/Wali Kelas
+ * and APK GAS Guru (`gas/schools/{schoolId}/teachers`). Credentials match APK:
+ * NPSN + NUPTK (nama is display-only on APK).
  *
- * Optional IAM alternative (not required after this change):
- * Grant the App Hosting runtime service account
- * roles/iam.serviceAccountTokenCreator on itself, or set FIREBASE_SERVICE_ACCOUNT_KEY
- * / FIREBASE_CLIENT_EMAIL+FIREBASE_PRIVATE_KEY via App Hosting secrets.
+ * Auth session strategy (App Hosting safe):
+ * 1) Ensure Auth user with password = NUPTK (no arbitrary account inventing)
+ * 2) Mint customToken when service-account private key is available
+ * 3) Always complete Identity Toolkit password sign-in on the server and return
+ *    tokens so the browser can apply a session even if client Auth XHR fails
+ *    with auth/network-request-failed (*.hosted.app has no /__/auth handler).
  */
 export async function POST(req: Request) {
   try {
@@ -73,7 +84,7 @@ export async function POST(req: Request) {
 
     if (!npsn || !nuptk) {
       return NextResponse.json(
-        { success: false, message: "NPSN dan NUPTK wajib diisi." },
+        { success: false, message: "NPSN dan NUPTK wajib diisi (sama seperti APK GAS Guru)." },
         { status: 400 }
       );
     }
@@ -92,7 +103,7 @@ export async function POST(req: Request) {
 
     if (!schoolContext?.schoolId) {
       return NextResponse.json(
-        { success: false, message: "Sekolah dengan NPSN tersebut tidak ditemukan." },
+        { success: false, message: "Sekolah dengan NPSN tersebut tidak ditemukan atau tidak aktif." },
         { status: 404 }
       );
     }
@@ -101,51 +112,72 @@ export async function POST(req: Request) {
     const teacher = await findTeacher(schoolId, nuptk);
     if (!teacher) {
       return NextResponse.json(
-        { success: false, message: "Guru dengan NUPTK tersebut tidak ditemukan." },
+        {
+          success: false,
+          message:
+            "Guru dengan NUPTK tersebut tidak terdaftar di database admin (Manajemen Guru/Wali Kelas).",
+        },
         { status: 404 }
       );
     }
 
-    const teacherName = readString(teacher.row, "name", "nama") || "Guru";
-    const homeroomClass = readHomeroomClass(teacher.row);
-    const resolvedNuptk = readString(teacher.row, "nuptk") || nuptk;
-    const email = teacherAuthEmail(schoolId, resolvedNuptk);
-    // NUPTK is the teacher credential (same role as admin password / student NISN).
-    const password = nuptk;
-
-    let uid = "";
-    try {
-      const existing = await adminAuth.getUserByEmail(email);
-      uid = existing.uid;
-      await adminAuth.updateUser(uid, {
-        displayName: teacherName,
-        disabled: false,
-        password,
-      });
-    } catch {
-      const created = await adminAuth.createUser({
-        email,
-        password,
-        displayName: teacherName,
-        emailVerified: true,
-        disabled: false,
-      });
-      uid = created.uid;
+    if (!isTeacherActive(teacher.row)) {
+      return NextResponse.json(
+        { success: false, message: "Akun guru berstatus Nonaktif. Hubungi admin sekolah." },
+        { status: 403 }
+      );
     }
 
-    await adminAuth.setCustomUserClaims(uid, {
-      role: "teacher",
+    const teacherName = readTeacherString(teacher.row, "name", "nama") || "Guru";
+    const homeroomClass = readHomeroomClass(teacher.row);
+    const storedNuptk = readTeacherString(teacher.row, "nuptk");
+    // APK password credential = NUPTK in master data (fallback: record key / submitted value).
+    const resolvedNuptk = storedNuptk || (teacher.id === nuptk ? teacher.id : "") || nuptk;
+
+    if (storedNuptk && normalizeLoose(storedNuptk) !== normalizeLoose(nuptk)) {
+      return NextResponse.json(
+        { success: false, message: "NUPTK salah. Gunakan NUPTK yang terdaftar di database admin." },
+        { status: 401 }
+      );
+    }
+
+    const email = teacherAuthEmail(schoolId, resolvedNuptk);
+    const password = resolvedNuptk;
+    const claims = {
+      role: "teacher" as const,
       schoolId,
       npsn: schoolContext.npsn || npsn,
       schoolName: schoolContext.name || "",
       nuptk: resolvedNuptk,
       class: homeroomClass,
       teacherId: teacher.id,
+    };
+
+    const uid = await ensureTeacherAuthUser({
+      email,
+      password,
+      displayName: teacherName,
+      emailCandidates: teacherAuthEmailCandidates(schoolId, resolvedNuptk),
     });
+
+    await adminAuth.setCustomUserClaims(uid, claims);
+
+    const customToken = await createTeacherCustomToken(uid, claims);
+    const session = await signInTeacherWithPassword(email, password);
 
     return NextResponse.json({
       success: true,
       email,
+      customToken: customToken || undefined,
+      // Browser may fail Identity Toolkit XHR on App Hosting; client applies this session.
+      session: {
+        localId: session.localId,
+        email: session.email,
+        displayName: session.displayName || teacherName,
+        idToken: session.idToken,
+        refreshToken: session.refreshToken,
+        expiresIn: session.expiresIn,
+      },
       teacher: {
         id: teacher.id,
         name: teacherName,
@@ -166,4 +198,11 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+}
+
+function normalizeLoose(value: string) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
 }
