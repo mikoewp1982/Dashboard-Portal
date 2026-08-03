@@ -141,7 +141,16 @@ export function GuruRekapView() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `rekap-kelas-${user.class || "wali"}-${MONTH_NAMES[month]}-${year}.xlsx`;
+      // Filename parity with APK: Rekapitulasi_{Kelas}_{Bulan_Tahun}.xlsx
+      const cd = res.headers.get("Content-Disposition") || "";
+      const serverName = /filename="([^"]+)"/i.exec(cd)?.[1];
+      const safeClass = (user.class || "wali").replace(/[^a-zA-Z0-9_-]/g, "_");
+      const safePeriod = `${MONTH_NAMES[month]}_${year}`.replace(
+        /[^a-zA-Z0-9_-]/g,
+        "_"
+      );
+      a.download =
+        serverName || `Rekapitulasi_${safeClass}_${safePeriod}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
