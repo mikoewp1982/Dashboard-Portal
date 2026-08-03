@@ -72,6 +72,8 @@ Tambahkan nama pelaksana jika perlu:
 - Fixed: Tab `Peringkat` pada `Virtual Pet` sekarang lebih tahan terhadap mismatch identitas siswa karena ranking membaca alias `recordId/id/nisn/username`.
 
 ### Guru
+- Added: Portal Guru PWA MVP di web path `/guru` (commit `05c4fb14`) untuk iOS Safari/browser: login NPSN+NUPTK, inbox notifikasi (literasi belum, pet mati, aduan), Add to Home Screen via manifest + `sw-guru.js`.
+- Known limitation: background Web Push masih perlu VAPID/FCM; belum push saat tab tertutup.
 - Added: Notifikasi guru `literasi belum selesai` (`LITERACY_INCOMPLETE`) untuk siswa wali/diampu agar guru bisa menindak tugas literasi outstanding.
 - Added: Notifikasi guru `virtual pet mati` (`PET_DEAD`) untuk siswa wali/diampu dengan navigasi ke `Data Siswa`.
 - Changed: Menu `Notifikasi` beranda guru menampilkan badge jumlah item.

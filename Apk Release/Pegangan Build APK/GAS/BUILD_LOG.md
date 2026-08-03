@@ -21,6 +21,39 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
+## 2026-08-03 11:10 - Docs + verify: Portal Guru PWA MVP live (`05c4fb14`)
+
+- Pelaksana: Assistant
+- Jenis perubahan: `docs`
+- Flavor terdampak: `guru` (web PWA; dokumentasi + verifikasi live)
+- Tujuan perubahan: Mencatat ship Portal Guru PWA di `/guru` (login NPSN+NUPTK, inbox literasi belum/pet mati/aduan, A2HS) dan hasil cek App Hosting live; mencatat batasan Web Push (VAPID/FCM masih perlu).
+- File utama yang diubah:
+  - `Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md`
+  - `Apk Release/Pegangan Build APK/GAS/CHANGELOG.md`
+  - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
+- Fitur lama yang wajib ikut dicek:
+  - login portal `/guru`, inbox notifikasi, Add to Home Screen
+  - APK Guru notifikasi (terpisah) tetap relevan di perangkat Android
+- Build yang dijalankan:
+  - tidak ada (docs + verify live; kode sudah di `05c4fb14`)
+- Hasil build:
+  - n/a
+- Output APK:
+  - n/a
+- Disalin ke:
+  - n/a
+- Regression check yang dijalankan:
+  - GET live `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/guru` → `200` HTML
+  - GET `/guru/manifest.json` → `200`
+  - GET `/sw-guru.js` → `200`
+- Belum diuji:
+  - Add to Home Screen di Safari iOS lapangan
+  - background Web Push (masih butuh VAPID/FCM)
+- Catatan:
+  - Deploy App Hosting sempat lag ~6 menit setelah push `05c4fb14` (`/guru` 404 hingga ~11:09 WIB), lalu semua path PWA 200.
+
+---
+
 ## 2026-08-03 - Fix: commit UI badge Notifikasi di home Guru (follow-up `ebfeb7b8`)
 
 - Pelaksana: Assistant

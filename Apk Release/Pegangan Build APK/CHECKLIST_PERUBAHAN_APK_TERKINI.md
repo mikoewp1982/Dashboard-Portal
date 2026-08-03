@@ -6,7 +6,7 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-03 10:50
+Update terakhir: 2026-08-03 11:10
 
 ## Temuan portal tutorial web
 
@@ -321,6 +321,16 @@ Build acuan:
 - [x] APK Guru Final diganti ke nama tunggal `GAS-Guru-release.apk` (`1.0.30-guru` / `1038`); file bertanggal `2026-07-30_17-47` di Final dihapus agar tidak membingungkan
 - [x] Ship tercatat di commit `ebfeb7b8` (fitur + APK + pegangan awal)
 - [x] Batasan dicatat: belum ada FCM; tray notification hanya saat app/listener hidup
+
+### Portal Guru PWA (web `/guru`)
+- [x] MVP Portal Guru PWA di-ship ke `main` (commit `05c4fb14`) untuk Firebase App Hosting `gerbang-aplikasi-sekolah--kompas-5f0b4`
+- [x] Live path `/guru` merespons `200` HTML (verifikasi `2026-08-03 ~11:09` WIB setelah lag deploy ~6 menit)
+- [x] Aset PWA live: `/guru/manifest.json` dan `/sw-guru.js` merespons `200`
+- [x] Login portal: `NPSN + NUPTK` (nama guru dari database)
+- [x] Inbox notifikasi web: literasi belum, pet mati, aduan (scope wali/diampu)
+- [x] Dukungan Add to Home Screen (manifest + service worker ringan)
+- [ ] Background Web Push masih perlu VAPID/FCM (belum production-ready)
+- [ ] Cek Safari iOS: login NPSN+NUPTK, inbox notif tampil, Add to Home Screen berjalan
 - [ ] Cek di HP: notifikasi tugas literasi siswa tetap masuk ke guru walau `studentId` log tersimpan sebagai alias selain NISN
 - [ ] Cek di HP: notifikasi laporan bullying siswa tetap masuk ke guru walau `reporterId/victimId/perpetratorId` tersimpan sebagai alias selain NISN
 - [ ] Cek di HP: siswa wali/diampu dengan literasi outstanding memunculkan notifikasi `literasi belum` di guru
