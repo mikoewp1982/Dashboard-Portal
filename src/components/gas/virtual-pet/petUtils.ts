@@ -15,8 +15,7 @@ export function analyzePetRisk(pet: PetData) {
   const isReviveGraceActive = Number(pet.manualReviveUntil || 0) > Date.now();
   const isDead = !isReviveGraceActive && (
     normalizedStatus === "DEAD" ||
-    health <= 0 ||
-    lowestVital <= 0
+    health <= 0
   );
 
   const isSick = health < 30 && !isDead;
