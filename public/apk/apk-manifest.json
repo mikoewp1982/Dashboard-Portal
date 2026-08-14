@@ -1,5 +1,5 @@
 {
-    "updatedAt":  "2026-08-14T14:51:47",
+    "updatedAt":  "2026-08-14T14:58:20",
     "files":  {
                   "GAS-Siswa-1.0.54-23051.apk":  {
                                                      "lastModified":  "2026-08-10T09:50:50",
@@ -325,16 +325,6 @@
                                                            "sizeBytes":  21226503,
                                                            "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63"
                                                        },
-                  "GAS-Siswa-release.apk":  {
-                                                "lastModified":  "2026-08-14T14:51:19",
-                                                "packageName":  "com.satupintu.mobile.siswa",
-                                                "sizeMB":  20.24,
-                                                "sha256":  "2F8A0F2238DAD9C389444DB9CA5FE82E3BBA02EB49CDED6B41CBBAB2D5FD7851",
-                                                "versionName":  "1.0.71-siswa",
-                                                "versionCode":  23068,
-                                                "sizeBytes":  21226504,
-                                                "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63"
-                                            },
                   "GAS-Siswa-1.0.71-siswa-23068.apk":  {
                                                            "lastModified":  "2026-08-14T14:51:19",
                                                            "packageName":  "com.satupintu.mobile.siswa",
@@ -343,6 +333,26 @@
                                                            "versionName":  "1.0.71-siswa",
                                                            "versionCode":  23068,
                                                            "sizeBytes":  21226504,
+                                                           "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63"
+                                                       },
+                  "GAS-Siswa-release.apk":  {
+                                                "lastModified":  "2026-08-14T14:57:50",
+                                                "packageName":  "com.satupintu.mobile.siswa",
+                                                "sizeMB":  20.24,
+                                                "sha256":  "26D976F5A74E9A4C9523927AC6C4A96FC9C21BC5BA924AAC54947C6B94C755F4",
+                                                "versionName":  "1.0.72-siswa",
+                                                "versionCode":  23069,
+                                                "sizeBytes":  21226505,
+                                                "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63"
+                                            },
+                  "GAS-Siswa-1.0.72-siswa-23069.apk":  {
+                                                           "lastModified":  "2026-08-14T14:57:50",
+                                                           "packageName":  "com.satupintu.mobile.siswa",
+                                                           "sizeMB":  20.24,
+                                                           "sha256":  "26D976F5A74E9A4C9523927AC6C4A96FC9C21BC5BA924AAC54947C6B94C755F4",
+                                                           "versionName":  "1.0.72-siswa",
+                                                           "versionCode":  23069,
+                                                           "sizeBytes":  21226505,
                                                            "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63"
                                                        }
               }
