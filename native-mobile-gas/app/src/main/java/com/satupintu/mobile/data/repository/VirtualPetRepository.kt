@@ -2,6 +2,7 @@ package com.satupintu.mobile.data.repository
 
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Query
@@ -23,6 +24,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import java.util.Calendar
 import java.util.UUID
+
 import kotlin.coroutines.resume
 
 class VirtualPetRepository {
@@ -78,15 +80,21 @@ class VirtualPetRepository {
     }
 
     private fun isBetterPetCandidate(candidate: VirtualPet, current: VirtualPet): Boolean {
-        val candidateScore = rankPetCandidate(candidate)
-        val currentScore = rankPetCandidate(current)
         return when {
-            candidateScore != currentScore -> candidateScore > currentScore
-            candidate.updatedAt != current.updatedAt -> candidate.updatedAt > current.updatedAt
             candidate.level != current.level -> candidate.level > current.level
             candidate.experiencePoints != current.experiencePoints -> candidate.experiencePoints > current.experiencePoints
-            else -> candidate.id > current.id
+            candidate.coins != current.coins -> candidate.coins > current.coins
+            else -> {
+                val candidateScore = rankPetCandidate(candidate)
+                val currentScore = rankPetCandidate(current)
+                if (candidateScore != currentScore) candidateScore > currentScore
+                else candidate.id > current.id
+            }
         }
+    }
+
+    private val petCandidateComparator = Comparator<VirtualPet> { p1, p2 ->
+        if (isBetterPetCandidate(p1, p2)) 1 else if (isBetterPetCandidate(p2, p1)) -1 else 0
     }
 
     private fun selectBestPetsByStudent(pets: List<VirtualPet>): List<VirtualPet> {
@@ -138,8 +146,8 @@ class VirtualPetRepository {
                     petSchoolId.isBlank() -> legacyMatches.add(pet)
                 }
             }
-            val chosenPet = (exactMatches.maxByOrNull(::rankPetCandidate)
-                ?: legacyMatches.maxByOrNull(::rankPetCandidate))
+            val chosenPet = (exactMatches.maxWithOrNull(petCandidateComparator)
+                ?: legacyMatches.maxWithOrNull(petCandidateComparator))
                 
             trySend(chosenPet)
         }
@@ -234,7 +242,7 @@ class VirtualPetRepository {
 
     suspend fun insertVirtualPet(pet: VirtualPet): String {
         val normalizedSchoolId = normalizeScope(pet.schoolId)
-        val petId = if (pet.id.isEmpty()) UUID.randomUUID().toString() else pet.id
+        val petId = if (pet.id.isEmpty()) pet.studentId.trim() else pet.id
         val newPet = pet.copy(id = petId, schoolId = normalizedSchoolId)
         db.child("virtual_pets").child(petId).setValue(newPet).await()
         return petId
@@ -328,7 +336,7 @@ class VirtualPetRepository {
 
                 rewardPetForQuestCompletion(
                     normalizedPetId = normalizedPetId,
-                    reward = quest.reward
+                    quest = quest
                 ) { rewarded ->
                     if (continuation.isActive) continuation.resume(rewarded)
                 }
@@ -342,14 +350,14 @@ class VirtualPetRepository {
 
     private fun rewardPetForQuestCompletion(
         normalizedPetId: String,
-        reward: Int,
+        quest: PetQuest,
         onComplete: (Boolean) -> Unit
     ) {
         val petRef = db.child("virtual_pets").child(normalizedPetId)
         petRef.runTransaction(object : Transaction.Handler {
             override fun doTransaction(currentData: MutableData): Transaction.Result {
                 val currentPet = currentData.getValue(VirtualPet::class.java) ?: return Transaction.abort()
-                currentData.value = applyQuestReward(currentPet, reward)
+                currentData.value = applyQuestReward(currentPet, quest)
                 return Transaction.success(currentData)
             }
 
@@ -363,10 +371,28 @@ class VirtualPetRepository {
         })
     }
 
-    private fun applyQuestReward(pet: VirtualPet, reward: Int): VirtualPet {
+    private fun applyQuestReward(pet: VirtualPet, quest: PetQuest): VirtualPet {
+        // Intelligence Gamification logic
+        if (quest.isPaused && quest.title == "Membaca Buku") {
+            // Bonus for reading on holidays!
+            return pet.copy(
+                intelligence = (pet.intelligence + 10).coerceAtMost(100),
+                updatedAt = System.currentTimeMillis()
+            )
+        }
+
+        var multiplier = 1.0f
+        if (quest.title == "Praktik 3 Kebiasaan") {
+            if (pet.intelligence >= 80) multiplier = 1.5f
+            else if (pet.intelligence >= 60) multiplier = 1.2f
+        }
+
+        val gainedCoins = quest.reward
+        val gainedXp = ((quest.reward / 2) * multiplier).toInt()
+
         var updatedPet = pet.copy(
-            coins = pet.coins + reward,
-            experiencePoints = pet.experiencePoints + (reward / 2),
+            coins = pet.coins + gainedCoins,
+            experiencePoints = pet.experiencePoints + gainedXp,
             updatedAt = System.currentTimeMillis()
         )
 
@@ -408,7 +434,8 @@ class VirtualPetRepository {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     var total = 0L
                     for (child in snapshot.children) {
-                        val duration = child.child("duration").getValue(Long::class.java) ?: 0L
+                        val durationVal = child.child("durationMillis").value ?: child.child("duration").value
+                        val duration = (durationVal as? Number)?.toLong() ?: 0L
                         total += duration
                     }
                     totalsByAlias[alias] = total
@@ -518,23 +545,29 @@ class VirtualPetRepository {
         calendar.set(java.util.Calendar.SECOND, 59)
         val endOfDay = calendar.timeInMillis
 
-        val ref = db.child("attendance")
-        val query = ref.orderByChild("date").startAt(startOfDay.toDouble()).endAt(endOfDay.toDouble())
+        var legacySchedules: Map<Int, DayScheduleRule> = emptyMap()
+        var scopedSchedules: Map<Int, DayScheduleRule>? = null
+        var legacyHolidays: List<HolidayRule> = emptyList()
+        var scopedHolidays: List<HolidayRule>? = null
 
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                var latestRecord: DataSnapshot? = null
-                var latestScore = Long.MIN_VALUE
+        val snapshotsByAlias = mutableMapOf<String, DataSnapshot?>()
+        val queries = mutableListOf<Pair<com.google.firebase.database.Query, ValueEventListener>>()
 
+        fun emitAttendance() {
+            var latestRecord: DataSnapshot? = null
+            var latestScore = Long.MIN_VALUE
+
+            aliases.forEach { alias ->
+                val snapshot = snapshotsByAlias[alias] ?: return@forEach
                 for (child in snapshot.children) {
                     val recordSchoolId = normalizeScope(child.child("schoolId").getValue(String::class.java))
-                    if (normalizedSchoolId.isNotBlank() && recordSchoolId.isNotBlank() && recordSchoolId != normalizedSchoolId) {
-                        continue
-                    }
-                    if (!snapshotMatchesStudent(child, aliases)) continue
+                    if (normalizedSchoolId.isNotBlank() && recordSchoolId.isNotBlank() && recordSchoolId != normalizedSchoolId) continue
+                    if (!snapshotMatchesStudent(child, setOf(alias))) continue
+
+                    val date = child.child("date").getValue(Long::class.java) ?: 0L
+                    if (date !in startOfDay..endOfDay) continue
 
                     val updatedAt = child.child("updatedAt").getValue(Long::class.java) ?: 0L
-                    val date = child.child("date").getValue(Long::class.java) ?: 0L
                     val createdAt = child.child("createdAt").getValue(Long::class.java) ?: 0L
                     val score = maxOf(updatedAt, date, createdAt)
                     if (latestRecord == null || score >= latestScore) {
@@ -542,21 +575,91 @@ class VirtualPetRepository {
                         latestScore = score
                     }
                 }
+            }
 
-                val status = latestRecord?.child("status")?.getValue(String::class.java)
-                val checkOutTime = latestRecord?.child("checkOutTime")?.value?.toString().orEmpty()
+            val status = latestRecord?.child("status")?.getValue(String::class.java)
+            val checkOutTime = latestRecord?.child("checkOutTime")?.value?.toString().orEmpty()
 
-                // Return both status and checkOutTime
-                val result = mapOf(
-                    "status" to status,
-                    "checkOutTime" to checkOutTime
-                )
-                trySend(result)
+            val schedules = scopedSchedules ?: legacySchedules
+            val holidays = scopedHolidays ?: legacyHolidays
+            val isEffectiveDay = com.satupintu.mobile.util.isValidSchoolDay(Calendar.getInstance(), schedules, holidays)
+
+            trySend(mapOf(
+                "status" to status, 
+                "checkOutTime" to checkOutTime,
+                "isEffectiveDay" to isEffectiveDay
+            ))
+        }
+
+        aliases.forEach { alias ->
+            val query = db.child("attendance").orderByChild("studentId").equalTo(alias)
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    snapshotsByAlias[alias] = snapshot
+                    emitAttendance()
+                }
+                override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+            }
+            query.addValueEventListener(listener)
+            queries += query to listener
+        }
+
+        val legacyScheduleRef = db.child("attendance_schedules")
+        val legacyScheduleListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                legacySchedules = parseScheduleSnapshot(snapshot)
+                emitAttendance()
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
         }
-        query.addValueEventListener(listener)
-        awaitClose { query.removeEventListener(listener) }
+
+        val legacyHolidayRef = db.child("holidays")
+        val legacyHolidayListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                legacyHolidays = parseHolidaySnapshot(snapshot)
+                emitAttendance()
+            }
+            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+        }
+
+        legacyScheduleRef.addValueEventListener(legacyScheduleListener)
+        legacyHolidayRef.addValueEventListener(legacyHolidayListener)
+
+        var scopedScheduleRef: com.google.firebase.database.DatabaseReference? = null
+        var scopedScheduleListener: ValueEventListener? = null
+        var scopedHolidayRef: com.google.firebase.database.DatabaseReference? = null
+        var scopedHolidayListener: ValueEventListener? = null
+
+        if (normalizedSchoolId.isNotBlank()) {
+            scopedScheduleRef = db.child("school_settings").child(normalizedSchoolId).child("attendance").child("schedules")
+            scopedScheduleListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    scopedSchedules = if (snapshot.exists()) parseScheduleSnapshot(snapshot) else null
+                    emitAttendance()
+                }
+                override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+            }
+
+            scopedHolidayRef = db.child("school_settings").child(normalizedSchoolId).child("attendance").child("holidays")
+            scopedHolidayListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    scopedHolidays = if (snapshot.exists()) parseHolidaySnapshot(snapshot) else null
+                    emitAttendance()
+                }
+                override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+            }
+
+            scopedScheduleRef.addValueEventListener(scopedScheduleListener)
+            scopedHolidayRef.addValueEventListener(scopedHolidayListener)
+        }
+
+        awaitClose { 
+            queries.forEach { (query, listener) -> query.removeEventListener(listener) } 
+            legacyScheduleRef.removeEventListener(legacyScheduleListener)
+            legacyHolidayRef.removeEventListener(legacyHolidayListener)
+            scopedScheduleRef?.let { ref -> scopedScheduleListener?.let(ref::removeEventListener) }
+            scopedHolidayRef?.let { ref -> scopedHolidayListener?.let(ref::removeEventListener) }
+        }
     }
 
     fun getRealtimePrayerInfo(studentId: String, schoolId: String = ""): Flow<PrayerRealtimeInfo> =
@@ -586,28 +689,23 @@ class VirtualPetRepository {
         var legacyHolidays: List<HolidayRule> = emptyList()
         var scopedHolidays: List<HolidayRule>? = null
 
-        fun emitRealtimePrayer() {
-            val schedules = scopedSchedules ?: legacySchedules
-            val holidays = scopedHolidays ?: legacyHolidays
-            val isEffectiveDay = isValidPrayerDay(Calendar.getInstance(), schedules, holidays)
-            trySend(PrayerRealtimeInfo(status = latestStatus, isEffectiveDay = isEffectiveDay))
-        }
+        val snapshotsByAlias = mutableMapOf<String, DataSnapshot?>()
+        val queries = mutableListOf<Pair<com.google.firebase.database.Query, ValueEventListener>>()
 
-        val prayerQuery = db.child("prayer_attendance")
-            .orderByChild("date")
-            .startAt(startOfDay.toDouble())
-            .endAt(endOfDay.toDouble())
-        val prayerListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                var latestRecord: DataSnapshot? = null
-                var latestScore = Long.MIN_VALUE
+        fun emitRealtimePrayer() {
+            var latestRecord: DataSnapshot? = null
+            var latestScore = Long.MIN_VALUE
+            for (alias in identityAliases) {
+                val snapshot = snapshotsByAlias[alias] ?: continue
                 for (child in snapshot.children) {
                     val logSchoolId = normalizeScope(child.child("schoolId").getValue(String::class.java))
-                    if (!snapshotMatchesStudent(child, identityAliases)) continue
+                    if (!snapshotMatchesStudent(child, setOf(alias))) continue
                     if (normalizedSchoolId.isNotBlank() && logSchoolId.isNotBlank() && logSchoolId != normalizedSchoolId) continue
 
-                    val updatedAt = child.child("updatedAt").getValue(Long::class.java) ?: 0L
                     val date = child.child("date").getValue(Long::class.java) ?: 0L
+                    if (date !in startOfDay..endOfDay) continue
+
+                    val updatedAt = child.child("updatedAt").getValue(Long::class.java) ?: 0L
                     val createdAt = child.child("createdAt").getValue(Long::class.java) ?: 0L
                     val score = maxOf(updatedAt, date, createdAt)
                     if (latestRecord == null || score >= latestScore) {
@@ -615,14 +713,26 @@ class VirtualPetRepository {
                         latestScore = score
                     }
                 }
-
-                latestStatus = latestRecord?.child("status")?.getValue(String::class.java)
-                emitRealtimePrayer()
             }
+            latestStatus = latestRecord?.child("status")?.getValue(String::class.java)
 
-            override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+            val schedules = scopedSchedules ?: legacySchedules
+            val holidays = scopedHolidays ?: legacyHolidays
+            val isEffectiveDay = isValidPrayerDay(Calendar.getInstance(), schedules, holidays)
+            trySend(PrayerRealtimeInfo(status = latestStatus, isEffectiveDay = isEffectiveDay))
+        }
+
+        identityAliases.forEach { alias ->
+            val query = db.child("prayer_attendance").orderByChild("studentId").equalTo(alias)
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    snapshotsByAlias[alias] = snapshot
+                    emitRealtimePrayer()
+                }
+                override fun onCancelled(error: DatabaseError) { close(error.toException()) }
             }
+            query.addValueEventListener(listener)
+            queries += query to listener
         }
 
         val legacyScheduleRef = db.child("prayer_schedules")
@@ -649,7 +759,6 @@ class VirtualPetRepository {
             }
         }
 
-        prayerQuery.addValueEventListener(prayerListener)
         legacyScheduleRef.addValueEventListener(legacyScheduleListener)
         legacyHolidayRef.addValueEventListener(legacyHolidayListener)
 
@@ -690,7 +799,7 @@ class VirtualPetRepository {
         }
 
         awaitClose {
-            prayerQuery.removeEventListener(prayerListener)
+            queries.forEach { (query, listener) -> query.removeEventListener(listener) }
             legacyScheduleRef.removeEventListener(legacyScheduleListener)
             legacyHolidayRef.removeEventListener(legacyHolidayListener)
             scopedScheduleRef?.let { ref -> scopedScheduleListener?.let(ref::removeEventListener) }
@@ -940,6 +1049,11 @@ class VirtualPetRepository {
         db.child("pet_achievements").child(id).setValue(newAchievement)
     }
 
+    suspend fun updatePetAchievement(achievement: PetAchievement) {
+        if (achievement.id.isBlank()) return
+        db.child("pet_achievements").child(achievement.id.trim()).setValue(achievement).await()
+    }
+
     fun deletePetAchievement(achievementId: String) {
         val normalizedAchievementId = achievementId.trim()
         if (normalizedAchievementId.isEmpty()) return
@@ -981,4 +1095,64 @@ class VirtualPetRepository {
                     }
                 })
         }
+
+    fun getRealtimeBooksReadCount(studentIds: Set<String>): Flow<Int> = callbackFlow {
+        val aliases = normalizeIdentitySet(studentIds)
+        if (aliases.isEmpty()) {
+            trySend(0)
+            close()
+            return@callbackFlow
+        }
+
+        val listeners = mutableListOf<Pair<DatabaseReference, ValueEventListener>>()
+        val durationsPerAlias = mutableMapOf<String, Map<String, Long>>()
+
+        val recalculateAndSend = {
+            val aggregated = mutableMapOf<String, Long>()
+            durationsPerAlias.values.forEach { aliasMap ->
+                aliasMap.forEach { (title, duration) ->
+                    val normalizedTitle = title.trim().lowercase()
+                    if (normalizedTitle.isNotBlank()) {
+                        aggregated[normalizedTitle] = (aggregated[normalizedTitle] ?: 0L) + duration
+                    }
+                }
+            }
+            val booksReadCount = aggregated.count { it.value >= 1800000L } // >= 30 minutes in ms
+            trySend(booksReadCount)
+        }
+
+        aliases.forEach { alias ->
+            val ref = db.child("student_activities").child(alias).child("reading_log")
+            val listener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val aliasDurations = mutableMapOf<String, Long>()
+                    for (dateSnapshot in snapshot.children) {
+                        for (logSnapshot in dateSnapshot.children) {
+                            val durationVal = logSnapshot.child("durationMillis").value ?: logSnapshot.child("duration").value
+                            val duration = (durationVal as? Number)?.toLong() ?: 0L
+                            val title = logSnapshot.child("bookTitle").getValue(String::class.java).orEmpty()
+                            if (title.isNotBlank() && duration > 0L) {
+                                val normalizedTitle = title.trim().lowercase()
+                                aliasDurations[normalizedTitle] = (aliasDurations[normalizedTitle] ?: 0L) + duration
+                            }
+                        }
+                    }
+                    durationsPerAlias[alias] = aliasDurations
+                    recalculateAndSend()
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Do nothing
+                }
+            }
+            ref.addValueEventListener(listener)
+            listeners.add(ref to listener)
+        }
+
+        awaitClose {
+            listeners.forEach { (ref, listener) ->
+                ref.removeEventListener(listener)
+            }
+        }
+    }
 }

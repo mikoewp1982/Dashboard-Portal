@@ -22,9 +22,9 @@ android {
     defaultConfig {
         applicationId = "com.satupintu.mobile"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1039
-        versionName = "1.0.30"
+        targetSdk = 34
+        versionCode = 23051
+        versionName = "1.0.54"
         buildConfigField("String", "MOBILE_BOUNDARY", "\"${mobileBoundary}\"")
         buildConfigField("String", "ALLOWED_FIREBASE_PROJECT_IDS", "\"${allowedFirebaseProjectIds}\"")
 
@@ -36,7 +36,8 @@ android {
         create("siswa") {
             dimension = "audience"
             minSdk = 23
-            versionCode = 23005
+            versionCode = 23071
+            versionName = "1.0.74"
             resValue("string", "app_name", "GAS Siswa")
             applicationIdSuffix = ".siswa"
             versionNameSuffix = "-siswa"
@@ -44,6 +45,7 @@ android {
         create("guru") {
             dimension = "audience"
             minSdk = 23
+            versionCode = 1046
             resValue("string", "app_name", "GAS Guru")
             applicationIdSuffix = ".guru"
             versionNameSuffix = "-guru"

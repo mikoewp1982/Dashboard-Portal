@@ -57,7 +57,8 @@ class VirtualPetViewModel : ViewModel() {
         val title: String,
         val description: String,
         val target: Int,
-        val reward: Int
+        val reward: Int,
+        val isPaused: Boolean = false
     )
 
     private data class AchievementTemplate(
@@ -68,12 +69,6 @@ class VirtualPetViewModel : ViewModel() {
 
     companion object {
         private val DAILY_QUEST_TEMPLATES = listOf(
-            DailyQuestTemplate(
-                title = "Tugas Literasi Hari Ini",
-                description = "Kirim minimal 1 tugas/laporan literasi hari ini",
-                target = 1,
-                reward = 30
-            ),
             DailyQuestTemplate(
                 title = "Absensi Sekolah Hari Ini",
                 description = "Masuk sekolah dan tercatat hadir atau terlambat",
@@ -94,7 +89,7 @@ class VirtualPetViewModel : ViewModel() {
             ),
             DailyQuestTemplate(
                 title = "Membaca Buku",
-                description = "Baca buku di e-perpus min. 1 jam",
+                description = "Baca buku di e-perpus min. 30 menit",
                 target = 1,
                 reward = 40
             )
@@ -108,7 +103,7 @@ class VirtualPetViewModel : ViewModel() {
             ),
             AchievementTemplate(
                 title = "Pembelajar Aktif",
-                description = "Menyelesaikan target literasi harian",
+                description = "Membaca buku di E-Perpus minimal 30 menit hari ini",
                 icon = "menu_book"
             ),
             AchievementTemplate(
@@ -162,17 +157,27 @@ class VirtualPetViewModel : ViewModel() {
                     scopedStudents.forEach { student ->
                         val stableId = student.id.trim()
                         val nisn = student.nisn.trim()
+                        val recordId = student.recordId.trim()
+                        
                         if (stableId.isNotEmpty()) put(stableId, student)
                         if (nisn.isNotEmpty()) put(nisn, student)
+                        if (recordId.isNotEmpty()) put(recordId, student)
                     }
                 }
 
-                pets.mapNotNull { pet ->
+                val petToStudentMap = pets.mapNotNull { pet ->
                     val student = studentMap[pet.studentId.trim()] ?: return@mapNotNull null
                     pet.copy(
                         petName = student.name.ifBlank { pet.petName }
-                    )
-                }.sortedWith(
+                    ) to student.id
+                }
+
+                // Group by student ID to prevent duplicates in leaderboard when a student has multiple pet aliases
+                val bestPetsByStudentId = petToStudentMap.groupBy { it.second }.map { (_, petList) ->
+                    petList.map { it.first }.maxWithOrNull(compareBy({ it.level }, { it.experiencePoints }, { it.coins }))!!
+                }
+
+                bestPetsByStudentId.sortedWith(
                     compareByDescending<VirtualPet> { it.level }
                         .thenByDescending { it.experiencePoints }
                         .thenByDescending { it.coins }
@@ -250,7 +255,8 @@ class VirtualPetViewModel : ViewModel() {
         val attendanceData: Map<String, Any?>,
         val literacyCount: Int,
         val prayerInfo: VirtualPetRepository.PrayerRealtimeInfo,
-        val disciplinePenalty: Int
+        val disciplinePenalty: Int,
+        val isAttendanceEffectiveDay: Boolean = true
     )
 
     private data class Quintuple<A, B, C, D, E>(
@@ -320,19 +326,26 @@ class VirtualPetViewModel : ViewModel() {
                     repository.getRealtimeAttendance(identityAliases, normalizedSchoolId),
                     repository.getRealtimeLiteracyCount(identityAliases, resolution.studentName, normalizedSchoolId),
                     repository.getRealtimePrayerInfo(identityAliases, normalizedSchoolId),
-                ) { r, h, a, l, p -> RealtimeStats(r, h, a, l, p, 0) }.combine(
+                ) { r, h, a, l, p -> RealtimeStats(r, h, a, l, p, 0, (a["isEffectiveDay"] as? Boolean) ?: true) }.combine(
                     repository.getRealtimeDisciplinePenalty(identityAliases, normalizedSchoolId)
                 ) { baseStats, disciplinePenalty ->
                     baseStats.copy(disciplinePenalty = disciplinePenalty)
                 }
             ) { quests, achievements, stats ->
-            checkDailyReset(syncedPet, quests)
+            checkDailyReset(syncedPet, quests, stats)
             syncQuestCatalog(syncedPet, quests)
             syncAchievementCatalog(syncedPet, achievements)
 
-            val targetMillis = 60 * 60 * 1000f
+            val targetMillis = 30 * 60 * 1000f
             val saturationPct = (stats.readingDuration / targetMillis * 100).coerceAtMost(100f).toInt()
-            val calculatedHunger = 100 - saturationPct
+            
+            // On holidays, hunger doesn't drop naturally, but reading still gives intelligence
+            val calculatedHunger = if (stats.isAttendanceEffectiveDay) {
+                100 - saturationPct
+            } else {
+                syncedPet.hunger
+            }
+            
             val calculatedEnergy = ((stats.habitsCount / 7f) * 100).coerceAtMost(100f).toInt()
 
             val statusStr = stats.attendanceData["status"] as? String
@@ -420,31 +433,22 @@ class VirtualPetViewModel : ViewModel() {
             val averageStats = (newHealth + newHappiness + newEnergy + fullness) / 4
             val reviveGraceActive = syncedPet.isManualReviveGraceActive()
             var newStatus = when {
-                !reviveGraceActive && lowestVital <= 0 -> "DEAD"
+                !reviveGraceActive && newHealth <= 0 -> "DEAD"
                 lowestVital < 30 || newHealth < 30 || newHappiness < 30 -> "SICK"
                 lowestVital < 60 || newHappiness < 50 -> "SAD"
                 else -> "HAPPY"
             }
 
-            if (!reviveGraceActive && syncedPet.status == "DEAD") {
+            if (!reviveGraceActive && newHealth <= 0 && syncedPet.status == "DEAD") {
                 newStatus = "DEAD"
             }
 
-            var newLevel = syncedPet.level
-            var newXp = syncedPet.experiencePoints
-
-            if (!reviveGraceActive && averageStats < 40 && syncedPet.level > 1 && newStatus != "DEAD") {
-                newLevel = 1
-                newXp = 0
-                _uiState.update { it.copy(message = "Level Reset ke 1 karena nilai keaktifan rendah!") }
-            }
+            val newLevel = syncedPet.level
+            val newXp = syncedPet.experiencePoints
 
             val updatedQuests = quests.map { quest ->
                 var newProgress = quest.progress
                 when (quest.title) {
-                    "Tugas Literasi Hari Ini" -> {
-                        newProgress = stats.literacyCount.coerceAtMost(quest.target)
-                    }
                     "Absensi Sekolah Hari Ini" -> {
                         val status = stats.attendanceData["status"] as? String
                         val normalizedStatus = status?.trim()?.uppercase()
@@ -466,7 +470,7 @@ class VirtualPetViewModel : ViewModel() {
                         newProgress = stats.habitsCount.coerceAtMost(quest.target)
                     }
                     "Membaca Buku" -> {
-                        if (stats.readingDuration >= 60 * 60 * 1000) {
+                        if (stats.readingDuration >= 30 * 60 * 1000) {
                             newProgress = 1
                         }
                     }
@@ -635,14 +639,28 @@ class VirtualPetViewModel : ViewModel() {
         achievements.forEach { repository.insertPetAchievement(it) }
     }
     
-    private suspend fun createDailyQuests(petId: String) {
+    private suspend fun createDailyQuests(petId: String, stats: RealtimeStats? = null) {
+        val dynamicTemplates = DAILY_QUEST_TEMPLATES.map { template ->
+            if (stats == null) return@map template
+            
+            when (template.title) {
+                "Absensi Sekolah Hari Ini", "Membaca Buku" -> {
+                    template.copy(isPaused = !stats.isAttendanceEffectiveDay)
+                }
+                "Presensi Sholat Hari Ini" -> {
+                    template.copy(isPaused = !stats.prayerInfo.isEffectiveDay)
+                }
+                else -> template
+            }
+        }
+        
         syncMissingQuestTemplates(
             petId = petId,
-            missingTemplates = DAILY_QUEST_TEMPLATES
+            missingTemplates = dynamicTemplates
         )
     }
 
-    private fun checkDailyReset(pet: VirtualPet, quests: List<PetQuest>) {
+    private fun checkDailyReset(pet: VirtualPet, quests: List<PetQuest>, stats: RealtimeStats) {
         val lastReset = pet.lastQuestReset
         val calendar = Calendar.getInstance()
         val currentDay = calendar.get(Calendar.DAY_OF_YEAR)
@@ -660,7 +678,7 @@ class VirtualPetViewModel : ViewModel() {
 
         questResetJob = viewModelScope.launch {
             repository.deletePetQuests(pet.id)
-            createDailyQuests(pet.id)
+            createDailyQuests(pet.id, stats)
             repository.updateVirtualPet(pet.copy(lastQuestReset = System.currentTimeMillis()))
         }
     }
@@ -699,7 +717,14 @@ class VirtualPetViewModel : ViewModel() {
             val templateKey = "${pet.id}:${template.title.trim()}"
             template.title !in existingTitles && pendingAchievementTemplateKeys.add(templateKey)
         }
-        if (missingTemplates.isEmpty()) return
+        
+        val requiredByTitle = ACHIEVEMENT_TEMPLATES.associateBy { it.title }
+        val achievementsToUpdate = achievements.filter { achievement ->
+            val template = requiredByTitle[achievement.title]
+            template != null && (achievement.description != template.description || achievement.icon != template.icon)
+        }
+
+        if (missingTemplates.isEmpty() && achievementsToUpdate.isEmpty()) return
 
         viewModelScope.launch {
             try {
@@ -712,6 +737,16 @@ class VirtualPetViewModel : ViewModel() {
                             icon = template.icon,
                             unlocked = template.title == "Pemula",
                             unlockedAt = if (template.title == "Pemula") System.currentTimeMillis() else 0L
+                        )
+                    )
+                }
+
+                achievementsToUpdate.forEach { achievement ->
+                    val template = requiredByTitle[achievement.title] ?: return@forEach
+                    repository.updatePetAchievement(
+                        achievement.copy(
+                            description = template.description,
+                            icon = template.icon
                         )
                     )
                 }
@@ -730,8 +765,8 @@ class VirtualPetViewModel : ViewModel() {
         healthScore: Int
     ): List<StudentCriteriaCard> {
         val readingMinutes = (stats.readingDuration / 60000L).toInt()
-        val literacyProgress = ((stats.readingDuration / (60f * 60f * 1000f)) * 100f).toInt().coerceIn(0, 100)
-        val literacyAchieved = stats.readingDuration >= 60 * 60 * 1000 || stats.literacyCount > 0
+        val literacyProgress = ((stats.readingDuration / (30f * 60f * 1000f)) * 100f).toInt().coerceIn(0, 100)
+        val literacyAchieved = stats.readingDuration >= 30 * 60 * 1000
 
         val attendanceStatus = (stats.attendanceData["status"] as? String).orEmpty().trim().uppercase()
         val disciplineFree = stats.disciplinePenalty <= 0
@@ -749,12 +784,12 @@ class VirtualPetViewModel : ViewModel() {
             StudentCriteriaCard(
                 key = "literacy",
                 title = "Literasi Aktif",
-                subtitle = "Baca 60 menit atau kirim 1 aktivitas literasi",
+                subtitle = "Baca buku di E-Perpus minimal 30 menit",
                 progress = literacyProgress,
                 status = if (literacyAchieved) {
-                    "Tercapai: $readingMinutes menit, ${stats.literacyCount} aktivitas"
+                    "Tercapai: $readingMinutes menit membaca hari ini"
                 } else {
-                    "$readingMinutes/60 menit, ${stats.literacyCount} aktivitas"
+                    "$readingMinutes/30 menit membaca hari ini"
                 },
                 isAchieved = literacyAchieved
             ),
@@ -806,7 +841,7 @@ class VirtualPetViewModel : ViewModel() {
         happinessScore: Int
     ): List<StudentActionCard> {
         val readingMinutes = (stats.readingDuration / 60000L).toInt().coerceAtLeast(0)
-        val readingProgress = ((stats.readingDuration / (60f * 60f * 1000f)) * 100f).toInt().coerceIn(0, 100)
+        val readingProgress = ((stats.readingDuration / (30f * 60f * 1000f)) * 100f).toInt().coerceIn(0, 100)
         val literacyProgress = if (stats.literacyCount > 0) 100 else 0
 
         val attendanceStatus = (stats.attendanceData["status"] as? String).orEmpty().trim().uppercase()
@@ -836,18 +871,18 @@ class VirtualPetViewModel : ViewModel() {
 
         return listOf(
             StudentActionCard(
-                key = "literacy_task",
-                title = "Literasi",
-                subtitle = "Tugas / laporan literasi",
-                progress = literacyProgress,
-                status = if (stats.literacyCount > 0) "Selesai: ${stats.literacyCount} aktivitas" else "Belum ada aktivitas hari ini"
-            ),
-            StudentActionCard(
                 key = "attendance",
                 title = "Kehadiran",
-                subtitle = "Absensi & presensi sholat",
-                progress = happinessScore.coerceIn(0, 100),
-                status = "Absensi: $attendanceLabel • Sholat: $prayerLabel • $disciplineHint"
+                subtitle = "Absensi sekolah harian",
+                progress = happinessScore.coerceIn(0, 100), // matches original
+                status = "Absensi: $attendanceLabel • $disciplineHint"
+            ),
+            StudentActionCard(
+                key = "prayer",
+                title = "Ibadah",
+                subtitle = "Presensi sholat",
+                progress = if (prayerExempt || !stats.prayerInfo.isEffectiveDay || prayerStatus in setOf("PRAY", "PERMIT", "HALANGAN")) 100 else 0,
+                status = "Status: $prayerLabel"
             ),
             StudentActionCard(
                 key = "habits",
@@ -861,7 +896,7 @@ class VirtualPetViewModel : ViewModel() {
                 title = "E-Perpus",
                 subtitle = "Baca buku untuk kenyang",
                 progress = readingProgress,
-                status = "$readingMinutes/60 menit membaca hari ini"
+                status = "$readingMinutes/30 menit membaca hari ini"
             )
         )
     }
@@ -943,7 +978,8 @@ class VirtualPetViewModel : ViewModel() {
                         title = template.title,
                         description = template.description,
                         target = template.target,
-                        reward = template.reward
+                        reward = template.reward,
+                        isPaused = template.isPaused
                     )
                 )
             }
