@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertCircle, BarChart3, Book, BookOpen, Clock, Download, FileText, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, BarChart3, Book, BookOpen, Clock, Download, FileText, Plus, Pencil, RotateCcw, Trash2, X } from "lucide-react";
 import { exportToExcel } from "@/utils/export";
 
 type LibraryTab = "loans" | "literacy" | "tasks" | "stats";
@@ -25,6 +26,8 @@ interface GasLibraryTabContentProps {
   onOpenModal: () => void;
   onUpdateTaskStatus: (taskId: string, status: "ACTIVE" | "CLOSED") => void;
   onDeleteTask: (taskId: string) => void;
+  onGradeLog: (logId: string, status: "GRADED" | "REJECTED", grade: string, feedback: string) => Promise<void>;
+  onBulkGradeLogs: (logIds: string[], status: "GRADED" | "REJECTED", grade: string, feedback: string) => Promise<void>;
   onDeleteHistoryLog: (logId: string, schoolId?: string) => Promise<void>;
 }
 
@@ -47,6 +50,8 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
     onOpenModal,
     onUpdateTaskStatus,
     onDeleteTask,
+    onGradeLog,
+    onBulkGradeLogs,
     onDeleteHistoryLog,
   } = props;
   const classOptions = classes.map((item) => ({
@@ -60,6 +65,103 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
   const gradedLogs = filteredLiteracyLogs.filter((log) => ["GRADED", "REVIEWED", "CORRECTED"].includes(normalizedStatus(log.status)));
   const pendingLogs = filteredLiteracyLogs.filter((log) => ["PENDING", "SUBMITTED", "WAITING_REVIEW", ""].includes(normalizedStatus(log.status)));
   const rejectedLogs = filteredLiteracyLogs.filter((log) => normalizedStatus(log.status) === "REJECTED");
+
+  // State untuk modal per-item
+  const [gradingLog, setGradingLog] = useState<any>(null);
+  const [gradingGrade, setGradingGrade] = useState("B");
+  const [gradingFeedback, setGradingFeedback] = useState("");
+  const [gradingBusy, setGradingBusy] = useState(false);
+  const [gradingError, setGradingError] = useState("");
+
+  // State untuk bulk/massal
+  const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set());
+  const [bulkModal, setBulkModal] = useState<"all" | "selected" | null>(null);
+  const [bulkGrade, setBulkGrade] = useState("B");
+  const [bulkFeedback, setBulkFeedback] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkError, setBulkError] = useState("");
+
+  const allPendingIds = pendingLogs.map((log) => log.id);
+  const allSelected = allPendingIds.length > 0 && allPendingIds.every((id) => selectedLogIds.has(id));
+
+  function toggleSelectAll() {
+    if (allSelected) {
+      setSelectedLogIds(new Set());
+    } else {
+      setSelectedLogIds(new Set(allPendingIds));
+    }
+  }
+
+  function toggleSelectLog(id: string) {
+    const next = new Set(selectedLogIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedLogIds(next);
+  }
+
+  function openGrading(log: any) {
+    setGradingLog(log);
+    setGradingGrade(log.grade || "B");
+    setGradingFeedback(log.feedback || "");
+    setGradingBusy(false);
+    setGradingError("");
+  }
+
+  function closeGrading() {
+    setGradingLog(null);
+    setGradingError("");
+  }
+
+  async function submitGrading(status: "GRADED" | "REJECTED") {
+    if (!gradingLog) return;
+    setGradingBusy(true);
+    setGradingError("");
+    try {
+      await onGradeLog(gradingLog.id, status, gradingGrade, gradingFeedback);
+      setSelectedLogIds((prev) => {
+        const next = new Set(prev);
+        next.delete(gradingLog.id);
+        return next;
+      });
+      closeGrading();
+    } catch (err) {
+      setGradingError(err instanceof Error ? err.message : "Gagal menyimpan penilaian");
+    } finally {
+      setGradingBusy(false);
+    }
+  }
+
+  function openBulk(mode: "all" | "selected") {
+    setBulkModal(mode);
+    setBulkGrade("B");
+    setBulkFeedback("");
+    setBulkBusy(false);
+    setBulkError("");
+  }
+
+  function closeBulk() {
+    setBulkModal(null);
+    setBulkError("");
+  }
+
+  async function submitBulk(status: "GRADED" | "REJECTED") {
+    const ids = bulkModal === "all" ? allPendingIds : Array.from(selectedLogIds);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    setBulkError("");
+    try {
+      await onBulkGradeLogs(ids, status, bulkGrade, bulkFeedback);
+      setSelectedLogIds(new Set());
+      closeBulk();
+    } catch (err) {
+      setBulkError(err instanceof Error ? err.message : "Gagal menyimpan penilaian massal");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
   const activeTasksCount = tasks.filter((task) => task.status === "ACTIVE").length;
   const borrowActiveCount = borrowRecords.filter((record) => record.status === "BORROWED").length;
   const completionRate = literacyStudentStats.total > 0
@@ -560,43 +662,107 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
               </div>
             );
           }
+          const selectedCount = selectedLogIds.size;
           return (
-            <div className="glass-effect-dark-card rounded-lg shadow-sm overflow-hidden border border-slate-700">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-700/40">
-                  <thead className="bg-slate-900/50">
-                    <tr>
-                      {["Siswa", "Buku / Tugas", "Ringkasan", "Tanggal", "Status"].map((header) => (
-                        <th key={header} className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{header}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-700/30">
-                    {pendingLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-slate-100">{log.studentName || log.studentId}</div>
-                          <div className="text-xs text-slate-400 mt-0.5">Kelas: {log.studentClass || "-"}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-blue-400">{log.bookTitle || "-"}</div>
-                          <div className="text-xs text-slate-400 mt-0.5">{log.taskTitle || "Baca Bebas"}</div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-300 max-w-[300px] truncate">
-                          {log.summary || "-"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                          {log.timestamp ? new Date(log.timestamp).toLocaleDateString("id-ID") : "-"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-900/40 text-amber-400 border border-amber-700/40">
-                            Menunggu Penilaian
-                          </span>
-                        </td>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleSelectAll}
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition-colors"
+                  >
+                    <input type="checkbox" checked={allSelected} readOnly className="accent-blue-500" />
+                    {allSelected ? "Batalkan Pilih Semua" : "Pilih Semua"}
+                  </button>
+                  {selectedCount > 0 && (
+                    <span className="rounded-full bg-blue-900/40 border border-blue-700/40 px-2.5 py-1 text-xs font-bold text-blue-300">
+                      Terpilih: {selectedCount}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openBulk("all")}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-green-700 px-3.5 py-1.5 text-xs font-bold text-white shadow hover:from-emerald-500 hover:to-green-600 transition-colors"
+                  >
+                    Nilai Semua ({pendingLogs.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openBulk("selected")}
+                    disabled={selectedCount === 0}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Nilai Terpilih {selectedCount > 0 ? `(${selectedCount})` : ""}
+                  </button>
+                </div>
+              </div>
+
+              <div className="glass-effect-dark-card rounded-lg shadow-sm overflow-hidden border border-slate-700">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-700/40">
+                    <thead className="bg-slate-900/50">
+                      <tr>
+                        <th className="w-12 px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                          <input
+                            type="checkbox"
+                            checked={allSelected}
+                            onChange={toggleSelectAll}
+                            className="accent-blue-500"
+                          />
+                        </th>
+                        {["Siswa", "Buku / Tugas", "Ringkasan", "Tanggal", "Status", "Aksi"].map((header) => (
+                          <th key={header} className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{header}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-700/30">
+                      {pendingLogs.map((log) => (
+                        <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
+                          <td className="px-4 py-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedLogIds.has(log.id)}
+                              onChange={() => toggleSelectLog(log.id)}
+                              className="accent-blue-500"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-slate-100">{log.studentName || log.studentId}</div>
+                            <div className="text-xs text-slate-400 mt-0.5">Kelas: {log.studentClass || "-"}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-blue-400">{log.bookTitle || "-"}</div>
+                            <div className="text-xs text-slate-400 mt-0.5">{log.taskTitle || "Baca Bebas"}</div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-300 max-w-[300px] truncate">
+                            {log.summary || "-"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                            {log.timestamp ? new Date(log.timestamp).toLocaleDateString("id-ID") : "-"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-900/40 text-amber-400 border border-amber-700/40">
+                              Menunggu Penilaian
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => openGrading(log)}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-emerald-400 hover:border-emerald-700 transition-colors"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Beri Nilai
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           );
@@ -702,7 +868,7 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
             <table className="min-w-full divide-y divide-slate-700/40">
               <thead className="bg-slate-900/50">
                 <tr>
-                  {["Judul Tugas", "Kelas", "Status", "Dibuat Pada", "Aksi"].map((header) => (
+                  {["Judul Tugas", "Kelas", "Waktu", "Status", "Dibuat Pada", "Aksi"].map((header) => (
                     <th
                       key={header}
                       className={`px-6 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider ${header === "Aksi" ? "text-right" : "text-left"}`}
@@ -713,13 +879,42 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/30">
-                {displayedTasks.map((task) => (
+                {displayedTasks.map((task) => {
+                  const hasRange = task.startAt || task.endAt;
+                  const fmt = (ts?: number) => ts
+                    ? new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(ts))
+                    : "-";
+                  const now = Date.now();
+                  const timeBadge = (() => {
+                    if (!hasRange) return null;
+                    if (task.startAt && now < task.startAt) {
+                      return <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-900/30 text-amber-400 border border-amber-700/40">Belum Mulai</span>;
+                    }
+                    if (task.endAt && now > task.endAt) {
+                      return <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-red-900/30 text-red-400 border border-red-700/40">Waktu Habis</span>;
+                    }
+                    return <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-900/30 text-emerald-400 border border-emerald-700/40">Aktif</span>;
+                  })();
+                  return (
                   <tr key={task.id} className="hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="text-sm font-semibold text-slate-100">{task.title}</div>
                       {task.description ? <div className="text-xs text-slate-500 mt-0.5 line-clamp-1">{task.description}</div> : null}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{task.className || "-"}</td>
+                    <td className="px-6 py-4 text-sm text-slate-300 whitespace-nowrap">
+                      {hasRange ? (
+                        <div>
+                          <div className="flex items-center flex-wrap">
+                            <Clock className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
+                            <span className="text-xs font-medium">{fmt(task.startAt)} — {fmt(task.endAt)}</span>
+                            {timeBadge}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-500">Tidak dibatasi</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                         task.status === "ACTIVE"
@@ -755,11 +950,204 @@ export function GasLibraryTabContent(props: GasLibraryTabContentProps) {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
         </div>
+      )}
+
+      {/* Modal Beri Nilai — per item */}
+      {gradingLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-700 bg-[#0f172a] shadow-2xl flex flex-col max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-start justify-between p-6 pb-2 sticky top-0 bg-[#0f172a] border-b border-slate-800">
+              <div>
+                <h2 className="text-lg font-bold text-slate-100">Beri Nilai Literasi</h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  {gradingLog.studentName || gradingLog.studentId || "-"}
+                  {gradingLog.studentClass ? ` • Kelas ${gradingLog.studentClass}` : ""}
+                </p>
+              </div>
+              <button
+                onClick={closeGrading}
+                className="rounded-md p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <div className="text-xs font-semibold text-slate-400">Judul Buku</div>
+                <div className="text-sm font-semibold text-blue-300">{gradingLog.bookTitle || "-"}</div>
+                {gradingLog.taskTitle && (
+                  <div className="text-xs text-slate-400">Tugas: {gradingLog.taskTitle}</div>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <div className="text-xs font-semibold text-slate-400">Ringkasan Siswa</div>
+                <div className="max-h-44 overflow-y-auto rounded-lg border border-slate-700 bg-[#0b1221] p-3 text-xs leading-relaxed text-slate-200">
+                  {gradingLog.summary || "Tidak ada ringkasan."}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-slate-400">Pilih Nilai</div>
+                <div className="grid grid-cols-4 gap-2">
+                  {(["A", "B", "C", "D"] as const).map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setGradingGrade(g)}
+                      className={`rounded-lg border py-2 text-sm font-bold transition-colors ${
+                        gradingGrade === g
+                          ? "border-white/40 bg-white/20 text-white"
+                          : "border-slate-700 bg-[#0b1221] text-slate-300 hover:border-slate-500"
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="text-xs font-semibold text-slate-400">Umpan Balik (Opsional)</div>
+                <textarea
+                  value={gradingFeedback}
+                  onChange={(e) => setGradingFeedback(e.target.value)}
+                  rows={3}
+                  placeholder="Contoh: Bagus, tingkatkan detail ringkasan buku..."
+                  className="w-full rounded-lg border border-slate-700 bg-[#0b1221] px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              {gradingError && (
+                <p className="text-xs text-rose-400 border border-rose-800/50 bg-rose-950/40 rounded-md px-3 py-2">
+                  {gradingError}
+                </p>
+              )}
+            </div>
+
+            <div className="p-6 pt-2 flex gap-2 sm:justify-end flex-col sm:flex-row">
+              <button
+                type="button"
+                disabled={gradingBusy}
+                onClick={closeGrading}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-md text-sm font-semibold text-slate-300 border border-slate-700 hover:bg-slate-800 transition disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={gradingBusy}
+                onClick={() => void submitGrading("REJECTED")}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-md text-sm font-semibold bg-rose-600 hover:bg-rose-500 text-white transition disabled:opacity-50"
+              >
+                {gradingBusy ? "Menyimpan..." : "Tolak"}
+              </button>
+              <button
+                type="button"
+                disabled={gradingBusy}
+                onClick={() => void submitGrading("GRADED")}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-md text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition disabled:opacity-50"
+              >
+                {gradingBusy ? "Menyimpan..." : "Simpan Nilai"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Penilaian Massal */}
+      {bulkModal && (
+        (() => {
+          const count = bulkModal === "all" ? allPendingIds.length : selectedLogIds.size;
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+              <div className="w-full max-w-md rounded-xl border border-slate-700 bg-[#0f172a] shadow-2xl flex flex-col">
+                <div className="flex items-start justify-between p-6 pb-2 border-b border-slate-800">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-100">
+                      {bulkModal === "all" ? "Nilai Semua Laporan" : "Nilai Laporan Terpilih"}
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Total laporan: <span className="font-bold text-slate-200">{count}</span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={closeBulk}
+                    className="rounded-md p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-4">
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-slate-400">Nilai yang Diberikan</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {(["A", "B", "C", "D"] as const).map((g) => (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() => setBulkGrade(g)}
+                          className={`rounded-lg border py-2 text-sm font-bold transition-colors ${
+                            bulkGrade === g
+                              ? "border-white/40 bg-white/20 text-white"
+                              : "border-slate-700 bg-[#0b1221] text-slate-300 hover:border-slate-500"
+                          }`}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="text-xs font-semibold text-slate-400">Umpan Balik (Opsional, sama untuk semua)</div>
+                    <textarea
+                      value={bulkFeedback}
+                      onChange={(e) => setBulkFeedback(e.target.value)}
+                      rows={3}
+                      placeholder="Contoh: Terima kasih, tingkatkan lagi detail ringkasannya..."
+                      className="w-full rounded-lg border border-slate-700 bg-[#0b1221] px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  {bulkError && (
+                    <p className="text-xs text-rose-400 border border-rose-800/50 bg-rose-950/40 rounded-md px-3 py-2">
+                      {bulkError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="p-6 pt-2 flex gap-2 sm:justify-end flex-col sm:flex-row">
+                  <button
+                    type="button"
+                    disabled={bulkBusy}
+                    onClick={closeBulk}
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-md text-sm font-semibold text-slate-300 border border-slate-700 hover:bg-slate-800 transition disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    disabled={bulkBusy || count === 0}
+                    onClick={() => void submitBulk("REJECTED")}
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-md text-sm font-semibold bg-rose-600 hover:bg-rose-500 text-white transition disabled:opacity-50"
+                  >
+                    {bulkBusy ? "Menyimpan..." : "Tolak Semua"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={bulkBusy || count === 0}
+                    onClick={() => void submitBulk("GRADED")}
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-md text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition disabled:opacity-50"
+                  >
+                    {bulkBusy ? "Menyimpan..." : "Simpan Nilai"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()
       )}
     </div>
   );

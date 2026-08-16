@@ -16,7 +16,7 @@ type LiteracySubTab = "list" | "progress";
 export function GasLibraryPanel({ schoolId }: { schoolId: string }) {
   const { user } = useAuthStore();
   const [selectedClass, setSelectedClass] = useState("");
-  const { tasks, classes, literacyLogs, borrowRecords, loading, refresh, addTask, updateTaskStatus, deleteTask, deleteLiteracyLog } = useGasLibrary(schoolId, selectedClass);
+  const { tasks, classes, literacyLogs, borrowRecords, loading, refresh, addTask, updateTaskStatus, deleteTask, updateLiteracyLogStatus, bulkGradeLiteracyLogs, deleteLiteracyLog } = useGasLibrary(schoolId, selectedClass);
   const { data: students } = useGasStudents(schoolId);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -200,6 +200,8 @@ export function GasLibraryPanel({ schoolId }: { schoolId: string }) {
         onOpenModal={() => setIsModalOpen(true)}
         onUpdateTaskStatus={updateTaskStatus}
         onDeleteTask={deleteTask}
+        onGradeLog={updateLiteracyLogStatus}
+        onBulkGradeLogs={bulkGradeLiteracyLogs}
         onDeleteHistoryLog={deleteLiteracyLog}
       />
 

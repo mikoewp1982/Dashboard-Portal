@@ -52,6 +52,30 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
   const [borrowRecords, setBorrowRecords] = useState<BorrowRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getTaskClassList = (item: any): string[] => {
+    if (Array.isArray(item.classList) && item.classList.length > 0) {
+      return item.classList.map((v: any) => (v || "").toString().trim()).filter(Boolean);
+    }
+    if (Array.isArray(item.targetClasses) && item.targetClasses.length > 0) {
+      return item.targetClasses.map((v: any) => (v || "").toString().trim()).filter(Boolean);
+    }
+    if (item.className) {
+      return [(item.className || "").toString().trim()].filter(Boolean);
+    }
+    return ["Semua Kelas"];
+  };
+
+  const classMatchesFilter = (taskClassList: string[], filterClass: string): boolean => {
+    if (!filterClass) return true;
+    const normalizedFilter = filterClass.trim();
+    if (!normalizedFilter) return true;
+    const normalizedList = taskClassList.map((c) => c.trim());
+    if (normalizedList.includes("Semua Kelas")) return true;
+    if (normalizedList.includes(normalizedFilter)) return true;
+    if (normalizedList.some((c) => c.toLowerCase() === normalizedFilter.toLowerCase())) return true;
+    return false;
+  };
+
   const fetchTasks = useCallback(async () => {
     if (!schoolId) {
       setTasks([]);
@@ -72,22 +96,27 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
           const scopeCandidates = new Set(getSchoolIdVariants(rawScope));
           const matches = Array.from(scopeCandidates).some((candidate) => scopeVariants.has(candidate));
           if (matches) {
-            const taskClassName = item.className || "Semua Kelas";
-            if (!selectedClass || taskClassName === selectedClass) {
-              result.push({
-                id,
-                title: item.title || "",
-                description: item.description || "",
-                className: taskClassName,
-                assignedBy: item.assignedBy || "admin",
-                assignedByName: item.assignedByName || "",
-                status: item.isActive === false || item.status === "CLOSED" ? "CLOSED" : "ACTIVE",
-                points: item.points || 30,
-                durationMinutes: item.durationMinutes || 45,
-                createdAt: item.createdAt || Date.now(),
-                updatedAt: item.updatedAt || item.createdAt || Date.now(),
-              });
+            const taskClassList = getTaskClassList(item);
+            const taskClassName = item.className || taskClassList[0] || "Semua Kelas";
+            if (!classMatchesFilter(taskClassList, selectedClass)) {
+              return;
             }
+            result.push({
+              id,
+              title: item.title || "",
+              description: item.description || "",
+              className: taskClassName,
+              classList: taskClassList,
+              assignedBy: item.assignedBy || "admin",
+              assignedByName: item.assignedByName || "",
+              status: item.isActive === false || item.status === "CLOSED" ? "CLOSED" : "ACTIVE",
+              points: item.points || 30,
+              durationMinutes: item.durationMinutes || 45,
+              startAt: item.startAt ? Number(item.startAt) : undefined,
+              endAt: item.endAt ? Number(item.endAt) : undefined,
+              createdAt: item.createdAt || Date.now(),
+              updatedAt: item.updatedAt || item.createdAt || Date.now(),
+            });
           }
         });
       }
@@ -188,13 +217,29 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
 
   const addTask = async (task: Omit<LibraryTask, "id">) => {
     if (!schoolId) return;
+    const startAt = Number(task.startAt) || 0;
+    const endAt = Number(task.endAt) || 0;
+    if (!startAt || !endAt) {
+      throw new Error("Jadwal Mulai dan Selesai wajib diisi.");
+    }
+    if (endAt <= startAt) {
+      throw new Error("Waktu Selesai harus lebih besar dari Waktu Mulai.");
+    }
     const normalizedSchoolId = normalizeSchoolId(schoolId);
-    
-    // Write to RTDB literacy_tasks (Primary source of truth for Mobile & Web)
+    const classListIn = Array.isArray(task.classList) && task.classList.length > 0
+      ? task.classList.map((c) => (c || "").toString().trim()).filter(Boolean)
+      : ["Semua Kelas"];
+    const friendlyClassName =
+      task.className && task.className.trim()
+        ? task.className.trim()
+        : classListIn.length === 1
+          ? classListIn[0]
+          : "Semua Kelas";
+
     const newTaskRef = push(rtdbRef(rtdb, "literacy_tasks"));
     const taskId = newTaskRef.key || Date.now().toString();
 
-    const rtdbPayload = {
+    const rtdbPayload: Record<string, any> = {
       id: taskId,
       title: task.title,
       description: task.description,
@@ -203,19 +248,30 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
       isActive: task.status === "ACTIVE",
       status: task.status,
       schoolId: normalizedSchoolId,
-      className: task.className || "Semua Kelas",
+      className: friendlyClassName,
+      classList: classListIn,
       assignedBy: task.assignedBy || "admin",
       assignedByName: task.assignedByName || "",
       createdAt: task.createdAt || Date.now(),
       updatedAt: Date.now(),
+      startAt,
+      endAt,
     };
 
     await set(newTaskRef, rtdbPayload);
 
-    // Mirror to Firestore for web backwards compatibility
     try {
       const docRef = doc(db, `schools/${normalizedSchoolId}/library_tasks/${taskId}`);
-      await setDoc(docRef, { ...task, id: taskId, schoolId: normalizedSchoolId });
+      const fsPayload: Record<string, any> = {
+        ...task,
+        id: taskId,
+        schoolId: normalizedSchoolId,
+        className: friendlyClassName,
+        classList: classListIn,
+        startAt,
+        endAt,
+      };
+      await setDoc(docRef, fsPayload);
     } catch (e) {
       console.warn("Firestore mirror failed for library task:", e);
     }
@@ -223,6 +279,8 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     const createdTask: LibraryTask = {
       ...task,
       id: taskId,
+      className: friendlyClassName,
+      classList: classListIn,
     };
     setTasks(prev => [createdTask, ...prev]);
   };
@@ -278,6 +336,34 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     }
   };
 
+  const bulkGradeLiteracyLogs = async (logIds: string[], status: "GRADED" | "REJECTED", grade: string, feedback: string) => {
+    if (!schoolId || logIds.length === 0) return;
+    const variants = getSchoolIdVariants(schoolId);
+    const gradedAt = Date.now();
+    try {
+      const updates: Record<string, any> = {};
+      for (const logId of logIds) {
+        updates[`literacy_logs/${logId}/status`] = status;
+        updates[`literacy_logs/${logId}/grade`] = grade;
+        updates[`literacy_logs/${logId}/feedback`] = feedback;
+        updates[`literacy_logs/${logId}/gradedAt`] = gradedAt;
+
+        for (const variant of variants) {
+          updates[`literacy_logs_by_school/${variant}/${logId}/status`] = status;
+          updates[`literacy_logs_by_school/${variant}/${logId}/grade`] = grade;
+          updates[`literacy_logs_by_school/${variant}/${logId}/feedback`] = feedback;
+          updates[`literacy_logs_by_school/${variant}/${logId}/gradedAt`] = gradedAt;
+        }
+      }
+
+      await update(rtdbRef(rtdb), updates);
+      setLiteracyLogs(prev => prev.map(l => logIds.includes(l.id) ? { ...l, status, grade, feedback } : l));
+    } catch(e) {
+      console.error("Gagal menilai laporan literasi (massal):", e);
+      throw e;
+    }
+  };
+
   const deleteLiteracyLog = async (logId: string, logSchoolId?: string) => {
     if (!schoolId) return;
     const variants = new Set([
@@ -314,6 +400,7 @@ export function useGasLibrary(schoolId: string | undefined, selectedClass: strin
     updateTaskStatus,
     deleteTask,
     updateLiteracyLogStatus,
+    bulkGradeLiteracyLogs,
     deleteLiteracyLog
   };
 }
