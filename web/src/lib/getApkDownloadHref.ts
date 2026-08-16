@@ -79,7 +79,7 @@ export function getLatestApkMetaByPackageName(
 
   if (entries.length === 0) return fallback;
 
-  // Prefer versioned filenames (e.g. GAS-Siswa-1.0.76-siswa-23073.apk) so the
+  // Prefer versioned filenames (e.g. GAS-Siswa-1.0.80-siswa-23077.apk) so the
   // browser Save-As name matches the URL. Mobile browsers often ignore the
   // HTML download= attribute and use the path basename instead.
   const versionedEntries = entries.filter(

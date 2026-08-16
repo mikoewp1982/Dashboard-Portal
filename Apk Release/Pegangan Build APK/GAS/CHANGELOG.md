@@ -1,4 +1,4 @@
-﻿# Changelog GAS
+# Changelog GAS
 
 Dokumen ini mencatat **perubahan perilaku atau fitur** pada APK `GAS`.
 
@@ -39,7 +39,7 @@ Tambahkan nama pelaksana jika perlu:
 ## [1.0.80-siswa] - 2026-08-16
 ### Fixed
 - **Siswa (Virtual Pet)**: Loading spinner tetap sampai sync vitals pertama selesai; tidak flash SEKARAT/DEAD dari partial alias/schedule sebelum bootstrap siap.
-- Changed: Build distribusi GAS Siswa `1.0.80` (`versionCode 23077`). Final only - URL unduhan web belum di-update.
+- Changed: Build distribusi GAS Siswa `1.0.80` (`versionCode 23077`). Ship publik: sync `web/public/apk` + manifest ke `1.0.80-siswa` / `23077` (SHA256 `CB5CF413…`).
 ## [1.0.79-siswa] - 2026-08-16
 ### Fixed
 - **Siswa (cold start)**: Crash silent/instant exit saat buka APK — `NoClassDefFoundError: NavigationKt` / `ClassNotFoundException`. Root cause: facade `Navigation.kt` terlalu besar sehingga kelas tidak ter-load dari secondary dex. Perbaikan: pecah route graph ke `GasAppNavGraph.kt`, `MultiDexApplication` (`GasApp`), `multiDexEnabled` + keep file entry points.

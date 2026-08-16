@@ -94,7 +94,7 @@ Versi dasar saat dokumen ini dirapikan:
 - `GAS Siswa` memakai `applicationId` `com.satupintu.mobile.siswa`.
 - Jalur `legacySiswa` pernah memakai `versionCode 23003` untuk package yang sama.
 - Karena itu, semua release `siswa` berikutnya wajib menjaga `versionCode` tetap monoton naik di atas riwayat distribusi package yang sama.
-- Build final siswa terbaru yang sudah dicatat saat ini adalah `1.0.80-siswa (23077)` di folder `D:\Dashboard Portal\Apk Release\Final` (URL unduhan web masih 1.0.76 sampai sync publik).
+- Build final siswa terbaru yang sudah dicatat saat ini adalah `1.0.80-siswa (23077)` di folder `D:\Dashboard Portal\Apk Release\Final` — URL unduhan web sudah `1.0.80-siswa` / `23077` (`/apk/GAS-Siswa-1.0.80-siswa-23077.apk`).
 
 ## 11. Catatan Distribusi GAS Guru
 - Build acuan terbaru: `1.0.30-guru (versionCode 1039)` — rebuild sore 2026-08-03 (~14:30) menyertakan fix ikon `cb3bed4d` di atas fitur notifikasi `ebfeb7b8`.

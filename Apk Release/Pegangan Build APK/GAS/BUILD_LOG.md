@@ -1,4 +1,15 @@
-﻿# Build Log GAS
+# Build Log GAS
+
+## 2026-08-16 22:15 - [SHIP WEB] GAS-Siswa v1.0.80-siswa (23077) - URL unduhan publik
+
+- **Tujuan:** Point unduhan siswa di portal ke APK Final 1.0.80 (Virtual Pet sync fix).
+- **Sumber:** `Apk Release/Final/GAS-Siswa-1.0.80-siswa-23077.apk` (SHA256 `CB5CF41398A815AB43678A0DC3CEE52CDF83593A69980F590DDDC5FB2F3EDB98`)
+- **Hasil:**
+  - `web/public/apk/GAS-Siswa-release.apk` + `GAS-Siswa-1.0.80-siswa-23077.apk`
+  - `apk-manifest.json` + `src/data/apk-manifest.json` = `1.0.80-siswa` / `23077`
+  - Hapus stale `GAS-Siswa-1.0.76-siswa-23073.apk` dari public
+  - Fallback `gas/install` di-update ke nama file 1.0.80
+- **URL:** `/gas/install` → `/apk/GAS-Siswa-1.0.80-siswa-23077.apk?v=CB5CF41398A8`
 
 Dokumen ini adalah log operasional wajib untuk setiap perubahan APK `GAS`.
 

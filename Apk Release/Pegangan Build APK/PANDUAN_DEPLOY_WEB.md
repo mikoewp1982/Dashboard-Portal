@@ -214,7 +214,7 @@ Harus exit `0`. Jika EUSAGE / Missing dari lock file → regenerasi lock dulu.
 
 ### Status progres 2026-08-16 (akhir hari)
 
-- **GAS Siswa live unduhan:** `1.0.76-siswa` / `versionCode 23073` (SHA256 `76C8EFC4…`)
+- **GAS Siswa live unduhan:** `1.0.80-siswa` / `versionCode 23077` (SHA256 `CB5CF413…`)
 - **EduLock live unduhan:** `1.3.11` / `versionCode 37`
 - **App Hosting:** sukses setelah `bf206c44`
 - Detail operasional: `GAS/BUILD_LOG.md`, checklist: `CHECKLIST_PERUBAHAN_APK_TERKINI.md`

@@ -9,7 +9,7 @@ Target pembaca: tim pengembang internal.
 
 Catatan operasional terkait:
 - Override / Generator Jumat = **tanggal + kelas** saja; **Jam** diatur di **Jadwal Sholat Per Kelas**.
-- APK Siswa Final terkait: `1.0.78` (match + jam) → `1.0.79` (NavigationKt MultiDex) → `1.0.80` (Virtual Pet sync) — URL unduhan web belum di-update.
+- APK Siswa Final terkait: `1.0.78` (match + jam) → `1.0.79` (NavigationKt MultiDex) → `1.0.80` (Virtual Pet sync) — URL unduhan web sudah `1.0.80`.
 
 ## Ringkasan
 - Rekomendasi utama: buat **menu baru** untuk rekap `Dhuha & Jum'at` agar tidak merusak halaman rekap `Dzuhur` yang sudah berjalan.
