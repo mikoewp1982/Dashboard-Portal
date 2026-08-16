@@ -31,7 +31,7 @@ function getStudentClass(row: StudentRow) {
 
 function buildStudentAliasIndex(rawStudents: Record<string, StudentRow>) {
   const aliasSet = new Set<string>();
-  const aliasMap = new Map<string, { studentName: string; className: string }>();
+  const aliasMap = new Map<string, { studentName: string; className: string; studentKey: string }>();
 
   for (const [studentKey, row] of Object.entries(rawStudents)) {
     const studentName = getStudentName(row);
@@ -41,7 +41,7 @@ function buildStudentAliasIndex(rawStudents: Record<string, StudentRow>) {
     for (const alias of aliases) {
       aliasSet.add(alias);
       if (!aliasMap.has(alias)) {
-        aliasMap.set(alias, { studentName, className });
+        aliasMap.set(alias, { studentName, className, studentKey });
       }
     }
   }
@@ -52,7 +52,7 @@ function buildStudentAliasIndex(rawStudents: Record<string, StudentRow>) {
 function resolveStudentMeta(
   petKey: string,
   rawPet: any,
-  aliasMap: Map<string, { studentName: string; className: string }>
+  aliasMap: Map<string, { studentName: string; className: string; studentKey: string }>
 ) {
   const aliases = [
     rawPet?.studentId,
@@ -150,40 +150,67 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const pets = Object.entries<any>(rawPetsMap).map(([petKey, rawPet]) => ({
-      ...(resolveStudentMeta(petKey, rawPet, aliasMap) || {}),
-      id: String(rawPet?.id || petKey || ""),
-      studentId: String(rawPet?.studentId || "").trim(),
-      schoolId: String(rawPet?.schoolId || "").trim().toLowerCase(),
-      studentName: String(
-        resolveStudentMeta(petKey, rawPet, aliasMap)?.studentName ||
-          rawPet?.studentName ||
-          rawPet?.petName ||
-          "Unknown Student"
-      ),
-      petName: String(rawPet?.petName || "Buddy"),
-      type: String(rawPet?.petType || "CAT"),
-      status: String(rawPet?.status || "HAPPY"),
-      manualReviveUntil: Number(rawPet?.manualReviveUntil || 0) || 0,
-      stats: {
-        level: Number(rawPet?.level ?? 1) || 1,
-        exp: Number(rawPet?.experiencePoints ?? 0) || 0,
-        maxExp: (Number(rawPet?.level ?? 1) || 1) * 100,
-        health: Number(rawPet?.health ?? 100),
-        energy: Number(rawPet?.energy ?? 100),
-        happiness: Number(rawPet?.happiness ?? 100),
-        intelligence: Number(rawPet?.intelligence ?? 0) || 0,
-        social: Number(rawPet?.social ?? 0) || 0,
-        creativity: 0,
-        coins: Number(rawPet?.coins ?? 0) || 0,
-        hunger: Number(rawPet?.hunger ?? 0) || 0,
-      },
-      lastSync: Number(rawPet?.updatedAt ?? 0) || 0,
-      lastFed: Number(rawPet?.lastFed || 0) || 0,
-      lastPlayed: Number(rawPet?.lastPlayed || 0) || 0,
-      lastQuestReset: Number(rawPet?.lastQuestReset || 0) || 0,
-      achievements: Array.isArray(rawPet?.achievements) ? rawPet.achievements : [],
-    }));
+    const allPets = Object.entries<any>(rawPetsMap).map(([petKey, rawPet]) => {
+      const meta = resolveStudentMeta(petKey, rawPet, aliasMap);
+      return {
+        ...(meta || {}),
+        id: String(rawPet?.id || petKey || ""),
+        studentId: String(rawPet?.studentId || "").trim(),
+        matchedStudentId: meta?.studentKey || "",
+        schoolId: String(rawPet?.schoolId || "").trim().toLowerCase(),
+        studentName: String(
+          meta?.studentName ||
+            rawPet?.studentName ||
+            rawPet?.petName ||
+            "Unknown Student"
+        ),
+        petName: String(rawPet?.petName || "Buddy"),
+        type: String(rawPet?.petType || "CAT"),
+        status: String(rawPet?.status || "HAPPY"),
+        manualReviveUntil: Number(rawPet?.manualReviveUntil || 0) || 0,
+        stats: {
+          level: Number(rawPet?.level ?? 1) || 1,
+          exp: Number(rawPet?.experiencePoints ?? 0) || 0,
+          maxExp: (Number(rawPet?.level ?? 1) || 1) * 100,
+          health: Number(rawPet?.health ?? 100),
+          energy: Number(rawPet?.energy ?? 100),
+          happiness: Number(rawPet?.happiness ?? 100),
+          intelligence: Number(rawPet?.intelligence ?? 0) || 0,
+          social: Number(rawPet?.social ?? 0) || 0,
+          creativity: 0,
+          coins: Number(rawPet?.coins ?? 0) || 0,
+          hunger: Number(rawPet?.hunger ?? 0) || 0,
+        },
+        lastSync: Number(rawPet?.updatedAt ?? 0) || 0,
+        lastFed: Number(rawPet?.lastFed || 0) || 0,
+        lastPlayed: Number(rawPet?.lastPlayed || 0) || 0,
+        lastQuestReset: Number(rawPet?.lastQuestReset || 0) || 0,
+        achievements: Array.isArray(rawPet?.achievements) ? rawPet.achievements : [],
+      };
+    });
+
+    // Deduplicate pets by student (keep highest level or most recently synced).
+    // Unmatched orphans keep unique keys so they can be counted then dropped.
+    const petMap = new Map<string, typeof allPets[0]>();
+    for (const pet of allPets) {
+      const dedupKey = pet.matchedStudentId
+        ? `student:${pet.matchedStudentId}`
+        : `orphan:${pet.studentId || pet.id}`;
+      const existing = petMap.get(dedupKey);
+      if (!existing) {
+        petMap.set(dedupKey, pet);
+      } else {
+        const isBetter =
+          pet.stats.level > existing.stats.level ||
+          (pet.stats.level === existing.stats.level && pet.lastSync > existing.lastSync);
+        if (isBetter) petMap.set(dedupKey, pet);
+      }
+    }
+
+    const dedupedPets = Array.from(petMap.values());
+    // Drop "pet siluman": RTDB rows for this schoolId that do not match any roster student.
+    const pets = dedupedPets.filter((pet) => Boolean(pet.matchedStudentId));
+    const orphanPetCount = dedupedPets.length - pets.length;
 
     const eventsSnap = await adminDb.ref("platform_events").orderByChild("schoolId").equalTo(targetSchoolId).once("value");
     const rawEvents = eventsSnap.val() || {};
@@ -212,6 +239,7 @@ export async function GET(req: NextRequest) {
       pets,
       reviveHistory,
       studentCount: Object.keys(rawStudents).length,
+      orphanPetCount,
     });
   } catch (error: any) {
     console.error("Virtual Pet API Error:", error);

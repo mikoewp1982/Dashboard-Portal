@@ -49,6 +49,14 @@ function getStudentClass(student?: GasStudentRecord | null) {
   return String(student?.kelas || student?.className || student?.class || "Unknown").trim() || "Unknown";
 }
 
+function isPetLinkedToRoster(pet: PetData, studentLookup: Map<string, GasStudentRecord>) {
+  const matchedKey = pet.matchedStudentId ? normalizeIdentity(pet.matchedStudentId) : "";
+  if (matchedKey && studentLookup.has(matchedKey)) return true;
+  if (studentLookup.has(normalizeIdentity(pet.studentId))) return true;
+  if (studentLookup.has(normalizeIdentity(pet.id))) return true;
+  return false;
+}
+
 export function GasPetPanel({ schoolId }: { schoolId: string }) {
   const { pets, reviveHistory, loading, refresh, revivePet, resetPetLevel, giveReward } = useGasVirtualPet(schoolId);
   const { data: students } = useGasStudents(schoolId);
@@ -78,41 +86,45 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
     return map;
   }, [typedStudents]);
 
-  // Enrich pets with student data
+  // Enrich pets with student data; drop roster orphans ("pet siluman") from monitor universe.
   const enrichedPets = useMemo<EnrichedPet[]>(() => {
-    return pets.map((pet) => {
-      const matchedKey = pet.matchedStudentId ? normalizeIdentity(pet.matchedStudentId) : null;
-      const student = (matchedKey ? studentLookup.get(matchedKey) : null)
-        || studentLookup.get(normalizeIdentity(pet.studentId))
-        || studentLookup.get(normalizeIdentity(pet.id));
-        
-      const existingClassName = String((pet as PetData & { className?: string }).className || "").trim();
-      return {
-        ...pet,
-        studentName: student?.name || pet.studentName,
-        className: student ? getStudentClass(student) : existingClassName || 'Unknown',
-      };
-    });
+    return pets
+      .filter((pet) => isPetLinkedToRoster(pet, studentLookup))
+      .map((pet) => {
+        const matchedKey = pet.matchedStudentId ? normalizeIdentity(pet.matchedStudentId) : null;
+        const student = (matchedKey ? studentLookup.get(matchedKey) : null)
+          || studentLookup.get(normalizeIdentity(pet.studentId))
+          || studentLookup.get(normalizeIdentity(pet.id));
+
+        const existingClassName = String((pet as PetData & { className?: string }).className || "").trim();
+        return {
+          ...pet,
+          studentName: student?.name || pet.studentName,
+          className: student ? getStudentClass(student) : existingClassName || "Unknown",
+        };
+      });
   }, [pets, studentLookup]);
 
   const studentsWithoutPetCount = useMemo(() => {
     return typedStudents.filter((student) => {
       const aliases = new Set(getStudentAliases(student));
-      return !pets.some((pet) => 
-        aliases.has(normalizeIdentity(pet.studentId)) ||
-        aliases.has(normalizeIdentity(pet.id)) ||
-        (pet.matchedStudentId && aliases.has(normalizeIdentity(pet.matchedStudentId)))
+      return !enrichedPets.some(
+        (pet) =>
+          aliases.has(normalizeIdentity(pet.studentId)) ||
+          aliases.has(normalizeIdentity(pet.id)) ||
+          (pet.matchedStudentId && aliases.has(normalizeIdentity(pet.matchedStudentId)))
       );
     }).length;
-  }, [pets, typedStudents]);
+  }, [enrichedPets, typedStudents]);
 
   const stats = useMemo(() => {
-    const activePets = enrichedPets.filter(p => p.stats.health > 0);
-    const totalPets = activePets.length;
-    const avgLevel = totalPets > 0 
-      ? (activePets.reduce((acc, curr) => acc + (curr.stats.level || 1), 0) / totalPets).toFixed(1) 
-      : "0";
-    
+    // Same universe as banner: one linked pet per roster student (not raw RTDB orphans).
+    const totalPets = enrichedPets.length;
+    const avgLevel =
+      totalPets > 0
+        ? (enrichedPets.reduce((acc, curr) => acc + (curr.stats.level || 1), 0) / totalPets).toFixed(1)
+        : "0";
+
     const atRisk = enrichedPets.filter((pet) => {
       const risk = analyzePetRisk(pet);
       return risk.isDead || risk.isSick || risk.isSad || risk.isStarving || risk.isLowStatus;
@@ -140,23 +152,23 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
   }, [enrichedPets]);
 
   const topClasses = useMemo(() => {
-    const classMap = new Map<string, { totalLevel: number, count: number }>();
-    enrichedPets.forEach(p => {
+    const classMap = new Map<string, { totalLevel: number; count: number }>();
+    enrichedPets.forEach((p) => {
       const className = p.className;
-      if (className === 'Unknown') return;
-      
+      if (className === "Unknown") return;
+
       if (!classMap.has(className)) {
         classMap.set(className, { totalLevel: 0, count: 0 });
       }
       const entry = classMap.get(className)!;
-      entry.totalLevel += (p.stats.level || 1);
+      entry.totalLevel += p.stats.level || 1;
       entry.count += 1;
     });
 
     return Array.from(classMap.entries())
       .map(([className, data]) => ({
         className,
-        avgLevel: parseFloat((data.totalLevel / data.count).toFixed(1))
+        avgLevel: parseFloat((data.totalLevel / data.count).toFixed(1)),
       }))
       .sort((a, b) => b.avgLevel - a.avgLevel)
       .slice(0, 5);
@@ -166,7 +178,7 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
     return [...enrichedPets].sort((a, b) => {
       const levelDiff = (b.stats.level || 1) - (a.stats.level || 1);
       if (levelDiff !== 0) return levelDiff;
-      
+
       const expDiff = (b.stats.exp || 0) - (a.stats.exp || 0);
       if (expDiff !== 0) return expDiff;
 
@@ -180,11 +192,14 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
   const riskPets = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const rows = enrichedPets
-      .map(p => ({ ...p, risk: analyzePetRisk(p) }))
-      .filter(p => p.risk.isDead || p.risk.isSick || p.risk.isSad || p.risk.isStarving || p.risk.isLowStatus)
+      .map((p) => ({ ...p, risk: analyzePetRisk(p) }))
+      .filter((p) => p.risk.isDead || p.risk.isSick || p.risk.isSad || p.risk.isStarving || p.risk.isLowStatus)
       .filter((p) => {
         if (!normalizedSearch) return true;
-        return p.studentName.toLowerCase().includes(normalizedSearch) || p.petName.toLowerCase().includes(normalizedSearch);
+        return (
+          p.studentName.toLowerCase().includes(normalizedSearch) ||
+          p.petName.toLowerCase().includes(normalizedSearch)
+        );
       })
       .sort((a, b) => {
         if (a.risk.isDead !== b.risk.isDead) return a.risk.isDead ? -1 : 1;
