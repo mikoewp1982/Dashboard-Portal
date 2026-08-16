@@ -27,6 +27,14 @@ Tambahkan nama pelaksana jika perlu:
 
 ### Siswa
 
+### Web Admin / PWA (2026-08-16)
+- Restored: Menu **Rekap Dhuha & Jumat** + pengaturan sistem `prayer_v2` kembali di live App Hosting (`39f8bb48`).
+- Fixed: Matching jadwal `classIds` admin <-> rekap/API guru (`13c86d2f`).
+- Fixed: Normalisasi jam admin `HH.mm` -> `HH:mm` di config prayer web (`b3f5ce4f`).
+- Fixed: Monitor Virtual Pet **Total Pets Aktif** hanya pet ter-link roster; orphan/siluman RTDB tidak ikut total (`39580854`). Cleanup one-off sebelumnya bukan filter tahan lama.
+- Note kontrak: **Override / Generator Jumat** hanya tanggal + kelas; **Jam** wajib di **Jadwal Sholat Per Kelas**.
+- Note kontrak: **Kenyang** hanya hari sekolah efektif + baca >=30 menit; baca di hari libur -> quest **+10 Kecerdasan** (bukan Kenyang).
+- Note: Selisih hitungan pet 104 vs 100 = orphan siluman RTDB; monitor sekarang memfilter.
 
 ## [1.0.80-siswa] - 2026-08-16
 ### Fixed
@@ -40,7 +48,7 @@ Tambahkan nama pelaksana jika perlu:
 ### Fixed
 - **Siswa (Presensi Dhuha/Jumat)**: Matching jadwal admin `prayer_v2` menghormati `classIds` (array/map), label kelas, dan varian `schoolId`.
 - **Siswa (Presensi Dhuha/Jumat)**: Jam tampilan/gate memakai start/end admin (normalize `HH.mm` ke `HH:mm`); tidak lagi menampilkan fake `07:00-07:30`. Hari tanpa jadwal = "Tidak dijadwalkan" tanpa jam palsu.
-- Changed: Build distribusi GAS Siswa `1.0.78` (`versionCode 23075`). Final only — URL unduhan web belum di-update.
+- Changed: Build distribusi GAS Siswa `1.0.78` (`versionCode 23075`). Final only — URL unduhan web belum di-update. Catatan: build pertama class-match saja (SHA `4BCE1A...`), lalu rebuild Final dengan fix jam (`E2F63CC3...`).
 ## [1.0.77-siswa] - 2026-08-16
 ### Added / Changed
 - **Siswa (Lentera)**: Kartu home **Tantangan Bulan Ini** menampilkan tugas literasi admin aktif (`literacy_tasks` per sekolah/kelas + jadwal), termasuk status submit; empty state jika belum ada.

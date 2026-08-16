@@ -6,20 +6,53 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-16 20:50 (GAS Siswa 1.0.78 Final-only; URL unduhan web tidak diubah)
+Update terakhir: 2026-08-16 22:15 (GAS Siswa 1.0.80 Final-only; web Rekap/pet siluman; URL unduhan web tidak diubah)
 
 ---
 
+## ✅ [FIX WEB] Monitor Virtual Pet — filter orphan siluman (`39580854`) 2026-08-16
 
-## [SHIP APK] GAS Siswa `1.0.78-siswa (23075)` - Align Dhuha/Jumat prayer_v2 classIds 2026-08-16 (Final only)
+- [x] **Total Pets Aktif** hanya pet ter-link roster siswa (bukan orphan RTDB).
+- [x] Penjelasan 104 vs 100: orphan/siluman; cleanup one-off lama tidak tahan lama — sekarang filter durable.
+- [ ] QA opsional: angka monitor = jumlah siswa ber-pet di roster.
+
+## ✅ [FIX WEB] Restore Rekap Dhuha & Jumat + prayer_v2 (`39f8bb48`) + classIds/jam 2026-08-16
+
+- [x] Restore menu **Rekap Dhuha & Jumat** + pengaturan `prayer_v2` (`39f8bb48`).
+- [x] Align matching `classIds` (`13c86d2f`).
+- [x] Normalize jam admin `HH.mm` → `HH:mm` (`b3f5ce4f` web parts).
+- [x] Kontrak: Override/Generator Jumat = tanggal+kelas saja; **Jam** di **Jadwal Sholat Per Kelas**.
+- [x] Status rekomendasi: lihat `GAS/REKOMENDASI_PENGEMBANGAN_REKAP_DHUHA_JUMAT_WEB_ADMIN.md` → **DONE / shipped**.
+- [ ] QA: rekap bulanan denominator Wajib + riwayat harian; jam Dhuha/Jumat di admin & APK sama.
+
+## [SHIP APK] GAS Siswa `1.0.80-siswa (23077)` - Virtual Pet no SEKARAT flash sampai sync penuh 2026-08-16 (Final only)
+
+- [x] **Virtual Pet**: loading sampai first full vitals sync; tidak flash SEKARAT/DEAD dari partial 0 stats.
+- [x] **Bump flavor siswa**: `versionName 1.0.80` / `versionCode 23077`.
+- [x] **Salin APK ke Folder Pegangan**: `GAS-Siswa-release.apk` + `GAS-Siswa-1.0.80-siswa-23077.apk` di `Apk Release/Final`.
+- [x] **SHA256**: `CB5CF41398A815AB43678A0DC3CEE52CDF83593A69980F590DDDC5FB2F3EDB98`.
+- [x] **Deploy web download URL:** **TIDAK** (Final only).
+- [ ] QA perangkat: buka Sahabat Belajar cold — spinner lalu vitals benar, tanpa flash SEKARAT sesaat.
+
+## [SHIP APK] GAS Siswa `1.0.79-siswa (23076)` - Fix cold-start NavigationKt NoClassDefFoundError 2026-08-16 (Final only)
+
+- [x] **Crash cold start**: `NoClassDefFoundError: NavigationKt` → pecah `GasAppNavGraph` + MultiDex (`GasApp` / keep).
+- [x] **Bump flavor siswa**: `versionName 1.0.79` / `versionCode 23076`.
+- [x] **Salin APK ke Folder Pegangan**: `GAS-Siswa-release.apk` + `GAS-Siswa-1.0.79-siswa-23076.apk` di `Apk Release/Final`.
+- [x] **SHA256**: `8CC2F9DE2AD0ED9C7A289DBFE59EBD28EBE345B2F6E7F25F9290AE02F5891C48`.
+- [x] **Deploy web download URL:** **TIDAK**.
+- [ ] QA perangkat: install fresh + cold launch tanpa silent exit.
+
+## [SHIP APK] GAS Siswa `1.0.78-siswa (23075)` - Class match + jam admin Dhuha/Jumat 2026-08-16 (Final only)
 
 - [x] **Native schedule match** (`PrayerDhuhaJumatScreen.kt`, nav): classIds parse + classLabelMap + schoolId variants.
 - [x] **Web** (`useGasPrayerConfig`, `PrayerV2RecapPanel`, `api/teacher/prayer-v2`): aligned matching; pushed `13c86d2f`.
+- [x] **Jam admin**: parse/normalize `HH.mm` → `HH:mm`; tidak fake `07:00-07:30` (`b3f5ce4f`). Build pertama class-match saja, lalu rebuild Final dengan fix jam.
 - [x] **Bump flavor siswa**: `versionName 1.0.78` / `versionCode 23075`.
 - [x] **Salin APK ke Folder Pegangan**: `GAS-Siswa-release.apk` + `GAS-Siswa-1.0.78-siswa-23075.apk` di `Apk Release/Final`.
-- [x] **SHA256**: `4BCE1A4755DB8B59660AD3AC244E6FAA641F2DFF13309E81F14E8515A41C4095`.
+- [x] **SHA256 Final (rebuild jam)**: `E2F63CC3184FBC747639EDC504BA88FD78046A96CA66BA551BFCFE4EDC56EBB5` (build pertama class-match: `4BCE1A47…`).
 - [x] **Deploy web download URL:** **TIDAK**.
-- [ ] QA perangkat: Presensi Dhuha/Jumat aktif hanya jika kelas siswa ada di jadwal admin hari itu; override tanggal dihormati.
+- [ ] QA perangkat: Presensi Dhuha/Jumat aktif hanya jika kelas siswa ada di jadwal admin hari itu; jam = admin; override tanggal dihormati.
 
 ## [SHIP APK] GAS Siswa `1.0.77-siswa (23074)` - Tantangan Bulan Ini + Bonus Literasi + MATI/Buku Dibaca 2026-08-16 (Final only)
 

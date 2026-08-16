@@ -7,11 +7,11 @@ Folder ini adalah pegangan operasional untuk semua perubahan APK `GAS` pada proy
 - Gradle module: `:app`
 - Root project name: `SatuPintuNativeMobile`
 - Application ID dasar: `com.satupintu.mobile`
-- Versi saat dokumen ini dirapikan:
-  - `defaultConfig versionCode = 1039`
-  - `defaultConfig versionName = 1.0.30`
-  - `flavor siswa versionCode = 23022` (distribusi Final; pastikan `build.gradle.kts` selaras saat build siswa)
-  - `flavor legacySiswa versionCode = 23003`
+- Versi distribusi terkini (update 2026-08-16 22:15):
+  - `flavor siswa` → `versionName 1.0.80-siswa` / `versionCode 23077` (**Final only**; URL unduhan web masih 1.0.76 sampai ship publik berikutnya)
+  - `flavor guru` → `versionName 1.0.30-guru` / `versionCode 1039` (terakhir dicatat di Final)
+  - `flavor legacySiswa versionCode = 23003` (kompatibilitas; jangan turun di bawah ini)
+  - Pastikan `native-mobile-gas/app/build.gradle.kts` selaras sebelum assemble
 
 ## Flavor Aktual
 
@@ -69,7 +69,7 @@ D:\Dashboard Portal\Apk Release\Final
 Jika user meminta folder lain, catat di [BUILD_LOG.md](./BUILD_LOG.md).
 
 Rilis final terbaru yang sudah dicatat saat ini:
-- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` (`1.0.30-siswa` / `versionCode 23022`)
+- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.80-siswa-23077.apk` (`1.0.80-siswa` / `versionCode 23077`, SHA256 `CB5CF41398A815AB43678A0DC3CEE52CDF83593A69980F590DDDC5FB2F3EDB98`) — Virtual Pet no SEKARAT flash sampai sync penuh; rantai Final 1.0.78 classIds+jam → 1.0.79 MultiDex NavigationKt → 1.0.80. **Final only** — URL unduhan web masih 1.0.76.
 - Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` (`1.0.30-guru` / `versionCode 1039`, rebuild 2026-08-03 ~14:30 + ikon `cb3bed4d`) — notifikasi literasi belum + pet mati (scope wali/diampu), badge Notifikasi, ikon Data Siswa/Rekapitulasi normal; tanpa FCM (tray saat app hidup). PWA Guru: `/guru` (9 menu parity; Web Push VAPID masih terbuka).
 
 ## Perintah Build yang Paling Sering Dipakai
@@ -84,7 +84,7 @@ Rilis final terbaru yang sudah dicatat saat ini:
 - Untuk `GAS Siswa`, `versionCode` release harus selalu naik untuk package `com.satupintu.mobile.siswa`.
 - Riwayat proyek ini sudah memakai jalur kompatibilitas `legacySiswa` dengan `versionCode 23003`, jadi release siswa reguler tidak boleh kembali ke angka di bawah itu.
 - Sebelum APK dibagikan lewat portal/web, jalankan `npm run sync:apk:gas` dari folder `web`.
-- Per 2026-08-02 sore, build final siswa terbaru di folder `Final` sudah `1.0.30-siswa (23022)`; jika file publik web belum ikut disinkronkan, anggap link unduh web masih tertinggal pada artefak lama.
+- Per 2026-08-16: **Final siswa** = `1.0.80-siswa (23077)` (belum sync ke `web/public/apk`). **Public unduhan web** masih `1.0.76-siswa (23073)` sampai `Ship-Apk-Baru.ps1` / `npm run sync:apk:gas` + push App Hosting dijalankan.
 - Skrip sinkronisasi web sekarang akan:
   - membaca metadata APK (`packageName`, `versionCode`, `versionName`)
   - menolak sinkronisasi jika `versionCode` GAS siswa turun

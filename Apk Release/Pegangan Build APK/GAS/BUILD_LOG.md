@@ -17,6 +17,36 @@ Field berikut wajib dipakai di setiap entri:
 - Flavor terdampak
 ## Tujuan perubahan
 
+## 2026-08-16 22:15 - [DOCS] Pegangan sync - Dhuha/Jumat + APK 1.0.78-1.0.80 + pet siluman
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `docs`
+- **Flavor terdampak:** pegangan GAS + CHECKLIST (tidak rebuild APK)
+- **Tujuan perubahan:**
+  - Sinkronkan CHECKLIST / README / RELEASE / REKOMENDASI ke progres 16 Agu 2026.
+  - Catat web: restore Rekap Dhuha & Jumat (`39f8bb48`), classIds (`13c86d2f`), normalize jam `HH.mm` -> `HH:mm` (`b3f5ce4f`), filter pet siluman monitor (`39580854`).
+  - Catat kontrak singkat: Override/Generator Jumat = tanggal+kelas saja (Jam di Jadwal Sholat Per Kelas); Kenyang hanya hari efektif >=30 menit baca; libur -> +10 Kecerdasan (bukan Kenyang); 104 vs 100 pet = orphan RTDB, monitor sekarang filter roster-linked.
+- **Build:** tidak rebuild APK
+
+## 2026-08-16 22:03 - [FIX WEB] Monitor Virtual Pet - drop orphan siluman dari Total Pets Aktif (`39580854`)
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** web admin only (APK tidak di-rebuild)
+- **Tujuan perubahan:**
+  - Total Pets Aktif di monitor hanya menghitung pet yang ter-link roster siswa (bukan orphan RTDB).
+  - Selisih 104 vs 100 sebelumnya = pet siluman tanpa siswa; cleanup one-off lama **bukan** filter tahan lama - sekarang filter durable di query/agregasi monitor.
+- **Build:** tidak rebuild APK
+- **Commit:** `39580854`
+
+## 2026-08-16 18:48 - [FIX WEB] Restore Rekap Dhuha & Jumat + pengaturan prayer_v2 (`39f8bb48`)
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** web App Hosting / admin GAS (APK tidak di-rebuild di langkah ini)
+- **Tujuan perubahan:**
+  - Mengembalikan menu **Rekap Dhuha & Jumat** + panel pengaturan sistem `prayer_v2` yang sempat hilang dari live deploy.
+  - Dilanjutkan align matching classIds (`13c86d2f`) dan normalize jam admin `HH.mm` -> `HH:mm` (`b3f5ce4f`, bagian web + APK 1.0.78).
+- **Build:** tidak rebuild APK di commit restore
+- **Commit:** `39f8bb48` (restore) -> `13c86d2f` (classIds) -> `b3f5ce4f` (jam)
+
 ## 2026-08-16 21:55 - [SHIP APK] GAS-Siswa v1.0.80-siswa (23077) - Virtual Pet loading SEKARAT flash fix
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix`
