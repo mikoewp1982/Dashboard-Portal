@@ -14,7 +14,8 @@ import com.satupintu.mobile.data.model.PetQuest
 import com.satupintu.mobile.data.model.VirtualPet
 import com.satupintu.mobile.util.DayScheduleRule
 import com.satupintu.mobile.util.HolidayRule
-import com.satupintu.mobile.util.isValidPrayerDay
+import com.satupintu.mobile.util.isDzuhurEffectiveDay
+import com.satupintu.mobile.util.parseActiveDaysSnapshot
 import com.satupintu.mobile.util.parseHolidaySnapshot
 import com.satupintu.mobile.util.parseScheduleSnapshot
 import kotlinx.coroutines.channels.awaitClose
@@ -688,6 +689,8 @@ class VirtualPetRepository {
         var scopedSchedules: Map<Int, DayScheduleRule>? = null
         var legacyHolidays: List<HolidayRule> = emptyList()
         var scopedHolidays: List<HolidayRule>? = null
+        var dzuhurActiveDays: List<Int>? = null
+        var dzuhurEnabled: Boolean = true
 
         val snapshotsByAlias = mutableMapOf<String, DataSnapshot?>()
         val queries = mutableListOf<Pair<com.google.firebase.database.Query, ValueEventListener>>()
@@ -718,7 +721,13 @@ class VirtualPetRepository {
 
             val schedules = scopedSchedules ?: legacySchedules
             val holidays = scopedHolidays ?: legacyHolidays
-            val isEffectiveDay = isValidPrayerDay(Calendar.getInstance(), schedules, holidays)
+            val isEffectiveDay = isDzuhurEffectiveDay(
+                calendar = Calendar.getInstance(),
+                schedules = schedules,
+                holidays = holidays,
+                activeDays = dzuhurActiveDays,
+                dzuhurEnabled = dzuhurEnabled
+            )
             trySend(PrayerRealtimeInfo(status = latestStatus, isEffectiveDay = isEffectiveDay))
         }
 
@@ -766,6 +775,8 @@ class VirtualPetRepository {
         var scopedScheduleListener: ValueEventListener? = null
         var scopedHolidayRef: com.google.firebase.database.DatabaseReference? = null
         var scopedHolidayListener: ValueEventListener? = null
+        var dzuhurTypeRef: com.google.firebase.database.DatabaseReference? = null
+        var dzuhurTypeListener: ValueEventListener? = null
 
         if (normalizedSchoolId.isNotBlank()) {
             scopedScheduleRef = db.child("school_settings").child(normalizedSchoolId).child("prayer").child("schedules")
@@ -792,8 +803,27 @@ class VirtualPetRepository {
                 }
             }
 
+            dzuhurTypeRef = db.child("school_settings").child(normalizedSchoolId).child("prayer_v2").child("types").child("DZUHUR")
+            dzuhurTypeListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) {
+                        dzuhurActiveDays = null
+                        dzuhurEnabled = true
+                    } else {
+                        dzuhurEnabled = snapshot.child("enabled").getValue(Boolean::class.java) ?: true
+                        dzuhurActiveDays = parseActiveDaysSnapshot(snapshot.child("activeDays"))
+                    }
+                    emitRealtimePrayer()
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    close(error.toException())
+                }
+            }
+
             scopedScheduleRef.addValueEventListener(scopedScheduleListener)
             scopedHolidayRef.addValueEventListener(scopedHolidayListener)
+            dzuhurTypeRef.addValueEventListener(dzuhurTypeListener)
         } else {
             emitRealtimePrayer()
         }
@@ -804,6 +834,7 @@ class VirtualPetRepository {
             legacyHolidayRef.removeEventListener(legacyHolidayListener)
             scopedScheduleRef?.let { ref -> scopedScheduleListener?.let(ref::removeEventListener) }
             scopedHolidayRef?.let { ref -> scopedHolidayListener?.let(ref::removeEventListener) }
+            dzuhurTypeRef?.let { ref -> dzuhurTypeListener?.let(ref::removeEventListener) }
         }
     }
 

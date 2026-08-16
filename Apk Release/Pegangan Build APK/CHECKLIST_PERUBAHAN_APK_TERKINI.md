@@ -6,7 +6,19 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-15 08:50 (SHIP GAS Siswa 1.0.74-siswa / 23071 - Fix Level/XP Discrepancy)
+Update terakhir: 2026-08-16 11:10 (SHIP GAS Siswa 1.0.76-siswa / 23073 - Home LIBUR + Dzuhur activeDays + Sahabat Belajar Ibadah)
+
+---
+
+## [SHIP APK] GAS Siswa `1.0.76-siswa (23073)` - Home LIBUR + Dzuhur activeDays + Sahabat Belajar Ibadah 2026-08-16
+
+- [x] **Bug1 Home LIBUR (`HomeScreen.kt`)**: Status Kehadiran Beranda baca jadwal + holidays (scoped/legacy), tampilkan badge `LIBUR` saat hari non-efektif sekolah.
+- [x] **Bug2 Dzuhur activeDays (`PresensiRuleUtils.kt`, `PrayerScreen.kt`, `VirtualPetRepository.kt`)**: Hormati `prayer_v2/types/DZUHUR` `enabled` + `activeDays` (JS getDay 0-6) sebelum jadwal/libur legacy; alasan UI "bukan hari wajib" / "nonaktif".
+- [x] **Bug3 Sahabat Belajar Ibadah (`VirtualPetViewModel.kt`, `VirtualPetScreen.kt`)**: Hari libur/non-wajib tampil `Libur / tidak wajib` (bukan "Belum ada"); kartu misi prayer terpisah dari absensi.
+- [x] **Bump flavor siswa**: `versionName 1.0.76` / `versionCode 23073`.
+- [x] **Salin APK ke Folder Pegangan**: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` dan `GAS-Siswa-1.0.76-siswa-23073.apk`.
+- [x] **SHA256**: `76C8EFC4051E11382B6DB3CB25BCD14127237C2FA291FCE27B15F41FA3420298` (Size: 20.24 MB).
+- [ ] QA perangkat: Beranda hari libur = LIBUR; Dzuhur hari di luar Hari Wajib = tidak bisa presensi; Sahabat Belajar kriteria Ibadah = Libur/tidak wajib.
 
 ---
 

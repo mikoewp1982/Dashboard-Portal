@@ -147,3 +147,64 @@ fun formatIndonesianShortDay(date: Date): String {
     return SimpleDateFormat("EEE", Locale("id", "ID")).format(date)
 }
 
+/**
+ * Admin `prayer_v2` Hari Wajib (`activeDays`) uses JS Date.getDay():
+ * Minggu=0, Senin=1, ... Sabtu=6.
+ */
+fun toAdminDayOfWeek(calendarDayOfWeek: Int): Int {
+    return when (calendarDayOfWeek) {
+        Calendar.SUNDAY -> 0
+        Calendar.MONDAY -> 1
+        Calendar.TUESDAY -> 2
+        Calendar.WEDNESDAY -> 3
+        Calendar.THURSDAY -> 4
+        Calendar.FRIDAY -> 5
+        Calendar.SATURDAY -> 6
+        else -> -1
+    }
+}
+
+fun parseActiveDaysSnapshot(snapshot: DataSnapshot): List<Int>? {
+    if (!snapshot.exists()) return null
+    val days = mutableListOf<Int>()
+    for (child in snapshot.children) {
+        val value = when (val raw = child.value) {
+            is Long -> raw.toInt()
+            is Int -> raw
+            is Double -> raw.toInt()
+            is String -> raw.trim().toIntOrNull()
+            // Map form: { "1": true, "2": true } where key is JS weekday
+            is Boolean -> if (raw) child.key?.toIntOrNull() else null
+            else -> null
+        }
+        if (value != null) days += value
+    }
+    return days
+}
+
+/**
+ * @return null when activeDays is not configured (caller should fall back to legacy schedule),
+ * true/false when the weekday is / is not in the mandatory list.
+ */
+fun isDayInActiveDays(calendar: Calendar, activeDays: List<Int>?): Boolean? {
+    if (activeDays == null) return null
+    if (activeDays.isEmpty()) return false
+    return activeDays.contains(toAdminDayOfWeek(calendar.get(Calendar.DAY_OF_WEEK)))
+}
+
+/**
+ * Dzuhur effective day for pet/presensi: respects admin Hari Wajib (`activeDays`)
+ * before falling back to legacy prayer schedules + holidays.
+ */
+fun isDzuhurEffectiveDay(
+    calendar: Calendar,
+    schedules: Map<Int, DayScheduleRule>,
+    holidays: List<HolidayRule>,
+    activeDays: List<Int>?,
+    dzuhurEnabled: Boolean = true
+): Boolean {
+    if (!dzuhurEnabled) return false
+    if (isDayInActiveDays(calendar, activeDays) == false) return false
+    return isValidPrayerDay(calendar, schedules, holidays)
+}
+

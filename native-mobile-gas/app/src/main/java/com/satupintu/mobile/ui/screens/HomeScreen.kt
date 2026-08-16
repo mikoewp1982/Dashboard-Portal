@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.withStyle
 import androidx.compose.foundation.shape.CircleShape
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,6 +41,13 @@ import com.google.firebase.database.ValueEventListener
 import com.satupintu.mobile.util.SecurityUtils
 import com.satupintu.mobile.utils.SecurePreferences
 import com.satupintu.mobile.ui.viewmodel.TeacherNotificationViewModel
+import com.satupintu.mobile.util.DayScheduleRule
+import com.satupintu.mobile.util.HolidayRule
+import com.satupintu.mobile.util.isValidSchoolDay
+import com.satupintu.mobile.util.parseHolidaySnapshot
+import com.satupintu.mobile.util.parseScheduleSnapshot
+import com.satupintu.mobile.util.toDateKey
+import java.util.Calendar
 
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Brush
@@ -51,8 +60,8 @@ import com.satupintu.mobile.R
 import com.satupintu.mobile.BuildConfig
 
 /** Shared home-menu icon box so guru/siswa tiles stay visually consistent. */
-private val HomeMenuIconMaxSize = 96.dp
-private val HomeMenuIconPanelHeight = 110.dp
+private val HomeMenuIconMaxSize = 72.dp
+private val HomeMenuIconPanelHeight = 96.dp
 
 data class StudentFeatureItem(
     val title: String,
@@ -106,8 +115,13 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
 
     fun checkGps() {
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        if (!isGpsEnabled) {
+        val isLocationEnabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            locationManager.isLocationEnabled
+        } else {
+            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+            locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        }
+        if (!isLocationEnabled) {
             showGpsDialog = true
         }
     }
@@ -172,6 +186,12 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     var userSchoolName by remember { mutableStateOf("") }
     var announcementText by remember { mutableStateOf("Memuat pengumuman...") }
     var isOsis by remember { mutableStateOf(false) }
+    
+    var todayCheckIn by remember { mutableStateOf("--:--") }
+    var todayCheckOut by remember { mutableStateOf("--:--") }
+    var todayStatus by remember { mutableStateOf("") }
+    var isTodayEarlyCheckout by remember { mutableStateOf(false) }
+    var isTodayHoliday by remember { mutableStateOf(false) }
 
     val teacherNotificationViewModel: TeacherNotificationViewModel = viewModel()
     val teacherNotifications by teacherNotificationViewModel.notifications.collectAsState()
@@ -193,6 +213,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     LaunchedEffect(Unit) {
         val prefs = SecurePreferences.getSessionPrefs(context)
         if (SecurityUtils.isSessionExpired(prefs)) {
+            runCatching { SecurityUtils.clearLastLoginIdentity(context) }
             prefs.edit().clear().apply()
             auth.signOut()
             onLogout()
@@ -211,6 +232,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
             else -> true
         }
         if (!ok) {
+            runCatching { SecurityUtils.clearLastLoginIdentity(context) }
             prefs.edit().clear().apply()
             auth.signOut()
             onLogout()
@@ -646,6 +668,118 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
         } else {
             checkStudentAndTeacher()
         }
+
+        if (storedRoleKey == "student" && studentSessionId.isNotBlank() && sessionSchoolId.isNotBlank()) {
+            val todayKey = toDateKey(System.currentTimeMillis())
+            db.getReference("attendance_by_school/$sessionSchoolId")
+                .orderByChild("studentId")
+                .equalTo(studentSessionId)
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        var latestAtt: DataSnapshot? = null
+                        var latestTime = 0L
+                        for (child in snapshot.children) {
+                            val dateObj = child.child("date").getValue(Long::class.java) ?: continue
+                            val dateKeyStr = toDateKey(dateObj)
+                            if (dateKeyStr == todayKey && dateObj > latestTime) {
+                                latestTime = dateObj
+                                latestAtt = child
+                            }
+                        }
+                        if (latestAtt != null) {
+                            val inTimeStr = latestAtt.child("checkInTime").value?.toString()
+                            val outTimeStr = latestAtt.child("checkOutTime").value?.toString()
+                            val inTime = inTimeStr?.toLongOrNull() ?: latestAtt.child("date").value?.toString()?.toLongOrNull()
+                            val outTime = outTimeStr?.toLongOrNull()
+                            
+                            if (inTime != null) {
+                                val cal = Calendar.getInstance().apply { timeInMillis = inTime }
+                                todayCheckIn = String.format("%02d:%02d", cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
+                            }
+                            if (outTime != null) {
+                                val cal = Calendar.getInstance().apply { timeInMillis = outTime }
+                                val outHour = cal.get(Calendar.HOUR_OF_DAY)
+                                val outMin = cal.get(Calendar.MINUTE)
+                                todayCheckOut = String.format("%02d:%02d", outHour, outMin)
+
+                                val explicitEarly = latestAtt.child("isEarlyCheckout").getValue(Boolean::class.java)
+                                    ?: latestAtt.child("earlyCheckout").getValue(Boolean::class.java)
+                                    ?: false
+
+                                val isFriday = cal.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
+                                val exitCutoffMinutes = if (isFriday) (10 * 60 + 50) else (13 * 60 + 30)
+                                val checkOutMinutes = outHour * 60 + outMin
+
+                                isTodayEarlyCheckout = explicitEarly || (checkOutMinutes < exitCutoffMinutes)
+                            } else {
+                                isTodayEarlyCheckout = false
+                            }
+                            todayStatus = latestAtt.child("status").value?.toString() ?: ""
+                        }
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+
+            // Align Status Kehadiran with Absensi: detect weekday/tanggal-merah holiday.
+            var homeSchedules = emptyMap<Int, DayScheduleRule>()
+            var homeHolidays = emptyList<HolidayRule>()
+            var scopedSchedulesAvailable = false
+            var scopedHolidaysAvailable = false
+
+            fun refreshHomeHolidayFlag() {
+                isTodayHoliday = !isValidSchoolDay(Calendar.getInstance(), homeSchedules, homeHolidays)
+            }
+
+            fun applyHomeSchedules(snapshot: DataSnapshot) {
+                homeSchedules = parseScheduleSnapshot(snapshot)
+                refreshHomeHolidayFlag()
+            }
+
+            fun applyHomeHolidays(snapshot: DataSnapshot) {
+                homeHolidays = parseHolidaySnapshot(snapshot)
+                refreshHomeHolidayFlag()
+            }
+
+            db.getReference("school_settings").child(sessionSchoolId).child("attendance").child("schedules")
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (snapshot.exists()) {
+                            scopedSchedulesAvailable = true
+                            applyHomeSchedules(snapshot)
+                        } else if (!scopedSchedulesAvailable) {
+                            db.getReference("schedules").addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(legacySnapshot: DataSnapshot) {
+                                    if (!scopedSchedulesAvailable && legacySnapshot.exists()) {
+                                        applyHomeSchedules(legacySnapshot)
+                                    }
+                                }
+                                override fun onCancelled(error: DatabaseError) {}
+                            })
+                        }
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+
+            db.getReference("school_settings").child(sessionSchoolId).child("attendance").child("holidays")
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (snapshot.exists()) {
+                            scopedHolidaysAvailable = true
+                            applyHomeHolidays(snapshot)
+                        } else if (!scopedHolidaysAvailable) {
+                            db.getReference("holidays").addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(legacySnapshot: DataSnapshot) {
+                                    if (!scopedHolidaysAvailable && legacySnapshot.exists()) {
+                                        applyHomeHolidays(legacySnapshot)
+                                    }
+                                }
+                                override fun onCancelled(error: DatabaseError) {}
+                            })
+                        }
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+        }
     }
 
     val accentBlue = colorScheme.primary
@@ -659,6 +793,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     val baseStudentFeatures = listOf(
         StudentFeatureItem(title = "Absensi", iconRes = R.drawable.ic_menu_absensi, route = "attendance", color = accentBlue),
         StudentFeatureItem(title = "Presensi Sholat", iconRes = R.drawable.ic_menu_presensi_sholat, route = "prayer", color = accentTeal),
+        StudentFeatureItem(title = "Presensi Dhuha & Jum'at", iconRes = R.drawable.ic_menu_presensi_sholat, route = "prayer_dhuha_jumat", color = accentTeal),
         StudentFeatureItem(title = "Lentera Digital", iconRes = R.drawable.ic_menu_lentera_digital, route = "library", color = accentTeal),
         StudentFeatureItem(title = "7 KAIH", iconRes = R.drawable.ic_menu_kaih7, route = "seven_habits", color = accentIndigo),
         StudentFeatureItem(title = "Virtual Pet", iconRes = R.drawable.ic_menu_virtual_pet, route = "virtual_pet", color = accentGold),
@@ -682,6 +817,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
         StudentFeatureItem(title = "Data Siswa", iconRes = R.drawable.ic_menu_data_siswa, route = "teacher_student_list", color = accentBlue),
         StudentFeatureItem(title = "Presensi Siswa", iconRes = R.drawable.ic_menu_absensi, route = "teacher_attendance", color = accentTeal),
         StudentFeatureItem(title = "Presensi Sholat", iconRes = R.drawable.ic_menu_presensi_sholat, route = "teacher_prayer", color = accentIndigo),
+        StudentFeatureItem(title = "Presensi Dhuha & Jum'at", iconRes = R.drawable.ic_menu_presensi_sholat, route = "teacher_prayer_dhuha_jumat", color = accentIndigo),
         StudentFeatureItem(title = "Literasi & Tugas", iconRes = R.drawable.ic_menu_lentera_digital, route = "teacher_literacy", color = accentViolet),
         StudentFeatureItem(title = "7 KAIH", iconRes = R.drawable.ic_menu_kaih7, route = "teacher_seven_habits", color = accentIndigo),
         StudentFeatureItem(title = "Kedisiplinan", iconRes = R.drawable.ic_menu_kedisiplinan, route = "teacher_discipline", color = accentRed),
@@ -700,13 +836,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
         StudentFeatureItem(title = "Input Pelanggaran", iconRes = R.drawable.ic_menu_kedisiplinan, route = "staff_discipline", color = accentRed),
         StudentFeatureItem(title = "Data Pelanggaran", iconRes = R.drawable.ic_menu_absensi, route = "staff_violation_history", color = accentBlue)
     )
-    val screenBackground = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFF12D6C6),
-            Color(0xFF0F7BFF),
-            Color(0xFF0F2A43)
-        )
-    )
+
     val activeStatusColor = colorScheme.tertiary
     val teacherHomeroomLabel = remember(userRole, userClass) {
         if (userRole == "Guru" && userClass.isNotBlank() && userClass != "-") "Wali Kelas $userClass" else ""
@@ -717,73 +847,58 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     val resolvedSchoolLabel = remember(userSchoolName) {
         userSchoolName.trim().ifBlank { "SMPN 3 Pacet" }
     }
+    val screenBackground = androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E3A8A)))
 
     Scaffold(
         containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = if (teacherHomeroomLabel.isNotBlank()) {
-                                "Hai, $userName $teacherHomeroomLabel"
-                            } else {
-                                "Hai, $userName"
-                            },
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleMedium, // Smaller font size
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
-                        if (studentClassLabel.isNotBlank()) {
-                            Text(
-                                text = studentClassLabel,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colorScheme.onBackground.copy(alpha = 0.8f)
+        bottomBar = {
+            NavigationBar(
+                containerColor = Color(0xFF0F172A),
+                tonalElevation = 8.dp
+            ) {
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Beranda", tint = Color.White) },
+                    label = { Text("Beranda", color = Color.White) },
+                    selected = true,
+                    onClick = { /* Stay on Home */ },
+                    colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                        indicatorColor = colorScheme.primary.copy(alpha = 0.5f)
+                    )
+                )
+                NavigationBarItem(
+                    icon = {
+                        Box(
+                            modifier = Modifier
+                                .offset(y = (-28).dp)
+                                .requiredSize(76.dp)
+                                .background(colorScheme.primary, CircleShape)
+                                .border(5.dp, Color(0xFF0F172A), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painterResource(id = R.drawable.ic_menu_absensi), 
+                                contentDescription = "Absen", 
+                                modifier = Modifier.size(38.dp),
+                                tint = colorScheme.onPrimary
                             )
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            val roleText = when (userRole) {
-                                "Guru" -> "Guru $resolvedSchoolLabel"
-                                "Staff" -> "Staff $resolvedSchoolLabel"
-                                else -> "Siswa $resolvedSchoolLabel"
-                            }
-                            Text(
-                                text = roleText,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colorScheme.onBackground.copy(alpha = 0.7f)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                color = activeStatusColor.copy(alpha = 0.12f),
-                                contentColor = activeStatusColor,
-                                shape = RoundedCornerShape(999.dp)
-                            ) {
-                                Text(
-                                    text = "AKTIF",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    titleContentColor = colorScheme.onBackground,
-                    actionIconContentColor = colorScheme.onBackground
-                ),
-                actions = {
-                    IconButton(onClick = {
-                        // Clear session before logout
-                        val prefs = context.getSharedPreferences("app_session", Context.MODE_PRIVATE)
-                        prefs.edit().clear().apply()
-                        onLogout()
-                    }) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
-                    }
-                }
-            )
+                    },
+                    label = { 
+                        Text("Absensi", color = Color.White, modifier = Modifier.offset(y = (-14).dp)) 
+                    },
+                    selected = false,
+                    onClick = { onNavigate("attendance") },
+                    colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                        indicatorColor = Color.Transparent
+                    )
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Profil", tint = Color.White) },
+                    label = { Text("Profil", color = Color.White) },
+                    selected = false,
+                    onClick = { onNavigate("profile") }
+                )
+            }
         }
     ) { paddingValues ->
         Box(
@@ -792,11 +907,12 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                 .background(screenBackground)
                 .padding(paddingValues)
         ) {
+            // Aurora effects
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        Brush.radialGradient(
+                        androidx.compose.ui.graphics.Brush.radialGradient(
                             colors = listOf(
                                 Color.White.copy(alpha = 0.18f),
                                 Color.Transparent
@@ -810,7 +926,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        Brush.radialGradient(
+                        androidx.compose.ui.graphics.Brush.radialGradient(
                             colors = listOf(
                                 Color.White.copy(alpha = 0.12f),
                                 Color.Transparent
@@ -820,131 +936,287 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                         )
                     )
             )
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
-                val isStudentMode = userRole != "Guru" && userRole != "Staff"
-                val heroBrush = when (userRole) {
-                    "Guru" -> Brush.linearGradient(listOf(colorScheme.primary, colorScheme.tertiary))
-                    "Staff" -> Brush.linearGradient(listOf(colorScheme.primary, colorScheme.secondary))
-                    else -> Brush.linearGradient(
-                        listOf(
-                            Color(0xFF12D6C6),
-                            Color(0xFF0F7BFF),
-                            Color(0xFF0F2A43)
-                        )
-                    )
-                }
-
-                Card(
+                // Header Profile (Transparent on Aurora)
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 18.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        if (isStudentMode) Color.White.copy(alpha = 0.18f) else colorScheme.outline
-                    )
+                        .padding(horizontal = 16.dp, vertical = 24.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(heroBrush)
-                            .padding(16.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.2f),
+                            modifier = Modifier.size(56.dp)
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                val headerTitle = when (userRole) {
-                                    "Guru" -> "Dashboard"
-                                    "Staff" -> "Panel Staff"
-                                    else -> "Pengumuman Terbaru"
-                                }
-                                Text(
-                                    text = headerTitle,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = when (userRole) {
-                                        "Guru", "Staff" -> colorScheme.onPrimary.copy(alpha = 0.95f)
-                                        else -> Color.White.copy(alpha = 0.95f)
-                                    }
-                                )
-
-                                Spacer(modifier = Modifier.height(6.dp))
-
-                                if (userRole == "Siswa" || userRole.isEmpty()) {
-                                    Text(
-                                        text = announcementText,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color.White.copy(alpha = 0.9f),
-                                        maxLines = 3,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                    )
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Avatar",
+                                tint = Color.White,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (teacherHomeroomLabel.isNotBlank()) {
+                                    "Hai, $userName $teacherHomeroomLabel"
                                 } else {
-                                    val subtitle = when (userRole) {
-                                        "Guru" -> "Monitoring aktivitas siswa"
-                                        else -> "Input pelanggaran siswa"
-                                    }
+                                    "Hai, $userName"
+                                },
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                            if (studentClassLabel.isNotBlank()) {
+                                Text(
+                                    text = studentClassLabel,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                            val roleText = when (userRole) {
+                                "Guru" -> "Guru $resolvedSchoolLabel"
+                                "Staff" -> "Staff $resolvedSchoolLabel"
+                                else -> "Siswa $resolvedSchoolLabel"
+                            }
+                            Text(
+                                text = roleText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                        }
+
+                    }
+                }
+
+                // Body Content (Scrollable Grid)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    // Kartu Status Kehadiran
+                    if (userRole == "Siswa" || userRole.isEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                val isLateStatus = todayStatus == "LATE" || todayStatus == "TERLAMBAT" || todayStatus.contains("Late", ignoreCase = true)
+                                val attendanceBadgeText = when {
+                                    isTodayHoliday -> "LIBUR"
+                                    todayCheckIn == "--:--" -> "BELUM ABSEN"
+                                    isLateStatus -> "TERLAMBAT"
+                                    else -> "HADIR"
+                                }
+                                val attendanceBadgeFg = when {
+                                    isTodayHoliday -> Color(0xFFFFB4A9)
+                                    todayCheckIn == "--:--" -> Color.White.copy(alpha = 0.9f)
+                                    isLateStatus -> Color(0xFFFBBF24)
+                                    else -> Color(0xFF34D399)
+                                }
+                                val attendanceBadgeBg = when {
+                                    isTodayHoliday -> Color(0xFFFFB4A9).copy(alpha = 0.18f)
+                                    todayCheckIn == "--:--" -> Color.White.copy(alpha = 0.1f)
+                                    isLateStatus -> Color(0xFFF59E0B).copy(alpha = 0.2f)
+                                    else -> Color(0xFF10B981).copy(alpha = 0.2f)
+                                }
+                                val attendanceBadgeBorder = when {
+                                    isTodayHoliday -> Color(0xFFFFB4A9)
+                                    todayCheckIn == "--:--" -> Color.White.copy(alpha = 0.3f)
+                                    isLateStatus -> Color(0xFFF59E0B)
+                                    else -> Color(0xFF10B981)
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
-                                        text = subtitle,
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = colorScheme.onPrimary.copy(alpha = 0.95f)
+                                        text = "Status Kehadiran",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
                                     )
+                                    Surface(
+                                        color = attendanceBadgeBg,
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, attendanceBadgeBorder)
+                                    ) {
+                                        Text(
+                                            text = attendanceBadgeText,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = attendanceBadgeFg,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    // Masuk
+                                    Surface(
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color.White.copy(alpha = 0.05f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.ArrowForward, contentDescription = "Masuk", tint = Color(0xFF60A5FA), modifier = Modifier.size(20.dp))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Column {
+                                                Text("DATANG", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f))
+                                                androidx.compose.material3.Text(
+                                                    text = androidx.compose.ui.text.buildAnnotatedString {
+                                                        append(todayCheckIn)
+                                                        if (isLateStatus) {
+                                                            withStyle(
+                                                                style = androidx.compose.ui.text.SpanStyle(
+                                                                    color = Color(0xFFF87171),
+                                                                    fontSize = 10.sp,
+                                                                    fontWeight = FontWeight.Normal
+                                                                )
+                                                            ) {
+                                                                append(" (Terlambat)")
+                                                            }
+                                                        }
+                                                    },
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    // Pulang
+                                    Surface(
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color.White.copy(alpha = 0.05f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.ArrowBack, contentDescription = "Pulang", tint = Color(0xFFF87171), modifier = Modifier.size(20.dp))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Column {
+                                                Text("PULANG", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f))
+                                                androidx.compose.material3.Text(
+                                                    text = androidx.compose.ui.text.buildAnnotatedString {
+                                                        append(todayCheckOut)
+                                                        if (isTodayEarlyCheckout) {
+                                                            withStyle(
+                                                                style = androidx.compose.ui.text.SpanStyle(
+                                                                    color = Color(0xFFF59E0B),
+                                                                    fontSize = 10.sp,
+                                                                    fontWeight = FontWeight.Normal
+                                                                )
+                                                            ) {
+                                                                append(" (Pulang Awal)")
+                                                            }
+                                                        }
+                                                    },
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
-
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            val heroIcon = when (userRole) {
-                                "Guru" -> Icons.Default.DateRange
-                                "Staff" -> Icons.Default.Warning
-                                else -> Icons.Default.Notifications
-                            }
-                            Surface(
-                                color = if (isStudentMode) Color.White.copy(alpha = 0.16f) else colorScheme.surface.copy(alpha = 0.35f),
-                                shape = RoundedCornerShape(18.dp)
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                    } else {
+                        // Announcement for Teacher/Staff
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
                             ) {
-                                Icon(
-                                    imageVector = heroIcon,
-                                    contentDescription = null,
-                                    tint = if (isStudentMode) Color.White else colorScheme.onSurface,
-                                    modifier = Modifier.padding(12.dp).size(22.dp)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Notifications, contentDescription = "Pengumuman", tint = Color(0xFF60A5FA))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Pengumuman",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = announcementText,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = 0.9f),
+                                    maxLines = 3,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                             }
                         }
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
-                }
 
-                Text(
-                    text = when (userRole) {
-                        "Guru" -> "Menu Guru"
-                        "Staff" -> "Menu Staff"
-                        else -> "Menu Siswa"
-                    },
-                    style = MaterialTheme.typography.titleLarge,
-                    color = colorScheme.onBackground,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
+                    Text(
+                        text = "MENU UTAMA",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(bottom = 12.dp),
+                        fontWeight = FontWeight.Bold
+                    )
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    val currentFeatures = when (userRole) {
-                        "Guru" -> teacherFeatures
-                        "Staff" -> staffFeatures
-                        else -> studentFeatures
-                    }
-                    items(currentFeatures) { feature ->
-                        StudentFeatureCard(feature) { route ->
-                            onNavigate(route)
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(4), // 4 columns
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        val currentFeatures = when (userRole) {
+                            "Guru" -> teacherFeatures
+                            "Staff" -> staffFeatures
+                            else -> studentFeatures
+                        }
+                        items(currentFeatures) { feature ->
+                            StudentFeatureCard(feature) { route ->
+                                onNavigate(route)
+                            }
                         }
                     }
                 }
@@ -959,187 +1231,76 @@ fun StudentFeatureCard(
     onClick: (String) -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val outerShape = RoundedCornerShape(24.dp)
-    val panelShape = RoundedCornerShape(20.dp)
-    val pillShape = RoundedCornerShape(999.dp)
-    Card(
+    val shape = RoundedCornerShape(16.dp)
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(174.dp)
             .clickable { onClick(feature.route) },
-        shape = outerShape,
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.18f))
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .size(64.dp)
                 .background(
-                    brush = Brush.verticalGradient(
+                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF8DC4F6).copy(alpha = 0.30f),
-                            Color(0xFF4F9AE8).copy(alpha = 0.24f),
-                            Color(0xFF1F5EA8).copy(alpha = 0.34f)
+                            Color.White.copy(alpha = 0.12f),
+                            colorScheme.primary.copy(alpha = 0.10f),
+                            Color(0xFF1C5A9A).copy(alpha = 0.18f)
                         )
                     ),
-                    shape = outerShape
+                    shape = shape
                 )
                 .border(
                     width = 1.dp,
-                    color = Color.White.copy(alpha = 0.12f),
-                    shape = outerShape
-                )
+                    color = Color.White.copy(alpha = 0.2f),
+                    shape = shape
+                ),
+            contentAlignment = Alignment.Center
         ) {
             if (feature.badgeCount > 0) {
                 Surface(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(10.dp),
+                        .offset(x = 6.dp, y = (-6).dp),
                     shape = CircleShape,
-                    color = Color(0xFFDC2626)
+                    color = colorScheme.error
                 ) {
                     Text(
                         text = if (feature.badgeCount > 99) "99+" else feature.badgeCount.toString(),
-                        color = Color.White,
+                        color = colorScheme.onError,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                     )
                 }
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.18f),
-                                Color.Transparent
-                            ),
-                            radius = 420f
-                        ),
-                        shape = outerShape
-                    )
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(
+            
+            if (feature.iconRes != null) {
+                Image(
+                    painter = painterResource(id = feature.iconRes),
+                    contentDescription = feature.title,
+                    contentScale = ContentScale.Fit,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(HomeMenuIconPanelHeight)
-                        .clip(panelShape)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.12f),
-                                    colorScheme.primary.copy(alpha = 0.10f),
-                                    Color(0xFF1C5A9A).copy(alpha = 0.18f)
-                                )
-                            ),
-                            shape = panelShape
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color.White.copy(alpha = 0.20f),
-                            shape = panelShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 8.dp, vertical = 6.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.White.copy(alpha = 0.06f),
-                                        Color.Transparent
-                                    )
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = Color.White.copy(alpha = 0.10f),
-                                shape = RoundedCornerShape(16.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (feature.iconRes != null) {
-                            Image(
-                                painter = painterResource(id = feature.iconRes),
-                                contentDescription = feature.title,
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier
-                                    .size(HomeMenuIconMaxSize)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    // Mild boost for portrait assets that already include padding.
-                                    .scale(1.28f)
-                            )
-                        } else if (feature.iconVector != null) {
-                            Icon(
-                                imageVector = feature.iconVector,
-                                contentDescription = feature.title,
-                                tint = Color.White,
-                                modifier = Modifier.size(HomeMenuIconMaxSize)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth(0.92f)
-                        .height(34.dp),
-                    shape = pillShape,
-                    color = Color.Transparent,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.28f))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.White.copy(alpha = 0.18f),
-                                        Color(0xFF9FCAE9).copy(alpha = 0.20f),
-                                        Color(0xFF5D91CC).copy(alpha = 0.30f)
-                                    )
-                                ),
-                                shape = pillShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = feature.title,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Color.White,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            maxLines = 1
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                if (feature.subtitle.isNotBlank()) {
-                    Text(
-                        text = feature.subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.72f),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        maxLines = 1
-                    )
-                }
+                        .size(36.dp)
+                )
+            } else if (feature.iconVector != null) {
+                Icon(
+                    imageVector = feature.iconVector,
+                    contentDescription = feature.title,
+                    tint = Color.White,
+                    modifier = Modifier.size(36.dp)
+                )
             }
         }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = feature.title,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            maxLines = 2,
+            lineHeight = androidx.compose.ui.unit.TextUnit(14f, androidx.compose.ui.unit.TextUnitType.Sp)
+        )
     }
 }

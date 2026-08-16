@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Build Log GAS
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Build Log GAS
 
 Dokumen ini adalah log operasional wajib untuk setiap perubahan APK `GAS`.
 
@@ -16,6 +16,26 @@ Field berikut wajib dipakai di setiap entri:
 - Jenis perubahan: `feature`, `fix`, `refactor`, `docs`, atau `no-build`
 - Flavor terdampak
 ## Tujuan perubahan
+
+## 2026-08-16 11:10 - [SHIP APK] GAS-Siswa v1.0.76-siswa (23073) - Home LIBUR + Dzuhur activeDays + Sahabat Belajar Ibadah
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** `siswa`
+- **Tujuan perubahan:**
+  - Bug1 Home: Status Kehadiran di Beranda menampilkan `LIBUR` saat hari non-efektif (jadwal/tanggal merah), selaras dengan Absensi.
+  - Bug2 Dzuhur: Presensi Sholat + pet menghormati admin `prayer_v2` Hari Wajib (`activeDays` JS weekday 0-6) dan flag `enabled` sebelum fallback jadwal legacy.
+  - Bug3 Sahabat Belajar Ibadah: kartu Ibadah/prayer di Virtual Pet tidak lagi jatuh ke "Belum ada" pada hari libur/non-wajib; label menjadi `Libur / tidak wajib`, plus kartu misi prayer terpisah.
+- **File utama:**
+  - `HomeScreen.kt`
+  - `PresensiRuleUtils.kt`, `PrayerScreen.kt`
+  - `VirtualPetRepository.kt`, `VirtualPetViewModel.kt`, `VirtualPetScreen.kt`
+  - `app/build.gradle.kts` bump `1.0.75/23072` -> `1.0.76/23073` (1.0.75 sudah ada di Final sebelumnya)
+- **Build:** `.\gradlew.bat :app:assembleSiswaRelease --no-daemon` - BUILD SUCCESSFUL
+- **Ship:** `Ship-Apk-Baru.ps1 -Preset GasSiswa` exit 0
+- **SHA256:** `76C8EFC4051E11382B6DB3CB25BCD14127237C2FA291FCE27B15F41FA3420298` (20.24 MB)
+- **Final:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.76-siswa-23073.apk`
 
 ## 2026-08-15 08:50 - [SHIP APK] GAS-Siswa v1.0.74-siswa (23071) - Fix Level/XP Discrepancy (Deduplicate pet aliases)
 - **Pelaksana:** Antigravity (AI Assistant)

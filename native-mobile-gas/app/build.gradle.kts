@@ -36,8 +36,8 @@ android {
         create("siswa") {
             dimension = "audience"
             minSdk = 23
-            versionCode = 23071
-            versionName = "1.0.74"
+            versionCode = 23073
+            versionName = "1.0.76"
             resValue("string", "app_name", "GAS Siswa")
             applicationIdSuffix = ".siswa"
             versionNameSuffix = "-siswa"

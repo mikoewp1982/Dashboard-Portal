@@ -64,7 +64,6 @@ fun VirtualPetScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var showAttendancePrayerDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(studentId, schoolId) {
         viewModel.loadPet(studentId, schoolId)
@@ -170,49 +169,15 @@ fun VirtualPetScreen(
                         },
                         onStroke = {
                             viewModel.strokePet(uiState.pet!!)
-                            showAttendancePrayerDialog = true
+                            navigateAfterHint(onOpenAttendance)
+                        },
+                        onPray = {
+                            viewModel.strokePet(uiState.pet!!)
+                            navigateAfterHint(onOpenPrayer)
                         }
                     )
                 }
             }
-        }
-
-        if (showAttendancePrayerDialog) {
-            AlertDialog(
-                onDismissRequest = { showAttendancePrayerDialog = false },
-                title = { Text("Pilih Menu Kehadiran") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            "Kebahagiaan pet mengikuti absensi sekolah, sedangkan kesehatan pet mengikuti presensi sholat."
-                        )
-                        Button(
-                            onClick = {
-                                showAttendancePrayerDialog = false
-                                onOpenAttendance()
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Buka Absensi")
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                showAttendancePrayerDialog = false
-                                onOpenPrayer()
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Buka Presensi Sholat")
-                        }
-                    }
-                },
-                confirmButton = {},
-                dismissButton = {
-                    TextButton(onClick = { showAttendancePrayerDialog = false }) {
-                        Text("Tutup")
-                    }
-                }
-            )
         }
     }
 }
@@ -254,10 +219,11 @@ fun PetContent(
     onFeed: () -> Unit,
     onPlay: () -> Unit,
     onSleep: () -> Unit,
-    onStroke: () -> Unit
+    onStroke: () -> Unit,
+    onPray: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Status", "Pencapaian", "Peringkat")
+    val tabs = listOf("Tugas Harian", "Pencapaian", "Peringkat")
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Pet Avatar & Main Stats Area
@@ -300,7 +266,7 @@ fun PetContent(
         // Tab Content
         Box(modifier = Modifier.weight(1f)) {
             when (selectedTab) {
-                0 -> StatusTab(pet, actionCards, onFeed, onPlay, onSleep, onStroke)
+                0 -> StatusTab(pet, actionCards, onFeed, onPlay, onSleep, onStroke, onPray)
                 1 -> AchievementsTab(criteriaCards, achievements)
                 2 -> LeaderboardTab(leaderboard, pet.id)
             }
@@ -310,6 +276,28 @@ fun PetContent(
 
 @Composable
 fun PetHeader(pet: VirtualPet) {
+    val petState = remember(pet.status, pet.hunger, pet.happiness, pet.energy, pet.health, pet.manualReviveUntil) {
+        determinePetState(pet)
+    }
+
+    val badgeLabel = when (petState) {
+        PetState.Dead -> "MATI"
+        PetState.Sekarat -> "SEKARAT"
+        PetState.Sick -> "SAKIT"
+        PetState.Healthy -> "SEHAT"
+        PetState.Sleeping -> "TIDUR"
+        PetState.Eating -> "MAKAN"
+    }
+
+    val badgeColor = when (petState) {
+        PetState.Dead -> Color.Black
+        PetState.Sekarat -> Color(0xFFB91C1C)
+        PetState.Sick -> Color(0xFFF97316)
+        PetState.Healthy -> Color(0xFF16A34A)
+        PetState.Sleeping -> Color(0xFF6366F1)
+        PetState.Eating -> Color(0xFF0891B2)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -352,17 +340,57 @@ fun PetHeader(pet: VirtualPet) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp)
+                    .padding(horizontal = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                PetStatusBar(
-                    Icons.Default.ShoppingCart,
-                    "Kenyang",
-                    (100 - pet.hunger).coerceIn(0, 100),
-                    Color(0xFF22C55E)
-                )
-                PetStatusBar(Icons.Default.Face, "Kebahagiaan", pet.happiness, Color(0xFFFF5A8A))
-                PetStatusBar(Icons.Default.ThumbUp, "Energi", pet.energy, Color(0xFFFFC94A))
-                PetStatusBar(Icons.Default.Favorite, "Kesehatan", pet.health, Color(0xFF38BDF8))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PetStatusBar(
+                        icon = Icons.Default.ShoppingCart,
+                        label = "Kenyang",
+                        value = (100 - pet.hunger).coerceIn(0, 100),
+                        color = Color(0xFF22C55E),
+                        modifier = Modifier.weight(1f)
+                    )
+                    PetStatusBar(
+                        icon = Icons.Default.Face,
+                        label = "Kebahagiaan",
+                        value = pet.happiness,
+                        color = Color(0xFFFF5A8A),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PetStatusBar(
+                        icon = Icons.Default.ThumbUp,
+                        label = "Energi",
+                        value = pet.energy,
+                        color = Color(0xFFFFC94A),
+                        modifier = Modifier.weight(1f)
+                    )
+                    PetStatusBar(
+                        icon = Icons.Default.Favorite,
+                        label = "Kesehatan",
+                        value = pet.health,
+                        color = Color(0xFF38BDF8),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PetStatusBar(
+                        icon = Icons.Default.Lightbulb,
+                        label = "Kecerdasan",
+                        value = pet.intelligence,
+                        color = Color(0xFFA855F7), // Purple
+                        modifier = Modifier.weight(1f)
+                    )
+                    PetStatusBar(
+                        icon = Icons.Default.Group,
+                        label = "Sosial",
+                        value = pet.social,
+                        color = Color(0xFF14B8A6), // Teal
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -374,6 +402,22 @@ fun PetHeader(pet: VirtualPet) {
                 contentAlignment = Alignment.Center
             ) {
                 PetVisuals(pet = pet)
+                
+                Surface(
+                    color = badgeColor,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp)
+                ) {
+                    Text(
+                        text = badgeLabel,
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
             }
 
             Text(
@@ -394,7 +438,8 @@ fun StatusTab(
     onFeed: () -> Unit,
     onPlay: () -> Unit,
     onSleep: () -> Unit,
-    onStroke: () -> Unit
+    onStroke: () -> Unit,
+    onPray: () -> Unit
 ) {
     val petState = remember(pet.status, pet.hunger, pet.happiness, pet.energy, pet.health, pet.manualReviveUntil) {
         determinePetState(pet)
@@ -452,23 +497,6 @@ fun StatusTab(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Status Badge
-        Surface(
-            color = badgeColor,
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-            Text(
-                text = badgeLabel,
-                color = Color.White,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
         StatusMotivationCard(
             title = motivationTitle,
             message = motivationMessage,
@@ -529,6 +557,7 @@ fun StatusTab(
                 when (card.key) {
                     "literacy_task" -> onSleep()
                     "attendance" -> onStroke()
+                    "prayer" -> onPray()
                     "habits" -> onPlay()
                     "library" -> onFeed()
                     else -> onSleep()
@@ -547,7 +576,7 @@ fun StatusTab(
                 )
 
                 val sortedCards = remember(actionCards) {
-                    val order = listOf("literacy_task", "attendance", "habits", "library")
+                    val order = listOf("attendance", "prayer", "habits", "library")
                     actionCards.sortedWith(compareBy { card -> order.indexOf(card.key).let { if (it == -1) Int.MAX_VALUE else it } })
                 }
 
@@ -698,8 +727,9 @@ private fun ActionStatusCard(
 ) {
     val accent = when (card.key) {
         "literacy_task" -> Color(0xFFFF5A8A)
-        "attendance" -> Color(0xFFFFC94A)
-        "habits" -> Color(0xFF38BDF8)
+        "attendance" -> Color(0xFF38BDF8)
+        "prayer" -> Color(0xFFFF5A8A)
+        "habits" -> Color(0xFFFFC94A)
         "library" -> Color(0xFF22C55E)
         else -> Color(0xFF94A3B8)
     }
@@ -707,6 +737,7 @@ private fun ActionStatusCard(
     val icon = when (card.key) {
         "literacy_task" -> Icons.Default.MenuBook
         "attendance" -> Icons.Default.FactCheck
+        "prayer" -> Icons.Default.SelfImprovement
         "habits" -> Icons.Default.Bolt
         "library" -> Icons.Default.LocalLibrary
         else -> Icons.Default.Info
@@ -797,7 +828,8 @@ fun PetStatusBar(
     label: String,
     value: Int,
     color: Color,
-    valueText: String = "$value%"
+    valueText: String = "$value%",
+    modifier: Modifier = Modifier
 ) {
     val clampedValue = value.coerceIn(0, 100)
     val containerColor = Color(0xCC08111F)
@@ -806,7 +838,7 @@ fun PetStatusBar(
     val valueColor = Color(0xFFFFFFFF)
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clip(RoundedCornerShape(14.dp))
@@ -895,7 +927,7 @@ fun TipsCard() {
                 icon = Icons.Default.Info,
                 title = "Cara Merawat Pet:",
                 content = """
-                    - Kenyang: Baca buku di E-Perpus (>1 jam)
+                    - Kenyang: Baca buku di E-Perpus (>30 menit)
                     - Kebahagiaan: Absensi Datang & Pulang Tepat Waktu
                     - Energi: Lakukan kebiasaan 7 KAIH
                     - Kesehatan: Lakukan Presensi Sholat
@@ -970,11 +1002,11 @@ fun PetVisuals(
     }
 
     val (animRes, animSpeed) = when (currentState) {
-        is PetState.Sekarat -> Pair(R.raw.pet_sekarat, 0.75f)
-        is PetState.Sick -> Pair(R.raw.pet_sakit, 0.85f)
-        is PetState.Healthy -> Pair(R.raw.cute_cat, 1.0f)
-        is PetState.Sleeping -> Pair(R.raw.cute_cat, 0.0f)
-        is PetState.Eating -> Pair(R.raw.cute_cat, 1.0f)
+        is PetState.Sekarat -> Pair(R.raw.cat_crying, 1.0f)
+        is PetState.Sick -> Pair(R.raw.cat_sleeping, 1.0f)
+        is PetState.Healthy -> Pair(R.raw.momo_run, 1.0f)
+        is PetState.Sleeping -> Pair(R.raw.cat_sleeping, 1.0f)
+        is PetState.Eating -> Pair(R.raw.momo_run, 1.0f)
         is PetState.Dead -> Pair(R.raw.pet_mati, 1.0f)
     }
 
@@ -1119,14 +1151,19 @@ fun QuestItem(
     onClaim: (PetQuest) -> Unit,
     onDebugProgress: (PetQuest) -> Unit
 ) {
+    val isHolidayBonus = quest.isPaused && quest.title == "Membaca Buku"
+    val isActuallyPaused = quest.isPaused && !isHolidayBonus
+    
+    val containerAlpha = if (quest.completed || isActuallyPaused) 0.5f else 1f
+    
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (quest.completed) MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.5f) else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = containerAlpha)
         ),
         modifier = Modifier
             .fillMaxWidth()
             .alpha(if (quest.completed) 0.6f else 1f)
-            .clickable { onDebugProgress(quest) }
+            .clickable(enabled = !isActuallyPaused) { onDebugProgress(quest) }
     ) {
         Column(
             modifier = Modifier
@@ -1144,35 +1181,53 @@ fun QuestItem(
                 }
                 if (quest.completed) {
                     Icon(Icons.Default.Check, "Selesai", tint = Color.Green)
-                } else {
+                } else if (isActuallyPaused) {
                     Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = Color.Gray.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            "${quest.reward} XP",
+                            "SEDANG LIBUR",
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White
+                        )
+                    }
+                } else {
+                    val rewardColor = if (isHolidayBonus) Color(0xFFA855F7) else MaterialTheme.colorScheme.primaryContainer
+                    val rewardText = if (isHolidayBonus) "+10 Kecerdasan" else "${quest.reward} XP"
+                    Surface(
+                        color = rewardColor,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            rewardText,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isHolidayBonus) Color.White else MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                LinearProgressIndicator(
-                    progress = { quest.progress.toFloat() / quest.target.toFloat() },
-                    modifier = Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(4.dp))
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("${quest.progress}/${quest.target}")
-            }
-            if (!quest.completed && quest.progress >= quest.target) {
+            
+            if (!isActuallyPaused) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = { onClaim(quest) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Klaim Hadiah")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    LinearProgressIndicator(
+                        progress = { quest.progress.toFloat() / quest.target.toFloat() },
+                        modifier = Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(4.dp))
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("${quest.progress}/${quest.target}")
+                }
+                if (!quest.completed && quest.progress >= quest.target) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { onClaim(quest) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Klaim Hadiah")
+                    }
                 }
             }
         }
@@ -1266,8 +1321,8 @@ fun StudentCriteriaItem(
 ) {
     val accentColor = when (criteria.key) {
         "literacy" -> Color(0xFF22C55E)
-        "attendance" -> Color(0xFFFFC94A)
-        "habits" -> Color(0xFF60A5FA)
+        "attendance" -> Color(0xFF60A5FA)
+        "habits" -> Color(0xFFFFC94A)
         "prayer" -> Color(0xFFFF5A8A)
         else -> Color(0xFFE2E8F0)
     }

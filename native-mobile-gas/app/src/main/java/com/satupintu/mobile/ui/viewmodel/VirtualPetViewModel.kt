@@ -8,6 +8,7 @@ import com.google.firebase.database.DatabaseError
 import com.satupintu.mobile.data.model.PetAchievement
 import com.satupintu.mobile.data.model.PetQuest
 import com.satupintu.mobile.data.model.VirtualPet
+import com.satupintu.mobile.data.model.isDeadByRule
 import com.satupintu.mobile.data.model.isManualReviveGraceActive
 import com.satupintu.mobile.data.repository.StudentRepository
 import com.satupintu.mobile.data.repository.VirtualPetRepository
@@ -433,13 +434,13 @@ class VirtualPetViewModel : ViewModel() {
             val averageStats = (newHealth + newHappiness + newEnergy + fullness) / 4
             val reviveGraceActive = syncedPet.isManualReviveGraceActive()
             var newStatus = when {
-                !reviveGraceActive && newHealth <= 0 -> "DEAD"
+                !reviveGraceActive && (syncedPet.status.trim().equals("DEAD", ignoreCase = true) || newHealth <= 0 || lowestVital <= 0) -> "DEAD"
                 lowestVital < 30 || newHealth < 30 || newHappiness < 30 -> "SICK"
                 lowestVital < 60 || newHappiness < 50 -> "SAD"
                 else -> "HAPPY"
             }
 
-            if (!reviveGraceActive && newHealth <= 0 && syncedPet.status == "DEAD") {
+            if (!reviveGraceActive && (syncedPet.status.trim().equals("DEAD", ignoreCase = true) || syncedPet.isDeadByRule())) {
                 newStatus = "DEAD"
             }
 
@@ -825,7 +826,7 @@ class VirtualPetViewModel : ViewModel() {
                 progress = healthScore.coerceIn(0, 100),
                 status = when {
                     prayerExempt -> "Tidak wajib untuk agama ini"
-                    !stats.prayerInfo.isEffectiveDay -> "Hari ini bukan hari efektif sholat"
+                    !stats.prayerInfo.isEffectiveDay -> "Hari ini libur / tidak wajib sholat"
                     prayerAchieved -> "Presensi sholat tercatat: ${prayerStatus.ifBlank { "SELESAI" }}"
                     prayerStatus.isBlank() -> "Belum ada presensi sholat hari ini"
                     else -> "Status presensi: ${prayerStatus.lowercase().replaceFirstChar { it.uppercase() }}"
@@ -855,9 +856,10 @@ class VirtualPetViewModel : ViewModel() {
 
         val prayerStatus = stats.prayerInfo.status?.trim()?.uppercase().orEmpty()
         val prayerExempt = isPrayerExempt(religion)
+        // Non-wajib / libur day must never fall through to "Belum ada" (same as Presensi Sholat)
         val prayerLabel = when {
             prayerExempt -> "Tidak wajib"
-            !stats.prayerInfo.isEffectiveDay -> "Tidak efektif"
+            !stats.prayerInfo.isEffectiveDay -> "Libur / tidak wajib"
             prayerStatus in setOf("PRAY") -> "Sholat"
             prayerStatus in setOf("PERMIT", "HALANGAN") -> "Izin"
             prayerStatus.isBlank() -> "Belum ada"

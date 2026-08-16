@@ -71,6 +71,8 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.satupintu.mobile.util.SecurityUtils
 import com.satupintu.mobile.util.formatIndonesianShortDay
+import com.satupintu.mobile.util.isDayInActiveDays
+import com.satupintu.mobile.util.parseActiveDaysSnapshot
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -165,7 +167,12 @@ private fun isNonMuslim(religionRaw: String): Boolean {
     return false
 }
 
-private fun isPrayerEffectiveDay(calendar: Calendar, schedules: Map<String, Boolean>, holidays: Set<String>): Boolean {
+private fun isPrayerEffectiveDay(
+    calendar: Calendar,
+    schedules: Map<String, Boolean>,
+    holidays: Set<String>,
+    activeDays: List<Int>? = null
+): Boolean {
     val todayStart = Calendar.getInstance().apply {
         set(Calendar.HOUR_OF_DAY, 0)
         set(Calendar.MINUTE, 0)
@@ -180,8 +187,14 @@ private fun isPrayerEffectiveDay(calendar: Calendar, schedules: Map<String, Bool
     if (targetStart.timeInMillis > todayStart) return false
     if (holidays.contains(toYmd(calendar))) return false
 
+    val inActiveDays = isDayInActiveDays(calendar, activeDays)
+    if (inActiveDays == false) return false
+
     val dayKey = calendar.get(Calendar.DAY_OF_WEEK).toString()
-    if (schedules.isEmpty()) return calendar.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY
+    if (schedules.isEmpty()) {
+        return if (inActiveDays == true) true
+        else calendar.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY
+    }
     val isHoliday = schedules[dayKey] ?: true
     return !isHoliday
 }
@@ -199,7 +212,8 @@ private fun mapPrayerStatusToCode(status: String?): String {
 private fun calculatePrayerMonthlySummary(
     history: List<PrayerHistoryRecord>,
     schedules: Map<String, Boolean>,
-    holidays: Set<String>
+    holidays: Set<String>,
+    activeDays: List<Int>? = null
 ): MonthlyPrayerSummary {
     val workingCalendar = Calendar.getInstance()
     val currentMonth = workingCalendar.get(Calendar.MONTH)
@@ -232,7 +246,7 @@ private fun calculatePrayerMonthlySummary(
 
         val dateKey = toYmd(workingCalendar)
         val dayName = formatIndonesianShortDay(workingCalendar.time)
-        if (!isPrayerEffectiveDay(workingCalendar, schedules, holidays)) {
+        if (!isPrayerEffectiveDay(workingCalendar, schedules, holidays, activeDays)) {
             summaries += DailyPrayerSummary(
                 day = day,
                 dayName = dayName,
@@ -297,6 +311,9 @@ fun PrayerScreen(
     var musholla by remember { mutableStateOf(MushollaLocation(lat = -7.6698, lng = 112.5432, radiusMeters = 25.0)) }
     var schedules by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) } // dayKey -> isHoliday
     var holidays by remember { mutableStateOf<Set<String>>(emptySet()) } // yyyy-mm-dd
+    // Admin Hari Wajib for Dzuhur: school_settings/.../prayer_v2/types/DZUHUR/activeDays (JS weekday 0-6)
+    var dzuhurActiveDays by remember { mutableStateOf<List<Int>?>(null) }
+    var dzuhurEnabled by remember { mutableStateOf(true) }
 
     var permissionGranted by remember { mutableStateOf(false) }
     var isChecking by remember { mutableStateOf(false) }
@@ -336,6 +353,7 @@ fun PrayerScreen(
         var scopedSchedulesListener: ValueEventListener? = null
         var legacyHolidaysListener: ValueEventListener? = null
         var scopedHolidaysListener: ValueEventListener? = null
+        var dzuhurTypeListener: ValueEventListener? = null
         var prayerHistoryListener: ValueEventListener? = null
         var prayerHistoryQuery: com.google.firebase.database.Query? = null
 
@@ -362,6 +380,15 @@ fun PrayerScreen(
         fun applyHolidays() {
             val picked = scopedHolidays ?: legacyHolidays
             if (picked != null) holidays = picked else holidays = emptySet()
+        }
+
+        fun readSnapshotDouble(snap: DataSnapshot, key: String, altKey: String, fallback: Double): Double {
+            val raw = snap.child(key).value ?: snap.child(altKey).value ?: return fallback
+            return when (raw) {
+                is Number -> raw.toDouble()
+                is String -> raw.trim().toDoubleOrNull() ?: fallback
+                else -> fallback
+            }
         }
 
         fun normalizeIdentity(value: String?): String = value?.trim()?.lowercase().orEmpty()
@@ -401,7 +428,7 @@ fun PrayerScreen(
 
         fun attachScopedListeners(scope: String) {
             if (scope.isBlank()) return
-            if (attachedScopeKey == scope && (scopedMushollaListener != null || scopedSchedulesListener != null || scopedHolidaysListener != null)) {
+            if (attachedScopeKey == scope && (scopedMushollaListener != null || scopedSchedulesListener != null || scopedHolidaysListener != null || dzuhurTypeListener != null)) {
                 return
             }
 
@@ -418,6 +445,10 @@ fun PrayerScreen(
                     db.getReference("school_settings").child(attachedScopeKey).child("attendance").child("holidays")
                         .removeEventListener(it)
                 }
+                dzuhurTypeListener?.let {
+                    db.getReference("school_settings").child(attachedScopeKey).child("prayer_v2").child("types").child("DZUHUR")
+                        .removeEventListener(it)
+                }
             }
             attachedScopeKey = scope
 
@@ -432,9 +463,9 @@ fun PrayerScreen(
                             legacyMushollaListener = object : ValueEventListener {
                                 override fun onDataChange(legacySnapshot: DataSnapshot) {
                                     if (!scopedMushollaAvailable && legacySnapshot.exists()) {
-                                        val lat = legacySnapshot.child("latitude").getValue(Double::class.java) ?: legacySnapshot.child("lat").getValue(Double::class.java) ?: Double.NaN
-                                        val lng = legacySnapshot.child("longitude").getValue(Double::class.java) ?: legacySnapshot.child("lng").getValue(Double::class.java) ?: Double.NaN
-                                        val radius = legacySnapshot.child("radius").getValue(Double::class.java) ?: legacySnapshot.child("radiusMeters").getValue(Double::class.java) ?: Double.NaN
+                                        val lat = readSnapshotDouble(legacySnapshot, "latitude", "lat", Double.NaN)
+                                        val lng = readSnapshotDouble(legacySnapshot, "longitude", "lng", Double.NaN)
+                                        val radius = readSnapshotDouble(legacySnapshot, "radius", "radiusMeters", Double.NaN)
                                         if (!lat.isFinite() || !lng.isFinite() || !radius.isFinite()) return
                                         legacyMusholla = MushollaLocation(lat, lng, radius)
                                         applyMusholla()
@@ -446,9 +477,9 @@ fun PrayerScreen(
                         }
                         return
                     }
-                    val lat = snapshot.child("latitude").getValue(Double::class.java) ?: snapshot.child("lat").getValue(Double::class.java) ?: Double.NaN
-                    val lng = snapshot.child("longitude").getValue(Double::class.java) ?: snapshot.child("lng").getValue(Double::class.java) ?: Double.NaN
-                    val radius = snapshot.child("radius").getValue(Double::class.java) ?: snapshot.child("radiusMeters").getValue(Double::class.java) ?: Double.NaN
+                    val lat = readSnapshotDouble(snapshot, "latitude", "lat", Double.NaN)
+                    val lng = readSnapshotDouble(snapshot, "longitude", "lng", Double.NaN)
+                    val radius = readSnapshotDouble(snapshot, "radius", "radiusMeters", Double.NaN)
                     if (!lat.isFinite() || !lng.isFinite() || !radius.isFinite()) return
                     scopedMushollaAvailable = true
                     scopedMusholla = MushollaLocation(lat, lng, radius)
@@ -537,6 +568,21 @@ fun PrayerScreen(
                 override fun onCancelled(error: DatabaseError) {}
             }
             holRef.addValueEventListener(scopedHolidaysListener as ValueEventListener)
+
+            val dzuhurTypeRef = db.getReference("school_settings").child(scope).child("prayer_v2").child("types").child("DZUHUR")
+            dzuhurTypeListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) {
+                        dzuhurActiveDays = null
+                        dzuhurEnabled = true
+                        return
+                    }
+                    dzuhurEnabled = snapshot.child("enabled").getValue(Boolean::class.java) ?: true
+                    dzuhurActiveDays = parseActiveDaysSnapshot(snapshot.child("activeDays"))
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            }
+            dzuhurTypeRef.addValueEventListener(dzuhurTypeListener as ValueEventListener)
         }
 
         fun attachPrayerHistoryListener(scope: String) {
@@ -689,6 +735,10 @@ fun PrayerScreen(
                 db.getReference("school_settings").child(attachedScopeKey).child("attendance").child("holidays")
                     .removeEventListener(scopedHolidaysListener as ValueEventListener)
             }
+            if (dzuhurTypeListener != null && attachedScopeKey.isNotBlank()) {
+                db.getReference("school_settings").child(attachedScopeKey).child("prayer_v2").child("types").child("DZUHUR")
+                    .removeEventListener(dzuhurTypeListener as ValueEventListener)
+            }
             if (prayerHistoryListener != null) {
                 prayerHistoryQuery?.removeEventListener(prayerHistoryListener as ValueEventListener)
             }
@@ -699,17 +749,20 @@ fun PrayerScreen(
     val todayYmd = remember { toYmd(cal) }
     val dayKey = remember { cal.get(Calendar.DAY_OF_WEEK).toString() }
 
-    val isHolidayBySchedule = when {
+    val isLegacyScheduleHoliday = when {
         schedules.isEmpty() -> cal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
         schedules[dayKey] == null -> true
         else -> schedules[dayKey] == true
     }
+    val inDzuhurActiveDays = isDayInActiveDays(cal, dzuhurActiveDays)
+    val isOutsideMandatoryDays = inDzuhurActiveDays == false
+    val isHolidayBySchedule = isLegacyScheduleHoliday || isOutsideMandatoryDays
     val isHolidayByDate = holidays.contains(todayYmd)
     val nonMuslim = isNonMuslim(religion)
     val deviceTimeTrusted = SecurityUtils.isAutomaticTimeEnabled(context) &&
         SecurityUtils.isAutomaticTimeZoneEnabled(context)
 
-    val canAttemptByRule = !nonMuslim && !isHolidayBySchedule && !isHolidayByDate
+    val canAttemptByRule = dzuhurEnabled && !nonMuslim && !isHolidayBySchedule && !isHolidayByDate
     val canAttemptByLocation = coords != null &&
         distanceMeters != null &&
         !mockLocationDetected &&
@@ -720,12 +773,18 @@ fun PrayerScreen(
             resolvedSchoolId.isBlank() || record.schoolId.isBlank() || record.schoolId == resolvedSchoolId
         }.sortedByDescending { it.date }
     }
-    val prayerMonthlySummary = remember(prayerHistory, schedules, holidays, nonMuslim) {
+    val prayerMonthlySummary = remember(prayerHistory, schedules, holidays, nonMuslim, dzuhurActiveDays) {
         if (nonMuslim) {
             calculateExemptPrayerMonthlySummary()
         } else {
-            calculatePrayerMonthlySummary(prayerHistory, schedules, holidays)
+            calculatePrayerMonthlySummary(prayerHistory, schedules, holidays, dzuhurActiveDays)
         }
+    }
+    val prayerRuleLabel = when {
+        nonMuslim -> "Tidak berlaku (Non Muslim)"
+        !dzuhurEnabled -> "Tidak berlaku (nonaktif)"
+        isOutsideMandatoryDays -> "Tidak berlaku (bukan hari wajib)"
+        else -> "Berlaku"
     }
     // #region debug-point A-E:prayer-location-reporting
     val reportPrayerLocationDebug = remember(context) {
@@ -946,11 +1005,34 @@ fun PrayerScreen(
         }
     }
 
+    DisposableEffect(permissionGranted) {
+        if (!permissionGranted) return@DisposableEffect onDispose {}
+        val fused = LocationServices.getFusedLocationProviderClient(context)
+        val locationRequest = com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3000)
+            .setMinUpdateDistanceMeters(1f)
+            .build()
+        val locationCallback = object : com.google.android.gms.location.LocationCallback() {
+            override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
+                result.lastLocation?.let { loc ->
+                    applyPrayerLocation(loc, "continuous")
+                }
+            }
+        }
+        if (androidx.core.app.ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fused.requestLocationUpdates(locationRequest, locationCallback, android.os.Looper.getMainLooper())
+        }
+        onDispose {
+            fused.removeLocationUpdates(locationCallback)
+        }
+    }
+
     fun submitPrayer() {
         if (!canAttemptByRule) {
             val reason = when {
+                !dzuhurEnabled -> "Presensi Sholat Dzuhur nonaktif di sekolah."
                 nonMuslim -> "Presensi sholat tidak berlaku untuk siswa non muslim."
-                isHolidayBySchedule -> "Hari ini non-efektif (jadwal libur)."
+                isOutsideMandatoryDays -> "Hari ini bukan hari wajib Dzuhur."
+                isLegacyScheduleHoliday -> "Hari ini non-efektif (jadwal libur)."
                 isHolidayByDate -> "Hari ini libur (tanggal merah)."
                 else -> "Tidak bisa presensi."
             }
@@ -1124,7 +1206,7 @@ fun PrayerScreen(
                                 Text("Hari efektif: ${if (!isHolidayBySchedule) "Ya" else "Tidak"}", color = Color.White.copy(alpha = 0.9f))
                                 Text("Tanggal merah: ${if (!isHolidayByDate) "Tidak" else "Ya"}", color = Color.White.copy(alpha = 0.9f))
                                 Text(
-                                    "Aturan sholat: ${if (nonMuslim) "Tidak berlaku (Non Muslim)" else "Berlaku"}",
+                                    "Aturan sholat: $prayerRuleLabel",
                                     color = Color.White.copy(alpha = 0.9f)
                                 )
                             }
@@ -1190,8 +1272,10 @@ fun PrayerScreen(
 
                         if (!canAttemptByRule) {
                             val reason = when {
+                                !dzuhurEnabled -> "Presensi Sholat Dzuhur nonaktif di sekolah."
                                 nonMuslim -> "Presensi sholat tidak berlaku untuk siswa non muslim."
-                                isHolidayBySchedule -> "Hari ini non-efektif (jadwal libur)."
+                                isOutsideMandatoryDays -> "Hari ini bukan hari wajib Dzuhur."
+                                isLegacyScheduleHoliday -> "Hari ini non-efektif (jadwal libur)."
                                 isHolidayByDate -> "Hari ini libur (tanggal merah)."
                                 else -> "Tidak bisa presensi."
                             }
