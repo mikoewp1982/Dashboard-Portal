@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿# Build Log GAS
+﻿# Build Log GAS
 
 Dokumen ini adalah log operasional wajib untuk setiap perubahan APK `GAS`.
 
@@ -16,6 +16,19 @@ Field berikut wajib dipakai di setiap entri:
 - Jenis perubahan: `feature`, `fix`, `refactor`, `docs`, atau `no-build`
 - Flavor terdampak
 ## Tujuan perubahan
+
+## 2026-08-16 12:00 - [FIX WEB] App Hosting npm ci — hapus app Next.js ganda di root
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** web App Hosting only (APK siswa 1.0.76 tidak di-rebuild)
+- **Tujuan perubahan:**
+  - Rollout `1b86d81d` masih gagal di Cloud Build step `build` (`npm ci` Usage / exit 51).
+  - Backend `gerbang-aplikasi-sekolah` `rootDirectory` = `web`, tetapi GitHub masih berisi salinan `package.json` + `.yarnrc` + puluhan APK di root `public/apk` (~600 MB). Builder baru mengira repo ini dua app / Yarn, lalu `npm ci` dipanggil salah.
+  - Commit penghapusan file root sisa itu, hapus `web/.yarnrc`, pakai `web/.npmrc`, dan pastikan `web/next.config.ts` `output: "standalone"`.
+- **File utama:**
+  - hapus root `package.json`, `package-lock.json`, `.yarnrc`, `apphosting.yaml`, `public/apk/*.apk`
+  - `web/.yarnrc` (hapus), `web/.npmrc` (baru), `web/next.config.ts`
+- **Build:** tidak rebuild APK; push `main` untuk rollout App Hosting ulang
 
 ## 2026-08-16 11:40 - [FIX WEB] Slim web/public/apk so App Hosting can build again
 - **Pelaksana:** Assistant
