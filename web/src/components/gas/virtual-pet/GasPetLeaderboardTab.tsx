@@ -1,6 +1,7 @@
 "use client";
 
 import { PetData } from "@/hooks/gas/virtual-pet/useGasVirtualPet";
+import { Coins } from "lucide-react";
 
 interface LeaderboardPet extends PetData {
   className: string;
@@ -23,7 +24,7 @@ export function GasPetLeaderboardTab({
             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Siswa</th>
             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Kelas</th>
             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Pet</th>
-            <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Level & EXP</th>
+            <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-400">Level, EXP & Coins</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-700/50">
@@ -35,7 +36,13 @@ export function GasPetLeaderboardTab({
               <td className="whitespace-nowrap px-4 py-4 text-sm uppercase text-slate-300">{pet.petName || "Buddy"}</td>
               <td className="whitespace-nowrap px-4 py-4 text-right">
                 <div className="text-sm font-bold text-slate-100">Lvl {pet.stats.level}</div>
-                <div className="text-xs font-semibold text-slate-400">{pet.stats.exp} XP</div>
+                <div className="text-xs font-semibold text-slate-400 flex justify-end items-center gap-1.5 mt-0.5">
+                  <span>{pet.stats.exp} XP</span>
+                  <span className="text-slate-600">•</span>
+                  <span className="text-yellow-500 font-bold flex items-center gap-1">
+                    {pet.stats.coins} <Coins className="w-3 h-3" />
+                  </span>
+                </div>
               </td>
             </tr>
           ))}

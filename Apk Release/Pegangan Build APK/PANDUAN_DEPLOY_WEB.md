@@ -194,7 +194,7 @@ Gejala tipikal: kartu **Latest rollout** merah, Cloud Build step `build` gagal ~
 | 1 | `web/public/apk` menumpuk puluhan APK lama (~20 MB × banyak file) | Slim ke alias + current saja; arsip di `Apk Release/Final` |
 | 2 | Ada `package.json` / `.yarnrc` / APK di **root** repo (ganda dengan `web/`) | Hapus artefak root itu; jangan commit ulang |
 | 3 | `package-lock.json` dibuat npm 11 (Node 25), kurang `@emnapi/*` | Regenerasi lock di Node 20: `fnm use 20` → `cd web` → hapus lock → `npm install` → commit `web/package-lock.json` |
-| 4 | Framework build gagal: `ERR_REQUIRE_ESM` (`jwks-rsa` require `jose@6`) | Pin override `"jose": "5.10.0"` di `web/package.json`, regenerasi lock Node 20, lalu push |
+| 4 | Framework build gagal: `ERR_REQUIRE_ESM` (`jwks-rsa` require `jose@6`) | Di `web/package.json` set overrides `"jose": "5.10.0"` + `"jwks-rsa": "3.2.0"`, regenerasi lock Node 20; di `next.config.ts` set `serverExternalPackages: ["firebase-admin","jwks-rsa","jose"]` |
 
 Rantai commit perbaikan yang berhasil (referensi):
 1. `c1477ed0` — ship GAS Siswa 1.0.76 (rollout gagal)

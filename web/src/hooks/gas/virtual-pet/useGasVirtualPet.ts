@@ -19,6 +19,7 @@ export interface PetStats {
 export interface PetData {
   id: string;
   studentId: string;
+  matchedStudentId?: string;
   schoolId?: string;
   studentName: string;
   petName: string;

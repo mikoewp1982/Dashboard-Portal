@@ -15,8 +15,7 @@ export function analyzePetRisk(pet: PetData) {
   const isReviveGraceActive = Number(pet.manualReviveUntil || 0) > Date.now();
   const isDead = !isReviveGraceActive && (
     normalizedStatus === "DEAD" ||
-    health <= 0 ||
-    lowestVital <= 0
+    health <= 0
   );
 
   const isSick = health < 30 && !isDead;
@@ -60,7 +59,7 @@ export function derivePetCondition(pet: PetData, risk: ReturnType<typeof analyze
     };
   }
 
-  if (lowestVital <= 10 || risk.avgStatus < 25) {
+  if (lowestVital < 30) {
     return {
       label: "Sekarat",
       className: "bg-red-600 text-white",
@@ -68,7 +67,7 @@ export function derivePetCondition(pet: PetData, risk: ReturnType<typeof analyze
     };
   }
 
-  if (risk.isSick || risk.isSad || risk.isStarving || risk.isLowStatus || lowestVital <= 30) {
+  if (lowestVital < 60) {
     return {
       label: "Sakit",
       className: "bg-orange-500 text-white",

@@ -73,14 +73,17 @@ export function GasPetRiskTab({
                       </div>
                     </td>
                     <td className="px-4 py-4 align-middle">
-                      <div className="w-48 space-y-2">
+                      <div className="w-56 space-y-1.5 py-1">
                         {[
-                          { label: "Health", value: Math.max(0, pet.stats.health), className: pet.stats.health <= 0 ? "bg-black" : "bg-red-500" },
-                          { label: "Happy", value: Math.max(0, pet.stats.happiness), className: "bg-pink-500" },
-                          { label: "Lapar", value: Math.max(0, pet.stats.hunger || 0), className: "bg-orange-500" },
+                          { label: "Kenyang", value: Math.max(0, 100 - (pet.stats.hunger || 0)), className: "bg-green-500" },
+                          { label: "Bahagia", value: Math.max(0, pet.stats.happiness || 0), className: "bg-pink-500" },
+                          { label: "Energi", value: Math.max(0, pet.stats.energy || 0), className: "bg-yellow-400" },
+                          { label: "Kesehatan", value: Math.max(0, pet.stats.health || 0), className: pet.stats.health <= 0 ? "bg-black" : "bg-sky-400" },
+                          { label: "Cerdas", value: Math.max(0, pet.stats.intelligence || 0), className: "bg-purple-500" },
+                          { label: "Sosial", value: Math.max(0, pet.stats.social || 0), className: "bg-teal-500" },
                         ].map((item) => (
-                          <div key={item.label} className="flex items-center text-xs font-medium text-slate-400 gap-2">
-                            <span className="w-12">{item.label}</span>
+                          <div key={item.label} className="flex items-center text-[10px] font-medium text-slate-400 gap-2">
+                            <span className="w-14 truncate">{item.label}</span>
                             <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
                               <div className={`h-full rounded-full ${item.className}`} style={{ width: `${item.value}%` }} />
                             </div>

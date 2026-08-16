@@ -81,7 +81,11 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
   // Enrich pets with student data
   const enrichedPets = useMemo<EnrichedPet[]>(() => {
     return pets.map((pet) => {
-      const student = studentLookup.get(normalizeIdentity(pet.studentId));
+      const matchedKey = pet.matchedStudentId ? normalizeIdentity(pet.matchedStudentId) : null;
+      const student = (matchedKey ? studentLookup.get(matchedKey) : null)
+        || studentLookup.get(normalizeIdentity(pet.studentId))
+        || studentLookup.get(normalizeIdentity(pet.id));
+        
       const existingClassName = String((pet as PetData & { className?: string }).className || "").trim();
       return {
         ...pet,
@@ -94,7 +98,11 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
   const studentsWithoutPetCount = useMemo(() => {
     return typedStudents.filter((student) => {
       const aliases = new Set(getStudentAliases(student));
-      return !pets.some((pet) => aliases.has(normalizeIdentity(pet.studentId)));
+      return !pets.some((pet) => 
+        aliases.has(normalizeIdentity(pet.studentId)) ||
+        aliases.has(normalizeIdentity(pet.id)) ||
+        (pet.matchedStudentId && aliases.has(normalizeIdentity(pet.matchedStudentId)))
+      );
     }).length;
   }, [pets, typedStudents]);
 
@@ -158,7 +166,14 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
     return [...enrichedPets].sort((a, b) => {
       const levelDiff = (b.stats.level || 1) - (a.stats.level || 1);
       if (levelDiff !== 0) return levelDiff;
-      return (b.stats.exp || 0) - (a.stats.exp || 0);
+      
+      const expDiff = (b.stats.exp || 0) - (a.stats.exp || 0);
+      if (expDiff !== 0) return expDiff;
+
+      const coinsDiff = (b.stats.coins || 0) - (a.stats.coins || 0);
+      if (coinsDiff !== 0) return coinsDiff;
+
+      return (b.lastSync || 0) - (a.lastSync || 0);
     });
   }, [enrichedPets]);
 
@@ -219,7 +234,11 @@ export function GasPetPanel({ schoolId }: { schoolId: string }) {
             const selectedStudent = typedStudents.find((student) => student.id === selectedStudentId);
             const selectedAliases = new Set(getStudentAliases(selectedStudent || { id: selectedStudentId }));
             targetPetIds = enrichedPets
-                .filter((pet) => selectedAliases.has(normalizeIdentity(pet.studentId)))
+                .filter((pet) => 
+                  selectedAliases.has(normalizeIdentity(pet.studentId)) ||
+                  selectedAliases.has(normalizeIdentity(pet.id)) ||
+                  (pet.matchedStudentId && selectedAliases.has(normalizeIdentity(pet.matchedStudentId)))
+                )
                 .map((pet) => pet.id);
         }
 
