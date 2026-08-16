@@ -6,16 +6,44 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-16 11:40 (FIX WEB slim public/apk setelah App Hosting build gagal)
+Update terakhir: 2026-08-16 20:50 (GAS Siswa 1.0.78 Final-only; URL unduhan web tidak diubah)
 
 ---
 
-## [FIX WEB] Slim `web/public/apk` setelah App Hosting `c1477ed0` gagal 2026-08-16
 
-- [x] **Penyebab:** Cloud Build step `build` gagal (`npm` exit 1) karena folder tutorial menumpuk puluhan APK lama.
-- [x] **Perbaikan:** `web/public/apk` hanya menyimpan `GAS-Siswa-release.apk`, `GAS-Siswa-1.0.76-siswa-23073.apk`, `EduLock-studentRelease.apk`, `EduLock-1.3.11-37.apk` + manifest 4 entry.
-- [x] **Arsip lama:** tetap di `Apk Release/Final`, tidak di-deploy.
-- [ ] QA live: App Hosting rollout sukses; `/gas/install` dan `/edulock/install` tetap mengunduh versi current.
+## [SHIP APK] GAS Siswa `1.0.78-siswa (23075)` - Align Dhuha/Jumat prayer_v2 classIds 2026-08-16 (Final only)
+
+- [x] **Native schedule match** (`PrayerDhuhaJumatScreen.kt`, nav): classIds parse + classLabelMap + schoolId variants.
+- [x] **Web** (`useGasPrayerConfig`, `PrayerV2RecapPanel`, `api/teacher/prayer-v2`): aligned matching; pushed `13c86d2f`.
+- [x] **Bump flavor siswa**: `versionName 1.0.78` / `versionCode 23075`.
+- [x] **Salin APK ke Folder Pegangan**: `GAS-Siswa-release.apk` + `GAS-Siswa-1.0.78-siswa-23075.apk` di `Apk Release/Final`.
+- [x] **SHA256**: `4BCE1A4755DB8B59660AD3AC244E6FAA641F2DFF13309E81F14E8515A41C4095`.
+- [x] **Deploy web download URL:** **TIDAK**.
+- [ ] QA perangkat: Presensi Dhuha/Jumat aktif hanya jika kelas siswa ada di jadwal admin hari itu; override tanggal dihormati.
+
+## [SHIP APK] GAS Siswa `1.0.77-siswa (23074)` - Tantangan Bulan Ini + Bonus Literasi + MATI/Buku Dibaca 2026-08-16 (Final only)
+
+- [x] **Lentera kartu Tantangan Bulan Ini** (`StudentLibraryScreen.kt`): judul section tetap; konten = tugas admin aktif (`literacy_tasks` school/class + startAt/endAt) — title, deskripsi, poin, durasi, periode, status submit; empty state jika kosong.
+- [x] **Bonus Literasi Bulanan** (`VirtualPetViewModel.kt`, `VirtualPet.kt`, `VirtualPetScreen.kt` badge BULANAN): +200 koin / +100 XP sekali per bulan kalender saat ada submit laporan literasi; meta quest di-sync; hunger harian tetap 30 menit baca.
+- [x] **Spam pet MATI** (`VirtualPet.kt` `isDeadByRule`, `TeacherNotificationListener.kt`): mati = vital saja; tidak sticky status DEAD.
+- [x] **Buku Dibaca** (`VirtualPetRepository.getRealtimeBooksReadCount`): `floor(totalMenit / 30)`.
+- [x] **Bump flavor siswa**: `versionName 1.0.77` / `versionCode 23074`.
+- [x] **Salin APK ke Folder Pegangan**: `GAS-Siswa-release.apk` + `GAS-Siswa-1.0.77-siswa-23074.apk` di `Apk Release/Final`.
+- [x] **SHA256**: `C7CE53212357DAD7D42954C7AA0D98591E26B34B923DFF42DD0FC942C470A108`.
+- [x] **Deploy web / App Hosting / git push:** **TIDAK** (sengaja). URL unduhan tutorial tetap 1.0.76.
+- [ ] QA perangkat: kartu Tantangan Bulan Ini = tugas admin; submit laporan → quest bulanan selesai + reward; Buku Dibaca = floor menit/30; pet sakit tidak spam MATI.
+
+---
+
+## ✅ [FIX WEB] App Hosting LIVE lagi setelah rantai `npm ci` 2026-08-16
+
+- [x] **Gejala:** Cloud Build step `build` gagal berulang (`npm ci` Usage / exit 51) setelah ship GAS 1.0.76.
+- [x] **Langkah 1 (`1b86d81d`)**: Slim `web/public/apk` → hanya alias + current GAS 1.0.76 + EduLock 1.3.11 (4 file + manifest). Arsip lama tetap di `Apk Release/Final`.
+- [x] **Langkah 2 (`101c147e`)**: Hapus app Next.js ganda di **root** repo (`package.json` / lock / `.yarnrc` / `public/apk/*.apk`). Backend `rootDirectory` = `web`.
+- [x] **Langkah 3 (`bf206c44`)**: Regenerasi `web/package-lock.json` dengan **Node 20.18 / npm 10.8.2** (lock dari npm 11 Node 25 kurang `@emnapi/*`).
+- [x] **Hasil:** App Hosting rollout **SUKSES** (dikonfirmasi user). URL live: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app`
+- [x] **Public tutorial sekarang:** `GAS-Siswa-release.apk` + `GAS-Siswa-1.0.76-siswa-23073.apk` + `EduLock-studentRelease.apk` + `EduLock-1.3.11-37.apk`
+- [ ] QA spot-check opsional: `/gas/install` dan `/edulock/install` unduh versi current setelah Ctrl+F5.
 
 ---
 
@@ -27,6 +55,7 @@ Update terakhir: 2026-08-16 11:40 (FIX WEB slim public/apk setelah App Hosting b
 - [x] **Bump flavor siswa**: `versionName 1.0.76` / `versionCode 23073`.
 - [x] **Salin APK ke Folder Pegangan**: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` dan `GAS-Siswa-1.0.76-siswa-23073.apk`.
 - [x] **SHA256**: `76C8EFC4051E11382B6DB3CB25BCD14127237C2FA291FCE27B15F41FA3420298` (Size: 20.24 MB).
+- [x] **Deploy web:** App Hosting live setelah `bf206c44` (lihat checklist FIX WEB di atas).
 - [ ] QA perangkat: Beranda hari libur = LIBUR; Dzuhur hari di luar Hari Wajib = tidak bisa presensi; Sahabat Belajar kriteria Ibadah = Libur/tidak wajib.
 
 ---

@@ -27,6 +27,20 @@ Tambahkan nama pelaksana jika perlu:
 
 ### Siswa
 
+
+## [1.0.78-siswa] - 2026-08-16
+### Fixed
+- **Siswa (Presensi Dhuha & Jumat)**: Matching jadwal admin `prayer_v2` kini menghormati `classIds` (array atau map), label kelas, dan varian `schoolId` agar slot aktif mengikuti pengaturan web.
+- Changed: Build distribusi GAS Siswa dinaikkan ke `1.0.78` (`versionCode 23075`). Final only — URL unduhan web belum di-update.
+## [1.0.77-siswa] - 2026-08-16
+### Added / Changed
+- **Siswa (Lentera)**: Kartu home **Tantangan Bulan Ini** menampilkan tugas literasi admin aktif (`literacy_tasks` per sekolah/kelas + jadwal), termasuk status submit; empty state jika belum ada.
+- **Siswa (Virtual Pet)**: Quest **Bonus Literasi Bulanan** (+200 koin / +100 XP, 1x per bulan kalender) saat siswa mengirim laporan tugas literasi; badge UI `BULANAN`.
+- Changed: Build distribusi GAS Siswa dinaikkan ke `1.0.77` (`versionCode 23074`). Catatan: salinan Final saja â€” URL unduhan web belum di-update.
+### Fixed
+- **Siswa (Virtual Pet)**: Spam notifikasi/popup pet MATI saat vital sudah pulih (mati = vital saja).
+- **Siswa (Lentera)**: Statistik **Buku Dibaca** = `floor(total menit baca / 30)`.
+
 ## [1.0.76-siswa] - 2026-08-16
 ### Fixed
 - **Siswa (Home)**: Status Kehadiran di Beranda menampilkan `LIBUR` pada hari non-efektif (jadwal sekolah / tanggal merah), selaras dengan menu Absensi (`HomeScreen.kt`).

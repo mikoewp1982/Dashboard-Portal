@@ -36,8 +36,8 @@ android {
         create("siswa") {
             dimension = "audience"
             minSdk = 23
-            versionCode = 23073
-            versionName = "1.0.76"
+            versionCode = 23075
+            versionName = "1.0.78"
             resValue("string", "app_name", "GAS Siswa")
             applicationIdSuffix = ".siswa"
             versionNameSuffix = "-siswa"
@@ -180,3 +180,4 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
+
