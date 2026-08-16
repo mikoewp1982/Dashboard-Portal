@@ -17,6 +17,21 @@ Field berikut wajib dipakai di setiap entri:
 - Flavor terdampak
 ## Tujuan perubahan
 
+## 2026-08-16 20:53 - [SHIP APK] GAS-Siswa v1.0.78-siswa (23075) - Class match + jam admin Dhuha/Jumat (Final only)
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** `siswa` (+ web admin prayer config normalize)
+- **Tujuan perubahan:**
+  - Align matching jadwal kelas siswa dengan `prayer_v2.classIds` admin (sudah di main `13c86d2f`).
+  - Fix tampilan jam Dhuha/Jumat: tidak lagi hardcode/fake `07:00-07:30`; parse/normalize `HH.mm` ke `HH:mm` dari jadwal/type admin; hari tanpa jadwal tampil "Tidak dijadwalkan" tanpa jam palsu.
+  - **Tidak** sync `web/public/apk`, **tidak** update URL unduhan web — Final only.
+- **Build:** `.\gradlew.bat :app:assembleSiswaRelease` (`--no-daemon`)
+- **Commit kode:** `b3f5ce4f` (time display) + `13c86d2f` (class match)
+- **Distribusi Final:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.78-siswa-23075.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+- **SHA256:** `E2F63CC3184FBC747639EDC504BA88FD78046A96CA66BA551BFCFE4EDC56EBB5`
+- **URL unduhan web:** TIDAK di-update (Final only)
 ## 2026-08-16 20:50 - [SHIP APK] GAS-Siswa v1.0.78-siswa (23075) - Align Dhuha/Jumat schedule with prayer_v2 classIds
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix`

@@ -30,8 +30,9 @@ Tambahkan nama pelaksana jika perlu:
 
 ## [1.0.78-siswa] - 2026-08-16
 ### Fixed
-- **Siswa (Presensi Dhuha & Jumat)**: Matching jadwal admin `prayer_v2` kini menghormati `classIds` (array atau map), label kelas, dan varian `schoolId` agar slot aktif mengikuti pengaturan web.
-- Changed: Build distribusi GAS Siswa dinaikkan ke `1.0.78` (`versionCode 23075`). Final only — URL unduhan web belum di-update.
+- **Siswa (Presensi Dhuha/Jumat)**: Matching jadwal admin `prayer_v2` menghormati `classIds` (array/map), label kelas, dan varian `schoolId`.
+- **Siswa (Presensi Dhuha/Jumat)**: Jam tampilan/gate memakai start/end admin (normalize `HH.mm` ke `HH:mm`); tidak lagi menampilkan fake `07:00-07:30`. Hari tanpa jadwal = "Tidak dijadwalkan" tanpa jam palsu.
+- Changed: Build distribusi GAS Siswa `1.0.78` (`versionCode 23075`). Final only — URL unduhan web belum di-update.
 ## [1.0.77-siswa] - 2026-08-16
 ### Added / Changed
 - **Siswa (Lentera)**: Kartu home **Tantangan Bulan Ini** menampilkan tugas literasi admin aktif (`literacy_tasks` per sekolah/kelas + jadwal), termasuk status submit; empty state jika belum ada.
