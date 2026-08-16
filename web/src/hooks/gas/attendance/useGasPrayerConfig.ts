@@ -45,14 +45,27 @@ const DEFAULT_PRAYER_TYPES: PrayerTypeConfig[] = [
   },
 ];
 
+/** Normalize times from RTDB/admin (`06.35` / `6:35`) to canonical `HH:mm`. */
+const normalizeTimeValue = (raw: unknown, fallback = ""): string => {
+  const trimmed = String(raw ?? "").trim();
+  if (!trimmed) return fallback;
+  const normalized = trimmed.replace(/[．.,，：]/g, ":").replace(/\s+/g, "");
+  const parts = normalized.split(":").filter(Boolean);
+  const hour = Number(parts[0]);
+  const minute = Number(parts[1] ?? "0");
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return fallback;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return fallback;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+};
+
 const normalizePrayerType = (typeId: string, raw?: Partial<PrayerTypeConfig>): PrayerTypeConfig => {
   const defaults = DEFAULT_PRAYER_TYPES.find((item) => item.id === typeId) ?? DEFAULT_PRAYER_TYPES[0];
   return {
     ...defaults,
     ...(raw || {}),
     id: defaults.id,
-    startTime: String(raw?.startTime || defaults.startTime || ""),
-    endTime: String(raw?.endTime || defaults.endTime || ""),
+    startTime: normalizeTimeValue(raw?.startTime, defaults.startTime || ""),
+    endTime: normalizeTimeValue(raw?.endTime, defaults.endTime || ""),
   };
 };
 
@@ -79,8 +92,8 @@ const normalizeSchedules = (data: Record<string, any> | null): PrayerClassSchedu
       prayerType: value?.prayerType ?? "DHUHA",
       classIds: parseClassIds(value?.classIds),
       dayOfWeek: Number(value?.dayOfWeek ?? 1),
-      startTime: String(value?.startTime ?? "07:00"),
-      endTime: String(value?.endTime ?? "07:30"),
+      startTime: normalizeTimeValue(value?.startTime, "07:00"),
+      endTime: normalizeTimeValue(value?.endTime, "07:30"),
       active: value?.active !== false,
       notes: String(value?.notes ?? ""),
     }))

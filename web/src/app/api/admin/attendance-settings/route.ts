@@ -5,6 +5,21 @@ import { getSchoolIdVariants, normalizeSchoolId } from "@/lib/gas/schoolId";
 
 export const dynamic = 'force-dynamic';
 
+/** Normalize admin times (`06.35`, `6:35`, `06:35:00`) to canonical `HH:mm`. */
+function normalizeTimeValue(raw: unknown, fallback = ""): string {
+  const trimmed = String(raw ?? "").trim();
+  if (!trimmed) return fallback;
+  const normalized = trimmed
+    .replace(/[．.,，：]/g, ":")
+    .replace(/\s+/g, "");
+  const parts = normalized.split(":").filter(Boolean);
+  const hour = Number(parts[0]);
+  const minute = Number(parts[1] ?? "0");
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return fallback;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return fallback;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -76,8 +91,8 @@ export async function POST(req: NextRequest) {
           requireMuslim: item?.requireMuslim !== false,
           eligibleGender: String(item?.eligibleGender || "all"),
           locationRequired: item?.locationRequired !== false,
-          startTime: String(item?.startTime || ""),
-          endTime: String(item?.endTime || ""),
+          startTime: normalizeTimeValue(item?.startTime, ""),
+          endTime: normalizeTimeValue(item?.endTime, ""),
           activeDays: Array.isArray(item?.activeDays)
             ? item.activeDays.map((d: any) => Number(d)).filter((d: number) => Number.isFinite(d))
             : [],
@@ -98,8 +113,8 @@ export async function POST(req: NextRequest) {
           prayerType: String(item?.prayerType || "DHUHA").toUpperCase(),
           classIds: Array.isArray(item?.classIds) ? item.classIds.filter(Boolean) : [],
           dayOfWeek: Number(item?.dayOfWeek ?? 1),
-          startTime: String(item?.startTime || "07:00"),
-          endTime: String(item?.endTime || "07:30"),
+          startTime: normalizeTimeValue(item?.startTime, "07:00"),
+          endTime: normalizeTimeValue(item?.endTime, "07:30"),
           active: item?.active !== false,
           notes: String(item?.notes || ""),
           updatedAt: Date.now(),

@@ -76,7 +76,9 @@ private data class PrayerV2Type(
     val enabled: Boolean,
     val requireMuslim: Boolean,
     val eligibleGender: String,
-    val locationRequired: Boolean
+    val locationRequired: Boolean,
+    val startTime: String = "",
+    val endTime: String = ""
 )
 
 private data class PrayerV2Schedule(
@@ -121,6 +123,14 @@ private fun sanitizeRecordId(value: String): String {
     return value.trim().replace(Regex("[^A-Za-z0-9_-]"), "_")
 }
 
+private fun readTimeLeaf(child: DataSnapshot, key: String): String {
+    val node = child.child(key)
+    val asString = node.getValue(String::class.java)?.trim().orEmpty()
+    if (asString.isNotBlank()) return asString
+    val raw = node.value ?: return ""
+    return raw.toString().trim()
+}
+
 private fun toYmd(cal: Calendar): String {
     val y = cal.get(Calendar.YEAR)
     val m = cal.get(Calendar.MONTH) + 1
@@ -128,12 +138,35 @@ private fun toYmd(cal: Calendar): String {
     return "%04d-%02d-%02d".format(y, m, d)
 }
 
+/**
+ * Accepts admin/HTML times such as `06:35`, `06.35`, `6.35`, `06:35:00`.
+ * Returns canonical `HH:mm`, or null when unparsable.
+ */
+private fun normalizeTimeString(raw: String?): String? {
+    val trimmed = raw?.trim().orEmpty()
+    if (trimmed.isBlank()) return null
+    val normalized = trimmed
+        .replace('．', ':')
+        .replace('：', ':')
+        .replace(',', ':')
+        .replace('.', ':')
+        .replace(Regex("\\s+"), "")
+    val parts = normalized.split(":").map { it.trim() }.filter { it.isNotEmpty() }
+    val hour = parts.getOrNull(0)?.toIntOrNull() ?: return null
+    val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+    if (hour !in 0..23 || minute !in 0..59) return null
+    return "%02d:%02d".format(hour, minute)
+}
+
 private fun parseTimeToMinutes(raw: String, defaultHour: Int, defaultMinute: Int): Int {
-    val trimmed = raw.trim().replace(".", ":")
-    val parts = trimmed.split(":").map { it.trim() }.filter { it.isNotEmpty() }
-    val hour = parts.getOrNull(0)?.toIntOrNull() ?: defaultHour
-    val minute = parts.getOrNull(1)?.toIntOrNull() ?: defaultMinute
-    return hour.coerceIn(0, 23) * 60 + minute.coerceIn(0, 59)
+    val normalized = normalizeTimeString(raw)
+    if (normalized != null) {
+        val parts = normalized.split(":")
+        val hour = parts.getOrNull(0)?.toIntOrNull() ?: defaultHour
+        val minute = parts.getOrNull(1)?.toIntOrNull() ?: defaultMinute
+        return hour * 60 + minute
+    }
+    return defaultHour.coerceIn(0, 23) * 60 + defaultMinute.coerceIn(0, 59)
 }
 
 /**
@@ -299,10 +332,39 @@ private fun isTimeInWindow(now: Calendar, start: String, end: String): Boolean {
     return nowMinutes in startMinutes..endMinutes
 }
 
-private fun toReadableTimeWindow(start: String, end: String): String {
-    val s = start.trim().replace(".", ":").ifBlank { "07:00" }
-    val e = end.trim().replace(".", ":").ifBlank { "07:30" }
-    return "$s - $e"
+private fun toReadableTimeWindow(start: String?, end: String?): String {
+    val s = normalizeTimeString(start)
+    val e = normalizeTimeString(end)
+    return if (s != null && e != null) "$s - $e" else "—"
+}
+
+/**
+ * Prefer today's matched schedule times; otherwise class schedule for this type;
+ * then type-level admin times. Never invent 07:00-07:30.
+ */
+private fun resolveDisplayTimes(
+    prayerType: String,
+    dayOfWeek: Int,
+    className: String,
+    activeSchedule: PrayerV2Schedule?,
+    schedules: List<PrayerV2Schedule>,
+    classLabelMap: Map<String, String>,
+    typeRule: PrayerV2Type
+): Pair<String?, String?> {
+    fun from(start: String?, end: String?): Pair<String, String>? {
+        val s = normalizeTimeString(start) ?: return null
+        val e = normalizeTimeString(end) ?: return null
+        return s to e
+    }
+
+    from(activeSchedule?.startTime, activeSchedule?.endTime)?.let { return it }
+
+    pickScheduleForClass(prayerType, dayOfWeek, className, schedules, classLabelMap)?.let { schedule ->
+        from(schedule.startTime, schedule.endTime)?.let { return it }
+    }
+
+    from(typeRule.startTime, typeRule.endTime)?.let { return it }
+    return null to null
 }
 
 private fun isDeviceTimeTrusted(context: Context): Boolean {
@@ -463,7 +525,9 @@ fun PrayerDhuhaJumatScreen(
                             enabled = child.child("enabled").getValue(Boolean::class.java) ?: true,
                             requireMuslim = child.child("requireMuslim").getValue(Boolean::class.java) ?: true,
                             eligibleGender = child.child("eligibleGender").getValue(String::class.java)?.trim().orEmpty(),
-                            locationRequired = child.child("locationRequired").getValue(Boolean::class.java) ?: true
+                            locationRequired = child.child("locationRequired").getValue(Boolean::class.java) ?: true,
+                            startTime = readTimeLeaf(child, "startTime"),
+                            endTime = readTimeLeaf(child, "endTime")
                         )
                     }
                     typesByVariant[variant] = next
@@ -484,8 +548,8 @@ fun PrayerDhuhaJumatScreen(
                             prayerType = prayerType,
                             classIds = parseClassIds(child.child("classIds")),
                             dayOfWeek = child.child("dayOfWeek").getValue(Int::class.java) ?: 5,
-                            startTime = child.child("startTime").getValue(String::class.java)?.trim().orEmpty(),
-                            endTime = child.child("endTime").getValue(String::class.java)?.trim().orEmpty(),
+                            startTime = readTimeLeaf(child, "startTime"),
+                            endTime = readTimeLeaf(child, "endTime"),
                             active = child.child("active").getValue(Boolean::class.java) ?: true
                         )
                     }
@@ -721,8 +785,14 @@ fun PrayerDhuhaJumatScreen(
         }
 
         val useSchedule = effectiveSchedule ?: schedule
-        val start = useSchedule?.startTime?.ifBlank { "07:00" } ?: "07:00"
-        val end = useSchedule?.endTime?.ifBlank { "07:30" } ?: "07:30"
+        val start = normalizeTimeString(useSchedule?.startTime)
+            ?: normalizeTimeString(typeRule.startTime)
+        val end = normalizeTimeString(useSchedule?.endTime)
+            ?: normalizeTimeString(typeRule.endTime)
+        if (start.isNullOrBlank() || end.isNullOrBlank()) {
+            Toast.makeText(context, "Jam operasional belum diatur admin untuk jadwal ini.", Toast.LENGTH_LONG).show()
+            return
+        }
         if (!isTimeInWindow(current, start, end)) {
             Toast.makeText(context, "Presensi hanya tersedia pada jam $start - $end.", Toast.LENGTH_LONG).show()
             return
@@ -831,8 +901,14 @@ fun PrayerDhuhaJumatScreen(
     val (dhuhaActive, dhuhaSchedule) = resolveActiveRule("DHUHA", todayKey, mappedDay, studentClass, schedules, overrides, classLabelMap)
     val (jumatActive, jumatSchedule) = resolveActiveRule("JUMAT", todayKey, mappedDay, studentClass, schedules, overrides, classLabelMap)
 
-    val dhuhaWindow = toReadableTimeWindow(dhuhaSchedule?.startTime ?: "07:00", dhuhaSchedule?.endTime ?: "07:30")
-    val jumatWindow = toReadableTimeWindow(jumatSchedule?.startTime ?: "07:00", jumatSchedule?.endTime ?: "07:30")
+    val (dhuhaStart, dhuhaEnd) = resolveDisplayTimes(
+        "DHUHA", mappedDay, studentClass, dhuhaSchedule, schedules, classLabelMap, typeDhuha
+    )
+    val (jumatStart, jumatEnd) = resolveDisplayTimes(
+        "JUMAT", mappedDay, studentClass, jumatSchedule, schedules, classLabelMap, typeJumat
+    )
+    val dhuhaWindow = toReadableTimeWindow(dhuhaStart, dhuhaEnd)
+    val jumatWindow = toReadableTimeWindow(jumatStart, jumatEnd)
 
     fun buildItem(
         title: String,
@@ -841,6 +917,8 @@ fun PrayerDhuhaJumatScreen(
         activeToday: Boolean,
         activeSchedule: PrayerV2Schedule?,
         timeLabel: String,
+        windowStart: String?,
+        windowEnd: String?,
         currentStatus: String?
     ): PrayerItemState {
         val already = currentStatus?.trim()?.uppercase(Locale.ROOT) == "PRAY"
@@ -860,24 +938,31 @@ fun PrayerDhuhaJumatScreen(
         if (!activeToday) {
             return PrayerItemState(title, prayerType, true, false, timeLabel, "Tidak dijadwalkan", false, "Tidak ada jadwal hari ini")
         }
-        
-        val start = activeSchedule?.startTime?.ifBlank { "07:00" } ?: "07:00"
-        val end = activeSchedule?.endTime?.ifBlank { "07:30" } ?: "07:30"
+
+        val start = normalizeTimeString(activeSchedule?.startTime)
+            ?: normalizeTimeString(windowStart)
+            ?: normalizeTimeString(typeRule.startTime)
+        val end = normalizeTimeString(activeSchedule?.endTime)
+            ?: normalizeTimeString(windowEnd)
+            ?: normalizeTimeString(typeRule.endTime)
+        if (start.isNullOrBlank() || end.isNullOrBlank()) {
+            return PrayerItemState(title, prayerType, true, true, timeLabel, "Jam belum diatur", false, "Admin belum mengisi jam operasional")
+        }
         val inWindow = isTimeInWindow(Calendar.getInstance(), start, end)
 
         if (already) {
             return PrayerItemState(title, prayerType, true, true, timeLabel, "Sudah Presensi", false, "Sudah presensi hari ini")
         }
-        
+
         if (!inWindow) {
             return PrayerItemState(title, prayerType, true, true, timeLabel, "Di luar jam operasional", false, "Waktu presensi $start - $end")
         }
-        
+
         return PrayerItemState(title, prayerType, true, true, timeLabel, "Belum Presensi", true, "")
     }
 
-    val dhuhaItem = buildItem("Sholat Dhuha", "DHUHA", typeDhuha, dhuhaActive, dhuhaSchedule, dhuhaWindow, dhuhaStatus)
-    val jumatItem = buildItem("Sholat Jum'at", "JUMAT", typeJumat, jumatActive, jumatSchedule, jumatWindow, jumatStatus)
+    val dhuhaItem = buildItem("Sholat Dhuha", "DHUHA", typeDhuha, dhuhaActive, dhuhaSchedule, dhuhaWindow, dhuhaStart, dhuhaEnd, dhuhaStatus)
+    val jumatItem = buildItem("Sholat Jum'at", "JUMAT", typeJumat, jumatActive, jumatSchedule, jumatWindow, jumatStart, jumatEnd, jumatStatus)
 
     Scaffold(
         topBar = {
