@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Build Log GAS
+﻿﻿﻿﻿﻿# Build Log GAS
 
 Dokumen ini adalah log operasional wajib untuk setiap perubahan APK `GAS`.
 
@@ -16,6 +16,19 @@ Field berikut wajib dipakai di setiap entri:
 - Jenis perubahan: `feature`, `fix`, `refactor`, `docs`, atau `no-build`
 - Flavor terdampak
 ## Tujuan perubahan
+
+## 2026-08-16 11:40 - [FIX WEB] Slim web/public/apk so App Hosting can build again
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** web tutorial download only (APK siswa 1.0.76 tidak di-rebuild)
+- **Tujuan perubahan:**
+  - App Hosting rollout `c1477ed0` gagal di Cloud Build step `build` (`npm` exit 1) karena `web/public/apk` menumpuk puluhan APK lama (~20 MB x banyak file).
+  - Bersihkan `web/public/apk` hanya ke file yang dipakai tutorial: alias + versi current GAS Siswa 1.0.76 dan EduLock 1.3.11.
+  - Arsip versi lama tetap di `Apk Release/Final`, tidak di-deploy ke App Hosting.
+- **File utama:**
+  - `web/public/apk/*` (hapus APK lama)
+  - `web/public/apk/apk-manifest.json` (hanya 4 entry current)
+- **Build:** tidak rebuild APK; menunggu App Hosting rollout ulang setelah push
 
 ## 2026-08-16 11:10 - [SHIP APK] GAS-Siswa v1.0.76-siswa (23073) - Home LIBUR + Dzuhur activeDays + Sahabat Belajar Ibadah
 - **Pelaksana:** Assistant

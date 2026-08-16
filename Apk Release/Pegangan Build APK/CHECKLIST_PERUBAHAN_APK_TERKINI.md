@@ -6,7 +6,16 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-16 11:10 (SHIP GAS Siswa 1.0.76-siswa / 23073 - Home LIBUR + Dzuhur activeDays + Sahabat Belajar Ibadah)
+Update terakhir: 2026-08-16 11:40 (FIX WEB slim public/apk setelah App Hosting build gagal)
+
+---
+
+## [FIX WEB] Slim `web/public/apk` setelah App Hosting `c1477ed0` gagal 2026-08-16
+
+- [x] **Penyebab:** Cloud Build step `build` gagal (`npm` exit 1) karena folder tutorial menumpuk puluhan APK lama.
+- [x] **Perbaikan:** `web/public/apk` hanya menyimpan `GAS-Siswa-release.apk`, `GAS-Siswa-1.0.76-siswa-23073.apk`, `EduLock-studentRelease.apk`, `EduLock-1.3.11-37.apk` + manifest 4 entry.
+- [x] **Arsip lama:** tetap di `Apk Release/Final`, tidak di-deploy.
+- [ ] QA live: App Hosting rollout sukses; `/gas/install` dan `/edulock/install` tetap mengunduh versi current.
 
 ---
 
