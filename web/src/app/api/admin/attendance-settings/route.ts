@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, schoolId: requestedSchoolId, schedules, holiday, location } = body;
+    const { action, schoolId: requestedSchoolId, schedules, holiday, location, prayerTypes, overrides } = body;
 
     const targetSchoolId = role === "super_admin" ? (requestedSchoolId || userSchoolId) : userSchoolId;
     if (!targetSchoolId) {
@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     const canonicalSchoolId = normalizeSchoolId(targetSchoolId);
     const schoolIdVariants = getSchoolIdVariants(canonicalSchoolId);
     const dbRef = adminDb.ref(`school_settings/${canonicalSchoolId}/attendance`);
+    const prayerV2Ref = adminDb.ref(`school_settings/${canonicalSchoolId}/prayer_v2`);
 
     if (action === "save-attendance-schedules") {
       const formatted: Record<string, any> = {};
@@ -59,6 +60,72 @@ export async function POST(req: NextRequest) {
       // Mirror to legacy path for EduLock APK backward compatibility
       await adminDb.ref(`schools/${canonicalSchoolId}/schedule/weekdays`).set(legacyFormatted);
       
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "save-prayer-v2-types") {
+      const formatted: Record<string, any> = {};
+      (Array.isArray(prayerTypes) ? prayerTypes : []).forEach((item: any) => {
+        const id = String(item?.id || "").trim().toUpperCase();
+        if (!id) return;
+        formatted[id] = {
+          label: String(item?.label || id),
+          description: String(item?.description || ""),
+          enabled: item?.enabled !== false,
+          scheduleMode: String(item?.scheduleMode || "global_daily"),
+          requireMuslim: item?.requireMuslim !== false,
+          eligibleGender: String(item?.eligibleGender || "all"),
+          locationRequired: item?.locationRequired !== false,
+          startTime: String(item?.startTime || ""),
+          endTime: String(item?.endTime || ""),
+          activeDays: Array.isArray(item?.activeDays)
+            ? item.activeDays.map((d: any) => Number(d)).filter((d: number) => Number.isFinite(d))
+            : [],
+          updatedAt: Date.now(),
+        };
+      });
+
+      await prayerV2Ref.child("types").set(formatted);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "save-prayer-v2-schedules") {
+      const formatted: Record<string, any> = {};
+      (Array.isArray(schedules) ? schedules : []).forEach((item: any) => {
+        const id = String(item?.id || "").trim();
+        if (!id) return;
+        formatted[id] = {
+          prayerType: String(item?.prayerType || "DHUHA").toUpperCase(),
+          classIds: Array.isArray(item?.classIds) ? item.classIds.filter(Boolean) : [],
+          dayOfWeek: Number(item?.dayOfWeek ?? 1),
+          startTime: String(item?.startTime || "07:00"),
+          endTime: String(item?.endTime || "07:30"),
+          active: item?.active !== false,
+          notes: String(item?.notes || ""),
+          updatedAt: Date.now(),
+        };
+      });
+
+      await prayerV2Ref.child("schedules").set(formatted);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "save-prayer-v2-overrides") {
+      const formatted: Record<string, any> = {};
+      (Array.isArray(overrides) ? overrides : []).forEach((item: any) => {
+        const id = String(item?.id || "").trim();
+        if (!id) return;
+        formatted[id] = {
+          date: String(item?.date || ""),
+          prayerType: String(item?.prayerType || "DHUHA").toUpperCase(),
+          classIds: Array.isArray(item?.classIds) ? item.classIds.filter(Boolean) : [],
+          action: item?.action === "activate" ? "activate" : "deactivate",
+          notes: String(item?.notes || ""),
+          updatedAt: Date.now(),
+        };
+      });
+
+      await prayerV2Ref.child("overrides").set(formatted);
       return NextResponse.json({ success: true });
     }
 

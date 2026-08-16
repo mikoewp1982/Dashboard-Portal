@@ -12,6 +12,7 @@ export const gasMenuItems = [
   { id: "discipline", label: "Rekap Kedisiplinan", status: "active" },
   { id: "library", label: "Monitoring E-Library", status: "active" },
   { id: "prayer-monitoring", label: "Rekap Sholat", status: "active" },
+  { id: "prayer-monitoring-v2", label: "Rekap Dhuha & Jum'at", status: "active" },
   { id: "virtual-pet", label: "Virtual Pet Monitor", status: "active" },
   { id: "seven-habits", label: "7 KAIH", status: "active" },
   { id: "halo-spentgapa", label: "Laporan Masuk", status: "active" },
@@ -45,4 +46,19 @@ export const getGasPath = (tab: GasTab, schoolId: string) => {
   return "";
 };
 
-export const isGasImplementedTab = (tab: GasTab) => tab === "dashboard" || tab === "students" || tab === "teachers" || tab === "attendance" || tab === "presensi-sholat" || tab === "settings" || tab === "attendance-report" || tab === "prayer-monitoring" || tab === "discipline" || tab === "library" || tab === "virtual-pet" || tab === "seven-habits" || tab === "halo-spentgapa" || tab === "notifications";
+export const isGasImplementedTab = (tab: GasTab) =>
+  tab === "dashboard" ||
+  tab === "students" ||
+  tab === "teachers" ||
+  tab === "attendance" ||
+  tab === "presensi-sholat" ||
+  tab === "settings" ||
+  tab === "attendance-report" ||
+  tab === "prayer-monitoring" ||
+  tab === "prayer-monitoring-v2" ||
+  tab === "discipline" ||
+  tab === "library" ||
+  tab === "virtual-pet" ||
+  tab === "seven-habits" ||
+  tab === "halo-spentgapa" ||
+  tab === "notifications";

@@ -17,6 +17,7 @@ const descriptions: Record<GasTab, string> = {
   "attendance-report": "Rekap presensi bulanan, filter kelas, dan export.",
   discipline: "Pencatatan pelanggaran dan poin kedisiplinan siswa.",
   "prayer-monitoring": "Monitoring dan rekap sholat siswa.",
+  "prayer-monitoring-v2": "Monitoring dan rekap sholat Dhuha & Jum'at per kelas.",
   "virtual-pet": "Gamifikasi perilaku siswa berbasis presensi dan disiplin.",
   library: "Inventaris dan aktivitas literasi sekolah.",
   "halo-spentgapa": "Kanal laporan internal sekolah dengan privasi ketat.",

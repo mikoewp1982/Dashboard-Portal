@@ -12,6 +12,7 @@ import { GasPrayerPanel } from "./prayer/GasPrayerPanel";
 import { GasSettingsPanel } from "./settings/GasSettingsPanel";
 import GasAttendanceReportPanel from "./attendance/GasAttendanceReportPanel";
 import GasPrayerReportPanel from "./prayer/GasPrayerReportPanel";
+import GasPrayerV2ReportPanel from "./prayer/GasPrayerV2ReportPanel";
 import { GasDisciplinePanel } from "./discipline/GasDisciplinePanel";
 import { GasLibraryPanel } from "./library/GasLibraryPanel";
 import { GasPetPanel } from "./virtual-pet/GasPetPanel";
@@ -40,6 +41,7 @@ export default function GasWorkspace() {
       candidate === "attendance-report" ||
       candidate === "discipline" ||
       candidate === "prayer-monitoring" ||
+      candidate === "prayer-monitoring-v2" ||
       candidate === "virtual-pet" ||
       candidate === "library" ||
       candidate === "halo-spentgapa" ||
@@ -78,6 +80,7 @@ export default function GasWorkspace() {
         {activeTab === "settings" && <GasSettingsPanel schoolId={user.schoolId || ""} />}
         {activeTab === "attendance-report" && <GasAttendanceReportPanel schoolId={user.schoolId || ""} />}
         {activeTab === "prayer-monitoring" && <GasPrayerReportPanel schoolId={user.schoolId || ""} />}
+        {activeTab === "prayer-monitoring-v2" && <GasPrayerV2ReportPanel schoolId={user.schoolId || ""} initialPrayerType="DHUHA" />}
         {activeTab === "discipline" && (
           <ErrorBoundary>
             <GasDisciplinePanel schoolId={user.schoolId || ""} />

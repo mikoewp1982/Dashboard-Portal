@@ -39,6 +39,7 @@ const iconImageMap = {
   "attendance-report": gasAbsensiIcon,
   "presensi-sholat": gasPresensiSholatIcon,
   "prayer-monitoring": gasPresensiSholatIcon,
+  "prayer-monitoring-v2": gasPresensiSholatIcon,
   discipline: gasKedisiplinanIcon,
   library: gasLenteraDigitalIcon,
   "virtual-pet": gasVirtualPetIcon,
@@ -57,6 +58,7 @@ const iconMap = {
   discipline: Award,
   library: BookOpen,
   "prayer-monitoring": Clock,
+  "prayer-monitoring-v2": Clock,
   "virtual-pet": HeartPulse,
   "seven-habits": Award,
   "halo-spentgapa": AlertTriangle,
@@ -201,6 +203,7 @@ export function GasSidebar({ activeTab, onTabChange }: GasSidebarProps) {
           {renderMenuButton("discipline", "Rekap Kedisiplinan", { trailingChevron: true })}
           {renderMenuButton("library", "Monitoring E-Library", { trailingChevron: true })}
           {renderMenuButton("prayer-monitoring", "Rekap Sholat", { trailingChevron: true })}
+          {renderMenuButton("prayer-monitoring-v2", "Rekap Dhuha & Jum'at", { trailingChevron: true })}
           {renderMenuButton("virtual-pet", "Virtual Pet Monitor", { trailingChevron: true })}
           {renderMenuButton("seven-habits", "7 KAIH", { trailingChevron: true })}
         </div>
