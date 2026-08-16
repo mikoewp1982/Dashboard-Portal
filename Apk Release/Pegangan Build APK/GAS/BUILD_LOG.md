@@ -17,6 +17,28 @@ Field berikut wajib dipakai di setiap entri:
 - Flavor terdampak
 ## Tujuan perubahan
 
+## 2026-08-16 12:25 - [FIX WEB] Regenerate package-lock.json with Node 20 for App Hosting npm ci
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** web App Hosting only (APK siswa 1.0.76 tidak di-rebuild)
+- **Tujuan perubahan:**
+  - Rollout `101c147` masih gagal: `npm ci` EUSAGE / Usage dump (exit 51).
+  - Lockfile lama dibuat npm 11 (Node 25) dan kurang `@emnapi/core` + `@emnapi/runtime`; Cloud Build Node 20 menolak.
+  - Regenerasi `web/package-lock.json` dengan Node 20.18 / npm 10.8.2; `npm ci` lokal lulus.
+- **File utama:**
+  - `web/package-lock.json`, `web/.npmrc`
+- **Build:** tidak rebuild APK; push `main` untuk rollout App Hosting ulang
+## 2026-08-16 12:25 - [FIX WEB] Regenerate package-lock.json with Node 20 for App Hosting npm ci
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** web App Hosting only (APK siswa 1.0.76 tidak di-rebuild)
+- **Tujuan perubahan:**
+  - Rollout `101c147` masih gagal: `npm ci` EUSAGE / Usage dump (exit 51).
+  - Lockfile lama dibuat npm 11 (Node 25) dan kurang `@emnapi/core` + `@emnapi/runtime`; Cloud Build Node 20 menolak.
+  - Regenerasi `web/package-lock.json` dengan Node 20.18 / npm 10.8.2; `npm ci` lokal lulus.
+- **File utama:**
+  - `web/package-lock.json`, `web/.npmrc`
+- **Build:** tidak rebuild APK; push `main` untuk rollout App Hosting ulang
 ## 2026-08-16 12:00 - [FIX WEB] App Hosting npm ci — hapus app Next.js ganda di root
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix`
