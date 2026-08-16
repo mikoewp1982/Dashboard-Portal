@@ -1,4 +1,4 @@
-# Build Log GAS
+Ôªø# Build Log GAS
 
 Dokumen ini adalah log operasional wajib untuk setiap perubahan APK `GAS`.
 
@@ -17,6 +17,20 @@ Field berikut wajib dipakai di setiap entri:
 - Flavor terdampak
 ## Tujuan perubahan
 
+## 2026-08-16 21:55 - [SHIP APK] GAS-Siswa v1.0.80-siswa (23077) - Virtual Pet loading SEKARAT flash fix
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** `siswa`
+- **Tujuan perubahan:**
+  - Virtual Pet: keep loading until first full vitals sync; repository gates reading/habit/prayer flows until alias bootstrap ready ‚Äî no brief SEKARAT/DEAD flash from partial 0 stats.
+  - Related: vitals (not stale status=DEAD) as source of truth; monthly literacy quest catalog polish in same pet files.
+  - **Tidak** sync URL unduhan web - Final only.
+- **Build:** `.\gradlew.bat :app:assembleSiswaRelease --no-daemon --max-workers=1`
+- **Distribusi Final:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.80-siswa-23077.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+- **SHA256:** `CB5CF41398A815AB43678A0DC3CEE52CDF83593A69980F590DDDC5FB2F3EDB98`
+- **URL unduhan web:** TIDAK di-update (Final only)
 ## 2026-08-16 21:22 - [SHIP APK] GAS-Siswa v1.0.79-siswa (23076) - Fix cold-start NavigationKt ClassNotFound
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix`
@@ -24,8 +38,8 @@ Field berikut wajib dipakai di setiap entri:
 - **Tujuan perubahan:**
   - Device logcat: `FATAL EXCEPTION` / `NoClassDefFoundError: Failed resolution of: Lcom/satupintu/mobile/ui/NavigationKt;` ? silent exit ke desktop.
   - Pecah NavHost routes ke `GasAppNavGraph.kt`; enable `multiDexEnabled` + `GasApp` (`MultiDexApplication`) + `multidex-keep.txt`.
-  - Verified: install + `am start` di V2030 ó tidak ada FATAL; `versionName=1.0.79-siswa` / `versionCode=23076`.
-  - **Tidak** sync URL unduhan web ó Final only.
+  - Verified: install + `am start` di V2030 ‚Äî tidak ada FATAL; `versionName=1.0.79-siswa` / `versionCode=23076`.
+  - **Tidak** sync URL unduhan web ‚Äî Final only.
 - **Build:** `.\gradlew.bat :app:assembleSiswaRelease --no-daemon --max-workers=2`
 - **Distribusi Final:**
   - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.79-siswa-23076.apk`
@@ -39,7 +53,7 @@ Field berikut wajib dipakai di setiap entri:
 - **Tujuan perubahan:**
   - Align matching jadwal kelas siswa dengan `prayer_v2.classIds` admin (sudah di main `13c86d2f`).
   - Fix tampilan jam Dhuha/Jumat: tidak lagi hardcode/fake `07:00-07:30`; parse/normalize `HH.mm` ke `HH:mm` dari jadwal/type admin; hari tanpa jadwal tampil "Tidak dijadwalkan" tanpa jam palsu.
-  - **Tidak** sync `web/public/apk`, **tidak** update URL unduhan web ó Final only.
+  - **Tidak** sync `web/public/apk`, **tidak** update URL unduhan web ‚Äî Final only.
 - **Build:** `.\gradlew.bat :app:assembleSiswaRelease` (`--no-daemon`)
 - **Commit kode:** `b3f5ce4f` (time display) + `13c86d2f` (class match)
 - **Distribusi Final:**
@@ -69,15 +83,15 @@ Field berikut wajib dipakai di setiap entri:
   - Lentera home: kartu **Tantangan Bulan Ini** menampilkan tugas `literacy_tasks` aktif (sekolah/kelas + startAt/endAt) atau empty state.
   - Quest pet **Bonus Literasi Bulanan** (+200 koin / +100 XP, 1x per bulan kalender saat submit laporan literasi); hunger harian tetap baca 30 menit.
   - Keep fix spam pet MATI (vital-only) + Buku Dibaca `floor(menit/30)`.
-  - **Tidak** sync `web/public/apk`, **tidak** git push, **tidak** App Hosting ó URL unduhan web tetap 1.0.76.
+  - **Tidak** sync `web/public/apk`, **tidak** git push, **tidak** App Hosting ‚Äî URL unduhan web tetap 1.0.76.
 - **Build:** `.\gradlew.bat :app:assembleSiswaRelease` (setelah clean build dir)
 - **Distribusi Final:**
   - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.77-siswa-23074.apk`
   - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
 - **SHA256:** `C7CE53212357DAD7D42954C7AA0D98591E26B34B923DFF42DD0FC942C470A108`
-- **URL unduhan web:** TIDAK di-deploy (public tetap SHA256 `76C8EFC4Ö` / 1.0.76)
+- **URL unduhan web:** TIDAK di-deploy (public tetap SHA256 `76C8EFC4‚Ä¶` / 1.0.76)
 
-## 2026-08-16 12:45 - [DOCS] Pegangan update ó App Hosting live lagi + GAS Siswa 1.0.76
+## 2026-08-16 12:45 - [DOCS] Pegangan update ‚Äî App Hosting live lagi + GAS Siswa 1.0.76
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `docs`
 - **Flavor terdampak:** pegangan web + GAS (tidak rebuild APK)
@@ -86,7 +100,7 @@ Field berikut wajib dipakai di setiap entri:
   - Sinkronkan CHECKLIST, PANDUAN_DEPLOY_WEB, aturan AI, README GAS ke progres terkini.
 - **Build:** tidak rebuild APK
 
-## 2026-08-16 12:30 - [FIX WEB] App Hosting LIVE ó package-lock Node 20 (`bf206c44`)
+## 2026-08-16 12:30 - [FIX WEB] App Hosting LIVE ‚Äî package-lock Node 20 (`bf206c44`)
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix`
 - **Flavor terdampak:** web App Hosting only (APK siswa 1.0.76 tidak di-rebuild)
@@ -96,13 +110,13 @@ Field berikut wajib dipakai di setiap entri:
   - Regenerasi `web/package-lock.json` + `web/.npmrc`; `npm ci` lokal lulus; push `bf206c44`.
 - **Hasil:** App Hosting rollout **SUKSES** (dikonfirmasi user 2026-08-16 ~12:47 WIB). Tutorial unduh GAS 1.0.76 + EduLock 1.3.11 live lagi.
 - **Commit rantai perbaikan hari ini:**
-  1. `c1477ed0` ó ship GAS Siswa 1.0.76 (build gagal: public/apk gemuk)
-  2. `1b86d81d` ó slim `web/public/apk` (masih gagal: npm ci)
-  3. `101c147e` ó hapus app Next.js ganda di root (masih gagal: lockfile npm 11)
-  4. `bf206c44` ó regenerate lockfile Node 20 ? **LIVE**
+  1. `c1477ed0` ‚Äî ship GAS Siswa 1.0.76 (build gagal: public/apk gemuk)
+  2. `1b86d81d` ‚Äî slim `web/public/apk` (masih gagal: npm ci)
+  3. `101c147e` ‚Äî hapus app Next.js ganda di root (masih gagal: lockfile npm 11)
+  4. `bf206c44` ‚Äî regenerate lockfile Node 20 ? **LIVE**
 - **Build:** tidak rebuild APK
 
-## 2026-08-16 12:00 - [FIX WEB] App Hosting npm ci ó hapus app Next.js ganda di root (`101c147e`)
+## 2026-08-16 12:00 - [FIX WEB] App Hosting npm ci ‚Äî hapus app Next.js ganda di root (`101c147e`)
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix`
 - **Flavor terdampak:** web App Hosting only (APK siswa 1.0.76 tidak di-rebuild)
@@ -113,7 +127,7 @@ Field berikut wajib dipakai di setiap entri:
 - **File utama:**
   - hapus root `package.json`, `package-lock.json`, `.yarnrc`, `apphosting.yaml`, `public/apk/*.apk`
   - `web/.yarnrc` (hapus), `web/.npmrc` (baru), `web/next.config.ts`
-- **Hasil saat itu:** masih gagal ó akar masalah berikutnya adalah lockfile npm 11 (lihat entry `bf206c44`).
+- **Hasil saat itu:** masih gagal ‚Äî akar masalah berikutnya adalah lockfile npm 11 (lihat entry `bf206c44`).
 - **Build:** tidak rebuild APK
 
 ## 2026-08-16 11:40 - [FIX WEB] Slim web/public/apk so App Hosting can build again (`1b86d81d`)
@@ -904,8 +918,8 @@ Field berikut wajib dipakai di setiap entri:
 - Flavor terdampak: `guru` & `siswa` (kepala TIDAK terdampak).
 - Tujuan perubahan: 3 item perbaikan hari ini sesuai permintaan user:
   1. **(GURU)** Label login kolom password Guru dari "NUPTK" saja ? **"NIP/NUPTK"** (hormati guru honorer/PNS baru yang blm punya NUPTK tapi punya NIP).
-  2. **(SISWA ó UX)** Tap kolom **Kode Sekolah (NPSN)** dan **Password (NISN)** = otomatis keyboard angka muncul (bukan keyboard huruf), karena keduanya 10 digit HANYA ANGKA ? kurangi salah ketik.
-  3. **(SISWA ó BUG FIX LOGIC)** Fix false positive fitur **"1 akun 1 device"**: SEBELUMNYA jika siswa LOGOUT dari HP SAMA lalu LOGIN ULANG ? muncul **"Akun ini terkunci pada perangkat lain"** (false positive, NISN & device SEBENARNYA SAMA). SEKARANG: Jika user login dengan loginKey (NISN) SAMA + deviceId SAMA dengan terakhir login di HP INI ? **skip device binding check, login SUKSES, TIDAK terkunci**. HANYA NISN SAMA device BEDA ? terkunci BENAR.
+  2. **(SISWA ‚Äî UX)** Tap kolom **Kode Sekolah (NPSN)** dan **Password (NISN)** = otomatis keyboard angka muncul (bukan keyboard huruf), karena keduanya 10 digit HANYA ANGKA ? kurangi salah ketik.
+  3. **(SISWA ‚Äî BUG FIX LOGIC)** Fix false positive fitur **"1 akun 1 device"**: SEBELUMNYA jika siswa LOGOUT dari HP SAMA lalu LOGIN ULANG ? muncul **"Akun ini terkunci pada perangkat lain"** (false positive, NISN & device SEBENARNYA SAMA). SEKARANG: Jika user login dengan loginKey (NISN) SAMA + deviceId SAMA dengan terakhir login di HP INI ? **skip device binding check, login SUKSES, TIDAK terkunci**. HANYA NISN SAMA device BEDA ? terkunci BENAR.
 - File utama yang diubah:
   1. [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt)
      - L1458, L1463, L1774: Label NIP/NUPTK + placeholder + toast validasi (guru only, tidak touch siswa/kepsek).
@@ -918,13 +932,13 @@ Field berikut wajib dipakai di setiap entri:
   3. **15 titik LOGOUT seragamkan panggil `clearLastLoginIdentity` sebelum prefs.clear + auth.signOut**:
      - [SharedPreferencesManager.clearSession](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/utils/SharedPreferencesManager.kt#L68-L72)
      - [HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt#L195-L198, L214-L217) (2 lokasi: isSessionExpired + role mismatch)
-     - [Navigation.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt) 12 lokasi: L105-L110 (flavor expired), L156-L160 (device kick), L186-L191 (role not allowed), L272-L280 (home logout), L292-L405 (Principal ◊6 route logout lambda), L418-L428 (ProfileScreen logout), L805-L813 (PetLockOverlay), L814-L835 (EduLockComplianceOverlay).
+     - [Navigation.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt) 12 lokasi: L105-L110 (flavor expired), L156-L160 (device kick), L186-L191 (role not allowed), L272-L280 (home logout), L292-L405 (Principal √ó6 route logout lambda), L418-L428 (ProfileScreen logout), L805-L813 (PetLockOverlay), L814-L835 (EduLockComplianceOverlay).
   4. [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts#L36-L44) **BUMP VERSION WAJIB flavor siswa** (karena logic berubah BUKAN CUMA STRING):
      - `versionCode 23038 ? 23039` (+1 unik, hindari INSTALL_FAILED_VERSION_DOWNGRADE di HP yang sudah terpasang build lawas).
      - `versionName "1.0.41" ? "1.0.42"` (patch naik, QA mudah baca).
      - Flavor guru TIDAK bump (versionCode 1046 tetap, versionName 1.0.39-guru tetap karena perubahan hanya string label).
   5. **Ship manual via Node.js script** (karena Ship-Apk-Baru.ps1 sebelumnya punya PowerShell 5 parser bug em dash. Setelah fix parser ASCII, mode Manual parameter aman. Tapi karena fix parser ship sebelum perbaikan script, maka ship dilakukan via Node.js agar SHA 4 copy SAMA PERSIS ? tetap equivalent dengan script).
-  6. [web/scripts/Ship-Akp-Baru.ps1](file:///D:/Dashboard%20Portal/web/scripts/Ship-Apk-Baru.ps1) ó SIDE-FIX selama proses: semua em dash Unicode `ó` ? hyphen ASCII `-`; bullet `ï` ? hyphen `-`; petik commit message perbaiki backtick escape. Kini script bisa dijalankan untuk mode Manual parameter tanpa parsing error.
+  6. [web/scripts/Ship-Akp-Baru.ps1](file:///D:/Dashboard%20Portal/web/scripts/Ship-Apk-Baru.ps1) ‚Äî SIDE-FIX selama proses: semua em dash Unicode `‚Äî` ? hyphen ASCII `-`; bullet `‚Ä¢` ? hyphen `-`; petik commit message perbaiki backtick escape. Kini script bisa dijalankan untuk mode Manual parameter tanpa parsing error.
 - Status Build:
   - ? `gradlew :app:assembleGuruRelease` BUILD SUCCESSFUL 2m52s (51 tasks, warning hanya deprecated icons + coroutine opt-in, TIDAK ADA ERROR).
   - ? `gradlew :app:assembleSiswaRelease` BUILD SUCCESSFUL 2m44s.
@@ -935,9 +949,9 @@ Field berikut wajib dipakai di setiap entri:
   | GAS-Guru-release | `D8D128594E772A39A37FD0973A1A8842FCBCADA22D501627DE41C99A72AB9193` | 21.072.251 |
   | GAS-Siswa-release (v23039) | `19DBD612950F4241A66D78AB66E5D8381D9FD86F98A3EBB4A11F06DAF5A614E8` | 21.072.261 |
 - Folder Final setelah bersihkan lawas (hapus `GAS-Siswa-1.0.41-siswa-23038.apk` duplikat build tanpa bump):
-  - [GAS-Guru-release.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/GAS-Guru-release.apk) ∑ [GAS-Guru-1.0.39-guru-1046.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/GAS-Guru-1.0.39-guru-1046.apk)
-  - [GAS-Siswa-release.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/GAS-Siswa-release.apk) ∑ [GAS-Siswa-1.0.42-siswa-23039.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/GAS-Siswa-1.0.42-siswa-23039.apk)
-  - EduLock tetap: [EduLock-student-release.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/EduLock-student-release.apk) ∑ [EduLock-1.3.6-32.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/EduLock-1.3.6-32.apk)
+  - [GAS-Guru-release.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/GAS-Guru-release.apk) ¬∑ [GAS-Guru-1.0.39-guru-1046.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/GAS-Guru-1.0.39-guru-1046.apk)
+  - [GAS-Siswa-release.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/GAS-Siswa-release.apk) ¬∑ [GAS-Siswa-1.0.42-siswa-23039.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/GAS-Siswa-1.0.42-siswa-23039.apk)
+  - EduLock tetap: [EduLock-student-release.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/EduLock-student-release.apk) ¬∑ [EduLock-1.3.6-32.apk](file:///D:/Dashboard%20Portal/Apk%20Release/Final/EduLock-1.3.6-32.apk)
 - Status Manifest SSOT Web:
   - Lokasi: [web/public/apk/apk-manifest.json](file:///D:/Dashboard%20Portal/web/public/apk/apk-manifest.json).
   - `updatedAt = 2026-08-08T06:11:41`.
@@ -946,7 +960,7 @@ Field berikut wajib dipakai di setiap entri:
   - ? `cd D:\Dashboard Portal\web ; npm run build` ? exit code 0. Prerender static OK. `ensure-standalone-public` merge 3 APK ke `.next/standalone/public/apk/` (App Hosting Firebase langsung copy tanpa ngelink salah).
   - ? Commit `0bd9c07d`: `feat(gas-siswa): bump 1.0.42-23039 (keyboard angka NISN/NPSN, fix 1-akun-1-device logout-login HP sama tidak terkunci)`. 8 files changed, +116 -48.
   - ? Push `a55dd463..0bd9c07d main ? main` ke `github.com/mikoewp1982/Dashboard-Portal` SUCCESS.
-  - ? Firebase App Hosting backend `gerbang-aplikasi-sekolah` rollout otomatis (selesai ±3ñ5 menit).
+  - ? Firebase App Hosting backend `gerbang-aplikasi-sekolah` rollout otomatis (selesai ¬±3‚Äì5 menit).
   - ? URL Live dishare: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/gas/install`
 - Fitur lama yang wajib ikut dicek (manual QA user di APK & web):
   - [ ] **Install APK GAS-Guru-release.apk** ? buka halaman login ? pilih Guru ? Label kolom = **Password (NIP/NUPTK)**, placeholder = **Masukkan NIP atau NUPTK**. Toast validasi jika kosong = tulisan "Password (NIP/NUPTK)".
@@ -968,10 +982,10 @@ Field berikut wajib dipakai di setiap entri:
   - **Entry EduLock 1.3.6 (32)** ? `sha256 = 19422295A35EF82AE45F6D7DD70E4F06204ABD5B2F300B60CA9A2C2D2AC60F71`.
   - KEDUA APK memiliki **`signerSha256 = 64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63`** SAMA ? lintas-app SharedPrefs `createPackageContext` (5-point local compliance gate EduLock?GAS) TETAP BERFUNGSI (tidak invalid karena signer beda).
 - **File utama yang diubah (manifest + halaman render download)**:
-  1. [web/public/apk/apk-manifest.json](file:///D:/Dashboard%20Portal/web/public/apk/apk-manifest.json) ó entry GAS-Siswa-release.apk update `versionName "1.0.39-siswa" ? "1.0.41-siswa"`, `versionCode 23036 ? 23038`, `sha256 ? 39D8962CÖ`; entry EduLock tetap 1.3.6/32 (SHA baru `19422295Ö`). updatedAt UTC 13:44:20.
-  2. [web/src/lib/getApkDownloadHref.ts](file:///D:/Dashboard%20Portal/web/src/lib/getApkDownloadHref.ts) ó (SUDAH ADA dari fix commit a74757db SSOT permanent) helper `loadManifestOnce()` baca `fs.readFileSync("public/apk/apk-manifest.json")` + cache in-memory by `mtimeMs` ? halaman `/gas/install` dan `/edulock/install` TIDAK PERLU static import compile-time manifest ? MUSTAHIL kesasar versi lama lagi.
+  1. [web/public/apk/apk-manifest.json](file:///D:/Dashboard%20Portal/web/public/apk/apk-manifest.json) ‚Äî entry GAS-Siswa-release.apk update `versionName "1.0.39-siswa" ? "1.0.41-siswa"`, `versionCode 23036 ? 23038`, `sha256 ? 39D8962C‚Ä¶`; entry EduLock tetap 1.3.6/32 (SHA baru `19422295‚Ä¶`). updatedAt UTC 13:44:20.
+  2. [web/src/lib/getApkDownloadHref.ts](file:///D:/Dashboard%20Portal/web/src/lib/getApkDownloadHref.ts) ‚Äî (SUDAH ADA dari fix commit a74757db SSOT permanent) helper `loadManifestOnce()` baca `fs.readFileSync("public/apk/apk-manifest.json")` + cache in-memory by `mtimeMs` ? halaman `/gas/install` dan `/edulock/install` TIDAK PERLU static import compile-time manifest ? MUSTAHIL kesasar versi lama lagi.
 - **QA & VERIFIKASI (otomatis via PowerShell saat update)**:
-  - ? Compare SHA manifest `GAS-Siswa-release.apk` (39D8962CÖ) vs SHA file Final `GAS-Siswa-1.0.41-siswa-23038.apk` via `Get-FileHash` ? **SAMA PERSIS**.
+  - ? Compare SHA manifest `GAS-Siswa-release.apk` (39D8962C‚Ä¶) vs SHA file Final `GAS-Siswa-1.0.41-siswa-23038.apk` via `Get-FileHash` ? **SAMA PERSIS**.
   - ? Compare SHA manifest EduLock vs SHA file Final `EduLock-1.3.6-32.apk` ? **SAMA PERSIS**.
   - ? `cd D:\Dashboard Portal\web ; npm run build` ? Next.js Compiled successfully. `ensure-standalone-public.mjs` merge APK `GAS 1.0.41` + `EduLock 1.3.6` ke `.next/standalone/public/apk/` ? build bundle static page tutorial unduh nama file **PERSIS** nama versi manifest.
 - **Fitur lama yang wajib ikut dicek (manual QA user lapangan BELUM DILAKUKAN)**:
@@ -984,13 +998,13 @@ Field berikut wajib dipakai di setiap entri:
 - Pelaksana: Assistant
 - Jenis perubahan: `docs` / `no-build` (Tidak ada build APK, tidak ada perubahan kode. Hanya dokumentasi SOP pegangan lapangan + script ADB campuran.)
 - Flavor terdampak: `siswa` (hanya EduLock + GAS Siswa. Flavor lain tidak terdampak.)
-- Tujuan perubahan: Menangani kasus HP **OPPO Reno 8 (shared chassis A58 4G / A78 4G) CPH2461** Android 14 SDK 34 (Build `CPH2461_14.0.0.2900(EX01)`) serial `9158a33c`. User lapangan melaporkan **"tidak bisa aktifkan aksesbilitas"**: Setiap TAP baris "EduLock Protection" di halaman "Aksesibilitas ? Aplikasi yang didownload", selalu muncul dialog putih: **`Setelan terbatas ó Demi keamanan Anda, setelan ini tidak tersedia untuk Anda saat ini.`** ? EduLock Protection **selalu Nonaktif**, tidak bisa ON meskipun user tap 10x. Setelah dipecahkan, ditemukan juga **bug pembunuh silent besok pagi**: ColorOS 14 default toggle **`Jeda aktivitas aplikasi jika tak dipakai` (Pause app activity if unused) = ON**, yang akan **force-kill SEMUA service EduLock + revoke semua runtime permission** jika EduLock tidak dibuka selama 24 jam. Ini vendor dengan security policy PALING KETAT saat ini (2026), bahkan lebih ketat dari VIVO OriginOS 3.
+- Tujuan perubahan: Menangani kasus HP **OPPO Reno 8 (shared chassis A58 4G / A78 4G) CPH2461** Android 14 SDK 34 (Build `CPH2461_14.0.0.2900(EX01)`) serial `9158a33c`. User lapangan melaporkan **"tidak bisa aktifkan aksesbilitas"**: Setiap TAP baris "EduLock Protection" di halaman "Aksesibilitas ? Aplikasi yang didownload", selalu muncul dialog putih: **`Setelan terbatas ‚Äî Demi keamanan Anda, setelan ini tidak tersedia untuk Anda saat ini.`** ? EduLock Protection **selalu Nonaktif**, tidak bisa ON meskipun user tap 10x. Setelah dipecahkan, ditemukan juga **bug pembunuh silent besok pagi**: ColorOS 14 default toggle **`Jeda aktivitas aplikasi jika tak dipakai` (Pause app activity if unused) = ON**, yang akan **force-kill SEMUA service EduLock + revoke semua runtime permission** jika EduLock tidak dibuka selama 24 jam. Ini vendor dengan security policy PALING KETAT saat ini (2026), bahkan lebih ketat dari VIVO OriginOS 3.
 - **Root Cause 5 LAYER BLOCK OPPO ColorOS 14 Android 14 (CPH2461 chassis family)**:
-  1. (LAYER 1 ó PALING KRITIS 80% kasus) **`Setelan terbatas (Restricted Settings)`** auto-block SEMUA APK sideload (non Play Store / non Toko OPPO HeyTap) dari mengakses Restricted Settings: Accessibility, SYSTEM_ALERT_WINDOW (Overlay), Device Admin, Usage Stats, WRITE_SECURE_SETTINGS. Solusi: **Info Aplikasi EduLock ? Section Lanjutan ? `Izinkan akses setelan terbatas` ? IZINKAN** (wajib manual fisik 1x, tidak ada backdoor ADB sama sekali).
-  2. (LAYER 2 ó Auto-Mati Besok Pagi!) **`Jeda aktivitas aplikasi jika tak dipakai (Pause app activity if unused)`** default ON. 24 jam tanpa buka EduLock ? ColorOS kill + revoke semua izin ? besok 5 badge MERAH SEMUA. Solusi: **Info Aplikasi EduLock ? paling bawah ? toggle `Jeda aktivitas...` ? WAJIB MATIKAN (OFF/ABU)** (wajib manual fisik 1x; tidak ada API ADB untuk setting ini).
-  3. (LAYER 3 ó ADB shell UID 2000 TERTUTUP TOTAL) ColorOS 14 mencabut semua privilege dari shell: `pm grant` ? `SecurityException: uid 2000 tidak punya GRANT_RUNTIME_PERMISSIONS`; `settings put secure` ? `Permission Denial: butuh WRITE_SECURE_SETTINGS`; `appops set` ? `MANAGE_APP_OPS_MODES denied`; bahkan trik `service call settings` ? **error "Service settings does not exist"**. Solusi: **3 toggle di Opsi Pengembang WAJIB ON-kan MANUAL FISIK 1x per unit SEBELUM ADB**: (M-1) `USB debugging (Pengaturan keamanan)` (GERBANG UTAMA! If OFF ? semua grant FAIL 100%. Jika diminta password OPPO/verifikasi akun ? masukkan saja), (M-2) `Nonaktifkan validasi izin`, (M-3) `Instalasi melalui USB`.
-  4. (LAYER 4 ó UI Automation GAGAL 100%) Oppo NearMe Framework pakai **custom render engine** bukan Android View standard; `uiautomator dump` selalu menghasilkan file XML **8405 byte sama terus**, berulang "Izinkan notifikasi" tanpa posisi toggle yang asli. Solusi: **JANGAN PERCAYA script tap otomatis untuk OPPO**. Selalu gunakan panduan fisik 9 langkah (PILIHAN 1) sebagai rujukan utama, cross-check manual user.
-  5. (LAYER 5 ó USB Verifier default ON) `verifier_verify_adb_installs=1` di settings global ? kadang memblok install APK via ADB. Solusi: `settings put global verifier_verify_adb_installs 0` (saja yang masih work via ADB untuk unit ini).
+  1. (LAYER 1 ‚Äî PALING KRITIS 80% kasus) **`Setelan terbatas (Restricted Settings)`** auto-block SEMUA APK sideload (non Play Store / non Toko OPPO HeyTap) dari mengakses Restricted Settings: Accessibility, SYSTEM_ALERT_WINDOW (Overlay), Device Admin, Usage Stats, WRITE_SECURE_SETTINGS. Solusi: **Info Aplikasi EduLock ? Section Lanjutan ? `Izinkan akses setelan terbatas` ? IZINKAN** (wajib manual fisik 1x, tidak ada backdoor ADB sama sekali).
+  2. (LAYER 2 ‚Äî Auto-Mati Besok Pagi!) **`Jeda aktivitas aplikasi jika tak dipakai (Pause app activity if unused)`** default ON. 24 jam tanpa buka EduLock ? ColorOS kill + revoke semua izin ? besok 5 badge MERAH SEMUA. Solusi: **Info Aplikasi EduLock ? paling bawah ? toggle `Jeda aktivitas...` ? WAJIB MATIKAN (OFF/ABU)** (wajib manual fisik 1x; tidak ada API ADB untuk setting ini).
+  3. (LAYER 3 ‚Äî ADB shell UID 2000 TERTUTUP TOTAL) ColorOS 14 mencabut semua privilege dari shell: `pm grant` ? `SecurityException: uid 2000 tidak punya GRANT_RUNTIME_PERMISSIONS`; `settings put secure` ? `Permission Denial: butuh WRITE_SECURE_SETTINGS`; `appops set` ? `MANAGE_APP_OPS_MODES denied`; bahkan trik `service call settings` ? **error "Service settings does not exist"**. Solusi: **3 toggle di Opsi Pengembang WAJIB ON-kan MANUAL FISIK 1x per unit SEBELUM ADB**: (M-1) `USB debugging (Pengaturan keamanan)` (GERBANG UTAMA! If OFF ? semua grant FAIL 100%. Jika diminta password OPPO/verifikasi akun ? masukkan saja), (M-2) `Nonaktifkan validasi izin`, (M-3) `Instalasi melalui USB`.
+  4. (LAYER 4 ‚Äî UI Automation GAGAL 100%) Oppo NearMe Framework pakai **custom render engine** bukan Android View standard; `uiautomator dump` selalu menghasilkan file XML **8405 byte sama terus**, berulang "Izinkan notifikasi" tanpa posisi toggle yang asli. Solusi: **JANGAN PERCAYA script tap otomatis untuk OPPO**. Selalu gunakan panduan fisik 9 langkah (PILIHAN 1) sebagai rujukan utama, cross-check manual user.
+  5. (LAYER 5 ‚Äî USB Verifier default ON) `verifier_verify_adb_installs=1` di settings global ? kadang memblok install APK via ADB. Solusi: `settings put global verifier_verify_adb_installs 0` (saja yang masih work via ADB untuk unit ini).
 - **Eksekusi Campuran Fisik + ADB di unit OPPO 9158a33c hari ini:**
   1. Manual user aktifkan 3 toggle M-1/M-2/M-3 di Opsi Pengembang.
   2. ADB (UID 2000 sekarang sudah punya privileges) ? 6 runtime grant EduLock + 3 grant GAS ? exit 0 SEMUA.
@@ -1005,13 +1019,13 @@ Field berikut wajib dipakai di setiap entri:
   - ? Work via ADB tanpa toggle manual: `dpm set-active-admin (Device Admin)` + `dumpsys deviceidle whitelist (Battery)` + `am start APPLICATION_DETAILS_SETTINGS / ACCESSIBILITY_SETTINGS / DEVELOPMENT_SETTINGS` (buka halaman setting spesifik).
   - ? TIDAK PERNAH work via ADB (wajib manual fisik 1x): `Izinkan akses setelan terbatas (L1)`, `Jeda aktivitas jika tak dipakai OFF (L2)`, 3 toggle Opsi Pengembang M1/M2/M3, `USB debugging Security ON (M1)`.
 - File utama yang dibuat / diubah (dokumentasi + script):
-  1. [TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md#L505-L691](file:///D:/2026-2027/Launching%20GAS/TROUBLESHOOTING/TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md#L505-L691) ó **BAGIAN 3 BARU OPPO RENO 8 CPH2461** DIGABUNGKAN DALAM 1 FILE SAMA dengan VIVO + NARZO (satu pegangan 3 vendor):
+  1. [TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md#L505-L691](file:///D:/2026-2027/Launching%20GAS/TROUBLESHOOTING/TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md#L505-L691) ‚Äî **BAGIAN 3 BARU OPPO RENO 8 CPH2461** DIGABUNGKAN DALAM 1 FILE SAMA dengan VIVO + NARZO (satu pegangan 3 vendor):
      - **PILIHAN 1 (FISIK 9 LANGKAH URUT 1?9)**: Tanpa laptop, 99% success untuk semua OPPO ColorOS 13+/Android 13+. Step 1 = Long Press ikon EduLock ? Info App ? Step 2 MATIKAN "Jeda aktivitas" (L2); Step 3 IZINKAN "Setelan terbatas" (L1); Step 5-7 Accessibility toggle ON; Step 8 Device Admin + Kunci Recent ? ??; Step 9 Battery "Izinkan latar belakang penuh".
      - **PILIHAN 2 (ADB USB SCRIPT + 3 TOGGLE MANUAL)**: 3 toggle M1/M2/M3 ON manual dulu ? block PowerShell copy-paste 7 perintah ADB ? auto-open Info EduLock ? user tinggal 2 aksi fisik terakhir (L1+L2) ? final verify 11 parameter compliance state.
      - **TABEL PERBANDINGAN 3 VENDOR (11 baris)**: VIVO vs NARZO vs OPPO RENO 8 ? 30 detik petugas lapangan langsung tahu blokir mana yang mana dan cara tercepat.
      - **CATATAN LAPANGAN KHUSUS COLOROS 14**: Urutan tercepat & PALING RELIABEL = (1) Manual 3 toggle Dev Options ? (2) Manual Info App L1+L2 ? (3) Baru script ADB 7 perintah.
-  2. [Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/GAS/BUILD_LOG.md) ó Entry ini (OPPONENT OPPO paling atas).
-  3. [Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md) ó Update header ◊3 UNIT HARI INI + Section OPPO "Setelan Terbatas".
+  2. [Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/GAS/BUILD_LOG.md) ‚Äî Entry ini (OPPONENT OPPO paling atas).
+  3. [Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md) ‚Äî Update header √ó3 UNIT HARI INI + Section OPPO "Setelan Terbatas".
 - Fitur lama yang wajib dicek:
   - ? Nama service Accessibility = **`com.sekolah.edulock/.AntiUninstallService`** (SAMA untuk SEMUA vendor! Jangan salah ketik `EduLockAccessibilityService` ? nama itu tidak ada di manifest).
   - ? Device Admin Receiver = `com.sekolah.edulock/.DeviceAdminReceiver`.
@@ -1034,9 +1048,9 @@ Field berikut wajib dipakai di setiap entri:
 - Flavor terdampak: `siswa` (hanya EduLock + GAS Siswa). Flavor guru/kepsek tidak terdampak.
 - Tujuan perubahan: Menangani kasus HP **Realme Narzo RMX3235 (shared chassis Narzo 50A / Narzo 50A Prime / Realme C35)** Android 11 SDK 30 (Build `RMX3235_11.A.63`) serial `0661C27V23103738`. User lapangan melaporkan **"instal fisik tidak bisa"** = Realme Package Installer + Google Play Protect SELALU memblokir instalasi APK EduLock 1.3.6-32 dan GAS 1.0.41-23038 meskipun "Unknown sources" sudah ON. Bahkan jika berhasil install manual ? Accessibility `EduLock Protection` toggle ON ? selalu OFF sendiri oleh ColorOS AI Smart Battery Saver.
 - **Root Cause**: Narzo Android 11 ColorOS / Realme UI memiliki **3 LAYER BLOKIR** yang lebih agresif dari VIVO / MIUI:
-  1. (LAYER 1) **Play Protect Scan + Realme App Security Scan** ó block ekstrak APK sebelum file di-copy (90% user terjebak di sini, install manual selalu gagal padahal izin Unknown source sudah ON). Solusi: **Sideload via `adb install -r -d <path.apk>`** ? 100% bypass, tidak ada satupun dialog security block.
-  2. (LAYER 2) **AI Smart Battery Saver** ó matikan service EduLock di background. Solusi: `dumpsys deviceidle whitelist +com.sekolah.edulock` + same for GAS ? `Added:` (whitelisted) + "Don't optimize" di Battery settings.
-  3. (LAYER 3) **Recent Apps Quick Cleanup** ó swipe kartu EduLock keluar = EduLock dibunuh permanen. Solusi: **Kunci kartu Recent Apps** (swipe ? ? ??).
+  1. (LAYER 1) **Play Protect Scan + Realme App Security Scan** ‚Äî block ekstrak APK sebelum file di-copy (90% user terjebak di sini, install manual selalu gagal padahal izin Unknown source sudah ON). Solusi: **Sideload via `adb install -r -d <path.apk>`** ? 100% bypass, tidak ada satupun dialog security block.
+  2. (LAYER 2) **AI Smart Battery Saver** ‚Äî matikan service EduLock di background. Solusi: `dumpsys deviceidle whitelist +com.sekolah.edulock` + same for GAS ? `Added:` (whitelisted) + "Don't optimize" di Battery settings.
+  3. (LAYER 3) **Recent Apps Quick Cleanup** ‚Äî swipe kartu EduLock keluar = EduLock dibunuh permanen. Solusi: **Kunci kartu Recent Apps** (swipe ? ? ??).
 - **Eksekusi ADB di unit Narzo hari ini (9 perintah, exit 0 SEMUA)**:
   1. `adb install -r -d EduLock-1.3.6-32.apk` ? `Success`.
   2. `adb install -r -d GAS-Siswa-1.0.41-siswa-23038.apk` ? `Success`.
@@ -1052,15 +1066,15 @@ Field berikut wajib dipakai di setiap entri:
   - Overlay `SYSTEM_ALERT_WINDOW` = `granted=true` ?.
   - ResumedActivity di layar HP = `com.sekolah.edulock/.RegistrationActivity` ? Terbuka, siap dipakai registrasi NISN siswa ?.
 - File utama yang dibuat / diubah (dokumentasi + script):
-  1. [TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md#L221-L503](file:///D:/2026-2027/Launching%20GAS/TROUBLESHOOTING/TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md#L221-L503) ó **BAGIAN 2 BARU NARZO RMX3235** di dalam FILE YANG SAMA dengan VIVO (satu pegangan 2 vendor):
-     - **PILIHAN 1 (FISIK 12 LANGKAH)**: Urutan 1?12 khusus Narzo. Langkah 1 unik untuk Narzo (MATIKAN Play Protect SCAN + Realme Security Scan SEBELUM install APK ó ini penyebab 90% "instal fisik tidak bisa"). Langkah 2 install manual. Langkah 3ñ12 sama persis mekanisme setting ColorOS.
-     - **PILIHAN 2 (ADB USB SIDELOAD)**: Block PowerShell **copy-paste langsung** (simpan sebagai pegangan petugas) ó seluruh script 9 perintah yang sukses di unit hari ini.
+  1. [TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md#L221-L503](file:///D:/2026-2027/Launching%20GAS/TROUBLESHOOTING/TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md#L221-L503) ‚Äî **BAGIAN 2 BARU NARZO RMX3235** di dalam FILE YANG SAMA dengan VIVO (satu pegangan 2 vendor):
+     - **PILIHAN 1 (FISIK 12 LANGKAH)**: Urutan 1?12 khusus Narzo. Langkah 1 unik untuk Narzo (MATIKAN Play Protect SCAN + Realme Security Scan SEBELUM install APK ‚Äî ini penyebab 90% "instal fisik tidak bisa"). Langkah 2 install manual. Langkah 3‚Äì12 sama persis mekanisme setting ColorOS.
+     - **PILIHAN 2 (ADB USB SIDELOAD)**: Block PowerShell **copy-paste langsung** (simpan sebagai pegangan petugas) ‚Äî seluruh script 9 perintah yang sukses di unit hari ini.
      - **TABEL PERBANDINGAN VIVO vs NARZO** 9 baris agar petugas cepat bedakan menu setting untuk vendor berbeda di lapangan.
-  2. [scripts/adb-final-verify-narzo.ps1](file:///D:/Dashboard%20Portal/scripts/adb-final-verify-narzo.ps1) ó Script dump final audit untuk Narzo: cek model, AppOps, Accessibility, Device Admin, Whitelist, Overlay, Usage Stats, Launch via Monkey, ResumedActivity, Running Accessibility Service.
-  3. [scripts/adb-fix-vivo-edulock.ps1](file:///D:/Dashboard%20Portal/scripts/adb-fix-vivo-edulock.ps1) + [adb-fix-vivo-edulock-part2.ps1](file:///D:/Dashboard%20Portal/scripts/adb-fix-vivo-edulock-part2.ps1) ó Reusable untuk semua vendor (tambah Narzo berhasil pakai).
-  4. [Audit-ADB/narzo-RMX3235-audit-20260807-092623.log](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/Audit-ADB/narzo-RMX3235-audit-20260807-092623.log) ó Dump log hasil eksekusi hari ini sebagai bukti audit.
-  5. [Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/GAS/BUILD_LOG.md) ó Entry ini (catatan Narzo).
-  6. [Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md) ó Section Narzo baru di paling atas.
+  2. [scripts/adb-final-verify-narzo.ps1](file:///D:/Dashboard%20Portal/scripts/adb-final-verify-narzo.ps1) ‚Äî Script dump final audit untuk Narzo: cek model, AppOps, Accessibility, Device Admin, Whitelist, Overlay, Usage Stats, Launch via Monkey, ResumedActivity, Running Accessibility Service.
+  3. [scripts/adb-fix-vivo-edulock.ps1](file:///D:/Dashboard%20Portal/scripts/adb-fix-vivo-edulock.ps1) + [adb-fix-vivo-edulock-part2.ps1](file:///D:/Dashboard%20Portal/scripts/adb-fix-vivo-edulock-part2.ps1) ‚Äî Reusable untuk semua vendor (tambah Narzo berhasil pakai).
+  4. [Audit-ADB/narzo-RMX3235-audit-20260807-092623.log](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/Audit-ADB/narzo-RMX3235-audit-20260807-092623.log) ‚Äî Dump log hasil eksekusi hari ini sebagai bukti audit.
+  5. [Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/GAS/BUILD_LOG.md) ‚Äî Entry ini (catatan Narzo).
+  6. [Apk Release/Pegangan Build APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/CHECKLIST_PERUBAHAN_APK_TERKINI.md) ‚Äî Section Narzo baru di paling atas.
 - Fitur lama yang wajib dicek:
   - ? Package Narzo: `adb devices` = serial `0661C27V23103738 device`. Jika ADB pertama kali run = tampil **`unauthorized`** ? user di HP BELUM centang "Always allow" dialog RSA. Kembali ke Langkah B di atas.
   - ? Nama service Accessibility = `AntiUninstallService` (SAMA untuk SEMUA vendor: Narzo, VIVO, Xiaomi, Samsung, Infinix). Jangan sampai salah ketik `EduLockAccessibilityService` (nama itu tidak ada ? `adb shell settings put` sukses tapi aksesibilitas tidak terhubung, dump setting read-back akan kosong).
@@ -1068,7 +1082,7 @@ Field berikut wajib dipakai di setiap entri:
 - Verifikasi hasil akhir di HP Narzo RMX3235:
   1. Tekan `[MULAI APLIKASI]` di EduLock Setup ? SUKSES loading (tanpa dialog permission tambahan, karena semuanya sudah di-grant dari ADB).
   2. Buka APK GAS Siswa ? 5 Badge Compliance Gate **HIJAU SEMUA 5/5** ??.
-  3. Swipe Clean All Recent Apps ? EduLock tetap **RUNNING** (buktinya: Accessibility ServiceRecord tidak berhenti di dumpsys activity services) ? ó karena terkunci ?? + sudah di whitelist deviceidle.
+  3. Swipe Clean All Recent Apps ? EduLock tetap **RUNNING** (buktinya: Accessibility ServiceRecord tidak berhenti di dumpsys activity services) ? ‚Äî karena terkunci ?? + sudah di whitelist deviceidle.
 
 ## 2026-08-07 09:15 - [TROUBLESHOOTING LAPANGAN VIVO] Root Cause AI Optimizer Diblokir + SOP ADB USB Debugging 6 Perintah Workaround
 
@@ -1076,21 +1090,21 @@ Field berikut wajib dipakai di setiap entri:
 - Jenis perubahan: `docs` / `no-build` (Tidak ada build APK. Tidak ada perubahan kode. Hanya dokumentasi SOP perbaikan manual di HP + script PowerShell otomatis ADB)
 - Flavor terdampak: `siswa` (hanya APK EduLock dan GAS Siswa. Flavor lain tidak terdampak.)
 - Tujuan perubahan: Menangani kasus lapangan HP VIVO (OriginOS / FuntouchOS) serial `10DCCX00TA000BA` (siswa MUHAMMAD ABBI ABRIZAL, NISN `0149360146`, NPSN `20555784`, VII-B) yang mengalami 2 masalah berurutan:
-  1. **Problem lookup NISN ? Nama Siswa**: Sebelumnya EduLock RegistrationActivity gagal autofill nama siswa dengan ikon `?` di field Nama. **Root cause**: **Koneksi WiFi HP tidak stabil (offline intermittent) + AI System Optimizer VIVO mematikan EduLock service saat query RTDB** ? `onCancelled` dipanggil di SDK Firebase `addListenerForSingleValueEvent`. **Solusi**: **On-off WiFi + Restart HP** (tanpa perubahan kode). Lookup NISN `0149360146` diverifikasi langsung di Firebase RTDB via REST query (unauth) + Node Admin SDK ? data ADA 100% di tenant `smpn3_pacet`, NISN sebagai STRING `"0149360146"` (persis input), username = "MUHAMMAD ABBI ABRIZAL", class = "VII-B", resolve tenant order BUKAN ke duplicate `smpn_3_pacet`. **Catatan tambahan**: ditemukan **DUPLICATE TENANT (bahaya laten)** ó `smpn3_pacet` (278 siswa, primary, adminAccessActive=true) dan `smpn_3_pacet` (2 siswa test, adminAccessActive=false, TIDAK ADA data NISN 0149360146). Saat ini SDK resolve = children.first() = PRIMARY tenant (selamat), tapi urutan SDK bisa berubah karena lexicographic inconsistency ? ini ancaman untuk siswa lain jika duplicate tidak segera dihapus / dicleanup.
-  2. **Problem Accessibility + Overlay ("Fitur tidak tersedia")**: Setelah lookup nama berhasil, setup EduLock menemui tembok VIVO policy: (a) **"Tampilkan di atas apl lain" ? error: "Fitur tidak tersedia ó Fitur ini telah dinonaktifkan karena memperlambat ponsel Anda"** (b) **Toggle "Aksesibilitas ? EduLock Protection" ON ? ditolak / kembali OFF otomatis** karena AI Optimizer. **Root cause**: VIVO **OriginOS / FuntouchOS memiliki 2 layer pembunuh service** yang lebih agresif dari MIUI: (LAYER 1) `Baterai ? AI System Optimizer` memblok SYSTEM_ALERT_WINDOW dan Accessibility untuk semua app non-VIVO; (LAYER 2) `Background Optimization + Recent Apps Kill` mematikan proses EduLock tanpa izin. **Solusi WORK 100% (hari ini diverifikasi)**: Ada 2 jalur, PILIHAN 1 (fisik 10 langkah tanpa laptop, tingkat keberhasilan 85%) dan PILIHAN 2 (via ADB USB Debugging, 6 perintah PowerShell ó 100% work di VIVO ini).
+  1. **Problem lookup NISN ? Nama Siswa**: Sebelumnya EduLock RegistrationActivity gagal autofill nama siswa dengan ikon `?` di field Nama. **Root cause**: **Koneksi WiFi HP tidak stabil (offline intermittent) + AI System Optimizer VIVO mematikan EduLock service saat query RTDB** ? `onCancelled` dipanggil di SDK Firebase `addListenerForSingleValueEvent`. **Solusi**: **On-off WiFi + Restart HP** (tanpa perubahan kode). Lookup NISN `0149360146` diverifikasi langsung di Firebase RTDB via REST query (unauth) + Node Admin SDK ? data ADA 100% di tenant `smpn3_pacet`, NISN sebagai STRING `"0149360146"` (persis input), username = "MUHAMMAD ABBI ABRIZAL", class = "VII-B", resolve tenant order BUKAN ke duplicate `smpn_3_pacet`. **Catatan tambahan**: ditemukan **DUPLICATE TENANT (bahaya laten)** ‚Äî `smpn3_pacet` (278 siswa, primary, adminAccessActive=true) dan `smpn_3_pacet` (2 siswa test, adminAccessActive=false, TIDAK ADA data NISN 0149360146). Saat ini SDK resolve = children.first() = PRIMARY tenant (selamat), tapi urutan SDK bisa berubah karena lexicographic inconsistency ? ini ancaman untuk siswa lain jika duplicate tidak segera dihapus / dicleanup.
+  2. **Problem Accessibility + Overlay ("Fitur tidak tersedia")**: Setelah lookup nama berhasil, setup EduLock menemui tembok VIVO policy: (a) **"Tampilkan di atas apl lain" ? error: "Fitur tidak tersedia ‚Äî Fitur ini telah dinonaktifkan karena memperlambat ponsel Anda"** (b) **Toggle "Aksesibilitas ? EduLock Protection" ON ? ditolak / kembali OFF otomatis** karena AI Optimizer. **Root cause**: VIVO **OriginOS / FuntouchOS memiliki 2 layer pembunuh service** yang lebih agresif dari MIUI: (LAYER 1) `Baterai ? AI System Optimizer` memblok SYSTEM_ALERT_WINDOW dan Accessibility untuk semua app non-VIVO; (LAYER 2) `Background Optimization + Recent Apps Kill` mematikan proses EduLock tanpa izin. **Solusi WORK 100% (hari ini diverifikasi)**: Ada 2 jalur, PILIHAN 1 (fisik 10 langkah tanpa laptop, tingkat keberhasilan 85%) dan PILIHAN 2 (via ADB USB Debugging, 6 perintah PowerShell ‚Äî 100% work di VIVO ini).
 - File utama yang diubah / dibuat (semua dokumentasi + script):
-  1. [Launching GAS/TROUBLESHOOTING/TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md](file:///D:/2026-2027/Launching%20GAS/TROUBLESHOOTING/TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md) ó **SOP PEGANGAN UTAMA LAPANGAN VIVO**:
+  1. [Launching GAS/TROUBLESHOOTING/TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md](file:///D:/2026-2027/Launching%20GAS/TROUBLESHOOTING/TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md) ‚Äî **SOP PEGANGAN UTAMA LAPANGAN VIVO**:
      - **PILIHAN 1 (FISIK 10 LANGKAH TANPA USB)**: Urutan 1?10 wajib ikut, JANGAN SKIP: (1) Nonaktifkan Optimasi Baterai AI + Allow high power EduLock & GAS, (2) Auto-start + 4 izin khusus Background (Run in background, Auto-start, Associate start, Background popup), (3) Kunci aplikasi EduLock + GAS di Recent Apps (swipe down kartu ? lock icon ??), (4) Izin Privasi + Special app access 5 item (Overlay, Modify System Settings, Usage Access, Notification Access, Ignore Battery Optimization), (5) Aktifkan Accessibility `EduLock Protection` = AntiUninstallService ? CONFIRM dialog panjang, (6) Set Device Administrator, (7) Set Accessibility Shortcut (Vol Up + Vol Down tahan 3 detik), (8) Reboot HP wajib, (9) Tekan tombol hijau [MULAI APLIKASI] di EduLock, (10) Cek 5 badge hijau di GAS Siswa.
      - **PILIHAN 2 (ADB USB DEBUGGING 6 PERINTAH)**: Step-by-step enable Developer Options ? enable USB Debugging ? Allow dialog RSA (centang Always) ? jalankan 6 perintah: (a) `pm grant SYSTEM_ALERT_WINDOW` (bypass "Fitur tidak tersedia"), (b) `settings put secure enabled_accessibility_services = com.sekolah.edulock/com.sekolah.edulock.AntiUninstallService` (NAMA SERVICE WAJIB BENAR = AntiUninstallService, dulu pernah salah pakai EduLockAccessibilityService), (c) `accessibility_enabled = 1`, (d) `dpm set-active-admin --user 0 .DeviceAdminReceiver`, (e) `dumpsys deviceidle whitelist +` 2 package, (f) `appops set GET_USAGE_STATS allow` 2 package ? reboot HP.
      - Tabel perbandingan vendor Xiaomi vs VIVO vs Samsung untuk pola yang sama.
      - Link kode referensi class name manifest (AntiUninstallService + DeviceAdminReceiver).
-  2. [scripts/adb-fix-vivo-edulock.ps1](file:///D:/Dashboard%20Portal/scripts/adb-fix-vivo-edulock.ps1) ó Script Part 1: Grant overlay, PM permissions, whitelist baterai.
-  3. [scripts/adb-fix-vivo-edulock-part2.ps1](file:///D:/Dashboard%20Portal/scripts/adb-fix-vivo-edulock-part2.ps1) ó Script Part 2: Accessibility force enable (nama service benar), dpm set active admin, usage stats, notification listener.
-  4. [Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/GAS/BUILD_LOG.md) ó Entry ini (catatan status operasional + investigasi lookup NISN dan ADB execution).
-  5. [Apk Release/Pegangan Build APK/Audit-ADB/](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/Audit-ADB) ó Folder dump audit log hasil ADB (vivo-audit-PART-*.log).
+  2. [scripts/adb-fix-vivo-edulock.ps1](file:///D:/Dashboard%20Portal/scripts/adb-fix-vivo-edulock.ps1) ‚Äî Script Part 1: Grant overlay, PM permissions, whitelist baterai.
+  3. [scripts/adb-fix-vivo-edulock-part2.ps1](file:///D:/Dashboard%20Portal/scripts/adb-fix-vivo-edulock-part2.ps1) ‚Äî Script Part 2: Accessibility force enable (nama service benar), dpm set active admin, usage stats, notification listener.
+  4. [Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/GAS/BUILD_LOG.md) ‚Äî Entry ini (catatan status operasional + investigasi lookup NISN dan ADB execution).
+  5. [Apk Release/Pegangan Build APK/Audit-ADB/](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/Audit-ADB) ‚Äî Folder dump audit log hasil ADB (vivo-audit-PART-*.log).
 - Fitur lama yang wajib ikut dicek:
-  - ? Nama Service Accessibility EduLock **YANG BENAR**: `com.sekolah.edulock.AntiUninstallService` ó manifest label `EduLock Protection`. **JANGAN SAMPAI SALAH NAMA CLASS** jika menjalankan `settings put secure enabled_accessibility_services` di HP vendor lain (Xiaomi, Samsung, Infinix).
-  - ? Perintah `dpm set-active-admin` ó receiver = `com.sekolah.edulock/.DeviceAdminReceiver`.
+  - ? Nama Service Accessibility EduLock **YANG BENAR**: `com.sekolah.edulock.AntiUninstallService` ‚Äî manifest label `EduLock Protection`. **JANGAN SAMPAI SALAH NAMA CLASS** jika menjalankan `settings put secure enabled_accessibility_services` di HP vendor lain (Xiaomi, Samsung, Infinix).
+  - ? Perintah `dpm set-active-admin` ‚Äî receiver = `com.sekolah.edulock/.DeviceAdminReceiver`.
   - ? Package GAS siswa = `com.satupintu.mobile.siswa` (BUKAN `com.sekolah.*`, banyak yang salah ketik saat whitelist).
   - ? Untuk lookup NISN di EduLock (RegistrationActivity ? TextWatcher 400ms debounce ? schedule lookup ? `StudentAuthService.findStudentByNisn`): jika HP VIVO / Xiaomi menampilkan ikon `?` tanpa pesan ? **CEK DULU KONEKSI INTERNET (on-off WiFi 1x)**. 90% kasus bukan salah data RTDB, melainkan koneksi + AI Optimizer kill network call.
 - Verifikasi hasil akhir (setelah 6 perintah ADB dijalankan pada VIVO `10DCCX00TA000BA`):
@@ -1225,7 +1239,7 @@ Field berikut wajib dipakai di setiap entri:
 
 - Pelaksana: Assistant
 - Jenis perubahan: `refactor / fix permanent / docs ops tooling` (tanpa assemble APK baru, hanya kode web + script deploy)
-- Flavor terdampak: **SEMUA URL tutorial download APK** (`/gas/install` GAS siswa, `/edulock/install` EduLock siswa, alias pendek `/g` & `/e`) ó sekaligus untuk build GAS & EduLock SELANJUTNYA.
+- Flavor terdampak: **SEMUA URL tutorial download APK** (`/gas/install` GAS siswa, `/edulock/install` EduLock siswa, alias pendek `/g` & `/e`) ‚Äî sekaligus untuk build GAS & EduLock SELANJUTNYA.
 - **LATAR BELAKANG (2x kejadian kemarin sore + tadi pagi)**: Sebelum fix ini, project web punya **DUA SALINAN `apk-manifest.json` TERPISAH yang KEDUANYA HARUS SELALU IDENTIK**:
   1. `web/public/apk/apk-manifest.json` ? manifest server-side (sumber kebenaran SHA/size yang selalu benar setelah setiap ship APK, kita selalu update ini).
   2. `web/src/data/apk-manifest.json` ? **SUMBER DATA STATIC IMPORT COMPILE-TIME** di `lib/getApkDownloadHref.ts` (line 1 `import apkManifest from "@/data/apk-manifest.json";`). File ini **SERING TERLEWAT di-sync** karena tidak ada alat otomatis.
@@ -1248,19 +1262,19 @@ Field berikut wajib dipakai di setiap entri:
     4. **Copy 2/3** ? `Apk Release/Final/<TargetFileName>` (default install manual lapangan).
     5. **Copy 3/3** ? `Apk Release/Final/<ArchivePrefix>-<VersionName>-<VersionCode>.apk` (arsip history versi). Mapping archive prefix otomatis by preset: EduLock?"EduLock", GasSiswa?"GAS-Siswa".
     6. **Update langsung `public/apk/apk-manifest.json`** (SATU-SATUNYA manifest, karena src/data SUDAH DIHAPUS): set `updatedAt` (UTC sekarang) + overwrite entry TargetFileName dengan struct lengkap (`lastModified, packageName, sizeMB, sha256, versionName, versionCode, sizeBytes`), tambah `signerSha256` untuk GasSiswa preset otomatis.
-    7. **Verifikasi akhir SHA256 KONSISTEN**: banding hash 3 copy file + entry di manifest ó WAJIB SAMA SEMUA. Jika beda ? script `exit 1` (gagal, tidak lanjut), jadi mustahil tercipta "versi kesasar".
+    7. **Verifikasi akhir SHA256 KONSISTEN**: banding hash 3 copy file + entry di manifest ‚Äî WAJIB SAMA SEMUA. Jika beda ? script `exit 1` (gagal, tidak lanjut), jadi mustahil tercipta "versi kesasar".
     8. Print ringkasan warna-warni di console: Preset/Package/Versi/SHA/Size.
     9. List 4 artefak tersimpan: [1] web public, [2] Final default, [3] Final arsip, [4] manifest.
-    10. **Print 4 LANGKAH MANUAL BERIKUTNYA (JANGAN DILEWATI)**: [1] cd web ; npm run build ∑ [2] QA cek build ∑ [3] update 3 catatan pegangan ∑ [4] git commit push.
+    10. **Print 4 LANGKAH MANUAL BERIKUTNYA (JANGAN DILEWATI)**: [1] cd web ; npm run build ¬∑ [2] QA cek build ¬∑ [3] update 3 catatan pegangan ¬∑ [4] git commit push.
   - **Cara pakai Preset (tinggal tempel, isi parameter sesuai versi baru)**:
-    * Untuk **EduLock (flavor student, app name EduLock)** ó setelah gradle `assembleStudentRelease` sukses:
+    * Untuk **EduLock (flavor student, app name EduLock)** ‚Äî setelah gradle `assembleStudentRelease` sukses:
       ```powershell
       cd D:\Dashboard Portal\web\scripts
       .\Ship-Apk-Baru.ps1 -Preset EduLock `
          -SourceApk  "D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk" `
          -VersionName "1.3.6" -VersionCode 32
       ```
-    * Untuk **GAS Siswa (flavor siswa, app name GAS)** ó setelah gradle `assembleSiswaRelease` sukses:
+    * Untuk **GAS Siswa (flavor siswa, app name GAS)** ‚Äî setelah gradle `assembleSiswaRelease` sukses:
       ```powershell
       cd D:\Dashboard Portal\web\scripts
       .\Ship-Apk-Baru.ps1 -Preset GasSiswa `
@@ -1269,13 +1283,13 @@ Field berikut wajib dipakai di setiap entri:
       ```
     * Preset otomatis set `TargetFileName` + `PackageName` + `signerSha256` GAS, jadi tidak perlu isi manual. Jika butuh custom (flavor lain), pakai parameter set `-TargetFileName` + `-PackageName` (ParameterSet Manual).
 - File utama yang diubah:
-  1. [web/src/lib/getApkDownloadHref.ts](file:///d:/Dashboard%20Portal/web/src/lib/getApkDownloadHref.ts#L1-L104) ó refactor static import ? fs read manifest tunggal + cache mtime.
+  1. [web/src/lib/getApkDownloadHref.ts](file:///d:/Dashboard%20Portal/web/src/lib/getApkDownloadHref.ts#L1-L104) ‚Äî refactor static import ? fs read manifest tunggal + cache mtime.
   2. ~~`web/src/data/apk-manifest.json`~~ ? **SUDAH DIHAPUS PERMANEN** (tidak akan jadi sumber kesasar lagi).
-  3. **[web/scripts/Ship-Apk-Baru.ps1](file:///d:/Dashboard%20Portal/web/scripts/Ship-Apk-Baru.ps1)** ? file PAKEM BARU (±220 baris) PowerShell deploy APK 10 step otomatis.
+  3. **[web/scripts/Ship-Apk-Baru.ps1](file:///d:/Dashboard%20Portal/web/scripts/Ship-Apk-Baru.ps1)** ? file PAKEM BARU (¬±220 baris) PowerShell deploy APK 10 step otomatis.
 - Fitur lama yang wajib ikut dicek:
   - ? URL `/apk/EduLock-studentRelease.apk?v=F51130526C1A` (token sha prefix 12) tetap berfungsi dan meng-embed versi baru.
   - ? URL `/apk/GAS-Siswa-release.apk?v=B64C0DE25B0B` (token sha prefix 12) tetap berfungsi.
-  - ? `signerSha256` GAS tetap `64738955Ö1eb31f63` (hardcoded sesuai keystore release kita bersama) ó script preset GasSiswa menulis field ini otomatis.
+  - ? `signerSha256` GAS tetap `64738955‚Ä¶1eb31f63` (hardcoded sesuai keystore release kita bersama) ‚Äî script preset GasSiswa menulis field ini otomatis.
 - Build yang dijalankan:
   1. Test run Script Preset EduLock 1.3.6 (32) ? exit code 0, SHA256 3 file + manifest konsisten `F51130526C1AAD9F04F5FB9017507EC24133591827D400762AA139572AC90C4F`.
   2. Test run Script Preset GasSiswa 1.0.39-siswa (23036) ? exit code 0, SHA256 3 file + manifest konsisten `B64C0DE25B0BDBA6548E301C4B4ECDE5FF925424EB81DA88E566A50DF009D68A`.
@@ -1289,11 +1303,11 @@ Field berikut wajib dipakai di setiap entri:
 - **PROGRES TERKINI 2026-08-06 10:30 (sudah DONE / Tanda [x])**:
   - [x] **Next.js Production Build SSOT manifest**: `cd web ; npm run build` ? **Compiled successfully in 19.5s**, 58 static pages OK. `ensure-standalone-public` merge 2 APK ke `.next/standalone/public/apk/` ?.
   - [x] **2 Commit split sudah di-push origin main (Firebase App Hosting auto deploy live dalam ~3-5 menit)**:
-    1. **Commit #1 source code (a74757db)** ∑ `fix(web+apk-deploy): SSOT manifest permanent + Ship-Apk-Baru.ps1 File PAKEM (no more kesasar version name download)` ó 7 files changed: `getApkDownloadHref.ts` rewrite SSOT fs read + cache mtime; `Ship-Apk-Baru.ps1` add File PAKEM; delete `src/data/apk-manifest.json` permanen; update `public/apk/apk-manifest.json` EduLock 1.3.6 + GAS 1.0.39; update Final default alias APK + arsip versioned GAS 1.0.39-siswa-23036.apk.
-    2. **Commit #2 docs catatan pegangan (90e283eb)** ∑ `docs(pegangan-build): BUILD_LOG GAS & EduLock + CHECKLIST update permanent SSOT manifest + cara pakai File PAKEM Ship-Apk-Baru.ps1 presets` ó 3 files changed: BUILD_LOG GAS, BUILD_LOG EduLock, CHECKLIST_PERUBAHAN_APK_TERKINI.
+    1. **Commit #1 source code (a74757db)** ¬∑ `fix(web+apk-deploy): SSOT manifest permanent + Ship-Apk-Baru.ps1 File PAKEM (no more kesasar version name download)` ‚Äî 7 files changed: `getApkDownloadHref.ts` rewrite SSOT fs read + cache mtime; `Ship-Apk-Baru.ps1` add File PAKEM; delete `src/data/apk-manifest.json` permanen; update `public/apk/apk-manifest.json` EduLock 1.3.6 + GAS 1.0.39; update Final default alias APK + arsip versioned GAS 1.0.39-siswa-23036.apk.
+    2. **Commit #2 docs catatan pegangan (90e283eb)** ¬∑ `docs(pegangan-build): BUILD_LOG GAS & EduLock + CHECKLIST update permanent SSOT manifest + cara pakai File PAKEM Ship-Apk-Baru.ps1 presets` ‚Äî 3 files changed: BUILD_LOG GAS, BUILD_LOG EduLock, CHECKLIST_PERUBAHAN_APK_TERKINI.
   - [x] **Git Push Origin Main OK**: push `54e110ca..90e283eb main -> main` ke `https://github.com/mikoewp1982/Dashboard-Portal.git` (write 19.21 MiB @4.76 MiB/s) ?.
   - [x] **Verifikasi Manifest SSOT PowerShell parse JSON**: EduLock versionName 1.3.6 versionCode 32 ?; GAS Siswa versionName 1.0.39-siswa versionCode 23036 ? (nama file download terbaru 100% benar).
-- Catatan (SOP MASA DEPAN ó WAJIB SELALU PAKAI FILE PAKEM INI, JANGAN COPY MANUAL LAGI!):
+- Catatan (SOP MASA DEPAN ‚Äî WAJIB SELALU PAKAI FILE PAKEM INI, JANGAN COPY MANUAL LAGI!):
   > Setiap kali **SELESAI `assembleXXXRelease` APK baru** (GAS atau EduLock), LANGKAH PERTAMA setelah SHA output gradle adalah:
   > 1. **JALANKAN script `Ship-Apk-Baru.ps1`** dengan Preset yang sesuai + SourceApk path assemble gradle + VersionName/VersionCode rilis.
   > 2. Script otomatis: copy 3 lokasi ? hit SHA ? edit manifest TUNGGAL ? verify semua cocok. (Tidak mungkin lagi ada src/data duplicate yang bikin kesasar.)
@@ -1309,7 +1323,7 @@ Field berikut wajib dipakai di setiap entri:
 - **LATAR BELAKANG (AKAR MASALAH DOWNLOAD GAS MASIH 1.0.38)**:
   - Ada **DUA LOKASI `apk-manifest.json`** dalam project web, MAKA harus SELALU di-sync BERSAMA:
     1. **`web/public/apk/apk-manifest.json`** ? manifest server-side, dipakai untuk validasi hash / serve metadata API. SUDAH benar kita update GAS ke 1.0.39-siswa (23036) & EduLock ke 1.3.6 (32) di step build APK sebelumnya.
-    2. **`web/src/data/apk-manifest.json`** ? **SUMBER DATA RENDER static page HALAMAN TUTORIAL DOWNLOAD APK** (`/gas/install/page.tsx` baca dari sini via import `getApkMeta(apkMetaStatic, "GAS-Siswa-release.apk")`). FILE INI **TERLEWAT UPDATE** ó Masih menyimpan GAS `1.0.38-siswa (23035)` & EduLock `1.3.5 (31)` ? jadinya tombol "Download APK Terbaru" di halaman `/gas/install` tetap menulis nama file unduhan `GAS-Siswa-1.0.38-siswa-23035.apk` (versi LAMA).
+    2. **`web/src/data/apk-manifest.json`** ? **SUMBER DATA RENDER static page HALAMAN TUTORIAL DOWNLOAD APK** (`/gas/install/page.tsx` baca dari sini via import `getApkMeta(apkMetaStatic, "GAS-Siswa-release.apk")`). FILE INI **TERLEWAT UPDATE** ‚Äî Masih menyimpan GAS `1.0.38-siswa (23035)` & EduLock `1.3.5 (31)` ? jadinya tombol "Download APK Terbaru" di halaman `/gas/install` tetap menulis nama file unduhan `GAS-Siswa-1.0.38-siswa-23035.apk` (versi LAMA).
   - Solusi: Overwrite total `web/src/data/apk-manifest.json` agar **100% identik** dengan `web/public/apk/apk-manifest.json` (sumber kebenaran).
 - File utama yang diubah:
   1. **`web/src/data/apk-manifest.json`** (disync sempurna ke entry terbaru):
@@ -1329,14 +1343,14 @@ Field berikut wajib dipakai di setiap entri:
   - `ensure-standalone-public.mjs` masih tetap menggabung 2 APK ke `.next/standalone/public/apk/` ?.
   - Ukuran bundle halaman `/gas/install` = 2.44 kB (first load 110 kB); `/edulock/install` = 928 B (first load 108 kB) ? tidak berubah (hanya data manifest yang berbeda).
 - Output APK / Artefak:
-  - Tidak ada assemble APK, tidak ada copy APK ulang. APK fisik di `web/public/apk/GAS-Siswa-release.apk` & `Apk Release/Final/GAS-Siswa-release.apk` SUDAH BENAR 1.0.39-siswa sejak commit `d1426812` dan sebelumnya ó hanya NAMA FILE UNDUHAN di browser yang salah karena `src/data/apk-manifest.json` tertinggal.
+  - Tidak ada assemble APK, tidak ada copy APK ulang. APK fisik di `web/public/apk/GAS-Siswa-release.apk` & `Apk Release/Final/GAS-Siswa-release.apk` SUDAH BENAR 1.0.39-siswa sejak commit `d1426812` dan sebelumnya ‚Äî hanya NAMA FILE UNDUHAN di browser yang salah karena `src/data/apk-manifest.json` tertinggal.
 - Regression check yang dijalankan:
   - Grep confirm tidak ada lagi string `1.0.38` di `web/src/data/apk-manifest.json` setelah overwrite.
   - Build production Next.js success ? static page prerender untuk `/gas/install` dan `/edulock/install` tertulis dengan metadata versi BARU.
   - SHA256 `web/src/data/apk-manifest.json` untuk GAS = `B64C0DE25B0BDBA6548E301C4B4ECDE5FF925424EB81DA88E566A50DF009D68A` ? SAMA PERSIS dengan `web/public/apk/apk-manifest.json` ?.
 - Belum diuji manual (opsional, tapi sangat direkomendasikan):
   1. [ ] Buka URL live `/gas/install` di browser laptop / HP ? tombol Download APK Terbaru ? arah kursor / klik kanan "Save link as..." ? Nama file unduhan = `GAS-Siswa-1.0.39-siswa-23036.apk` ? (bukan 23035).
-  2. [ ] Download file tersebut dalam browser ? SHA256 file terunduh = `B64C0DE2Ö` cocok manifest.
+  2. [ ] Download file tersebut dalam browser ? SHA256 file terunduh = `B64C0DE2‚Ä¶` cocok manifest.
   3. [ ] Buka `/edulock/install` live ? nama file unduhan = `EduLock-1.3.6-32.apk` ? (bukan 31).
 - Catatan / Lessons Learned SOP MASA DEPAN PENTING:
   - ?? **Setiap kali update APK EduLock MAUPUN GAS (assemble release baru ? copy ke web/public/apk/ ? edit `web/public/apk/apk-manifest.json`)**, SELALU JALANKAN LANGKAH TAMBAHAN INI SETELAHNYA (jangan sampai terlewat lagi):
@@ -1404,25 +1418,25 @@ Field berikut wajib dipakai di setiap entri:
   - Dropdown toggle click ? panel list kelas dengan checkbox per item, max-h-60 scroll.
   - Preview summary: default bila tidak pilih apapun ? `? Semua Kelas (Terpilih Semua)`.
   - Bila sebagian terpilih ? list nama kelas ditampilkan truncated; label icon `Check` berwarna **hijau (semua)** / **kuning (sebagian)** / abu-abu (tidak ada).
-  - Friendly display `className` otomatis disesuaikan: 0 pilih = "Semua Kelas", semua pilih = "Semua Kelas", 1 pilih = `NamaKelas`, >1 pilih = `N Kelas (Kelas1, Kelas2, Ö)`.
+  - Friendly display `className` otomatis disesuaikan: 0 pilih = "Semua Kelas", semua pilih = "Semua Kelas", 1 pilih = `NamaKelas`, >1 pilih = `N Kelas (Kelas1, Kelas2, ‚Ä¶)`.
 - Data type baru: `LibraryTask` di **LibraryTask.ts #L6** ditambah `classList?: string[]`.
 - Hook **useGasLibrary.ts** (file utama logika):
-  - Tambah helper `getTaskClassList(item)` ó support 3 source: (1) `classList[]` (baru), (2) `targetClasses[]` (alias fallback), (3) `className` string legacy.
-  - Tambah helper `classMatchesFilter(taskClassList, filterClass)` ó filter multi kelas di list admin. Rule: `Semua Kelas` auto lolos; exact match + case-insensitive match.
+  - Tambah helper `getTaskClassList(item)` ‚Äî support 3 source: (1) `classList[]` (baru), (2) `targetClasses[]` (alias fallback), (3) `className` string legacy.
+  - Tambah helper `classMatchesFilter(taskClassList, filterClass)` ‚Äî filter multi kelas di list admin. Rule: `Semua Kelas` auto lolos; exact match + case-insensitive match.
   - FetchTasks list admin sekarang memakai multi-filter classList array ? filter tab kelas di atas list tugas sekarang bekerja BENAR untuk multi-kelas (bukan cuma 1 string).
   - `addTask(task)` sekarang write 2 field baru ke RTDB + Firestore mirror: `className` (friendly display) dan **`classList`** (array string authoritative). Sebelum simpan, classListIn disanitasi trim dan filter blank.
 - **APK GAS Siswa** (menghindari bug siswa lihat tugas yang bukan kelasnya):
   - `LiteracyTask.kt` model (LiteracyTask.kt #L11-L13) ditambah field `className: String` dan `classList: List<String> = emptyList()` (backward compatible default empty).
   - `LiteracyRepository.kt` (repository layer):
-    - Tambah `parseClassList(snapshot, legacyClassName)` ó parse RTDB array `classList` / `targetClasses` / fallback ke `className` string lama; default ke `["semua kelas"]` bila tidak ada.
-    - Tambah `taskMatchesStudentClass(taskClassList, studentClass)` ó Rule: empty/`semua` ? lolos; exact match lowercase; fuzzy substring match (misal kelas prefix "7A" match di "Kelas 7A").
+    - Tambah `parseClassList(snapshot, legacyClassName)` ‚Äî parse RTDB array `classList` / `targetClasses` / fallback ke `className` string lama; default ke `["semua kelas"]` bila tidak ada.
+    - Tambah `taskMatchesStudentClass(taskClassList, studentClass)` ‚Äî Rule: empty/`semua` ? lolos; exact match lowercase; fuzzy substring match (misal kelas prefix "7A" match di "Kelas 7A").
     - `getLiteracyTasks` listener (L96-L97, L103-L113) sekarang parse `className` & `classList` dan dimasukkan ke model LiteracyTask.
   - `StudentLibraryViewModel.kt`:
     - Tambah state `_studentClass = MutableStateFlow("")` ? `studentClass` (dipasok dari StudentLibraryScreen).
     - `applySchoolScope()` (L92-L101) tugas sekarang **3 kondisi**: isActive AND matchesSchool AND **`matchesClass`**.
     - `setStudentScope(studentId, aliases, studentClass = "")` signature di-upgrade (L121-L134): terima parameter kelas siswa ? `_studentClass` disimpan ? `applySchoolScope()` re-trigger otomatis.
   - `StudentLibraryScreen.kt` (L258-L260): `LaunchedEffect(studentId, studentAliases, studentClass)` sekarang pass kelas siswa ke viewmodel.
-- **Backward compatibility**: Semua tugas LAMA (sebelum update, tanpa field `classList`) ó parseClassList otomatis fallback ke `className` (yang biasanya = `Semua Kelas`) ? task lama TETAP tampil ke semua siswa seperti semula. **Tidak ada migrasi DB diperlukan**.
+- **Backward compatibility**: Semua tugas LAMA (sebelum update, tanpa field `classList`) ‚Äî parseClassList otomatis fallback ke `className` (yang biasanya = `Semua Kelas`) ? task lama TETAP tampil ke semua siswa seperti semula. **Tidak ada migrasi DB diperlukan**.
 - Build yang dijalankan:
   1. Web production: `cd web ; npm run build` ? Next.js **Compiled successfully in 24.2s**, 58 static pages (termasuk /dashboard/gas bundle 296 kB). `ensure-standalone-public` merge 2 APK live ? `.next/standalone/public` OK ?.
   2. APK GAS Siswa compile Kotlin: `cd native-mobile-gas ; .\gradlew.bat :app:compileSiswaReleaseKotlin --no-daemon` ? **BUILD SUCCESSFUL in 1m 41s** (16 actionable tasks, 1 executed) ? hanya warning deprecated unrelated, **TIDAK ADA ERROR** ?.
@@ -1470,7 +1484,7 @@ Field berikut wajib dipakai di setiap entri:
      - **`protectionActive`** ? SharedPreferences EduLock key `is_protection_active` = true (TOMBOL MULAI DITEKAN). Ini menutup celah siswa skip tekan MULAI yang sebelumnya lolos ketika RTDB telemetry belum terbit.
   2. **SharedPreferences lintas app aman via `createPackageContext("com.sekolah.edulock", CONTEXT_IGNORE_SECURITY | CONTEXT_INCLUDE_CODE)`** ? hanya berjalan jika GAS & EduLock **signed SHA256 sama** (`64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63`). Jika signer beda ? exception ? return false ? gate fail-closed diblokir. Sudah diverifikasi apksigner ?.
   3. **Upgrade Overlay merah "AKSES GAS DITAHAN"**:
-     - 3 teks badge ? **5 kartu LocalBadge berwarna (62dp)**: `Install` ∑ `Setup` ∑ `Akses` ∑ `Admin` ∑ `Aktif`
+     - 3 teks badge ? **5 kartu LocalBadge berwarna (62dp)**: `Install` ¬∑ `Setup` ¬∑ `Akses` ¬∑ `Admin` ¬∑ `Aktif`
      - Keterangan tambahan: "Aktif = tombol MULAI di EduLock sudah ditekan."
      - 3 quick action 1-tap: **HIJAU (0x059669) "BUKA EDULOCK & TEKAN MULAI"** (setup/Aktif FAIL), **BIRU (0x2563EB) BUKA AKSESIBILITAS**, **BIRU BUKA ADMIN PERANGKAT**
      - Tombol permanen tetap ada: `BUKA EDULOCK`, outlined `Pengaturan Aksesibilitas`, outlined `Pengaturan Admin Perangkat`, `Keluar`
@@ -1488,7 +1502,7 @@ Field berikut wajib dipakai di setiap entri:
   - ? duplikat `Apk Release/Final/GAS-Siswa-1.0.38-siswa-23035.apk` ?
 - Sync ke web public/apk:
   - Script: `cd web ; powershell -ExecutionPolicy Bypass -File .\scripts\sync-public-apk.ps1 -App gas` ? SUCCESS ?
-  - Output: Version `1.0.38-siswa (23035)`, Package `com.satupintu.mobile.siswa`, Signer `64738955Ö`, SHA256 APK file `1C3E86D98882BC684D84CA44E90B10CEAB96F567C56FFE5DDC35454B42D9C31F`
+  - Output: Version `1.0.38-siswa (23035)`, Package `com.satupintu.mobile.siswa`, Signer `64738955‚Ä¶`, SHA256 APK file `1C3E86D98882BC684D84CA44E90B10CEAB96F567C56FFE5DDC35454B42D9C31F`
   - File terupdate: `web/public/apk/GAS-Siswa-release.apk`, `web/public/apk/apk-manifest.json`, `web/src/data/apk-manifest.json` (mirror src)
 - Build web production:
   - Command: `cd web ; npm run build` ? `next build + ensure-standalone-public.mjs` ?, `/gas/install` bundle size 2.44 kB / 110 kB first load
@@ -1517,7 +1531,7 @@ Field berikut wajib dipakai di setiap entri:
 ## 2026-08-05 23:10 - [PERBAIKAN LANJUTAN] GAS Siswa 1.0.38-siswa: Tambah 2 cek LOKAL (setupCompleted + protectionActive/tombol MULAI) untuk menutup celah skip MULAI
 
 - Pelaksana: Assistant
-- Jenis perubahan: `bugfix` / `no-build` (lanjutan entry 22:30; source compile sudah verified `BUILD SUCCESSFUL` via `:app:compileSiswaReleaseKotlin` ó assemble APK dan bump versi BELUM dijalankan)
+- Jenis perubahan: `bugfix` / `no-build` (lanjutan entry 22:30; source compile sudah verified `BUILD SUCCESSFUL` via `:app:compileSiswaReleaseKotlin` ‚Äî assemble APK dan bump versi BELUM dijalankan)
 - Flavor terdampak: `siswa`
 - Latar belakang: Setelah desain gate lokal primer 3 titik (install + Accessibility + Device Admin), user mengidentifikasi celah: **siswa selesaikan 5 setup EduLock ? Accessibility + Device Admin ON ? tapi TIDAK PERNAH tekan tombol MULAI (isProtectionActive=false / setupCompleted=false)**. Versi 22:30 TIDAK MEMBLOKIR kasus ini karena hanya 3 titik, dan jika RTDB telemetry `record==null` (barusan setup) maka fail-open. Celah ini TERTUTUP di entry ini.
 - Perbaikan arsitektur: `LocalHealthState` upgrade dari 3 ? **5 field**:
@@ -1537,17 +1551,17 @@ Field berikut wajib dipakai di setiap entri:
 - `firstFailedReason()` urutannya disesuaikan: setupCompleted dulu, baru Accessibility, Admin, terakhir protectionActive (MULAI).
 - `firstQuickActionFor()` tambah rule: jika reason ada kata `MULAI` atau `setup` ? `EduLockQuickAction.OPEN_EDULOCK`.
 - Upgrade UI Overlay merah di `EduLockComplianceOverlay`:
-  - Status diganti dari 3 badge teks ? **5 kartu LocalBadge berwarna**: `Install` ∑ `Setup` ∑ `Akses` ∑ `Admin` ∑ `Aktif`. Keterangan di bawahnya: "Aktif = tombol MULAI di EduLock sudah ditekan."
+  - Status diganti dari 3 badge teks ? **5 kartu LocalBadge berwarna**: `Install` ¬∑ `Setup` ¬∑ `Akses` ¬∑ `Admin` ¬∑ `Aktif`. Keterangan di bawahnya: "Aktif = tombol MULAI di EduLock sudah ditekan."
   - Quick action **OPEN_EDULOCK** baru ? tombol WARNA HIJAU `BUKA EDULOCK & TEKAN MULAI` (hanya muncul ketika reason adalah setup blm selesai / MULAI blm ditekan).
   - Tombol lain (BUKA AKSESIBILITAS biru / BUKA ADMIN PERANGKAT biru) tetap seperti semula.
 - File yang berubah total sesi ini:
   1. `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/EduLockComplianceGate.kt` (file UTAMA, seluruh perubahan di atas)
-  2. `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt` ó `openEduLock(context)` ? `openEduLockApp(context)`.
-  3. `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt` ó import 4 helper diganti (`openEduLock` ? `openEduLockApp` + tambah `openEduLockAccessibilitySettings` + `openDeviceAdminSettings`).
+  2. `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt` ‚Äî `openEduLock(context)` ? `openEduLockApp(context)`.
+  3. `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt` ‚Äî import 4 helper diganti (`openEduLock` ? `openEduLockApp` + tambah `openEduLockAccessibilitySettings` + `openDeviceAdminSettings`).
 - Verifikasi compile:
   - Command: `cd native-mobile-gas ; .\gradlew.bat :app:compileSiswaReleaseKotlin --no-daemon`
   - Hasil: **BUILD SUCCESSFUL in 1m 27s** (exit code 0, hanya warning non-blocking file lain). Hanya 1 task executed.
-- Catatan keamanan: `createPackageContext` lintas app hanya berjalan jika GAS & EduLock **signed dengan APK signer SHA256 yang sama**. SHA256 kita adalah `64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63` ó sama untuk kedua APK, jadi aman. Jika suatu saat signer berbeda (misal EduLock di-install dari source unsigned), `readEduLockPrefsLokal` melempar exception ? return false ? gate blokir. Ini fail-closed yang aman.
+- Catatan keamanan: `createPackageContext` lintas app hanya berjalan jika GAS & EduLock **signed dengan APK signer SHA256 yang sama**. SHA256 kita adalah `64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63` ‚Äî sama untuk kedua APK, jadi aman. Jika suatu saat signer berbeda (misal EduLock di-install dari source unsigned), `readEduLockPrefsLokal` melempar exception ? return false ? gate blokir. Ini fail-closed yang aman.
 - Skenario test wajib sebelum assemble betulan:
   1. Setup EduLock sampai selesai, TAPI JANGAN tekan MULAI ? buka GAS ? harus tertahan dengan kartu `Aktif = ?` + tombol hijau `BUKA EDULOCK & TEKAN MULAI`.
   2. Setelah tekan MULAI di EduLock ? balik ke GAS ? lolos (lokal 5 poin ?).
@@ -1565,9 +1579,9 @@ Field berikut wajib dipakai di setiap entri:
 - Flavor terdampak: `siswa`
 - Tujuan perubahan: Mengurangi 90% false-positive blokir GAS di HP vendor agresif (khusus Redmi 15C HyperOS / Oppo / Vivo). Sebelumnya compliance gate bergantung telemetry RTDB `lastProtectionCheckAt` (stale > 15 menit = blokir), sekarang gate primer cek LOKAL HP: EduLock terinstall + Accessibility Service `AntiUninstallService` ON + Device Admin `DeviceAdminReceiver` ON. Jika ketiganya SEHAT ? GAS langsung lolos meskipun RTDB belum sync / stale. Remote RTDB tetap memblokir hanya jika admin set compliance=NON_COMPLIANT / PAUSED / protectionActive=false (kendali admin tetap berjalan).
 - File utama yang diubah:
-  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/EduLockComplianceGate.kt` (file UTAMA) ó tambah konstanta class target EduLock Accessibility/Device Admin, data class `LocalHealthState`, helper `getEduLockLocalHealth` + `isEduLockAccessibilityEnabled` (match Settings.Secure ENABLED_ACCESSIBILITY_SERVICES) + `isEduLockDeviceAdminActive` (DPM.isAdminActive), builder `buildComplianceState` gate primer lokal, helper `openEduLockAccessibilitySettings` (Intent ACTION_ACCESSIBILITY_SETTINGS) + `openDeviceAdminSettings` (Intent ACTION_ADD_DEVICE_ADMIN menunjuk component EduLock), upgrade `EduLockComplianceState` (tambah localHealth & quickAction), rewrite `checkEduLockComplianceOnce` & `rememberEduLockComplianceState` memakai gate primer lokal, hapus stale-blocked dari evaluasi akhir, upgrade composable `EduLockComplianceOverlay` (badge status lokal 3 titik, tombol biru shortcut Accessibility/Device Admin sesuai alasan, dua tombol outlined pengaturan manual, tombol open EduLock + logout tetap ada).
-  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt` ó supply callback `onQuickAccessibility` dan `onQuickDeviceAdmin` ke EduLockComplianceOverlay area post-login siswa.
-  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt` ó supply callback shortcut yang sama ke overlay di halaman login gate.
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/EduLockComplianceGate.kt` (file UTAMA) ‚Äî tambah konstanta class target EduLock Accessibility/Device Admin, data class `LocalHealthState`, helper `getEduLockLocalHealth` + `isEduLockAccessibilityEnabled` (match Settings.Secure ENABLED_ACCESSIBILITY_SERVICES) + `isEduLockDeviceAdminActive` (DPM.isAdminActive), builder `buildComplianceState` gate primer lokal, helper `openEduLockAccessibilitySettings` (Intent ACTION_ACCESSIBILITY_SETTINGS) + `openDeviceAdminSettings` (Intent ACTION_ADD_DEVICE_ADMIN menunjuk component EduLock), upgrade `EduLockComplianceState` (tambah localHealth & quickAction), rewrite `checkEduLockComplianceOnce` & `rememberEduLockComplianceState` memakai gate primer lokal, hapus stale-blocked dari evaluasi akhir, upgrade composable `EduLockComplianceOverlay` (badge status lokal 3 titik, tombol biru shortcut Accessibility/Device Admin sesuai alasan, dua tombol outlined pengaturan manual, tombol open EduLock + logout tetap ada).
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt` ‚Äî supply callback `onQuickAccessibility` dan `onQuickDeviceAdmin` ke EduLockComplianceOverlay area post-login siswa.
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt` ‚Äî supply callback shortcut yang sama ke overlay di halaman login gate.
 - Fitur lama yang wajib ikut dicek sebelum build betulan:
   - Gate login EduLock sebelum login (strict mode) tetap memblokir EduLock yang belum terinstall / Accessibility / Admin OFF.
   - Post-login session siswa: PET lock overlay tidak bentrok dengan compliance overlay (urutan prioritas tetap PET terakhir / tertinggi).
@@ -1579,7 +1593,7 @@ Field berikut wajib dipakai di setiap entri:
   - Build lokal web **TIDAK** dijalankan (perubahan ini khusus native source APK).
   - Dokumen roadmap Word untuk rilis 1.0.38-siswa (23035) sudah di-generate dan disimpan di `Apk Release/Pegangan Build APK/GAS/Roadmap_GAS_Siswa_1.0.38_compliance_gate_lokal.docx`.
 - Catatan:
-  - Temuan lapangan: siswa "MOHAMMAD EVAN SATYA WIJAYA" Redmi 15C ó root cause bukan error kode, tapi status EduLock monitoring menampilkan badge **Dijeda Admin** artinya field `complianceStatus = "PAUSED"` di RTDB telemetry. Solusi: admin resume / lepaskan jeda proteksi di halaman `dashboard/edulock?tab=control`, kemudian force-stop kedua app ? buka EduLock ? tunggu 30 detik ? buka GAS, siswa masuk normal.
+  - Temuan lapangan: siswa "MOHAMMAD EVAN SATYA WIJAYA" Redmi 15C ‚Äî root cause bukan error kode, tapi status EduLock monitoring menampilkan badge **Dijeda Admin** artinya field `complianceStatus = "PAUSED"` di RTDB telemetry. Solusi: admin resume / lepaskan jeda proteksi di halaman `dashboard/edulock?tab=control`, kemudian force-stop kedua app ? buka EduLock ? tunggu 30 detik ? buka GAS, siswa masuk normal.
   - Perubahan kode ini **DIPERTAHANKAN** sesuai kesepakatan session (tidak direvert) untuk batch build berikutnya; hanya saja assemble/bump versi ditunda agar tidak terlalu sering update APK siswa.
   - Generator script roadmap: `web/scripts/generate-gas-siswa-1.0.38-roadmap.mjs`, bisa regenerate Word kapan saja jika spec berubah.
   - Dokumentasi troubleshooting EduLock per merk HP juga sudah di-generate di `Apk Release/Pegangan Build APK/Troubleshooting_Instalansi_EduLock_dan_GAS_Siswa_Per_Merk_HP.docx`.
@@ -1593,20 +1607,20 @@ Field berikut wajib dipakai di setiap entri:
 - Flavor terdampak: `web admin`
 - Tujuan perubahan: Memungkinkan admin sekolah menilai laporan literasi siswa langsung dari web admin (perilaku sama seperti APK GAS Guru), sekaligus menyediakan tombol penilaian massal (Opsi 3) untuk menghemat waktu admin ketika banyak laporan pending.
 - File utama yang diubah:
-  - `web/src/hooks/gas/library/useGasLibrary.ts` ó menambahkan `bulkGradeLiteracyLogs(logIds[], status, grade, feedback)` menggunakan single multi-path RTDB update untuk commit semua laporan sekaligus, menyimpan ke `literacy_logs/{id}` dan `literacy_logs_by_school/{variant}/{id}` (status + grade + feedback + gradedAt).
-  - `web/src/components/gas/library/GasLibraryPanel.tsx` ó destructure `updateLiteracyLogStatus` & `bulkGradeLiteracyLogs` dari hook, lalu pass sebagai `onGradeLog` dan `onBulkGradeLogs` ke TabContent.
-  - `web/src/components/gas/library/GasLibraryTabContent.tsx` ó menambahkan interface props grading, state modal per-item, state checkbox multi-select, tombol toolbar (`Pilih Semua`, `Nilai Semua (N)`, `Nilai Terpilih`), kolom aksi `Beri Nilai`, serta 2 modal (per-item dan massal) dengan pilihan nilai A/B/C/D default B, textarea umpan balik, tombol aksi `Simpan Nilai` (GRADED) / `Tolak` (REJECTED) / `Batal`, serta error handling strip.
+  - `web/src/hooks/gas/library/useGasLibrary.ts` ‚Äî menambahkan `bulkGradeLiteracyLogs(logIds[], status, grade, feedback)` menggunakan single multi-path RTDB update untuk commit semua laporan sekaligus, menyimpan ke `literacy_logs/{id}` dan `literacy_logs_by_school/{variant}/{id}` (status + grade + feedback + gradedAt).
+  - `web/src/components/gas/library/GasLibraryPanel.tsx` ‚Äî destructure `updateLiteracyLogStatus` & `bulkGradeLiteracyLogs` dari hook, lalu pass sebagai `onGradeLog` dan `onBulkGradeLogs` ke TabContent.
+  - `web/src/components/gas/library/GasLibraryTabContent.tsx` ‚Äî menambahkan interface props grading, state modal per-item, state checkbox multi-select, tombol toolbar (`Pilih Semua`, `Nilai Semua (N)`, `Nilai Terpilih`), kolom aksi `Beri Nilai`, serta 2 modal (per-item dan massal) dengan pilihan nilai A/B/C/D default B, textarea umpan balik, tombol aksi `Simpan Nilai` (GRADED) / `Tolak` (REJECTED) / `Batal`, serta error handling strip.
 - Fitur lama yang wajib ikut dicek:
   - tab `Daftar Tugas` dan `Riwayat` harus tetap berfungsi tanpa perubahan perilaku
   - laporan yang sudah `GRADED` / `REJECTED` tetap terlihat di tab `Riwayat` seperti sebelumnya
   - tombol `+ Buat Tugas Baru` tetap berfungsi
   - filter kelas pada `Monitoring E-Library` tetap membatasi baris yang tampil
 - Build / deploy yang dijalankan:
-  - `cd web ; npm.cmd run build` ó Next.js 15.5.20 production build ? **Compiled successfully (exit 0)**
-  - `git add ... ; git commit ... ; git push origin main` ó commit `b6e073f6` ? `2771febf..b6e073f6 main -> main` (3 files, +427 lines)
+  - `cd web ; npm.cmd run build` ‚Äî Next.js 15.5.20 production build ? **Compiled successfully (exit 0)**
+  - `git add ... ; git commit ... ; git push origin main` ‚Äî commit `b6e073f6` ? `2771febf..b6e073f6 main -> main` (3 files, +427 lines)
   - Firebase App Hosting `gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app` akan auto-rollout commit `b6e073f6` ke web live
 - Catatan:
-  - **tidak ada perubahan APK** ó GAS Siswa 1.0.37-siswa (23034) dan GAS Guru 1.0.33-guru (1046) tetap build terbaru saat ini
+  - **tidak ada perubahan APK** ‚Äî GAS Siswa 1.0.37-siswa (23034) dan GAS Guru 1.0.33-guru (1046) tetap build terbaru saat ini
   - Data layer `updateLiteracyLogStatus` yang dipakai oleh APK/PWA guru tetap dipakai kembali oleh web admin untuk mode per-item, sehingga format payload & kontrak path RTDB tetap 1 sumber
 
 ---
@@ -1733,7 +1747,7 @@ Field berikut wajib dipakai di setiap entri:
 - Hasil build:
   - sukses (Next.js production build)
 - Commit deploy:
-  - `9e10a797` ó `deploy: sync GAS Siswa 23032 and admin Dzuhur schedule settings`
+  - `9e10a797` ‚Äî `deploy: sync GAS Siswa 23032 and admin Dzuhur schedule settings`
 - Status push:
   - `main` berhasil didorong ke remote (`fdb09fda..9e10a797`)
 - Verifikasi live:
@@ -1976,7 +1990,7 @@ Field berikut wajib dipakai di setiap entri:
 
 ---
 
-## 2026-08-04 19:55 - GAS Siswa: perbaiki EduLock compliance gate ó cek langsung di cold start pertama instalasi (tanpa harus kill recent)
+## 2026-08-04 19:55 - GAS Siswa: perbaiki EduLock compliance gate ‚Äî cek langsung di cold start pertama instalasi (tanpa harus kill recent)
 
 - Pelaksana: Assistant
 - Jenis perubahan: `fix (critical security)`
@@ -2221,7 +2235,7 @@ Field berikut wajib dipakai di setiap entri:
   - tidak ada
 - Catatan:
   - Rekap bulanan memakai denominator `Wajib` per siswa (tanggal yang memang terjadwal untuk kelasnya).
-  - Riwayat harian menampilkan log yang ada (tanpa generate baris ìmissingî).
+  - Riwayat harian menampilkan log yang ada (tanpa generate baris ‚Äúmissing‚Äù).
   - Deploy live: commit `89fc23e9` sudah dipush ke `main`; rollout Firebase App Hosting sukses (user konfirmasi).
 
 ## 2026-08-04 11:10 - Web admin GAS: generator rotasi Jumat (override otomatis)
@@ -2425,7 +2439,7 @@ Field berikut wajib dipakai di setiap entri:
 - Flavor terdampak: `guru`
 - Tujuan perubahan: Rebuild APK Guru setelah `cb3bed4d` (normalisasi ikon Data Siswa & Rekapitulasi) yang belum ikut build; overwrite distribusi Final/GAS.
 - File utama yang diubah:
-  - `native-mobile-gas/.../ui/screens/HomeScreen.kt` (unblock compile: kembalikan ikon siswa Tools/Catat ke ref yang ada ó `cb3bed4d` merujuk drawable hilang)
+  - `native-mobile-gas/.../ui/screens/HomeScreen.kt` (unblock compile: kembalikan ikon siswa Tools/Catat ke ref yang ada ‚Äî `cb3bed4d` merujuk drawable hilang)
   - `Apk Release/Final/GAS-Guru-release.apk`
   - `Apk Release/GAS/app-guru-release.apk`
   - `Apk Release/Pegangan Build APK/GAS/BUILD_LOG.md`
@@ -2456,7 +2470,7 @@ Field berikut wajib dipakai di setiap entri:
 - Pelaksana: Assistant
 - Jenis perubahan: `fix` + `docs`
 - Flavor terdampak: `guru` (APK + web PWA dokumentasi)
-- Tujuan perubahan: Menutup hari kerja 2026-08-03 sore ‚Äî Final APK Guru pagi (`1038` / 10:14) belum memuat fix ikon `cb3bed4d` (14:01), jadi di-rebuild ke `1039` dan menimpa Final; mencatat audit lengkap Portal Guru PWA (9 menu APK-parity termasuk Kedisiplinan) plus batasan Web Push VAPID yang masih terbuka.
+- Tujuan perubahan: Menutup hari kerja 2026-08-03 sore √¢‚Ç¨‚Äù Final APK Guru pagi (`1038` / 10:14) belum memuat fix ikon `cb3bed4d` (14:01), jadi di-rebuild ke `1039` dan menimpa Final; mencatat audit lengkap Portal Guru PWA (9 menu APK-parity termasuk Kedisiplinan) plus batasan Web Push VAPID yang masih terbuka.
 - File utama yang diubah:
   - `native-mobile-gas/app/build.gradle.kts` (`versionCode` `1039`, `versionName` `1.0.30`)
   - `native-mobile-gas/app/src/main/res/drawable/ic_menu_tools.png` (aset yang dibutuhkan compile HomeScreen)
@@ -2483,7 +2497,7 @@ Field berikut wajib dipakai di setiap entri:
   - `Apk Release/Final/GAS-Guru-release.apk`
   - `Apk Release/GAS/app-guru-release.apk`
 - Regression check yang dijalankan:
-  - `aapt dump badging` ‚Üí package/version `1039` / `1.0.30-guru`
+  - `aapt dump badging` √¢‚Ä†‚Äô package/version `1039` / `1.0.30-guru`
   - review commit rantai PWA hari ini vs checklist
 - Belum diuji:
   - uji perangkat fisik APK `1039` (ikon + notifikasi)
@@ -2491,7 +2505,7 @@ Field berikut wajib dipakai di setiap entri:
   - background Web Push (VAPID/FCM belum)
 - Catatan progres bundle 2026-08-03:
   - APK pagi notifikasi: `ebfeb7b8` (`1038`)
-  - PWA ship: `05c4fb14` ‚Üí login DB: `06c784b8` / `112271dc` ‚Üí menu home: `5680539b` ‚Üí presensi: `b8db31af` ‚Üí sholat TZ: `0f8aa2dc` ‚Üí siswa/literasi: `90ca0faa` ‚Üí 7 KAIH: `9232a30a` ‚Üí rekap Excel: `b9a48343` ‚Üí aduan: `034241fd` ‚Üí kedisiplinan: `3876bf95` ‚Üí ikon APK: `cb3bed4d` ‚Üí polish: `7fb4580d`
+  - PWA ship: `05c4fb14` √¢‚Ä†‚Äô login DB: `06c784b8` / `112271dc` √¢‚Ä†‚Äô menu home: `5680539b` √¢‚Ä†‚Äô presensi: `b8db31af` √¢‚Ä†‚Äô sholat TZ: `0f8aa2dc` √¢‚Ä†‚Äô siswa/literasi: `90ca0faa` √¢‚Ä†‚Äô 7 KAIH: `9232a30a` √¢‚Ä†‚Äô rekap Excel: `b9a48343` √¢‚Ä†‚Äô aduan: `034241fd` √¢‚Ä†‚Äô kedisiplinan: `3876bf95` √¢‚Ä†‚Äô ikon APK: `cb3bed4d` √¢‚Ä†‚Äô polish: `7fb4580d`
   - Kedisiplinan PWA **selesai** (bukan stub) via `3876bf95`
   - URL live: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/guru`
   - Tidak sinkron ke `web/public/apk` (Guru bukan jalur tutorial siswa)
@@ -2520,9 +2534,9 @@ Field berikut wajib dipakai di setiap entri:
 - Disalin ke:
   - n/a
 - Regression check yang dijalankan:
-  - GET live `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/guru` ‚Üí `200` HTML
-  - GET `/guru/manifest.json` ‚Üí `200`
-  - GET `/sw-guru.js` ‚Üí `200`
+  - GET live `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/guru` √¢‚Ä†‚Äô `200` HTML
+  - GET `/guru/manifest.json` √¢‚Ä†‚Äô `200`
+  - GET `/sw-guru.js` √¢‚Ä†‚Äô `200`
 - Belum diuji:
   - Add to Home Screen di Safari iOS lapangan
   - background Web Push (masih butuh VAPID/FCM)
@@ -2894,7 +2908,7 @@ Field berikut wajib dipakai di setiap entri:
   - `web/scripts/sync-public-apk.ps1`
   - `web/public/apk/apk-manifest.json`
 - Fitur lama yang wajib ikut dicek:
-  - halaman `Super Admin ‚Üí Kontrol Aplikasi Mobile` tetap bisa load & simpan min version
+  - halaman `Super Admin √¢‚Ä†‚Äô Kontrol Aplikasi Mobile` tetap bisa load & simpan min version
   - angka `Versi saat ini` muncul untuk GAS dan EduLock (jika file APK tersedia)
 - Build yang dijalankan:
   - `npm run build`

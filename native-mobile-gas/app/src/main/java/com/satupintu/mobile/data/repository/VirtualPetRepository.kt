@@ -423,9 +423,13 @@ class VirtualPetRepository {
         }
 
         val totalsByAlias = mutableMapOf<String, Long>()
+        val readyAliases = mutableSetOf<String>()
         val refs = mutableListOf<Pair<com.google.firebase.database.DatabaseReference, ValueEventListener>>()
 
         fun emitReadingTotal() {
+            // Wait until every identity alias has reported once so we don't briefly
+            // treat missing aliases as 0 reading → hunger 100 → SEKARAT/DEAD flash.
+            if (readyAliases.size < aliases.size) return
             trySend(totalsByAlias.values.maxOrNull() ?: 0L)
         }
 
@@ -440,6 +444,7 @@ class VirtualPetRepository {
                         total += duration
                     }
                     totalsByAlias[alias] = total
+                    readyAliases.add(alias)
                     emitReadingTotal()
                 }
 
@@ -467,9 +472,12 @@ class VirtualPetRepository {
         }
 
         val countsByAlias = mutableMapOf<String, Int>()
+        val readyAliases = mutableSetOf<String>()
         val refs = mutableListOf<Pair<com.google.firebase.database.Query, ValueEventListener>>()
 
         fun emitHabitCount() {
+            // Gate until every alias has a first callback; partial 0 energy → SEKARAT/DEAD flash.
+            if (readyAliases.size < aliases.size) return
             trySend(countsByAlias.values.maxOrNull() ?: 0)
         }
 
@@ -481,20 +489,34 @@ class VirtualPetRepository {
                 db.child("seven_habits_logs_by_school").child(normalizedSchoolId).child(alias).child(todayStr).child("habits")
             }
 
+            var scopedFired = scopedRef == null
+            var legacyFired = false
             var scopedHasData = false
+            var scopedCount = 0
+            var legacyCount = 0
+
+            fun publishAliasIfReady() {
+                if (!scopedFired || !legacyFired) return
+                countsByAlias[alias] = if (scopedHasData) scopedCount else legacyCount
+                readyAliases.add(alias)
+                emitHabitCount()
+            }
+
+            fun countTrueHabits(snapshot: DataSnapshot): Int {
+                var count = 0
+                for (child in snapshot.children) {
+                    if (child.getValue(Boolean::class.java) == true) count++
+                }
+                return count
+            }
 
             val scopedListener = scopedRef?.let {
                 object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
-                        var count = 0
-                        for (child in snapshot.children) {
-                            if (child.getValue(Boolean::class.java) == true) count++
-                        }
                         scopedHasData = snapshot.exists()
-                        if (scopedHasData) {
-                            countsByAlias[alias] = count
-                            emitHabitCount()
-                        }
+                        scopedCount = countTrueHabits(snapshot)
+                        scopedFired = true
+                        publishAliasIfReady()
                     }
 
                     override fun onCancelled(error: DatabaseError) {
@@ -505,13 +527,9 @@ class VirtualPetRepository {
 
             val legacyListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    if (scopedHasData) return
-                    var count = 0
-                    for (child in snapshot.children) {
-                        if (child.getValue(Boolean::class.java) == true) count++
-                    }
-                    countsByAlias[alias] = count
-                    emitHabitCount()
+                    legacyCount = countTrueHabits(snapshot)
+                    legacyFired = true
+                    publishAliasIfReady()
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -693,9 +711,28 @@ class VirtualPetRepository {
         var dzuhurEnabled: Boolean = true
 
         val snapshotsByAlias = mutableMapOf<String, DataSnapshot?>()
+        val readyAliases = mutableSetOf<String>()
+        var legacySchedulesReady = false
+        var legacyHolidaysReady = false
+        var scopedSchedulesReady = normalizedSchoolId.isBlank()
+        var scopedHolidaysReady = normalizedSchoolId.isBlank()
+        var dzuhurSettingsReady = normalizedSchoolId.isBlank()
         val queries = mutableListOf<Pair<com.google.firebase.database.Query, ValueEventListener>>()
 
+        fun isBootstrapReady(): Boolean {
+            return readyAliases.size >= identityAliases.size &&
+                legacySchedulesReady &&
+                legacyHolidaysReady &&
+                scopedSchedulesReady &&
+                scopedHolidaysReady &&
+                dzuhurSettingsReady
+        }
+
         fun emitRealtimePrayer() {
+            // Schedule/holiday listeners used to emit with status=null before attendance
+            // snapshots arrived, which ViewModel mapped to health=20 → SEKARAT flash.
+            if (identityAliases.isEmpty() || !isBootstrapReady()) return
+
             var latestRecord: DataSnapshot? = null
             var latestScore = Long.MIN_VALUE
             for (alias in identityAliases) {
@@ -731,11 +768,18 @@ class VirtualPetRepository {
             trySend(PrayerRealtimeInfo(status = latestStatus, isEffectiveDay = isEffectiveDay))
         }
 
+        if (identityAliases.isEmpty()) {
+            trySend(PrayerRealtimeInfo(status = null, isEffectiveDay = true))
+            awaitClose { }
+            return@callbackFlow
+        }
+
         identityAliases.forEach { alias ->
             val query = db.child("prayer_attendance").orderByChild("studentId").equalTo(alias)
             val listener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     snapshotsByAlias[alias] = snapshot
+                    readyAliases.add(alias)
                     emitRealtimePrayer()
                 }
                 override fun onCancelled(error: DatabaseError) { close(error.toException()) }
@@ -748,6 +792,7 @@ class VirtualPetRepository {
         val legacyScheduleListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 legacySchedules = parseScheduleSnapshot(snapshot)
+                legacySchedulesReady = true
                 emitRealtimePrayer()
             }
 
@@ -760,6 +805,7 @@ class VirtualPetRepository {
         val legacyHolidayListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 legacyHolidays = parseHolidaySnapshot(snapshot)
+                legacyHolidaysReady = true
                 emitRealtimePrayer()
             }
 
@@ -783,6 +829,7 @@ class VirtualPetRepository {
             scopedScheduleListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     scopedSchedules = if (snapshot.exists()) parseScheduleSnapshot(snapshot) else null
+                    scopedSchedulesReady = true
                     emitRealtimePrayer()
                 }
 
@@ -795,6 +842,7 @@ class VirtualPetRepository {
             scopedHolidayListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     scopedHolidays = if (snapshot.exists()) parseHolidaySnapshot(snapshot) else null
+                    scopedHolidaysReady = true
                     emitRealtimePrayer()
                 }
 
@@ -813,6 +861,7 @@ class VirtualPetRepository {
                         dzuhurEnabled = snapshot.child("enabled").getValue(Boolean::class.java) ?: true
                         dzuhurActiveDays = parseActiveDaysSnapshot(snapshot.child("activeDays"))
                     }
+                    dzuhurSettingsReady = true
                     emitRealtimePrayer()
                 }
 
@@ -824,8 +873,6 @@ class VirtualPetRepository {
             scopedScheduleRef.addValueEventListener(scopedScheduleListener)
             scopedHolidayRef.addValueEventListener(scopedHolidayListener)
             dzuhurTypeRef.addValueEventListener(dzuhurTypeListener)
-        } else {
-            emitRealtimePrayer()
         }
 
         awaitClose {
@@ -980,14 +1027,15 @@ class VirtualPetRepository {
         val queries = mutableListOf<Pair<com.google.firebase.database.Query, ValueEventListener>>()
 
         val calendar = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_MONTH, 1)
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
-        val startOfDay = calendar.timeInMillis
-        calendar.add(Calendar.DAY_OF_YEAR, 1)
-        val endOfDay = calendar.timeInMillis
+        val startOfMonth = calendar.timeInMillis
+        calendar.add(Calendar.MONTH, 1)
+        val endOfMonth = calendar.timeInMillis
 
         fun emitLiteracyCount() {
             trySend(countsByAlias.values.maxOrNull() ?: 0)
@@ -1010,7 +1058,7 @@ class VirtualPetRepository {
 
                         if ((normalizedSchoolId.isBlank() || logSchoolId == normalizedSchoolId) &&
                             matchesStudent &&
-                            timestamp in startOfDay until endOfDay
+                            timestamp in startOfMonth until endOfMonth
                         ) {
                             count++
                         }
@@ -1034,16 +1082,26 @@ class VirtualPetRepository {
     }
 
     fun deletePetQuests(petId: String) {
+        deletePetQuests(petId, onlyTypes = null)
+    }
+
+    fun deletePetQuests(petId: String, onlyTypes: Set<String>?) {
         val normalizedPetId = petId.trim()
+        val allowedTypes = onlyTypes?.map { it.trim().uppercase() }?.filter { it.isNotBlank() }?.toSet()
         val ref = db.child("pet_quests")
         val query = ref.orderByChild("petId").equalTo(normalizedPetId)
         query.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (child in snapshot.children) {
                     val questPetId = child.child("petId").getValue(String::class.java).orEmpty().trim()
-                    if (questPetId == normalizedPetId) {
-                        child.ref.removeValue()
-                    }
+                    if (questPetId != normalizedPetId) continue
+                    val questType = child.child("type").getValue(String::class.java)
+                        .orEmpty()
+                        .trim()
+                        .uppercase()
+                        .ifBlank { "DAILY" }
+                    if (allowedTypes != null && questType !in allowedTypes) continue
+                    child.ref.removeValue()
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
@@ -1136,19 +1194,16 @@ class VirtualPetRepository {
         }
 
         val listeners = mutableListOf<Pair<DatabaseReference, ValueEventListener>>()
-        val durationsPerAlias = mutableMapOf<String, Map<String, Long>>()
+        // Per-alias total reading duration (all dates). Use max across aliases
+        // so NISN/username duplicates are not double-counted — same approach as
+        // Sahabat Belajar E-Perpus daily duration.
+        val totalsByAlias = mutableMapOf<String, Long>()
+        val thirtyMinutesMs = 30L * 60L * 1000L
 
         val recalculateAndSend = {
-            val aggregated = mutableMapOf<String, Long>()
-            durationsPerAlias.values.forEach { aliasMap ->
-                aliasMap.forEach { (title, duration) ->
-                    val normalizedTitle = title.trim().lowercase()
-                    if (normalizedTitle.isNotBlank()) {
-                        aggregated[normalizedTitle] = (aggregated[normalizedTitle] ?: 0L) + duration
-                    }
-                }
-            }
-            val booksReadCount = aggregated.count { it.value >= 1800000L } // >= 30 minutes in ms
+            val totalMs = totalsByAlias.values.maxOrNull() ?: 0L
+            // 30 menit = 1 buku, 60 menit = 2 buku, dst (floor).
+            val booksReadCount = (totalMs / thirtyMinutesMs).toInt()
             trySend(booksReadCount)
         }
 
@@ -1156,19 +1211,19 @@ class VirtualPetRepository {
             val ref = db.child("student_activities").child(alias).child("reading_log")
             val listener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val aliasDurations = mutableMapOf<String, Long>()
+                    var totalMs = 0L
                     for (dateSnapshot in snapshot.children) {
                         for (logSnapshot in dateSnapshot.children) {
-                            val durationVal = logSnapshot.child("durationMillis").value ?: logSnapshot.child("duration").value
+                            val durationVal =
+                                logSnapshot.child("durationMillis").value
+                                    ?: logSnapshot.child("duration").value
                             val duration = (durationVal as? Number)?.toLong() ?: 0L
-                            val title = logSnapshot.child("bookTitle").getValue(String::class.java).orEmpty()
-                            if (title.isNotBlank() && duration > 0L) {
-                                val normalizedTitle = title.trim().lowercase()
-                                aliasDurations[normalizedTitle] = (aliasDurations[normalizedTitle] ?: 0L) + duration
+                            if (duration > 0L) {
+                                totalMs += duration
                             }
                         }
                     }
-                    durationsPerAlias[alias] = aliasDurations
+                    totalsByAlias[alias] = totalMs
                     recalculateAndSend()
                 }
 
@@ -1177,13 +1232,13 @@ class VirtualPetRepository {
                 }
             }
             ref.addValueEventListener(listener)
-            listeners.add(ref to listener)
+            listeners += ref to listener
         }
 
+        // Emit 0 immediately while waiting for first snapshot.
+        trySend(0)
         awaitClose {
-            listeners.forEach { (ref, listener) ->
-                ref.removeEventListener(listener)
-            }
+            listeners.forEach { (ref, listener) -> ref.removeEventListener(listener) }
         }
     }
 }

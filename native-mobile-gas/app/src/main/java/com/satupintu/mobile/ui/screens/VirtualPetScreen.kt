@@ -133,7 +133,7 @@ fun VirtualPetScreen(
                 .fillMaxSize()
                 .background(pageBackground)
         ) {
-            if (uiState.isLoading && uiState.pet == null) {
+            if (uiState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color.White)
             } else if (uiState.error != null && uiState.pet == null) {
                 Text(
@@ -1176,7 +1176,26 @@ fun QuestItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(quest.title, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(quest.title, fontWeight = FontWeight.Bold)
+                        if (quest.type.equals("MONTHLY", ignoreCase = true) ||
+                            quest.title.equals("Bonus Literasi Bulanan", ignoreCase = true)
+                        ) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    "BULANAN",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
                     Text(quest.description, style = MaterialTheme.typography.bodySmall)
                 }
                 if (quest.completed) {
@@ -1194,8 +1213,15 @@ fun QuestItem(
                         )
                     }
                 } else {
+                    val isMonthly =
+                        quest.type.equals("MONTHLY", ignoreCase = true) ||
+                            quest.title.equals("Bonus Literasi Bulanan", ignoreCase = true)
                     val rewardColor = if (isHolidayBonus) Color(0xFFA855F7) else MaterialTheme.colorScheme.primaryContainer
-                    val rewardText = if (isHolidayBonus) "+10 Kecerdasan" else "${quest.reward} XP"
+                    val rewardText = when {
+                        isHolidayBonus -> "+10 Kecerdasan"
+                        isMonthly -> "+${quest.reward} Koin / +${quest.reward / 2} XP"
+                        else -> "+${quest.reward} Koin"
+                    }
                     Surface(
                         color = rewardColor,
                         shape = RoundedCornerShape(8.dp)

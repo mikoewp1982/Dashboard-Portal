@@ -59,6 +59,7 @@ class VirtualPetViewModel : ViewModel() {
         val description: String,
         val target: Int,
         val reward: Int,
+        val type: String = "DAILY",
         val isPaused: Boolean = false
     )
 
@@ -95,6 +96,24 @@ class VirtualPetViewModel : ViewModel() {
                 reward = 40
             )
         )
+
+        private val MONTHLY_QUEST_TEMPLATES = listOf(
+            DailyQuestTemplate(
+                title = "Bonus Literasi Bulanan",
+                description = "Kirim laporan tugas literasi dari admin sekolah (1x per bulan)",
+                target = 1,
+                reward = 200,
+                type = "MONTHLY"
+            )
+        )
+
+        private val ALL_QUEST_TEMPLATES = DAILY_QUEST_TEMPLATES + MONTHLY_QUEST_TEMPLATES
+
+        private fun currentMonthPeriodKey(now: Long = System.currentTimeMillis()): String {
+            val calendar = Calendar.getInstance().apply { timeInMillis = now }
+            val month = (calendar.get(Calendar.MONTH) + 1).toString().padStart(2, '0')
+            return "${calendar.get(Calendar.YEAR)}-$month"
+        }
 
         private val ACHIEVEMENT_TEMPLATES = listOf(
             AchievementTemplate(
@@ -193,7 +212,20 @@ class VirtualPetViewModel : ViewModel() {
     fun loadPet(credential: String, sessionSchoolId: String = "") {
         petJob?.cancel()
         petJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            // Clear pet so UI keeps the spinner until the first full vitals sync.
+            // Otherwise a retained ViewModel briefly shows stale/critical defaults
+            // (e.g. SEKARAT) before realtime stats finish combining.
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    pet = null,
+                    quests = emptyList(),
+                    achievements = emptyList(),
+                    criteriaCards = emptyList(),
+                    actionCards = emptyList(),
+                    error = null
+                )
+            }
             try {
                 // Resolve Student Key from Credential (NISN/Username)
                 val resolution = resolveStudentIdentity(credential, sessionSchoolId)
@@ -335,6 +367,7 @@ class VirtualPetViewModel : ViewModel() {
             ) { quests, achievements, stats ->
             checkDailyReset(syncedPet, quests, stats)
             syncQuestCatalog(syncedPet, quests)
+            ensureMonthlyLiteracyQuest(syncedPet, quests)
             syncAchievementCatalog(syncedPet, achievements)
 
             val targetMillis = 30 * 60 * 1000f
@@ -403,13 +436,16 @@ class VirtualPetViewModel : ViewModel() {
             val attendanceBaseline = happinessScore.coerceIn(0, 100)
             val calculatedHappiness = (attendanceBaseline - stats.disciplinePenalty).coerceIn(0, 100)
             val prayerStatus = stats.prayerInfo.status?.trim()?.uppercase()
+            // Unknown/blank status after listeners are ready means no prayer log yet
+            // (treat as not prayed). Do NOT use a pre-sync placeholder here — repository
+            // flows gate until alias/schedule bootstrap finishes to avoid SEKARAT flash.
             val calculatedHealth = when {
                 isPrayerExempt(resolution.religion) -> 100
                 !stats.prayerInfo.isEffectiveDay -> 100
                 prayerStatus == "PRAY" -> 100
                 prayerStatus == "PERMIT" || prayerStatus == "HALANGAN" -> 100
-                prayerStatus == "NOT_PRAY" -> 20
-                else -> 20
+                prayerStatus == "NOT_PRAY" || prayerStatus.isNullOrBlank() -> 20
+                else -> syncedPet.health.coerceIn(0, 100)
             }
 
             val newHealth = calculatedHealth
@@ -433,15 +469,14 @@ class VirtualPetViewModel : ViewModel() {
             val lowestVital = minOf(newHealth, newHappiness, newEnergy, fullness)
             val averageStats = (newHealth + newHappiness + newEnergy + fullness) / 4
             val reviveGraceActive = syncedPet.isManualReviveGraceActive()
-            var newStatus = when {
-                !reviveGraceActive && (syncedPet.status.trim().equals("DEAD", ignoreCase = true) || newHealth <= 0 || lowestVital <= 0) -> "DEAD"
+            // Do NOT sticky-lock status=DEAD when vitals have recovered.
+            // Otherwise a previously dead pet that is already SAKIT/SEHAT in UI
+            // keeps forcing DEAD into Firebase and re-triggers lock/notifications.
+            val newStatus = when {
+                !reviveGraceActive && (newHealth <= 0 || lowestVital <= 0) -> "DEAD"
                 lowestVital < 30 || newHealth < 30 || newHappiness < 30 -> "SICK"
                 lowestVital < 60 || newHappiness < 50 -> "SAD"
                 else -> "HAPPY"
-            }
-
-            if (!reviveGraceActive && (syncedPet.status.trim().equals("DEAD", ignoreCase = true) || syncedPet.isDeadByRule())) {
-                newStatus = "DEAD"
             }
 
             val newLevel = syncedPet.level
@@ -474,6 +509,9 @@ class VirtualPetViewModel : ViewModel() {
                         if (stats.readingDuration >= 30 * 60 * 1000) {
                             newProgress = 1
                         }
+                    }
+                    "Bonus Literasi Bulanan" -> {
+                        newProgress = if (stats.literacyCount > 0) 1 else 0
                     }
                 }
                 quest.copy(progress = newProgress)
@@ -665,21 +703,25 @@ class VirtualPetViewModel : ViewModel() {
         val lastReset = pet.lastQuestReset
         val calendar = Calendar.getInstance()
         val currentDay = calendar.get(Calendar.DAY_OF_YEAR)
+        val currentYear = calendar.get(Calendar.YEAR)
         
         calendar.timeInMillis = lastReset
         val lastResetDay = calendar.get(Calendar.DAY_OF_YEAR)
+        val lastResetYear = calendar.get(Calendar.YEAR)
         
-        if (currentDay == lastResetDay) return
+        if (currentYear == lastResetYear && currentDay == lastResetDay) return
 
-        val guardKey = "${calendar.get(Calendar.YEAR)}-$currentDay-${pet.id}"
+        val guardKey = "$currentYear-$currentDay-${pet.id}"
         if (lastQuestResetGuardKey == guardKey) return
 
         if (questResetJob?.isActive == true) return
         lastQuestResetGuardKey = guardKey
 
         questResetJob = viewModelScope.launch {
-            repository.deletePetQuests(pet.id)
+            // Hanya reset quest harian — biarkan Bonus Literasi Bulanan tetap hidup.
+            repository.deletePetQuests(pet.id, onlyTypes = setOf("DAILY"))
             createDailyQuests(pet.id, stats)
+            ensureMonthlyLiteracyQuest(pet, quests)
             repository.updateVirtualPet(pet.copy(lastQuestReset = System.currentTimeMillis()))
         }
     }
@@ -687,13 +729,13 @@ class VirtualPetViewModel : ViewModel() {
     private fun syncQuestCatalog(pet: VirtualPet, quests: List<PetQuest>) {
         cleanupDuplicateQuests(quests)
 
-        val requiredByTitle = DAILY_QUEST_TEMPLATES.associateBy { it.title }
+        val requiredByTitle = ALL_QUEST_TEMPLATES.associateBy { it.title }
         val legacyTitles = setOf("Belajar Fokus", "Hadir Hari Ini")
         val questIdsToRemove = quests
             .filter { quest -> quest.title in legacyTitles || requiredByTitle[quest.title] == null }
             .map { it.id }
 
-        val missingTemplates = DAILY_QUEST_TEMPLATES.filter { template ->
+        val missingTemplates = ALL_QUEST_TEMPLATES.filter { template ->
             quests.none { it.title == template.title }
         }
 
@@ -707,6 +749,45 @@ class VirtualPetViewModel : ViewModel() {
                 petId = pet.id,
                 missingTemplates = missingTemplates
             )
+        }
+    }
+
+    private fun ensureMonthlyLiteracyQuest(pet: VirtualPet, quests: List<PetQuest>) {
+        val monthKey = currentMonthPeriodKey()
+        val monthlyTitle = "Bonus Literasi Bulanan"
+        val template = MONTHLY_QUEST_TEMPLATES.firstOrNull() ?: return
+        val existing = quests.filter { it.title == monthlyTitle }
+
+        viewModelScope.launch {
+            val stale = existing.filter { it.periodKey.isNotBlank() && it.periodKey != monthKey }
+            stale.forEach { repository.deletePetQuest(it.id) }
+
+            val active = existing.firstOrNull { it.periodKey.isBlank() || it.periodKey == monthKey }
+            if (active == null) {
+                syncMissingQuestTemplates(
+                    petId = pet.id,
+                    missingTemplates = listOf(template),
+                    periodKey = monthKey
+                )
+            } else {
+                val needsMetaSync =
+                    active.periodKey.isBlank() ||
+                        !active.type.equals("MONTHLY", ignoreCase = true) ||
+                        active.reward != template.reward ||
+                        active.description != template.description ||
+                        active.target != template.target
+                if (needsMetaSync) {
+                    repository.updatePetQuest(
+                        active.copy(
+                            type = "MONTHLY",
+                            periodKey = monthKey,
+                            reward = template.reward,
+                            description = template.description,
+                            target = template.target
+                        )
+                    )
+                }
+            }
         }
     }
 
@@ -843,7 +924,6 @@ class VirtualPetViewModel : ViewModel() {
     ): List<StudentActionCard> {
         val readingMinutes = (stats.readingDuration / 60000L).toInt().coerceAtLeast(0)
         val readingProgress = ((stats.readingDuration / (30f * 60f * 1000f)) * 100f).toInt().coerceIn(0, 100)
-        val literacyProgress = if (stats.literacyCount > 0) 100 else 0
 
         val attendanceStatus = (stats.attendanceData["status"] as? String).orEmpty().trim().uppercase()
         val attendanceLabel = when (attendanceStatus) {
@@ -917,7 +997,7 @@ class VirtualPetViewModel : ViewModel() {
     }
 
     private fun curatedQuests(quests: List<PetQuest>): List<PetQuest> {
-        val order = DAILY_QUEST_TEMPLATES.mapIndexed { index, template -> template.title to index }.toMap()
+        val order = ALL_QUEST_TEMPLATES.mapIndexed { index, template -> template.title to index }.toMap()
         return quests
             .filter { it.title in order.keys }
             .groupBy { it.title.trim() }
@@ -963,10 +1043,11 @@ class VirtualPetViewModel : ViewModel() {
 
     private suspend fun syncMissingQuestTemplates(
         petId: String,
-        missingTemplates: List<DailyQuestTemplate>
+        missingTemplates: List<DailyQuestTemplate>,
+        periodKey: String = ""
     ) {
         val acceptedTemplates = missingTemplates.filter { template ->
-            val templateKey = "${petId.trim()}:${template.title.trim()}"
+            val templateKey = "${petId.trim()}:${template.title.trim()}:${periodKey.ifBlank { template.type }}"
             pendingQuestTemplateKeys.add(templateKey)
         }
 
@@ -974,6 +1055,11 @@ class VirtualPetViewModel : ViewModel() {
 
         try {
             acceptedTemplates.forEach { template ->
+                val resolvedPeriodKey = when {
+                    periodKey.isNotBlank() -> periodKey
+                    template.type.equals("MONTHLY", ignoreCase = true) -> currentMonthPeriodKey()
+                    else -> ""
+                }
                 repository.insertPetQuest(
                     PetQuest(
                         petId = petId,
@@ -981,13 +1067,17 @@ class VirtualPetViewModel : ViewModel() {
                         description = template.description,
                         target = template.target,
                         reward = template.reward,
+                        type = template.type,
+                        periodKey = resolvedPeriodKey,
                         isPaused = template.isPaused
                     )
                 )
             }
         } finally {
             acceptedTemplates.forEach { template ->
-                pendingQuestTemplateKeys.remove("${petId.trim()}:${template.title.trim()}")
+                pendingQuestTemplateKeys.remove(
+                    "${petId.trim()}:${template.title.trim()}:${periodKey.ifBlank { template.type }}"
+                )
             }
         }
     }

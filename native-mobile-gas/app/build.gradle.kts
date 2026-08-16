@@ -1,4 +1,4 @@
-import java.util.Properties
+﻿import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -38,8 +38,8 @@ android {
         create("siswa") {
             dimension = "audience"
             minSdk = 23
-            versionCode = 23076
-            versionName = "1.0.79"
+            versionCode = 23077
+            versionName = "1.0.80"
             resValue("string", "app_name", "GAS Siswa")
             applicationIdSuffix = ".siswa"
             versionNameSuffix = "-siswa"

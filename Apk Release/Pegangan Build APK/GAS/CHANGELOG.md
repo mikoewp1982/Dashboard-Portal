@@ -1,4 +1,4 @@
-# Changelog GAS
+﻿# Changelog GAS
 
 Dokumen ini mencatat **perubahan perilaku atau fitur** pada APK `GAS`.
 
@@ -28,20 +28,24 @@ Tambahkan nama pelaksana jika perlu:
 ### Siswa
 
 
+## [1.0.80-siswa] - 2026-08-16
+### Fixed
+- **Siswa (Virtual Pet)**: Loading spinner tetap sampai sync vitals pertama selesai; tidak flash SEKARAT/DEAD dari partial alias/schedule sebelum bootstrap siap.
+- Changed: Build distribusi GAS Siswa `1.0.80` (`versionCode 23077`). Final only - URL unduhan web belum di-update.
 ## [1.0.79-siswa] - 2026-08-16
 ### Fixed
-- **Siswa (cold start)**: Crash silent/instant exit saat buka APK � `NoClassDefFoundError: NavigationKt` / `ClassNotFoundException`. Root cause: facade `Navigation.kt` terlalu besar sehingga kelas tidak ter-load dari secondary dex. Perbaikan: pecah route graph ke `GasAppNavGraph.kt`, `MultiDexApplication` (`GasApp`), `multiDexEnabled` + keep file entry points.
-- Changed: Build distribusi GAS Siswa `1.0.79` (`versionCode 23076`). Final only � URL unduhan web belum di-update.
+- **Siswa (cold start)**: Crash silent/instant exit saat buka APK — `NoClassDefFoundError: NavigationKt` / `ClassNotFoundException`. Root cause: facade `Navigation.kt` terlalu besar sehingga kelas tidak ter-load dari secondary dex. Perbaikan: pecah route graph ke `GasAppNavGraph.kt`, `MultiDexApplication` (`GasApp`), `multiDexEnabled` + keep file entry points.
+- Changed: Build distribusi GAS Siswa `1.0.79` (`versionCode 23076`). Final only — URL unduhan web belum di-update.
 ## [1.0.78-siswa] - 2026-08-16
 ### Fixed
 - **Siswa (Presensi Dhuha/Jumat)**: Matching jadwal admin `prayer_v2` menghormati `classIds` (array/map), label kelas, dan varian `schoolId`.
 - **Siswa (Presensi Dhuha/Jumat)**: Jam tampilan/gate memakai start/end admin (normalize `HH.mm` ke `HH:mm`); tidak lagi menampilkan fake `07:00-07:30`. Hari tanpa jadwal = "Tidak dijadwalkan" tanpa jam palsu.
-- Changed: Build distribusi GAS Siswa `1.0.78` (`versionCode 23075`). Final only � URL unduhan web belum di-update.
+- Changed: Build distribusi GAS Siswa `1.0.78` (`versionCode 23075`). Final only — URL unduhan web belum di-update.
 ## [1.0.77-siswa] - 2026-08-16
 ### Added / Changed
 - **Siswa (Lentera)**: Kartu home **Tantangan Bulan Ini** menampilkan tugas literasi admin aktif (`literacy_tasks` per sekolah/kelas + jadwal), termasuk status submit; empty state jika belum ada.
 - **Siswa (Virtual Pet)**: Quest **Bonus Literasi Bulanan** (+200 koin / +100 XP, 1x per bulan kalender) saat siswa mengirim laporan tugas literasi; badge UI `BULANAN`.
-- Changed: Build distribusi GAS Siswa dinaikkan ke `1.0.77` (`versionCode 23074`). Catatan: salinan Final saja — URL unduhan web belum di-update.
+- Changed: Build distribusi GAS Siswa dinaikkan ke `1.0.77` (`versionCode 23074`). Catatan: salinan Final saja â€” URL unduhan web belum di-update.
 ### Fixed
 - **Siswa (Virtual Pet)**: Spam notifikasi/popup pet MATI saat vital sudah pulih (mati = vital saja).
 - **Siswa (Lentera)**: Statistik **Buku Dibaca** = `floor(total menit baca / 30)`.
@@ -66,17 +70,17 @@ Tambahkan nama pelaksana jika perlu:
 - Changed: Build distribusi GAS Siswa sebelumnya `1.0.50` (`versionCode 23047`) untuk NISN + iterasi katalog awal.
 - Fixed: Katalog `Lentera Digital` pada GAS Siswa sekarang mengikuti **master kategori web e-perpus** secara persis: `SEMUA KATEGORI`, `FIKSI & SASTRA`, `BUKU PELAJARAN`, `NON-FIKSI`, `ENSIKLOPEDIA`, `SAINS & TEKNOLOGI`, `PENGEMBANGAN DIRI`, `MINAT`, `MAJALAH`, dan `LAINNYA`.
 - Fixed: Filter kategori katalog siswa kini memakai aturan yang sama seperti halaman web `admin/books/lentera-catalog`, termasuk normalisasi buku lama seperti kategori string yang masih membawa turunan `ENSIKLOPEDIA`.
-- Fixed: **v1.0.48-siswa (23045)** — Refactor fail-open logic `EduLockComplianceGate` menghindari false-block overlay "Status EduLock belum tersinkron" saat HP bangun dari sleep + swipe recent apps (proses EduLock sempat di-kill OS, RTDB stale). Perilaku: (1) Strict activation mode (login awal) TETAP TEGAS memblokir bila remote belum valid; (2) Launch normal (setelah login) support 2 level fail-open: bila local `setupCompleted=true` → langsung lolos; bila setupCompleted=false namun 4 badge dasar SEHAT (Installed + AccessibilityOn + DeviceAdminOn + ProtectionActive) → dianggap akan self-heal oleh EduLock ScreenReceiver → lolos tanpa overlay. Logic lama strict remote-first diganti menjadi hybrid local-tolerance.
+- Fixed: **v1.0.48-siswa (23045)** â€” Refactor fail-open logic `EduLockComplianceGate` menghindari false-block overlay "Status EduLock belum tersinkron" saat HP bangun dari sleep + swipe recent apps (proses EduLock sempat di-kill OS, RTDB stale). Perilaku: (1) Strict activation mode (login awal) TETAP TEGAS memblokir bila remote belum valid; (2) Launch normal (setelah login) support 2 level fail-open: bila local `setupCompleted=true` â†’ langsung lolos; bila setupCompleted=false namun 4 badge dasar SEHAT (Installed + AccessibilityOn + DeviceAdminOn + ProtectionActive) â†’ dianggap akan self-heal oleh EduLock ScreenReceiver â†’ lolos tanpa overlay. Logic lama strict remote-first diganti menjadi hybrid local-tolerance.
 - Changed: Build distribusi GAS Siswa dinaikkan ke `1.0.48` (`versionCode 23045`) karena perubahan decision gate compliance (state logic berubah).
 
 ### PWA & Web Admin
-- Added: Admin membuat Tugas Literasi (menu **Monitoring E-Library → Tugas Literasi → Buat Tugas**) sekarang bisa **memilih kelas target mana saja** (multi-select checkbox) yang menerima tugas tersebut, tidak harus selalu dikirim ke Semua Kelas. UI modal menambahkan panel "Kirim ke Kelas": counter terpilih `X / Total`, tombol cepat `Pilih Semua / Kosongkan`, preview summary kelas yang terpilih, dan auto-generate friendly label `className` (Semua Kelas / NamaKelas / N Kelas (Kelas1, Kelas2, …)). Data persistence: field baru `classList[]` (array string authoritative) ditulis ke RTDB `literacy_tasks` dan mirror Firestore untuk backwards compatibility dengan tugas lama (yang hanya punya `className` string).
+- Added: Admin membuat Tugas Literasi (menu **Monitoring E-Library â†’ Tugas Literasi â†’ Buat Tugas**) sekarang bisa **memilih kelas target mana saja** (multi-select checkbox) yang menerima tugas tersebut, tidak harus selalu dikirim ke Semua Kelas. UI modal menambahkan panel "Kirim ke Kelas": counter terpilih `X / Total`, tombol cepat `Pilih Semua / Kosongkan`, preview summary kelas yang terpilih, dan auto-generate friendly label `className` (Semua Kelas / NamaKelas / N Kelas (Kelas1, Kelas2, â€¦)). Data persistence: field baru `classList[]` (array string authoritative) ditulis ke RTDB `literacy_tasks` dan mirror Firestore untuk backwards compatibility dengan tugas lama (yang hanya punya `className` string).
 - Added: Filter kelas pada list **Tugas Literasi** web admin sekarang mendukung multi-kelas (tugas dengan `classList = ["7A", "8C"]` sekarang muncul ketika admin memilih filter tab **7A** ataupun **8C**, bukan cuma 1 match string). Backwards compatible: tugas lama dengan `className = Semua Kelas` tetap tampil di semua tab.
 - Added: APK GAS Siswa sekarang **menyaring tugas literasi berdasarkan kelas siswa** di repository+viewmodel, sehingga tugas yang dikirim hanya ke kelas X tidak muncul di HP siswa kelas Y. Model `LiteracyTask` ditambah field `className` + `classList[]`, `LiteracyRepository.parseClassList` support 3 format RTDB (classList array / targetClasses array / className string legacy), `LiteracyRepository.taskMatchesStudentClass` rule fuzzy match kelas, `StudentLibraryViewModel.applySchoolScope` menambahkan syarat `matchesClass` sebelum tugas ditampilkan, dan `StudentLibraryScreen` menyampaikan `studentClass` hasil lookup RTDB profil siswa ke viewmodel via `setStudentScope` signature yang di-upgrade.
-- Added: Menu `Monitoring E-Library → Tugas Literasi → Perlu Dinilai` pada web admin GAS kini memungkinkan admin memberikan penilaian literasi langsung dari web admin (perilaku sama seperti APK GAS Guru).
-- Added: Mode per-item di tab `Perlu Dinilai` — setiap baris laporan pending dilengkapi tombol `Beri Nilai`. Modal berisi identitas siswa, judul buku, ringkasan, pilihan nilai A/B/C/D, umpan balik opsional, serta tombol `Simpan Nilai` (GRADED) / `Tolak` (REJECTED) / `Batal`.
-- Added: Mode massal Opsi 3 di tab `Perlu Dinilai` — toolbar berisi checkbox `Pilih Semua`, checkbox per-row, badge `Terpilih: N`, tombol hijau `Nilai Semua (N)`, dan tombol biru `Nilai Terpilih`. Data layer `useGasLibrary.bulkGradeLiteracyLogs` memakai single multi-path RTDB update untuk commit semua laporan sekaligus.
-- Added: Error handling per-item & massal — jika penyimpanan gagal, modal menampilkan strip pesan error tanpa menutup modal sehingga admin bisa retry tanpa input ulang.
+- Added: Menu `Monitoring E-Library â†’ Tugas Literasi â†’ Perlu Dinilai` pada web admin GAS kini memungkinkan admin memberikan penilaian literasi langsung dari web admin (perilaku sama seperti APK GAS Guru).
+- Added: Mode per-item di tab `Perlu Dinilai` â€” setiap baris laporan pending dilengkapi tombol `Beri Nilai`. Modal berisi identitas siswa, judul buku, ringkasan, pilihan nilai A/B/C/D, umpan balik opsional, serta tombol `Simpan Nilai` (GRADED) / `Tolak` (REJECTED) / `Batal`.
+- Added: Mode massal Opsi 3 di tab `Perlu Dinilai` â€” toolbar berisi checkbox `Pilih Semua`, checkbox per-row, badge `Terpilih: N`, tombol hijau `Nilai Semua (N)`, dan tombol biru `Nilai Terpilih`. Data layer `useGasLibrary.bulkGradeLiteracyLogs` memakai single multi-path RTDB update untuk commit semua laporan sekaligus.
+- Added: Error handling per-item & massal â€” jika penyimpanan gagal, modal menampilkan strip pesan error tanpa menutup modal sehingga admin bisa retry tanpa input ulang.
 - Added: Kartu `Sholat Dzuhur` di panel `Presensi Sholat -> Pengaturan Sistem` sekarang punya `Jam Mulai` dan `Jam Selesai` sendiri. Nilainya disimpan ke `school_settings/{schoolId}/prayer_v2/types/DZUHUR`, sehingga admin tidak lagi harus menumpang jam sekolah umum untuk mengatur window Dzuhur.
 - Added: PWA Guru menambahkan menu baru `Presensi Dhuha & Jum'at` agar perilakunya sama dengan APK Guru, memakai route `/guru/sholat-dhuha-jumat` dan API `/api/teacher/prayer-v2`.
 - Added: `Presensi Dhuha & Jum'at` di PWA Guru memakai mode wali kelas; guru hanya melihat siswa kelas walinya, bisa input manual dengan label status yang sama seperti Dzuhur, dan `Jum'at` hanya aktif jika kelas tersebut terjadwal di `prayer_v2`.
@@ -126,29 +130,29 @@ Tambahkan nama pelaksana jika perlu:
 - **Siswa**: UI Absensi kini dilengkapi dengan *Real-time Location Tracking* pada peta. Titik lokasi dan validasi jarak ke sekolah akan otomatis diperbarui setiap 3 detik atau setiap siswa bergerak sejauh 1 meter, tanpa perlu menekan tombol refresh lagi.
 - **Siswa**: Memperbaiki label teks di dalam kotak informasi Virtual Pet menjadi "30 menit".
 
-## [1.0.52] - 2026-08-106 - GAS Siswa Release (23036) - DEPLOYED LIVE ✓
+## [1.0.52] - 2026-08-106 - GAS Siswa Release (23036) - DEPLOYED LIVE âœ“
 
 ### Umum
-- Bumped defaultConfig GAS: versionCode `1051 → 1052`, versionName `1.0.38 → 1.0.39`.
-- Flavor `siswa` versionCode: `23035 → 23036` (release build `assembleSiswaRelease` SUCCESS, 3m 6s, signer SHA256 `64738955…` cocok dengan EduLock).
-- APK tersinkron ke `web/public/apk/GAS-Siswa-release.apk` (20.08 MB, sha256 `B64C0DE2…`), `apk-manifest.json` updatedAt `2026-08-06T07:27:43`.
+- Bumped defaultConfig GAS: versionCode `1051 â†’ 1052`, versionName `1.0.38 â†’ 1.0.39`.
+- Flavor `siswa` versionCode: `23035 â†’ 23036` (release build `assembleSiswaRelease` SUCCESS, 3m 6s, signer SHA256 `64738955â€¦` cocok dengan EduLock).
+- APK tersinkron ke `web/public/apk/GAS-Siswa-release.apk` (20.08 MB, sha256 `B64C0DE2â€¦`), `apk-manifest.json` updatedAt `2026-08-06T07:27:43`.
 - Web tutorial `/gas/install` auto-sync APK 1.0.39-siswa bersama deploy commit ini, App Hosting auto rollout.
 
 ### Siswa (Release 1.0.39-siswa 23036)
-- Added: APK GAS Siswa sekarang **menyaring tugas literasi berdasarkan kelas siswa** (repository + viewmodel + screen). Tugas yang dikirim admin hanya ke kelas X TIDAK muncul di HP siswa kelas Y. Sebelumnya (APK 23035) tidak ada filtering ini → semua siswa melihat semua tugas. Detail 7 file source:
+- Added: APK GAS Siswa sekarang **menyaring tugas literasi berdasarkan kelas siswa** (repository + viewmodel + screen). Tugas yang dikirim admin hanya ke kelas X TIDAK muncul di HP siswa kelas Y. Sebelumnya (APK 23035) tidak ada filtering ini â†’ semua siswa melihat semua tugas. Detail 7 file source:
   - Model `LiteracyTask` tambah `className` + `classList: List<String> = emptyList()` (backward compat default empty).
-  - `LiteracyRepository.parseClassList` — fallback 3 tahap: RTDB `classList[]` → alias `targetClasses[]` → `className` string lama; default `["semua kelas"]` bila semua kosong.
-  - `LiteracyRepository.taskMatchesStudentClass` — fuzzy rule: empty/semua → lolos; exact lowercase match; substring prefix match (misal "7A" match "Kelas 7A").
-  - `StudentLibraryViewModel.applySchoolScope()` — filter 3 kondisi: `isActive && matchesSchool && matchesClass`.
+  - `LiteracyRepository.parseClassList` â€” fallback 3 tahap: RTDB `classList[]` â†’ alias `targetClasses[]` â†’ `className` string lama; default `["semua kelas"]` bila semua kosong.
+  - `LiteracyRepository.taskMatchesStudentClass` â€” fuzzy rule: empty/semua â†’ lolos; exact lowercase match; substring prefix match (misal "7A" match "Kelas 7A").
+  - `StudentLibraryViewModel.applySchoolScope()` â€” filter 3 kondisi: `isActive && matchesSchool && matchesClass`.
   - `setStudentScope(studentId, aliases, studentClass = "")` signature upgrade; state `_studentClass` disimpan; `applySchoolScope()` re-trigger otomatis ketika kelas berubah.
-  - `StudentLibraryScreen` `LaunchedEffect(studentId, studentAliases, studentClass)` — passing `student.child("class") ?: student.child("kelas")` hasil lookup profil RTDB siswa ke viewmodel.
-- Backward compat TANPA MIGRASI DB: Tugas lama record `literacy_tasks` tanpa `classList` → parseClassList auto fallback ke `className` (biasanya `Semua Kelas`) → tugas lama TETAP tampil ke semua siswa seperti semula.
+  - `StudentLibraryScreen` `LaunchedEffect(studentId, studentAliases, studentClass)` â€” passing `student.child("class") ?: student.child("kelas")` hasil lookup profil RTDB siswa ke viewmodel.
+- Backward compat TANPA MIGRASI DB: Tugas lama record `literacy_tasks` tanpa `classList` â†’ parseClassList auto fallback ke `className` (biasanya `Semua Kelas`) â†’ tugas lama TETAP tampil ke semua siswa seperti semula.
 
-## [1.0.38] - 2026-08-05 - GAS Siswa Release (23035) - DEPLOYED LIVE ✓
+## [1.0.38] - 2026-08-05 - GAS Siswa Release (23035) - DEPLOYED LIVE âœ“
 
 ### Umum
-- Bumped defaultConfig GAS: versionCode `1050 → 1051`, versionName `1.0.37 → 1.0.38`.
-- Flavor `siswa` versionCode: `23034 → 23035` (release build `assembleSiswaRelease` SUCCESS, signer SHA256 `64738955…` cocok).
+- Bumped defaultConfig GAS: versionCode `1050 â†’ 1051`, versionName `1.0.37 â†’ 1.0.38`.
+- Flavor `siswa` versionCode: `23034 â†’ 23035` (release build `assembleSiswaRelease` SUCCESS, signer SHA256 `64738955â€¦` cocok).
 - Web tutorial `/gas/install` sudah sync APK 1.0.38-siswa via commit `65cd2a93`, App Hosting auto rollout.
 - APK tersimpan di `Apk Release/Final/` dan `web/public/apk/GAS-Siswa-release.apk` (20.08 MB).
 
@@ -159,7 +163,7 @@ Tambahkan nama pelaksana jika perlu:
 - Changed: Build distribusi manual terbaru GAS Guru dinaikkan ke `1.0.33-guru (1045)` untuk membawa perbaikan rekap bulanan `Presensi Sholat`.
 - Changed: Jalur distribusi GAS Guru tetap `manual install`; build guru terbaru tidak disinkronkan ke `web/public/apk` dan tidak memakai live URL tutorial siswa.
 - Changed: Build distribusi manual terbaru GAS Guru dinaikkan ke `1.0.33-guru (1044)` untuk membawa pembaruan bersama di `LoginScreen.kt` dan menjaga jalur distribusi tetap satu set dengan build siswa terbaru.
-- Fixed: Reaktivitas EduLock compliance di `AppNavigation` — `sessionRole`/`sessionSchoolId` sekarang re-derive ketika navController berpindah route (login → home) + UID berubah, sehingga compliance check langsung aktif setelah login tanpa harus kill APK dari recent apps.
+- Fixed: Reaktivitas EduLock compliance di `AppNavigation` â€” `sessionRole`/`sessionSchoolId` sekarang re-derive ketika navController berpindah route (login â†’ home) + UID berubah, sehingga compliance check langsung aktif setelah login tanpa harus kill APK dari recent apps.
 - Changed: Build distribusi manual terbaru GAS Guru dinaikkan ke `1.0.32-guru (1043)` untuk membawa perbaikan reactivity compliance gate di Navigation bersama.
 - Changed: Teks preview `Login sebagai: <username>@domain` di bawah kolom nama pada halaman login guru juga dihapus, konsisten dengan perubahan halaman login siswa.
 - Changed: Build distribusi manual terbaru GAS Guru dinaikkan ke `1.0.31-guru (1042)` untuk membawa perubahan UI hapus preview username login ini.
@@ -172,10 +176,10 @@ Tambahkan nama pelaksana jika perlu:
 
 ### Siswa (Release 1.0.38-siswa 23035)
 - Added: EduLock Compliance Gate Lokal sekarang mengecek **5 poin lokal sekaligus** (sebelumnya bergantung RTDB telemetry): `Install` + `Setup Selesai (setup_completed)` + `Accessibility` + `Device Admin` + `Proteksi Aktif / tombol MULAI (is_protection_active)`. Poin #2 dan #5 dibaca langsung dari SharedPreferences EduLock lintas-app via `context.createPackageContext` + signer SHA256 yang sama. Ini menutup **dua celah sekaligus**: (a) false-positive Redmi 15C / vendor agresif service background di-kill & RTDB stale, (b) celah skip tekan tombol MULAI yang sebelumnya lolos jika RTDB telemetry belum terbit.
-- Fixed: Jika siswa selesaikan 5 setup EduLock namun **belum / tidak menekan tombol MULAI** → `protectionActive=false` → GAS otomatis tertahan dengan reason: *"Proteksi EduLock belum dijalankan. Buka EduLock dan tekan tombol MULAI agar proteksi aktif."* dan menampilkan tombol shortcut HIJAU **"BUKA EDULOCK & TEKAN MULAI"** (1 tap buka EduLock langsung).
-- Changed: Overlay merah compliance status diganti dari 3 teks badge → **5 kartu LocalBadge berwarna** (62dp, border hijau/merah) berurutan: `Install` · `Setup` · `Akses` · `Admin` · `Aktif`. Keterangan tambahan "Aktif = tombol MULAI di EduLock sudah ditekan" ditampilkan di bawahnya agar guru/petugas langsung paham.
-- Changed: Overlay merah sekarang menyediakan **3 varian tombol shortcut UTAMA**: HIJAU `BUKA EDULOCK & TEKAN MULAI` (setup/protectionActive FAIL), BIRU `BUKA AKSESIBILITAS`, BIRU `BUKA ADMIN PERANGKAT` — otomatis muncul sesuai reason. Dua tombol outlined permanen (`Pengaturan Aksesibilitas` / `Pengaturan Admin Perangkat`) tetap ada untuk manual kapanpun.
-- Fixed: Skenario kasus siswa MOHAMMAD EVAN SATYA WIJAYA (badge `Dijeda Admin` = complianceStatus=PAUSED) → **TETAP DIBLOKIR** meskipun 5 poin lokal ✅ semua (kendali admin prioritas tertinggi, QA Test #6 terpenuhi).
+- Fixed: Jika siswa selesaikan 5 setup EduLock namun **belum / tidak menekan tombol MULAI** â†’ `protectionActive=false` â†’ GAS otomatis tertahan dengan reason: *"Proteksi EduLock belum dijalankan. Buka EduLock dan tekan tombol MULAI agar proteksi aktif."* dan menampilkan tombol shortcut HIJAU **"BUKA EDULOCK & TEKAN MULAI"** (1 tap buka EduLock langsung).
+- Changed: Overlay merah compliance status diganti dari 3 teks badge â†’ **5 kartu LocalBadge berwarna** (62dp, border hijau/merah) berurutan: `Install` Â· `Setup` Â· `Akses` Â· `Admin` Â· `Aktif`. Keterangan tambahan "Aktif = tombol MULAI di EduLock sudah ditekan" ditampilkan di bawahnya agar guru/petugas langsung paham.
+- Changed: Overlay merah sekarang menyediakan **3 varian tombol shortcut UTAMA**: HIJAU `BUKA EDULOCK & TEKAN MULAI` (setup/protectionActive FAIL), BIRU `BUKA AKSESIBILITAS`, BIRU `BUKA ADMIN PERANGKAT` â€” otomatis muncul sesuai reason. Dua tombol outlined permanen (`Pengaturan Aksesibilitas` / `Pengaturan Admin Perangkat`) tetap ada untuk manual kapanpun.
+- Fixed: Skenario kasus siswa MOHAMMAD EVAN SATYA WIJAYA (badge `Dijeda Admin` = complianceStatus=PAUSED) â†’ **TETAP DIBLOKIR** meskipun 5 poin lokal âœ… semua (kendali admin prioritas tertinggi, QA Test #6 terpenuhi).
 - Removed: Card `Prestasi` di menu `Kedisiplinan` siswa dihapus; ringkasan `Pelanggaran` sekarang memakai lebar penuh agar layout tetap rapi tanpa mengubah riwayat catatan.
 - Fixed: Login GAS Siswa sekarang tidak cukup mengecek EduLock terpasang. Saat tombol `Masuk` ditekan, aplikasi juga memverifikasi EduLock sudah aktif/sehat; jika telemetry belum ada, proteksi mati, accessibility/device admin mati, atau status stale/non-compliant, login langsung ditahan.
 - Added: Layar `Force Update` GAS siswa sekarang punya tombol `Download APK Terbaru` yang mengarahkan siswa ke halaman tutorial instalasi `/gas/install`.
@@ -187,15 +191,15 @@ Tambahkan nama pelaksana jika perlu:
 - Changed: Build distribusi manual terbaru GAS Siswa dinaikkan ke `1.0.34-siswa (23031)` untuk membawa dukungan jam khusus Dzuhur dari web admin.
 - Changed: Alur cek EduLock di halaman login GAS Siswa diubah: siswa boleh membuka halaman login dan mengisi semua kolom terlebih dahulu; pengecekan EduLock baru dijalankan saat tombol `Masuk` ditekan. Jika EduLock belum terpasang, barulah overlay penahanan muncul. Overlay juga dipindah ke layer penuh supaya tidak bertumpuk dengan form.
 - Changed: Build distribusi manual terbaru GAS Siswa dinaikkan ke `1.0.33-siswa (23030)` untuk membawa perubahan alur cek EduLock berbasis klik tombol Masuk ini.
-- Fixed: Halaman Login GAS Siswa sekarang **langsung mengecek keberadaan EduLock di cold start pertama instalasi baru**, tanpa harus user keluar-kill recent-buka ulang. Pre-gate `produceState` polling PackageManager tiap 800ms; jika EduLock belum terpasang, `EduLockComplianceOverlay` langsung tampil block halaman login, tombol MASUK disabled, tombol `BUKA EDULOCK` tersedia untuk redirect. Setelah EduLock ter-install, polling otomatis mendeteksi dalam 1 detik → overlay hilang tanpa restart.
-- Fixed: Reaktivitas EduLock compliance di `AppNavigation` — `sessionRole`/`sessionSchoolId` sekarang re-derive ketika navController berpindah route (login → home) + UID berubah, sehingga telemetry compliance (COMPLIANT + ONLINE + device sama) langsung ter-trigger SESUDAH login sukses, tanpa harus kill APK dari recent apps.
+- Fixed: Halaman Login GAS Siswa sekarang **langsung mengecek keberadaan EduLock di cold start pertama instalasi baru**, tanpa harus user keluar-kill recent-buka ulang. Pre-gate `produceState` polling PackageManager tiap 800ms; jika EduLock belum terpasang, `EduLockComplianceOverlay` langsung tampil block halaman login, tombol MASUK disabled, tombol `BUKA EDULOCK` tersedia untuk redirect. Setelah EduLock ter-install, polling otomatis mendeteksi dalam 1 detik â†’ overlay hilang tanpa restart.
+- Fixed: Reaktivitas EduLock compliance di `AppNavigation` â€” `sessionRole`/`sessionSchoolId` sekarang re-derive ketika navController berpindah route (login â†’ home) + UID berubah, sehingga telemetry compliance (COMPLIANT + ONLINE + device sama) langsung ter-trigger SESUDAH login sukses, tanpa harus kill APK dari recent apps.
 - Changed: Build distribusi manual terbaru GAS Siswa dinaikkan ke `1.0.32-siswa (23029)` untuk membawa perbaikan EduLock pre-check install-pertama + reactivity compliance gate.
 - Changed: Teks preview `Login sebagai: <username>@domain` di bawah kolom nama pada halaman login dihapus (ketika nama sudah terisi otomatis), karena kolom nama sudah read-only dan teks preview dirasa membingungkan.
 - Changed: Build distribusi manual terbaru GAS Siswa dinaikkan ke `1.0.31-siswa (23028)` untuk membawa perubahan UI hapus preview username login ini.
-- Fixed: Auto-fill nama siswa di halaman login diperbaiki. Resolusi sekolah sekarang juga mencoba `orderByChild("npsn")` dan `orderByChild("schoolId")` selain direct key, sehingga NPSN mentah (angka) yang tidak menjadi key schools node tetap ter-resolve dengan benar. Lookup user juga ditambah fallback 5 tahap (nisn/nuptk string → numeric → direct key → username → name/nama) dan membaca field `displayName` sebagai nama cadangan.
+- Fixed: Auto-fill nama siswa di halaman login diperbaiki. Resolusi sekolah sekarang juga mencoba `orderByChild("npsn")` dan `orderByChild("schoolId")` selain direct key, sehingga NPSN mentah (angka) yang tidak menjadi key schools node tetap ter-resolve dengan benar. Lookup user juga ditambah fallback 5 tahap (nisn/nuptk string â†’ numeric â†’ direct key â†’ username â†’ name/nama) dan membaca field `displayName` sebagai nama cadangan.
 - Changed: Build distribusi manual terbaru GAS Siswa dinaikkan ke `1.0.31-siswa (23027)` untuk membawa perbaikan auto-fill nama login ini.
 - Added: GAS Siswa menambahkan menu baru `Presensi Dhuha & Jum'at` sebagai layar terpisah (tidak mengubah menu `Presensi Sholat` Dzuhur). Fitur ini membaca konfigurasi `prayer_v2` dari web admin dan menyimpan log ke `prayer_attendance_v2`.
-- Changed: Ukuran ikon menu beranda GAS Siswa diperkecil agar tampilan tidak terlalu “penuh” di layar.
+- Changed: Ukuran ikon menu beranda GAS Siswa diperkecil agar tampilan tidak terlalu â€œpenuhâ€ di layar.
 - Changed: Build distribusi manual terbaru GAS Siswa dinaikkan ke `1.0.30-siswa (23024)` untuk membawa menu baru tersebut + penyesuaian ukuran ikon.
 - Fixed: Tombol unduh APK di portal tutorial live sempat `404` pada App Hosting standalone; diperbaiki lewat `ensure-standalone-public.mjs` + stop tracing `apk-manifest` dari `public` (commit `3c9b1413`), unduh GAS+EduLock live sudah normal.
 - Fixed: Binding 1 akun 1 device GAS Siswa dipisah ke field `gasDeviceId`, sehingga logout/login ulang di HP yang sama tetap berhasil dan binding EduLock tidak lagi menimpa kunci perangkat GAS.
