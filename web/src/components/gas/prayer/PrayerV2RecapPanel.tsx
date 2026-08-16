@@ -125,12 +125,19 @@ function isScheduledForClass(
   dayOfWeek: number,
   className: string,
   schedules: PrayerClassSchedule[],
-  overrides: PrayerDateOverride[]
+  overrides: PrayerDateOverride[],
+  classLabelMap: Map<string, string>
 ) {
   const normalizedClass = normalizeClassCompact(className);
   if (!normalizedClass) return false;
 
-  const isClassMatch = (candidate: string) => normalizeClassCompact(candidate) === normalizedClass;
+  const isClassMatch = (candidate: string) => {
+    const raw = String(candidate || "").trim();
+    if (!raw) return false;
+    const label = classLabelMap.get(raw) || raw;
+    const candidates = [raw, label].map((value) => normalizeClassCompact(value)).filter(Boolean);
+    return candidates.some((value) => value === normalizedClass);
+  };
 
   const off = overrides.find(
     (item) =>
@@ -206,6 +213,16 @@ export function PrayerV2RecapPanel({
   const prayerConfig = useMemo(() => prayerTypes.find((item) => item.id === selectedPrayerType), [prayerTypes, selectedPrayerType]);
   const effectivePrayerType = useMemo(() => toPrayerTypeV2(selectedPrayerType), [selectedPrayerType]);
 
+  const classLabelMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (classes || []).forEach((item) => {
+      const id = String(item.id || "").trim();
+      if (!id) return;
+      map.set(id, String(item.className || item.name || id).trim() || id);
+    });
+    return map;
+  }, [classes]);
+
   const scopedStudents = useMemo(() => {
     const requireMuslim = prayerConfig?.requireMuslim !== false;
     const eligibleGender = prayerConfig?.eligibleGender || "all";
@@ -271,7 +288,8 @@ export function PrayerV2RecapPanel({
             date.getDay(),
             className,
             schedules || [],
-            overrides || []
+            overrides || [],
+            classLabelMap
           );
           if (!scheduled) continue;
           wajib += 1;
@@ -295,7 +313,7 @@ export function PrayerV2RecapPanel({
         percentage: wajib > 0 ? String(Math.round((pray / wajib) * 100)) : "-",
       };
     });
-  }, [effectivePrayerType, filteredStudents, logMap, monthDates, overrides, prayerConfig?.enabled, schedules]);
+  }, [classLabelMap, effectivePrayerType, filteredStudents, logMap, monthDates, overrides, prayerConfig?.enabled, schedules]);
 
   const dailyRows = useMemo(() => {
     const queryText = searchQuery.trim().toLowerCase();

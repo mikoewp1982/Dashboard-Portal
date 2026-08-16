@@ -56,13 +56,28 @@ const normalizePrayerType = (typeId: string, raw?: Partial<PrayerTypeConfig>): P
   };
 };
 
+const parseClassIds = (raw: unknown): string[] => {
+  if (Array.isArray(raw)) {
+    return raw.map((value) => String(value || "").trim()).filter(Boolean);
+  }
+  if (raw && typeof raw === "object") {
+    return Object.entries(raw as Record<string, unknown>)
+      .flatMap(([key, value]) => {
+        if (value === true) return [String(key || "").trim()];
+        return [String(value || "").trim()];
+      })
+      .filter(Boolean);
+  }
+  return [];
+};
+
 const normalizeSchedules = (data: Record<string, any> | null): PrayerClassSchedule[] => {
   if (!data) return [];
   return Object.entries(data)
     .map(([id, value]) => ({
       id,
       prayerType: value?.prayerType ?? "DHUHA",
-      classIds: Array.isArray(value?.classIds) ? value.classIds.filter(Boolean) : [],
+      classIds: parseClassIds(value?.classIds),
       dayOfWeek: Number(value?.dayOfWeek ?? 1),
       startTime: String(value?.startTime ?? "07:00"),
       endTime: String(value?.endTime ?? "07:30"),
@@ -79,7 +94,7 @@ const normalizeOverrides = (data: Record<string, any> | null): PrayerDateOverrid
       id,
       date: String(value?.date ?? ""),
       prayerType: value?.prayerType ?? "DHUHA",
-      classIds: Array.isArray(value?.classIds) ? value.classIds.filter(Boolean) : [],
+      classIds: parseClassIds(value?.classIds),
       action: value?.action === "activate" ? "activate" : "deactivate",
       notes: String(value?.notes ?? ""),
     }))

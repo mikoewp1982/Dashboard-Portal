@@ -1,4 +1,4 @@
-﻿package com.satupintu.mobile.ui
+package com.satupintu.mobile.ui
 
 import android.widget.Toast
 import androidx.compose.runtime.Composable
@@ -60,10 +60,12 @@ import com.satupintu.mobile.ui.screens.teacher.TeacherStudentsScreen
 import com.satupintu.mobile.ui.screens.teacher.TeacherBullyingScreen
 import com.satupintu.mobile.ui.screens.teacher.TeacherNotificationScreen
 import com.satupintu.mobile.ui.screens.teacher.TeacherPrayerScreen
+import com.satupintu.mobile.ui.screens.teacher.TeacherPrayerDhuhaJumatScreen
 import com.satupintu.mobile.ui.screens.teacher.TeacherSevenHabitsScreen
 import com.satupintu.mobile.ui.screens.student.ReportBullyingScreen
 import com.satupintu.mobile.ui.screens.student.HaloSpentgapaScreen
 import com.satupintu.mobile.ui.screens.student.PrayerScreen
+import com.satupintu.mobile.ui.screens.student.PrayerDhuhaJumatScreen
 import com.satupintu.mobile.ui.screens.student.ENGLISH_DICTIONARY_ROUTE
 import com.satupintu.mobile.ui.screens.student.JAVANESE_DICTIONARY_ROUTE
 import com.satupintu.mobile.ui.screens.student.StudentEnglishDictionaryScreen
@@ -560,6 +562,22 @@ fun AppNavigation(
                 )
             }
         }
+        composable("prayer_dhuha_jumat") {
+            GuardedRoute("prayer_dhuha_jumat") {
+                val context = LocalContext.current
+                val prefs = SecurePreferences.getSessionPrefs(context)
+                val credential = SecurityUtils.getStoredLoginKey(prefs)
+                val studentId = SecurityUtils.getStoredStudentKey(prefs).ifBlank { credential }
+                val schoolId = SecurityUtils.getStoredSchoolId(prefs)
+
+                PrayerDhuhaJumatScreen(
+                    studentCredential = credential,
+                    studentId = studentId,
+                    schoolId = schoolId,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
         composable("halo_spentgapa") {
             GuardedRoute("halo_spentgapa") {
                 val context = LocalContext.current
@@ -657,6 +675,20 @@ fun AppNavigation(
                 val schoolId = SecurityUtils.getStoredSchoolId(prefs)
 
                 TeacherPrayerScreen(
+                    teacherNuptk = credential,
+                    schoolId = schoolId,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("teacher_prayer_dhuha_jumat") {
+            GuardedRoute("teacher_prayer_dhuha_jumat") {
+                val context = LocalContext.current
+                val prefs = SecurePreferences.getSessionPrefs(context)
+                val credential = SecurityUtils.getStoredTeacherKey(prefs)
+                val schoolId = SecurityUtils.getStoredSchoolId(prefs)
+
+                TeacherPrayerDhuhaJumatScreen(
                     teacherNuptk = credential,
                     schoolId = schoolId,
                     onBack = { navController.popBackStack() }

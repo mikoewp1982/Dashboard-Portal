@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Loader2, RefreshCw } from "lucide-react";
+import { useState } from "react";
 import { PrayerRecapPanel } from "./PrayerRecapPanel";
 import { useGasSettings } from "@/hooks/gas/attendance/useGasSettings";
 import { useGasPrayerAttendance } from "@/hooks/gas/attendance/useGasPrayerAttendance";
@@ -17,7 +18,6 @@ export default function GasPrayerReportPanel({ schoolId }: GasPrayerReportPanelP
 
   const { schedules, holidays } = useGasSettings(schoolId);
   const { classes, students, logs, loading, refresh } = useGasPrayerAttendance(schoolId, selectedMonth, selectedYear);
-  const { RefreshCw, Loader2 } = require("lucide-react");
 
   return (
     <div className="space-y-6 flex-1 overflow-y-auto p-6">
