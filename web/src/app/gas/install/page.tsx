@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getApkDownloadHref } from "@/lib/getApkDownloadHref";
+import {
+  getApkDownloadHref,
+  getLatestApkMetaByPackageName,
+} from "@/lib/getApkDownloadHref";
 import gasAbsensiStep1Image from "../../../../public/tutorial/gas-siswa/absensi/1.jpeg";
 import gasAbsensiStep2Image from "../../../../public/tutorial/gas-siswa/absensi/2.jpeg";
 import gasAbsensiStep3Image from "../../../../public/tutorial/gas-siswa/absensi/3.jpeg";
@@ -16,6 +19,7 @@ import gasLenteraStep3Image from "../../../../public/tutorial/gas-siswa/lentera-
 import gasLenteraStep4Image from "../../../../public/tutorial/gas-siswa/lentera-digital/4.jpeg";
 import gasLenteraStep5Image from "../../../../public/tutorial/gas-siswa/lentera-digital/5.jpeg";
 import gasPresensiSholatStep1Image from "../../../../public/tutorial/gas-siswa/presensi-sholat/1.jpeg";
+import gasPresensiDhuhaJumatImage from "../../../../public/tutorial/gas-siswa/presensi-dhuha-jumat/1.jpeg";
 import gasLogoImage from "../../../../public/tutorial/gas-siswa/logo-aplikasi.png";
 import gasMenuImage from "../../../../public/tutorial/gas-siswa/menu-gas.png";
 import gasToolsImage from "../../../../public/tutorial/gas-siswa/tools/1.jpeg";
@@ -26,28 +30,30 @@ export const metadata: Metadata = {
   description: "Panduan instalasi APK GAS Siswa melalui browser Android.",
 };
 
-const installSteps = [
-  {
-    title: "Unduh APK GAS Siswa",
-    body: "Tekan tombol Unduh APK di bawah halaman ini. File yang terunduh bernama GAS-Siswa-release.apk.",
-  },
-  {
-    title: "Izinkan instalasi dari browser",
-    body: 'Jika muncul peringatan keamanan, buka pengaturan yang ditawarkan lalu aktifkan izin instal aplikasi dari browser yang sedang dipakai.',
-  },
-  {
-    title: "Instal aplikasi sampai selesai",
-    body: "Setelah izin aktif, lanjutkan pemasangan APK sampai selesai tanpa menutup layar.",
-  },
-  {
-    title: "Buka aplikasi GAS Siswa",
-    body: "Setelah terpasang, buka aplikasi GAS Siswa dan login memakai akun yang diberikan sekolah.",
-  },
-  {
-    title: "Izinkan akses lokasi saat diminta",
-    body: 'Jika muncul permintaan izin lokasi, pilih "Saat aplikasi digunakan" agar fitur berjalan normal.',
-  },
-];
+function getInstallSteps(downloadFileName: string) {
+  return [
+    {
+      title: "Unduh APK GAS Siswa",
+      body: `Tekan tombol Unduh APK di bawah halaman ini. File yang terunduh bernama ${downloadFileName}.`,
+    },
+    {
+      title: "Izinkan instalasi dari browser",
+      body: 'Jika muncul peringatan keamanan, buka pengaturan yang ditawarkan lalu aktifkan izin instal aplikasi dari browser yang sedang dipakai.',
+    },
+    {
+      title: "Instal aplikasi sampai selesai",
+      body: "Setelah izin aktif, lanjutkan pemasangan APK sampai selesai tanpa menutup layar.",
+    },
+    {
+      title: "Buka aplikasi GAS Siswa",
+      body: "Setelah terpasang, buka aplikasi GAS Siswa dan login memakai akun yang diberikan sekolah.",
+    },
+    {
+      title: "Izinkan akses lokasi saat diminta",
+      body: 'Jika muncul permintaan izin lokasi, pilih "Saat aplikasi digunakan" agar fitur berjalan normal.',
+    },
+  ];
+}
 
 const notes = [
   "Gunakan HP Android. Instalasi APK tidak berlaku untuk iPhone.",
@@ -123,6 +129,24 @@ const gasMenuItems = [
         body: 'Cek aturan hari dan lokasi musholla, lalu tekan "Presensi Sholat" saat waktunya. Tombol Presensi Sholat akan muncul jika di area Mushollah.',
         imageSrc: gasPresensiSholatStep1Image,
         imageAlt: "Presensi Sholat - Halaman utama",
+      },
+    ],
+  },
+  {
+    id: "presensi-dhuha-jumat",
+    title: "Presensi Dhuha & Jum'at",
+    body: "Catat presensi khusus sholat Dhuha dan Jum'at.",
+    steps: [
+      "Buka menu Presensi Dhuha & Jum'at.",
+      "Pilih tombol presensi (Dhuha atau Jum'at) yang sedang aktif.",
+      "Pastikan Anda berada di lokasi masjid/musholla sekolah.",
+      "Tunggu hingga status presensi berhasil tercatat."
+    ],
+    visualSteps: [
+      {
+        title: "1. Buka Halaman Presensi",
+        imageSrc: gasPresensiDhuhaJumatImage,
+        imageAlt: "Presensi Dhuha & Jum'at - Halaman utama",
       },
     ],
   },
@@ -259,20 +283,18 @@ const gasMenuItems = [
       },
     ],
   },
-  {
-    id: "catat-pelanggaran",
-    title: "Catat Pelanggaran",
-    body: "Input catatan pelanggaran bila menu ini diaktifkan.",
-    steps: [
-      "Buka menu Catat Pelanggaran.",
-      "Isi data yang diminta (jenis, keterangan, bukti jika ada).",
-      "Simpan/kirim sesuai instruksi sekolah.",
-    ],
-  },
 ];
 
 export default function GasStudentInstallPage() {
-  const apkHref = getApkDownloadHref("GAS-Siswa-release.apk");
+  const apkMeta = getLatestApkMetaByPackageName("com.satupintu.mobile.siswa", {
+    fileName: "GAS-Siswa-1.0.76-siswa-23073.apk",
+    versionName: "1.0.76-siswa",
+    versionCode: 23073,
+  });
+  // URL must be the versioned file so mobile Save-As keeps the version in the name.
+  const apkHref = getApkDownloadHref(apkMeta.fileName);
+  const downloadFileName = apkMeta.fileName;
+  const installSteps = getInstallSteps(downloadFileName);
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#0ea5e9_0%,_#0f172a_46%,_#020617_100%)] text-white">
@@ -295,12 +317,13 @@ export default function GasStudentInstallPage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
+                <a
                   href={apkHref}
+                  download={downloadFileName}
                   className="inline-flex items-center justify-center rounded-2xl bg-sky-400 px-6 py-4 text-base font-bold text-slate-950 transition hover:bg-sky-300"
                 >
                   Unduh APK GAS Siswa
-                </Link>
+                </a>
                 <a
                   href="#langkah-instalasi"
                   className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-4 text-base font-semibold text-white transition hover:bg-white/10"
@@ -314,6 +337,20 @@ export default function GasStudentInstallPage() {
                   Penggunaan Menu GAS
                 </a>
               </div>
+              <p className="mt-3 text-sm text-slate-300">
+                File unduhan:{" "}
+                <span className="font-semibold text-sky-200">{downloadFileName}</span>
+                {apkMeta.versionName ? (
+                  <>
+                    {" "}
+                    (versi {apkMeta.versionName}
+                    {typeof apkMeta.versionCode === "number"
+                      ? ` / ${apkMeta.versionCode}`
+                      : ""}
+                    )
+                  </>
+                ) : null}
+              </p>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
