@@ -17,6 +17,21 @@ Field berikut wajib dipakai di setiap entri:
 - Flavor terdampak
 ## Tujuan perubahan
 
+## 2026-08-16 21:22 - [SHIP APK] GAS-Siswa v1.0.79-siswa (23076) - Fix cold-start NavigationKt ClassNotFound
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** `siswa`
+- **Tujuan perubahan:**
+  - Device logcat: `FATAL EXCEPTION` / `NoClassDefFoundError: Failed resolution of: Lcom/satupintu/mobile/ui/NavigationKt;` ? silent exit ke desktop.
+  - Pecah NavHost routes ke `GasAppNavGraph.kt`; enable `multiDexEnabled` + `GasApp` (`MultiDexApplication`) + `multidex-keep.txt`.
+  - Verified: install + `am start` di V2030 — tidak ada FATAL; `versionName=1.0.79-siswa` / `versionCode=23076`.
+  - **Tidak** sync URL unduhan web — Final only.
+- **Build:** `.\gradlew.bat :app:assembleSiswaRelease --no-daemon --max-workers=2`
+- **Distribusi Final:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.79-siswa-23076.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+- **SHA256:** `8CC2F9DE2AD0ED9C7A289DBFE59EBD28EBE345B2F6E7F25F9290AE02F5891C48`
+- **URL unduhan web:** TIDAK di-update (Final only)
 ## 2026-08-16 20:53 - [SHIP APK] GAS-Siswa v1.0.78-siswa (23075) - Class match + jam admin Dhuha/Jumat (Final only)
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix`

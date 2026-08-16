@@ -28,6 +28,10 @@ Tambahkan nama pelaksana jika perlu:
 ### Siswa
 
 
+## [1.0.79-siswa] - 2026-08-16
+### Fixed
+- **Siswa (cold start)**: Crash silent/instant exit saat buka APK — `NoClassDefFoundError: NavigationKt` / `ClassNotFoundException`. Root cause: facade `Navigation.kt` terlalu besar sehingga kelas tidak ter-load dari secondary dex. Perbaikan: pecah route graph ke `GasAppNavGraph.kt`, `MultiDexApplication` (`GasApp`), `multiDexEnabled` + keep file entry points.
+- Changed: Build distribusi GAS Siswa `1.0.79` (`versionCode 23076`). Final only — URL unduhan web belum di-update.
 ## [1.0.78-siswa] - 2026-08-16
 ### Fixed
 - **Siswa (Presensi Dhuha/Jumat)**: Matching jadwal admin `prayer_v2` menghormati `classIds` (array/map), label kelas, dan varian `schoolId`.

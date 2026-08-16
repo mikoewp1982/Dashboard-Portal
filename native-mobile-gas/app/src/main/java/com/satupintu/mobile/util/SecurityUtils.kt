@@ -17,6 +17,9 @@ object SecurityUtils {
     private val sessionMaxAgeMs = TimeUnit.DAYS.toMillis(SESSION_MAX_AGE_DAYS)
     private val schoolScopedRoles = setOf("student", "teacher", "staff", "principal")
     private const val KEY_SESSION_PERSISTENT = "session_persistent"
+    private const val KEY_LAST_LOGIN_KEY = "device_binding_last_login_key"
+    private const val KEY_LAST_DEVICE_ID = "device_binding_last_device_id"
+    private const val PREFS_NAME = "satupintu_mobile_security"
     private val rootPaths = listOf(
         "/system/app/Superuser.apk",
         "/sbin/su",
@@ -62,6 +65,37 @@ object SecurityUtils {
         if (stored.isBlank()) return true
         val candidates = setOf(getDeviceBindingId(context), getLegacyAndroidId(context)).filter { it.isNotBlank() }
         return candidates.contains(stored)
+    }
+
+    private fun getSecurityPrefs(context: Context): SharedPreferences {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
+
+    fun rememberLastLoginIdentity(context: Context, loginKey: String, deviceId: String = getDeviceBindingId(context)) {
+        val key = loginKey.trim()
+        if (key.isBlank()) return
+        getSecurityPrefs(context).edit()
+            .putString(KEY_LAST_LOGIN_KEY, key)
+            .putString(KEY_LAST_DEVICE_ID, deviceId.trim().ifBlank { getDeviceBindingId(context) })
+            .apply()
+    }
+
+    fun clearLastLoginIdentity(context: Context) {
+        getSecurityPrefs(context).edit()
+            .remove(KEY_LAST_LOGIN_KEY)
+            .remove(KEY_LAST_DEVICE_ID)
+            .apply()
+    }
+
+    fun isSameLoginUserOnSameDevice(context: Context, loginKey: String, deviceId: String = getDeviceBindingId(context)): Boolean {
+        val key = loginKey.trim()
+        if (key.isBlank()) return false
+        val prefs = getSecurityPrefs(context)
+        val prevKey = prefs.getString(KEY_LAST_LOGIN_KEY, null)?.trim().orEmpty()
+        val prevDevice = prefs.getString(KEY_LAST_DEVICE_ID, null)?.trim().orEmpty()
+        if (prevKey.isBlank() || prevDevice.isBlank()) return false
+        val currDevice = deviceId.trim().ifBlank { getDeviceBindingId(context) }
+        return (key == prevKey) && (currDevice == prevDevice)
     }
 
     fun isValidCoordinate(lat: Double, lng: Double): Boolean {
@@ -259,11 +293,11 @@ object SecurityUtils {
         if (normalizedFlavor == "universal") {
             return when (route) {
                 "home", "profile", "tasks" -> normalizedRole in schoolScopedRoles
-                "attendance", "library", "tools", "tools_english_dictionary", "tools_javanese_dictionary", "discipline", "virtual_pet", "seven_habits", "prayer", "halo_spentgapa", "notifications" ->
+                "attendance", "library", "tools", "tools_english_dictionary", "tools_javanese_dictionary", "discipline", "virtual_pet", "seven_habits", "prayer", "prayer_dhuha_jumat", "halo_spentgapa", "notifications" ->
                     normalizedRole == "student"
                 "osis_discipline" ->
                     normalizedRole == "staff" || (normalizedRole == "student" && osisEnabled)
-                "teacher_student_list", "teacher_attendance", "teacher_prayer", "teacher_discipline", "teacher_literacy", "teacher_bullying_reports", "teacher_notifications", "teacher_seven_habits" ->
+                "teacher_student_list", "teacher_attendance", "teacher_prayer", "teacher_prayer_dhuha_jumat", "teacher_discipline", "teacher_literacy", "teacher_bullying_reports", "teacher_notifications", "teacher_seven_habits" ->
                     normalizedRole == "teacher" || normalizedRole == "staff"
                 "principal_attendance", "principal_literacy", "principal_prayer", "principal_seven_habits", "principal_discipline", "principal_bullying" ->
                     normalizedRole == "principal"
@@ -277,12 +311,12 @@ object SecurityUtils {
                 "kepala" -> normalizedRole == "principal"
                 else -> true
             }
-            "attendance", "library", "tools", "tools_english_dictionary", "tools_javanese_dictionary", "discipline", "virtual_pet", "seven_habits", "prayer", "halo_spentgapa", "notifications" ->
+            "attendance", "library", "tools", "tools_english_dictionary", "tools_javanese_dictionary", "discipline", "virtual_pet", "seven_habits", "prayer", "prayer_dhuha_jumat", "halo_spentgapa", "notifications" ->
                 normalizedFlavor == "siswa" && normalizedRole == "student"
             "osis_discipline" ->
                 (normalizedFlavor == "guru" && normalizedRole == "staff") ||
                     (normalizedFlavor == "siswa" && normalizedRole == "student" && osisEnabled)
-            "teacher_student_list", "teacher_attendance", "teacher_prayer", "teacher_discipline", "teacher_literacy", "teacher_bullying_reports", "teacher_notifications", "teacher_seven_habits" ->
+            "teacher_student_list", "teacher_attendance", "teacher_prayer", "teacher_prayer_dhuha_jumat", "teacher_discipline", "teacher_literacy", "teacher_bullying_reports", "teacher_notifications", "teacher_seven_habits" ->
                 normalizedFlavor == "guru" && normalizedRole == "teacher"
             "principal_attendance", "principal_literacy", "principal_prayer", "principal_seven_habits", "principal_discipline", "principal_bullying" ->
                 normalizedFlavor == "kepala" && normalizedRole == "principal"

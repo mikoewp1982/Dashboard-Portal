@@ -29,6 +29,8 @@ android {
         buildConfigField("String", "ALLOWED_FIREBASE_PROJECT_IDS", "\"${allowedFirebaseProjectIds}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled = true
+        multiDexKeepFile = file("multidex-keep.txt")
     }
 
     flavorDimensions += "audience"
@@ -36,8 +38,8 @@ android {
         create("siswa") {
             dimension = "audience"
             minSdk = 23
-            versionCode = 23075
-            versionName = "1.0.78"
+            versionCode = 23076
+            versionName = "1.0.79"
             resValue("string", "app_name", "GAS Siswa")
             applicationIdSuffix = ".siswa"
             versionNameSuffix = "-siswa"
@@ -140,6 +142,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.multidex:multidex:2.0.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
