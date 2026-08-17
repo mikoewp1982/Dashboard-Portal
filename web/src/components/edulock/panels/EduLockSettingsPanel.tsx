@@ -31,11 +31,23 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
   const edulockLocation = settings.geofence ?? location;
   const [gpsWarnMinutes, setGpsWarnMinutes] = useState(2);
   const [gpsLockMinutes, setGpsLockMinutes] = useState(5);
+  const [petDeadReminderFirstMinutes, setPetDeadReminderFirstMinutes] = useState(30);
+  const [petDeadReminderSecondMinutes, setPetDeadReminderSecondMinutes] = useState(20);
+  const [petDeadReminderRepeatMinutes, setPetDeadReminderRepeatMinutes] = useState(10);
 
   useEffect(() => {
     setGpsWarnMinutes(settings.gpsWarnMinutes);
     setGpsLockMinutes(settings.gpsLockMinutes);
-  }, [settings.gpsWarnMinutes, settings.gpsLockMinutes]);
+    setPetDeadReminderFirstMinutes(settings.petDeadReminderFirstMinutes);
+    setPetDeadReminderSecondMinutes(settings.petDeadReminderSecondMinutes);
+    setPetDeadReminderRepeatMinutes(settings.petDeadReminderRepeatMinutes);
+  }, [
+    settings.gpsWarnMinutes,
+    settings.gpsLockMinutes,
+    settings.petDeadReminderFirstMinutes,
+    settings.petDeadReminderSecondMinutes,
+    settings.petDeadReminderRepeatMinutes,
+  ]);
 
   const [holidayDateInput, setHolidayDateInput] = useState("");
   const [holidayNoteInput, setHolidayNoteInput] = useState("");
@@ -283,6 +295,71 @@ export function EduLockSettingsPanel({ schoolId }: { schoolId: string }) {
                         className="w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-2 text-white outline-none focus:border-indigo-500"
                       />
                     </div>
+                  </div>
+                </div>
+
+                <div className="md:col-span-2 rounded-2xl border border-white/10 bg-slate-900/50 p-6 shadow-inner">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-semibold text-white">Jeda Overlay Pet Mati</div>
+                      <div className="text-xs text-slate-400 mt-1">
+                        Atur jeda kemunculan ulang overlay EduLock saat siswa menekan tombol &quot;Saya Mengerti&quot;.
+                        Sistem memakai jeda bertingkat agar awalnya lebih longgar, lalu makin rapat jika tetap diabaikan.
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={saving || settingsLoading}
+                      onClick={() =>
+                        void saveSettings({
+                          petDeadReminderFirstMinutes,
+                          petDeadReminderSecondMinutes,
+                          petDeadReminderRepeatMinutes,
+                        })
+                      }
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 text-sm rounded-xl font-semibold whitespace-nowrap transition flex items-center"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      {saving ? "Menyimpan..." : "Simpan"}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-5">
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Muncul ke-1 (menit)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={String(petDeadReminderFirstMinutes)}
+                        onChange={(e) => setPetDeadReminderFirstMinutes(Math.max(1, Number(e.target.value || 1)))}
+                        className="w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-2 text-white outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Muncul ke-2 (menit)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={String(petDeadReminderSecondMinutes)}
+                        onChange={(e) => setPetDeadReminderSecondMinutes(Math.max(1, Number(e.target.value || 1)))}
+                        className="w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-2 text-white outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Muncul ke-3+ (menit)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={String(petDeadReminderRepeatMinutes)}
+                        onChange={(e) => setPetDeadReminderRepeatMinutes(Math.max(1, Number(e.target.value || 1)))}
+                        className="w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-2 text-white outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                    Contoh yang disarankan: pertama 30 menit, kedua 20 menit, lalu ketiga dan seterusnya 10 menit.
+                    Counter di-reset saat pet siswa sudah direvive.
                   </div>
                 </div>
 

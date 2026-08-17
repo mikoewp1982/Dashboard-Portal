@@ -424,6 +424,23 @@ export async function POST(request: Request) {
         settings.geofence = { latitude, longitude, radius };
       }
 
+      const petReminderFields = [
+        "petDeadReminderFirstMinutes",
+        "petDeadReminderSecondMinutes",
+        "petDeadReminderRepeatMinutes",
+      ] as const;
+      for (const field of petReminderFields) {
+        if (settings[field] === undefined) continue;
+        const minutes = Number(settings[field]);
+        if (!Number.isFinite(minutes) || minutes < 1 || minutes > 1440) {
+          return NextResponse.json(
+            { success: false, error: `${field} harus berupa angka 1-1440 menit` },
+            { status: 400 }
+          );
+        }
+        settings[field] = Math.floor(minutes);
+      }
+
       const settingsUpdates: Record<string, unknown> = { ...settings };
       const geofence = settings.geofence;
       if (geofence) {
@@ -470,6 +487,15 @@ export async function POST(request: Request) {
       }
       if (typeof settings.gpsLockMinutes === "number") {
         policyUpdates.gps_off_lock_ms = settings.gpsLockMinutes * 60 * 1000;
+      }
+      if (typeof settings.petDeadReminderFirstMinutes === "number") {
+        policyUpdates.pet_dead_reminder_first_ms = settings.petDeadReminderFirstMinutes * 60 * 1000;
+      }
+      if (typeof settings.petDeadReminderSecondMinutes === "number") {
+        policyUpdates.pet_dead_reminder_second_ms = settings.petDeadReminderSecondMinutes * 60 * 1000;
+      }
+      if (typeof settings.petDeadReminderRepeatMinutes === "number") {
+        policyUpdates.pet_dead_reminder_repeat_ms = settings.petDeadReminderRepeatMinutes * 60 * 1000;
       }
       if (Object.keys(policyUpdates).length > 0) {
         await adminDb.ref(`schools/${schoolId}/policy`).update(policyUpdates);

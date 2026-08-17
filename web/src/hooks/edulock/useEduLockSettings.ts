@@ -14,6 +14,9 @@ export interface EduLockSettings {
   is_holiday_mode: boolean;
   gpsWarnMinutes: number;
   gpsLockMinutes: number;
+  petDeadReminderFirstMinutes: number;
+  petDeadReminderSecondMinutes: number;
+  petDeadReminderRepeatMinutes: number;
   geofence: EduLockGeofence | null;
 }
 
@@ -28,6 +31,9 @@ export function useEduLockSettings(schoolId: string) {
     is_holiday_mode: false,
     gpsWarnMinutes: 2,
     gpsLockMinutes: 5,
+    petDeadReminderFirstMinutes: 30,
+    petDeadReminderSecondMinutes: 20,
+    petDeadReminderRepeatMinutes: 10,
     geofence: null,
   });
   const [loading, setLoading] = useState(true);
@@ -48,6 +54,9 @@ export function useEduLockSettings(schoolId: string) {
           is_holiday_mode: data.is_holiday_mode ?? false,
           gpsWarnMinutes: data.gpsWarnMinutes ?? 2,
           gpsLockMinutes: data.gpsLockMinutes ?? 5,
+          petDeadReminderFirstMinutes: data.petDeadReminderFirstMinutes ?? 30,
+          petDeadReminderSecondMinutes: data.petDeadReminderSecondMinutes ?? 20,
+          petDeadReminderRepeatMinutes: data.petDeadReminderRepeatMinutes ?? 10,
           geofence:
             data.geofence &&
             Number.isFinite(Number(data.geofence.latitude)) &&
