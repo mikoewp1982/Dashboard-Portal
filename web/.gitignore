@@ -42,4 +42,21 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
+# Local one-off / debug — jangan ikut push atau App Hosting
+/check*.ts
+/check*.js
+/check*.mjs
+/check_habits.js
+/PANDUAN_REDEPLOY_WEB.md
+/Apk Release/
+/src/app/api/debug-*/
+/scripts/debug-*
+/scripts/delete_ok.ts
+/scripts/delete-garbage.js
+/scripts/clean-*.js
+/scripts/fix-wahyu.js
+/scripts/check-*.js
+/scripts/generate-*.mjs
+/scripts/Ship-Apk-Baru.ps1
+/scripts/update_firebase_url.ts
+/docs/**/*.apk

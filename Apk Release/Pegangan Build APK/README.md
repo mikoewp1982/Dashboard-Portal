@@ -25,6 +25,7 @@ Kerjakan berurutan. Jika salah satu gagal → **jangan push**.
 
 1. **Kerjaan Anda sudah di-commit** — jangan biarkan fitur penting hanya di working tree.
 2. `git status` bersih untuk file yang tidak relevan; **jangan** `git add web/` atau `git add .` buta.
+   - Jangan push: `debug-*` API, script `check-*` / `delete_*` sekali pakai, `web/Apk Release/`, APK di dalam `web/docs/`.
 3. `git pull origin main` (atau rebase) dulu supaya tidak menimpa commit orang lain / fitur lama.
 4. **Jangan force-push** ke `main` / `master`.
 5. Bandingkan **lokal vs live** untuk menu kritis di bawah (minimal smoke).
