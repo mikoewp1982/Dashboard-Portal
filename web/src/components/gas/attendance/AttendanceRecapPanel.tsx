@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { useState, useMemo } from "react";
 import { exportToExcel } from "@/utils/export";
-import { Search, Download, Printer, List, Calendar } from "lucide-react";
+import { Search, Download, Printer, List, Calendar, BarChart3 } from "lucide-react";
 import { createStudentDateKey, getValidDatesInMonth, pickNewestLog, toDateKey } from "@/utils/presensiRules";
 import { AttendanceRecord } from "@/types/gas";
+import { AttendanceStatisticsPanel } from "./AttendanceStatisticsPanel";
 
 const MONTHS = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -72,7 +73,7 @@ export function AttendanceRecapPanel({
   const dropdownClassName =
     "px-3 py-2 rounded-md border border-slate-500/70 bg-slate-950/90 text-sm font-medium text-slate-50 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/60";
   
-  const [viewMode, setViewMode] = useState<"summary" | "daily">("summary");
+  const [viewMode, setViewMode] = useState<"summary" | "daily" | "statistics">("summary");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -288,7 +289,8 @@ export function AttendanceRecapPanel({
         }
       `}</style>
 
-      {/* Stats Cards */}
+      {/* Stats Cards — rekap only */}
+      {viewMode !== "statistics" && (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 no-print">
         <StatItem label="Hadir" value={stats.present} color="bg-green-900/30 text-green-400 border border-green-700/30" />
         <StatItem label="Terlambat" value={stats.late} color="bg-yellow-900/30 text-yellow-400 border border-yellow-700/30" />
@@ -297,8 +299,10 @@ export function AttendanceRecapPanel({
         <StatItem label="Tidak Hadir" value={stats.absent} color="bg-red-900/30 text-red-400 border border-red-700/30" />
         <StatItem label="Hari Sekolah Aktif" value={stats.validDays} color="bg-slate-800/30 text-slate-200 border border-slate-700/30" />
       </div>
+      )}
 
-      {/* Filters & Export */}
+      {/* Filters & Export — rekap only (Statistik punya filter sendiri) */}
+      {viewMode !== "statistics" && (
       <div className="rounded-lg bg-slate-900/50 p-4 shadow-sm border border-slate-700/60 space-y-4 md:space-y-0 md:flex md:items-center md:justify-between gap-4 no-print">
         <div className="flex flex-col md:flex-row gap-4 flex-1">
             <select
@@ -352,8 +356,9 @@ export function AttendanceRecapPanel({
           Cetak
         </button>
       </div>
+      )}
 
-      <div className="flex w-fit space-x-1 rounded-lg bg-slate-800/30 p-1 no-print border border-slate-700/60">
+      <div className="flex w-fit flex-wrap space-x-1 rounded-lg bg-slate-800/30 p-1 no-print border border-slate-700/60">
         <button
           onClick={() => setViewMode("summary")}
           className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
@@ -376,8 +381,35 @@ export function AttendanceRecapPanel({
           <Calendar className="h-4 w-4" />
           Riwayat Harian
         </button>
+        <button
+          onClick={() => setViewMode("statistics")}
+          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+            viewMode === "statistics"
+              ? "bg-slate-800/80 text-blue-300 shadow"
+              : "text-slate-400 hover:text-slate-300"
+          }`}
+        >
+          <BarChart3 className="h-4 w-4" />
+          Statistik
+        </button>
       </div>
 
+      {viewMode === "statistics" ? (
+        <AttendanceStatisticsPanel
+          classes={classes}
+          students={students}
+          attendances={attendances}
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          selectedClassName={selectedClassName}
+          setSelectedClassName={setSelectedClassName}
+          schedules={schedules}
+          holidays={holidays}
+        />
+      ) : (
+      <>
       <div className="rounded-lg border border-slate-700/60 bg-slate-950/40 px-4 py-3 text-sm text-slate-300 no-print">
         Rekap menampilkan seluruh siswa terfilter pada setiap hari sekolah aktif.
         {" "}Untuk filter saat ini: <span className="font-semibold text-slate-100">{filteredStudents.length} siswa</span>
@@ -515,6 +547,8 @@ export function AttendanceRecapPanel({
         </div>
 
       </div>
+      </>
+      )}
     </div>
   );
 }

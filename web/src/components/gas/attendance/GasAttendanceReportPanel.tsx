@@ -23,7 +23,7 @@ export default function GasAttendanceReportPanel({ schoolId }: GasAttendanceRepo
       <div className="glass-effect-dark-card rounded-3xl p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-100">Rekap Kehadiran Siswa</h2>
-          <p className="text-slate-400 mt-1">Laporan komprehensif presensi bulanan sekolah</p>
+          <p className="text-slate-400 mt-1">Rekap bulanan, riwayat harian, dan statistik kehadiran</p>
         </div>
         <div className="flex items-center gap-3">
           <button
