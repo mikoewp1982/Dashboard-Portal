@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BarChart3, BookOpen, LayoutDashboard, Users } from "lucide-react";
+import { BarChart3, BookMarked, BookOpen, LayoutDashboard, Users } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 
-type LenteraNavKey = "dashboard" | "loans" | "members" | "stats";
+type LenteraNavKey = "dashboard" | "catalog" | "loans" | "members" | "stats";
 
 function getActiveKey(pathname: string | null, tab: string, view: string): LenteraNavKey {
   const safePathname = String(pathname || "");
   if (safePathname.startsWith("/dashboard/lentera/anggota")) return "members";
   if (tab === "literacy" && view === "progress") return "stats";
   if (tab === "literacy" && view === "list") return "stats";
+  if (tab === "catalog") return "catalog";
   if (tab === "loans") return "loans";
   if (tab === "members") return "members";
   if (tab === "stats") return "stats";
@@ -68,6 +69,11 @@ export function LenteraSidebar() {
           <Link href="/dashboard/lentera?tab=dashboard" className={linkClass("dashboard")}>
             <LayoutDashboard className="w-5 h-5" />
             <span>Dashboard</span>
+          </Link>
+
+          <Link href="/dashboard/lentera?tab=catalog" className={linkClass("catalog")}>
+            <BookMarked className="w-4 h-4" />
+            <span>Katalog Buku</span>
           </Link>
 
           <Link href="/dashboard/lentera?tab=loans" className={linkClass("loans")}>

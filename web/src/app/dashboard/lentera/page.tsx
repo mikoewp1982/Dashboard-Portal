@@ -6,7 +6,14 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { LenteraSidebar } from "@/components/lentera/LenteraSidebar";
 import LenteraWorkspace from "@/components/lentera/LenteraWorkspace";
 
-export type LenteraTab = "dashboard" | "loans" | "tasks" | "members" | "stats" | "settings";
+export type LenteraTab =
+  | "dashboard"
+  | "catalog"
+  | "loans"
+  | "tasks"
+  | "members"
+  | "stats"
+  | "settings";
 
 export default function LenteraDashboardPage() {
   const router = useRouter();

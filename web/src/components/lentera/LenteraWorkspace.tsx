@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { LenteraDashboardPanel } from "./panels/LenteraDashboardPanel";
+import { LenteraCatalogPanel } from "./panels/LenteraCatalogPanel";
 import { LenteraLoansPanel } from "./panels/LenteraLoansPanel";
 import { LenteraStatsPanel } from "./panels/LenteraStatsPanel";
 import { LenteraMembersPanel } from "./panels/LenteraMembersPanel";
@@ -35,6 +36,9 @@ export default function LenteraWorkspace() {
   const renderContent = () => {
     if (activeTab === "dashboard") {
       return <LenteraDashboardPanel />;
+    }
+    if (activeTab === "catalog") {
+      return <LenteraCatalogPanel />;
     }
     if (activeTab === "loans") {
       return <LenteraLoansPanel />;
