@@ -3,7 +3,7 @@ import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 
 type AdminDatabaseRequestBody = {
-  action?: "create" | "update" | "delete" | "delete-all" | "import-excel" | "reset-device";
+  action?: "create" | "update" | "delete" | "delete-all" | "import-excel" | "reset-device" | "reset-gas-device" | "reset-edulock-device";
   tab?: string;
   data?: Record<string, unknown>;
   bulkData?: Record<string, unknown>[];
@@ -113,6 +113,8 @@ export async function POST(request: Request) {
     else if (action === "reset-device") {
       if (!id) return NextResponse.json({ success: false, message: "ID tidak valid" }, { status: 400 });
       await ref.child(id).update({
+        gasDeviceId: "",
+        edulockDeviceUuid: "",
         deviceId: "",
         device_uuid: "",
         device: "",
@@ -122,6 +124,30 @@ export async function POST(request: Request) {
         updatedAt: Date.now()
       });
       return NextResponse.json({ success: true, message: "Device binding berhasil di-reset" });
+    }
+
+    else if (action === "reset-gas-device") {
+      if (!id) return NextResponse.json({ success: false, message: "ID tidak valid" }, { status: 400 });
+      await ref.child(id).update({
+        gasDeviceId: "",
+        deviceId: "",
+        device: "",
+        lastLoginAt: null,
+        updatedAt: Date.now()
+      });
+      return NextResponse.json({ success: true, message: "Device GAS berhasil di-reset" });
+    }
+
+    else if (action === "reset-edulock-device") {
+      if (!id) return NextResponse.json({ success: false, message: "ID tidak valid" }, { status: 400 });
+      await ref.child(id).update({
+        edulockDeviceUuid: "",
+        device_uuid: "",
+        lastLoginEduLock: null,
+        isRegistered: false,
+        updatedAt: Date.now()
+      });
+      return NextResponse.json({ success: true, message: "Device EduLock berhasil di-reset" });
     }
 
     else if (action === "import-excel") {

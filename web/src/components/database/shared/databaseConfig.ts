@@ -27,9 +27,15 @@ export type DatabaseRecord = {
   device?: string;
   deviceId?: string;
   device_uuid?: string;
+  gasDeviceId?: string;
+  edulockDeviceUuid?: string;
   lastLoginAt?: number;
   lastLoginEduLock?: number;
   isRegistered?: boolean;
+  activityStatus?: "ACTIVE_NOW" | "ACTIVE_TODAY" | "ACTIVE_7D" | "INACTIVE" | "NEVER";
+  activityLabel?: string;
+  latestActivityAt?: number | null;
+  hasActiveEduLockSession?: boolean;
 };
 
 export type OverviewCounts = {
