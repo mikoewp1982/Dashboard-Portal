@@ -101,9 +101,7 @@ export function GuruSholatInteractive() {
       setItems(data.items || []);
       setManualSelections((prev) => {
         const valid = new Set(
-          (data.items || [])
-            .filter((item: PrayerItem) => item.status === STATUS_NOT_YET)
-            .map((item: PrayerItem) => item.identityKey)
+          (data.items || []).map((item: PrayerItem) => item.identityKey)
         );
         const next: Record<string, string> = {};
         Object.entries(prev).forEach(([key, value]) => {
@@ -152,10 +150,7 @@ export function GuruSholatInteractive() {
   const effectiveStats = useMemo(() => {
     const countFor = (status: string) =>
       items.filter((item) => {
-        const effective =
-          manualSelections[item.identityKey] && item.status === STATUS_NOT_YET
-            ? manualSelections[item.identityKey]
-            : item.status;
+        const effective = manualSelections[item.identityKey] || item.status;
         return effective === status;
       }).length;
 
@@ -168,7 +163,6 @@ export function GuruSholatInteractive() {
   }, [items, manualSelections]);
 
   function toggleStatus(item: PrayerItem, status: string) {
-    if (item.status !== STATUS_NOT_YET) return;
     const key = item.identityKey;
     setManualSelections((prev) => {
       const next = { ...prev };

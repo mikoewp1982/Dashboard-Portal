@@ -110,9 +110,17 @@ function buildDailyItems(
       .sort((a, b) => b.date - a.date)[0];
 
     let status: string;
-    if (!validDay) status = "Hari Nonaktif";
-    else if (nonMuslim) status = "Non-Muslim";
-    else status = toPrayerLabel(todayLog?.status);
+    let canSelect = false;
+    if (!validDay) {
+      status = "Hari Nonaktif";
+      canSelect = true;
+    } else if (nonMuslim) {
+      status = "Non-Muslim";
+      canSelect = false;
+    } else {
+      status = toPrayerLabel(todayLog?.status);
+      canSelect = true;
+    }
 
     return {
       studentId: student.id,
@@ -125,7 +133,7 @@ function buildDailyItems(
       religion: student.religion,
       status,
       submittedAt: todayLog?.date || null,
-      canSelect: status === "Belum Presensi",
+      canSelect,
     };
   });
 }
