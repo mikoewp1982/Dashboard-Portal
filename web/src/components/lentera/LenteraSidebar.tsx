@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BarChart3, BookOpen, FileText, LayoutDashboard, Users } from "lucide-react";
+import { BarChart3, BookOpen, LayoutDashboard, Users } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 
-type LenteraNavKey = "dashboard" | "loans" | "tasks" | "members" | "stats";
+type LenteraNavKey = "dashboard" | "loans" | "members" | "stats";
 
 function getActiveKey(pathname: string | null, tab: string, view: string): LenteraNavKey {
   const safePathname = String(pathname || "");
   if (safePathname.startsWith("/dashboard/lentera/anggota")) return "members";
-  if (tab === "tasks") return "tasks";
   if (tab === "literacy" && view === "progress") return "stats";
   if (tab === "literacy" && view === "list") return "stats";
   if (tab === "loans") return "loans";
+  if (tab === "members") return "members";
+  if (tab === "stats") return "stats";
   return "dashboard";
 }
 
@@ -24,8 +25,6 @@ export function LenteraSidebar() {
 
   const tab = String(searchParams.get("tab") || "").trim();
   const view = String(searchParams.get("view") || "").trim();
-  const taskViewRaw = String(searchParams.get("taskView") || "").trim();
-  const taskView = taskViewRaw === "needs-grading" || taskViewRaw === "history" ? taskViewRaw : "tasks";
   const activeKey = getActiveKey(pathname, tab, view);
 
   const linkClass = (key: LenteraNavKey) => {
@@ -74,11 +73,6 @@ export function LenteraSidebar() {
           <Link href="/dashboard/lentera?tab=loans" className={linkClass("loans")}>
             <BookOpen className="w-4 h-4" />
             <span>Peminjaman</span>
-          </Link>
-
-          <Link href="/dashboard/lentera?tab=tasks" className={linkClass("tasks")}>
-            <FileText className="w-4 h-4" />
-            <span>Kelola Literasi</span>
           </Link>
 
           <Link href="/dashboard/lentera?tab=members" className={linkClass("members")}>
