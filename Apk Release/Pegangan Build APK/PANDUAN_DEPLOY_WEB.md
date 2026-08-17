@@ -1,5 +1,7 @@
 # Panduan Deploy Web
 
+> **Pintu masuk Pegangan:** baca dulu [README.md](./README.md) (gate sebelum push + checklist regresi singkat).
+
 Dokumen ini adalah **pegangan resmi** agar deploy web tidak salah jalur.
 
 ## Target Yang Benar
