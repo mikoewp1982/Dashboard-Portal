@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { useMemo } from "react";
-import { Activity, CalendarDays, ShieldAlert, UserCheck } from "lucide-react";
+import { Activity, CalendarDays, Clock, ShieldAlert, UserCheck, UserMinus, UserRound, UserX } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { compareClassNames, createStudentDateKey, getValidDatesInMonth, normalizeClassName, pickNewestLog, toDateKey } from "@/utils/presensiRules";
 import { AttendanceRecord } from "@/types/gas";
@@ -152,6 +152,72 @@ export function AttendanceStatisticsPanel({
     };
   }, [filteredLogs, filteredStudents, validDates]);
 
+  const topStudentsByStatus = useMemo(() => {
+    type Tally = { id: string; name: string; className: string; absent: number; late: number; sick: number; permit: number };
+    const byStudent = new Map<string, Tally>();
+
+    for (const student of filteredStudents) {
+      const id = String(student.id || "");
+      if (!id) continue;
+      byStudent.set(id, {
+        id,
+        name: String(student.name || "Tanpa nama"),
+        className: String(student.class || student.className || "-"),
+        absent: 0,
+        late: 0,
+        sick: 0,
+        permit: 0,
+      });
+    }
+
+    for (const student of filteredStudents) {
+      const id = String(student.id || "");
+      const tally = byStudent.get(id);
+      if (!tally) continue;
+
+      for (const date of validDates) {
+        const dateKey = toDateKey(date);
+        const log = filteredLogs.get(createStudentDateKey(id, dateKey));
+
+        if (!log || log.status === "ALPHA") {
+          tally.absent += 1;
+          continue;
+        }
+        if (log.status === "LATE") {
+          tally.late += 1;
+          continue;
+        }
+        if (log.status === "SAKIT") {
+          tally.sick += 1;
+          continue;
+        }
+        if (log.status === "IZIN") {
+          tally.permit += 1;
+        }
+      }
+    }
+
+    const list = Array.from(byStudent.values());
+    const pickTop = (key: keyof Pick<Tally, "absent" | "late" | "sick" | "permit">) => {
+      const sorted = [...list].sort((a, b) => {
+        if (b[key] !== a[key]) return b[key] - a[key];
+        return a.name.localeCompare(b.name, "id-ID", { sensitivity: "base" });
+      });
+      const top = sorted[0];
+      if (!top || top[key] <= 0) {
+        return { name: "—", className: "", count: 0 };
+      }
+      return { name: top.name, className: top.className, count: top[key] };
+    };
+
+    return {
+      absent: pickTop("absent"),
+      late: pickTop("late"),
+      sick: pickTop("sick"),
+      permit: pickTop("permit"),
+    };
+  }, [filteredLogs, filteredStudents, validDates]);
+
   const pieData = useMemo(() => ([
     { name: "Hadir", value: summary.totals.present, color: CHART_COLORS.present },
     { name: "Terlambat", value: summary.totals.late, color: CHART_COLORS.late },
@@ -232,6 +298,37 @@ export function AttendanceStatisticsPanel({
         <StatsMiniCard title="Tingkat Pelanggaran" value={`${summary.totals.violationRate}%`} description="Terlambat + tidak hadir dibanding total wajib hadir" icon={ShieldAlert} accent="red" />
       </div>
 
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <TopStudentCard
+          title="Paling Sering Tidak Hadir (A)"
+          student={topStudentsByStatus.absent}
+          unitLabel="hari"
+          icon={UserX}
+          accent="red"
+        />
+        <TopStudentCard
+          title="Paling Sering Izin (I)"
+          student={topStudentsByStatus.permit}
+          unitLabel="hari"
+          icon={UserRound}
+          accent="purple"
+        />
+        <TopStudentCard
+          title="Paling Sering Sakit (S)"
+          student={topStudentsByStatus.sick}
+          unitLabel="hari"
+          icon={UserMinus}
+          accent="blue"
+        />
+        <TopStudentCard
+          title="Paling Sering Terlambat"
+          student={topStudentsByStatus.late}
+          unitLabel="hari"
+          icon={Clock}
+          accent="amber"
+        />
+      </div>
+
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <div className="rounded-lg bg-slate-900/50 p-6 shadow-sm border border-slate-700/60">
           <div className="mb-4">
@@ -288,6 +385,48 @@ export function AttendanceStatisticsPanel({
             <p className="mt-2 text-sm text-slate-400">{item.description}</p>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function TopStudentCard({
+  title,
+  student,
+  unitLabel,
+  icon: Icon,
+  accent,
+}: {
+  title: string;
+  student: { name: string; className: string; count: number };
+  unitLabel: string;
+  icon: typeof UserCheck;
+  accent: "red" | "purple" | "blue" | "amber";
+}) {
+  const accentMap = {
+    red: "bg-red-500/10 text-red-300 border-red-500/20",
+    purple: "bg-purple-500/10 text-purple-300 border-purple-500/20",
+    blue: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+    amber: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+  }[accent];
+
+  return (
+    <div className="rounded-lg bg-slate-900/50 p-5 shadow-sm border border-slate-700/60">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold uppercase tracking-wide text-slate-400">{title}</div>
+          <div className="mt-3 truncate text-lg font-bold text-slate-100" title={student.name}>
+            {student.name}
+          </div>
+          <p className="mt-1 text-sm text-slate-400">
+            {student.count > 0
+              ? `${student.className} · ${student.count} ${unitLabel}`
+              : "Belum ada data pada filter ini"}
+          </p>
+        </div>
+        <div className={`rounded-xl border p-3 shrink-0 ${accentMap}`}>
+          <Icon className="h-5 w-5" />
+        </div>
       </div>
     </div>
   );
