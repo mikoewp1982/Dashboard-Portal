@@ -20,6 +20,10 @@
         ".write": "auth != null"
       }
     },
+    "student_activities": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
     "virtual_pets": {
       ".indexOn": [
         "schoolId",
@@ -115,10 +119,26 @@
       ".read": "auth != null",
       ".write": "auth != null",
       ".indexOn": [
-        "schoolId"
+        "schoolId",
+        "studentId",
+        "date"
+      ]
+    },
+    "prayer_attendance_v2": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": [
+        "schoolId",
+        "prayerType",
+        "studentId",
+        "date"
       ]
     },
     "prayer_attendance_by_school": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "prayer_attendance_v2_by_school": {
       ".read": "auth != null",
       ".write": "auth != null"
     },
