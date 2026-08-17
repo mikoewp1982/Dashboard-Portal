@@ -99,6 +99,13 @@ const TEACHER_MENUS = [
     tone: "bg-indigo-500/15 text-indigo-200",
   },
   {
+    href: "/guru/sholat-dhuha-jumat",
+    title: "Presensi Dhuha & Jum'at",
+    desc: "Monitoring & input manual",
+    icon: Moon,
+    tone: "bg-indigo-500/15 text-indigo-200",
+  },
+  {
     href: "/guru/literasi",
     title: "Literasi & Tugas",
     desc: "Jurnal & tugas literasi",

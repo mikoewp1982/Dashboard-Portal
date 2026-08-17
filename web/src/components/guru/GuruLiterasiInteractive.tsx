@@ -14,13 +14,47 @@ import { ApkGlassCard, ApkPageFrame, ApkTabs } from "./GuruApkTheme";
 
 const GRADES = ["A", "B", "C", "D"] as const;
 
-function formatLiteracyDate(ms: number) {
-  return new Date(ms).toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function safeText(value: unknown, fallback = ""): string {
+  if (value == null) return fallback;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return String(value);
+  }
+  try {
+    const s = JSON.stringify(value);
+    return s && s !== "{}" ? s : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function formatLiteracyDate(ms: unknown) {
+  const n = typeof ms === "number" && Number.isFinite(ms) ? ms : NaN;
+  const t = Number.isFinite(n) && n > 1e9 ? n : Date.now();
+  try {
+    return new Date(t).toLocaleString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return new Date().toLocaleString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+}
+
+function lineClampFallback(text: unknown, maxLines = 2, maxChars = 160) {
+  const s = safeText(text, "");
+  if (!s) return s;
+  if (s.length <= maxChars) return s;
+  // Manual fallback if CSS line-clamp ever fails to be present (e.g. missing plugin).
+  // We still keep CSS class on the element for proper behavior.
+  return s.slice(0, maxChars) + "…";
 }
 
 export function GuruLiterasiInteractive() {
@@ -45,16 +79,21 @@ export function GuruLiterasiInteractive() {
   const filtered = useMemo(
     () =>
       logs.filter((log) => {
-        const reviewed = isLiteracyReviewed(log.status);
-        return tab === 0 ? !reviewed : reviewed;
+        try {
+          const status = safeText(log?.status, "PENDING");
+          const reviewed = isLiteracyReviewed(status);
+          return tab === 0 ? !reviewed : reviewed;
+        } catch {
+          return tab === 0;
+        }
       }),
     [logs, tab]
   );
 
   function openGrade(log: TeacherLiteracyLog) {
     setSelected(log);
-    setGrade(log.grade || "A");
-    setFeedback(log.feedback || "");
+    setGrade(safeText(log.grade, "A") || "A");
+    setFeedback(safeText(log.feedback, ""));
     setError("");
     setShowDelete(false);
   }
@@ -126,9 +165,16 @@ export function GuruLiterasiInteractive() {
       {!loading && !loadingStudents && filtered.length > 0 && (
         <div className="space-y-2">
           {filtered.map((log, index) => {
-            const reviewed = isLiteracyReviewed(log.status);
+            const reviewed = isLiteracyReviewed(safeText(log?.status, "PENDING"));
+            const studentName = safeText(log?.studentName, "Siswa");
+            const studentClass =
+              safeText(log?.studentClass, "") || safeText(user?.class, "") || "-";
+            const bookTitle = safeText(log?.bookTitle, "Jurnal literasi");
+            const author = safeText(log?.author, "");
+            const summaryRaw = safeText(log?.summary, "Tidak ada ringkasan.");
+            const gradeShown = safeText(log?.grade, "-") || "-";
             return (
-              <ApkGlassCard key={log.id} className="overflow-hidden">
+              <ApkGlassCard key={log.id || `lit-${index}`} className="overflow-hidden">
                 <div
                   className={`h-1 w-full ${reviewed ? "bg-[#4CAF50]" : "bg-[#0F7BFF]"}`}
                 />
@@ -150,17 +196,16 @@ export function GuruLiterasiInteractive() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-bold text-white">
-                        {log.studentName}
+                        {studentName}
                       </div>
                       <div className="text-xs text-white/70">
-                        {log.studentClass || user?.class || "-"} |{" "}
-                        {formatLiteracyDate(log.timestamp)}
+                        {studentClass} | {formatLiteracyDate(log?.timestamp)}
                       </div>
                     </div>
                     {reviewed ? (
                       <div className="flex items-center gap-1">
                         <span className="rounded-full bg-[#4CAF50] px-2 py-1 text-[10px] font-semibold text-white">
-                          Nilai: {log.grade || "-"}
+                          Nilai: {gradeShown}
                         </span>
                         {tab === 1 && (
                           <button
@@ -186,11 +231,14 @@ export function GuruLiterasiInteractive() {
                   </div>
                   <div className="my-2 h-px bg-white/20" />
                   <div className="truncate text-sm font-semibold text-white">
-                    {log.bookTitle || "Jurnal literasi"}
-                    {log.author ? ` (${log.author})` : ""}
+                    {bookTitle}
+                    {author ? ` (${author})` : ""}
                   </div>
-                  <p className="mt-1 line-clamp-2 text-xs text-white/70">
-                    {log.summary || "Tidak ada ringkasan."}
+                  <p
+                    className="mt-1 line-clamp-2 text-xs text-white/70"
+                    title={summaryRaw}
+                  >
+                    {lineClampFallback(summaryRaw, 2, 160)}
                   </p>
                 </div>
               </ApkGlassCard>
@@ -203,14 +251,16 @@ export function GuruLiterasiInteractive() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
           <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl bg-[#0F2A43] p-5 text-white shadow-xl">
             <h3 className="text-lg font-bold">Nilai Literasi</h3>
-            <p className="mt-2 text-xs text-white/70">Nama: {selected.studentName}</p>
+            <p className="mt-2 text-xs text-white/70">
+              Nama: {safeText(selected?.studentName, "Siswa")}
+            </p>
             <p className="text-xs text-white/70">
-              Buku: {selected.bookTitle || "-"}
+              Buku: {safeText(selected?.bookTitle, "") || "-"}
             </p>
             <div className="mt-3">
               <div className="text-xs text-white/70">Ringkasan:</div>
-              <div className="mt-1 max-h-36 overflow-y-auto rounded-xl border border-white/15 bg-[#0B1F33]/40 p-3 text-xs leading-relaxed text-white">
-                {selected.summary || "Tidak ada ringkasan."}
+              <div className="mt-1 max-h-36 overflow-y-auto rounded-xl border border-white/15 bg-[#0B1F33]/40 p-3 text-xs leading-relaxed text-white whitespace-pre-wrap break-words">
+                {safeText(selected?.summary, "Tidak ada ringkasan.")}
               </div>
             </div>
             <div className="mt-4">
@@ -270,7 +320,7 @@ export function GuruLiterasiInteractive() {
             <h3 className="text-lg font-bold">Hapus Laporan</h3>
             <p className="mt-2 text-sm text-white/75">
               Apakah Anda yakin ingin menghapus laporan literasi dari{" "}
-              {selected.studentName}?
+              {safeText(selected?.studentName, "siswa")}?
             </p>
             {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
             <div className="mt-4 flex gap-2">

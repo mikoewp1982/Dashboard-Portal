@@ -60,6 +60,7 @@ const RECAP_HEADERS = [
   "Halangan (H)",
   "Literasi (Total Buku)",
   "Literasi (Total Menit)",
+  "Pelanggaran",
   "Poin Pelanggaran",
 ] as const;
 
@@ -78,6 +79,7 @@ type StudentRecapRow = {
   sholatHalangan: number;
   totalBuku: number;
   totalMenitBaca: number;
+  daftarPelanggaran: string;
   poinPelanggaran: number;
 };
 
@@ -146,6 +148,47 @@ function extractRecordDateMs(row: Record<string, unknown>, key?: string | null):
   return 0;
 }
 
+function collectDisciplineRuleMeta(
+  source: unknown,
+  ruleCategories: Map<number, string>,
+  ruleNames: Map<number, string>,
+  rulePoints: Map<number, number>
+) {
+  if (!source || typeof source !== "object") return;
+  Object.entries(source as Record<string, unknown>).forEach(([key, raw]) => {
+    if (!raw || typeof raw !== "object") return;
+    const row = raw as Record<string, unknown>;
+    const id = Number(row.id ?? key ?? 0);
+    if (!Number.isFinite(id) || id <= 0) return;
+
+    const category = String(row.category || "").trim().toUpperCase();
+    if (category) ruleCategories.set(id, category);
+
+    const ruleName = String(row.ruleName || row.name || row.title || "").trim();
+    if (ruleName) ruleNames.set(id, ruleName);
+
+    const pointsRaw = row.points;
+    if (
+      pointsRaw !== undefined &&
+      pointsRaw !== null &&
+      String(pointsRaw).trim() !== ""
+    ) {
+      const points = Number(pointsRaw);
+      if (Number.isFinite(points)) {
+        rulePoints.set(id, points);
+      }
+    }
+  });
+}
+
+function parsePointsWithFallback(raw: unknown, fallback: number): number {
+  if (raw !== undefined && raw !== null && String(raw).trim() !== "") {
+    const parsed = Number(raw);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
 async function loadScopedChildren(
   primaryPath: string,
   fallbackPath: string
@@ -204,6 +247,7 @@ async function buildRecapXlsxBuffer(
     { width: 12 },
     { width: 16 },
     { width: 16 },
+    { width: 30 },
     { width: 14 },
   ];
 
@@ -274,6 +318,7 @@ async function buildRecapXlsxBuffer(
       r.sholatHalangan,
       r.totalBuku,
       r.totalMenitBaca,
+      r.daftarPelanggaran || "-",
       r.poinPelanggaran,
     ];
     values.forEach((value, colIdx) => {
@@ -395,6 +440,7 @@ export async function GET(req: NextRequest) {
         sholatHalangan: 0,
         totalBuku: 0,
         totalMenitBaca: 0,
+        daftarPelanggaran: "",
         poinPelanggaran: 0,
       });
       studentsByKey.set(rowKey, student);
@@ -538,20 +584,18 @@ export async function GET(req: NextRequest) {
     }
 
     // Discipline ÔÇö Poin Pelanggaran only (APK parity)
-    const rulesSnap = await adminDb
-      .ref(`discipline_rules_by_school/${scope}`)
-      .once("value");
-    const rulesSource = rulesSnap.exists()
-      ? rulesSnap
-      : await adminDb.ref("discipline_rules").once("value");
+    const [tenantRulesSnap, scopedRulesSnap, globalRulesSnap] = await Promise.all([
+      adminDb.ref(`gas/schools/${scope}/settings/disciplineRules`).once("value"),
+      adminDb.ref(`discipline_rules_by_school/${scope}`).once("value"),
+      adminDb.ref("discipline_rules").once("value"),
+    ]);
     const ruleCategories = new Map<number, string>();
-    if (rulesSource.exists()) {
-      rulesSource.forEach((child) => {
-        const r = (child.val() || {}) as Record<string, unknown>;
-        const id = Number(r.id || child.key || 0);
-        if (id) ruleCategories.set(id, String(r.category || "").toUpperCase());
-      });
-    }
+    const ruleNames = new Map<number, string>();
+    const rulePoints = new Map<number, number>();
+    // Apply low-to-high precedence so tenant-specific settings override scoped/global defaults.
+    collectDisciplineRuleMeta(globalRulesSnap.val(), ruleCategories, ruleNames, rulePoints);
+    collectDisciplineRuleMeta(scopedRulesSnap.val(), ruleCategories, ruleNames, rulePoints);
+    collectDisciplineRuleMeta(tenantRulesSnap.val(), ruleCategories, ruleNames, rulePoints);
 
     const discRecords = await loadScopedChildren(
       `discipline_records_by_school/${scope}`,
@@ -574,10 +618,26 @@ export async function GET(req: NextRequest) {
       const recap = studentRows.get(rowKeyFor(student));
       if (!recap) continue;
       const ruleId = Number(row.ruleId || 0);
-      const points = Number(row.points || 0);
+      const points = parsePointsWithFallback(row.points, rulePoints.get(ruleId) ?? 0);
       const category =
-        ruleCategories.get(ruleId) || (points > 0 ? "VIOLATION" : "");
-      if (category === "VIOLATION") recap.poinPelanggaran += points;
+        ruleCategories.get(ruleId) ||
+        String(row.category || "").trim().toUpperCase() ||
+        (points > 0 ? "VIOLATION" : "");
+      if (category === "VIOLATION") {
+        recap.poinPelanggaran += points;
+        const fallbackRuleName = `Pelanggaran (Rule ${ruleId})`;
+        let ruleNameRaw =
+          String(row.ruleNameSnapshot || row.ruleName || row.title || "").trim();
+        if (!ruleNameRaw || ruleNameRaw === "-") {
+          ruleNameRaw = ruleNames.get(ruleId) || fallbackRuleName;
+        }
+        
+        if (recap.daftarPelanggaran) {
+          recap.daftarPelanggaran += `, ${ruleNameRaw}`;
+        } else {
+          recap.daftarPelanggaran = ruleNameRaw;
+        }
+      }
     }
 
     const rows = Array.from(studentRows.values());

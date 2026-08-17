@@ -31,6 +31,26 @@ type Options = {
 };
 
 const INCOMPLETE_COOLDOWN_MS = 15 * 60 * 1000;
+const ANY_LITERACY_LOG_SENTINEL = "__any__";
+
+function safeStr(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return String(value);
+  }
+  try {
+    const s = JSON.stringify(value);
+    return s && s !== "{}" ? s : "";
+  } catch {
+    return "";
+  }
+}
+
+function isReviewedLiteracyStatus(status: unknown): boolean {
+  const s = safeStr(status).trim().toUpperCase();
+  return s === "GRADED" || s === "REVIEWED" || s === "CORRECTED" || s === "REJECTED" || s === "DONE";
+}
 
 function showBrowserNotification(title: string, body: string) {
   if (typeof window === "undefined" || typeof Notification === "undefined") return;
@@ -58,7 +78,7 @@ function showBrowserNotification(title: string, body: string) {
 }
 
 function isPetDead(row: Record<string, unknown>) {
-  const status = String(row.status || "HAPPY");
+  const status = safeStr(row.status || "HAPPY");
   const health = Number(row.health ?? 100);
   const happiness = Number(row.happiness ?? 100);
   const energy = Number(row.energy ?? 100);
@@ -158,8 +178,17 @@ export function useTeacherNotificationInbox({
       const submitted = new Set<string>();
       student.identities.forEach((alias) => {
         logsByStudentRef.current.get(alias)?.forEach((taskId) => submitted.add(taskId));
-        logsByStudentRef.current.get(alias.toLowerCase())?.forEach((taskId) => submitted.add(taskId));
+        logsByStudentRef.current
+          .get(alias.toLowerCase())
+          ?.forEach((taskId) => submitted.add(taskId));
       });
+      // Short-circuit: if the student has any log marked with the ANY-sentinel
+      // (either a task-less legacy jurnal, or ANY log that was explicitly GRADED
+      // by the teacher), treat them as having covered every active task.
+      // This fixes the reported false-positive: "sudah dinilai semua tapi 32
+      // siswa masih muncul 'Belum Dikerjakan'".
+      const hasAnyReviewed = submitted.has(ANY_LITERACY_LOG_SENTINEL);
+      if (hasAnyReviewed) return;
       const missing = tasks.some((task) => !submitted.has(task.id));
       if (missing) {
         incompleteKeys.add(student.id.toLowerCase() || student.name.toLowerCase());
@@ -394,31 +423,41 @@ export function useTeacherNotificationInbox({
         }
         let newCount = 0;
         snapshot.forEach((child) => {
-          const id = child.key || "";
-          const row = (child.val() || {}) as Record<string, unknown>;
-          const logSchool = normalizeSchoolId(row.schoolId);
-          if (logSchool && logSchool !== canonicalSchoolId) return;
-          const status = String(row.status || "");
-          const studentId = String(row.studentId || row.nisn || "");
-          const studentName = String(row.studentName || row.name || "");
-          if (!status.toLowerCase().includes("pending")) return;
-          if (!isSupervised(studentId, studentName)) return;
-          if (!knownPending.current.has(id)) {
-            knownPending.current.add(id);
-            if (!firstPending.current) {
-              newCount += 1;
-              pushItem(
-                {
-                  id: `pending-${id}`,
-                  type: "literacy_pending",
-                  title: "Tugas Literasi Baru",
-                  body: `${studentLabel(studentId) || studentName || "Siswa"} mengirim tugas literasi untuk dinilai.`,
-                  createdAt: Number(row.timestamp || row.createdAt || Date.now()),
-                  studentName: studentLabel(studentId) || studentName,
-                },
-                true
-              );
+          try {
+            const id = safeStr(child.key);
+            if (!id) return;
+            const row = (child.val() || {}) as Record<string, unknown>;
+            const logSchool = normalizeSchoolId(row.schoolId);
+            if (logSchool && logSchool !== canonicalSchoolId) return;
+            const status = safeStr(row.status || "");
+            const studentId = safeStr(row.studentId || row.nisn || "");
+            const studentName = safeStr(row.studentName || row.name || "");
+            if (!status.toLowerCase().includes("pending")) return;
+            if (!isSupervised(studentId, studentName)) return;
+            if (!knownPending.current.has(id)) {
+              knownPending.current.add(id);
+              if (!firstPending.current) {
+                newCount += 1;
+                pushItem(
+                  {
+                    id: `pending-${id}`,
+                    type: "literacy_pending",
+                    title: "Tugas Literasi Baru",
+                    body: `${studentLabel(studentId) || studentName || "Siswa"} mengirim tugas literasi untuk dinilai.`,
+                    createdAt: Number(row.timestamp || row.createdAt || Date.now()) || Date.now(),
+                    studentName: studentLabel(studentId) || studentName,
+                  },
+                  true
+                );
+              }
             }
+          } catch (pendingErr) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[useTeacherNotificationInbox] skip invalid pending literacy_log:",
+              child.key,
+              pendingErr
+            );
           }
         });
         if (firstPending.current) {
@@ -451,15 +490,26 @@ export function useTeacherNotificationInbox({
         const tasks: Array<{ id: string; title: string }> = [];
         if (snapshot.exists()) {
           snapshot.forEach((child) => {
-            const row = (child.val() || {}) as Record<string, unknown>;
-            if (row.isActive === false) return;
-            tasks.push({
-              id: child.key || "",
-              title: String(row.title || "Tugas Literasi"),
-            });
+            try {
+              const row = (child.val() || {}) as Record<string, unknown>;
+              // STRICTER: only consider task truly active if `isActive === true`.
+              // Records without isActive (undefined) or isActive = false are skipped.
+              // This prevents leftover/legacy rows (created before isActive field existed)
+              // from being incorrectly treated as active tasks.
+              if (row.isActive !== true) return;
+              const idKey = safeStr(child.key).trim();
+              if (!idKey) return;
+              tasks.push({
+                id: idKey,
+                title: safeStr(row.title) || "Tugas Literasi",
+              });
+            } catch (taskErr) {
+              // eslint-disable-next-line no-console
+              console.warn("[useTeacherNotificationInbox] skip invalid task:", child.key, taskErr);
+            }
           });
         }
-        activeTasksRef.current = tasks.filter((task) => task.id);
+        activeTasksRef.current = tasks;
         evaluateIncomplete();
       })
     );
@@ -469,15 +519,51 @@ export function useTeacherNotificationInbox({
         const map = new Map<string, Set<string>>();
         if (snapshot.exists()) {
           snapshot.forEach((child) => {
-            const row = (child.val() || {}) as Record<string, unknown>;
-            const studentId = String(row.studentId || row.nisn || row.studentNisn || "").trim();
-            const taskId = String(row.taskId || "").trim();
-            if (!studentId || !taskId) return;
-            if (!map.has(studentId)) map.set(studentId, new Set());
-            map.get(studentId)!.add(taskId);
-            const lower = studentId.toLowerCase();
-            if (!map.has(lower)) map.set(lower, new Set());
-            map.get(lower)!.add(taskId);
+            try {
+              const row = (child.val() || {}) as Record<string, unknown>;
+              const studentId = safeStr(
+                row.studentId ?? row.nisn ?? row.studentNisn ?? ""
+              ).trim();
+              if (!studentId) return;
+              const taskId = safeStr(row.taskId).trim();
+              const reviewed = isReviewedLiteracyStatus(row.status);
+
+              const addStudentLog = (alias: string, submittedTaskId: string) => {
+                if (!alias) return;
+                if (!map.has(alias)) map.set(alias, new Set());
+                map.get(alias)!.add(submittedTaskId);
+              };
+
+              if (taskId) {
+                addStudentLog(studentId, taskId);
+                addStudentLog(studentId.toLowerCase(), taskId);
+              }
+
+              // KEY FIXES for false-positive "Literasi Belum Dikerjakan" notifications:
+              //
+              // 1) If the log has NO taskId (legacy jurnal literasi / non-task-bound
+              //    submission from APK), mark it with the ANY_LITERACY_LOG_SENTINEL
+              //    sentinel. evaluateIncomplete() will treat the student as having
+              //    covered all active tasks if any reviewed log with empty taskId exists.
+              // 2) If the log has been GRADED/REVIEWED, we also award the ANY-sentinel
+              //    regardless of its taskId. This way, once a teacher has explicitly
+              //    graded ANY of a student's literacy submissions, the student no
+              //    longer shows up as "belum mengerjakan" for every dangling task.
+              //
+              // Both combined solve the reported case: "sudah dinilai SEMUA tapi
+              // masih muncul notifikasi 32 siswa belum mengerjakan".
+              if (!taskId || reviewed) {
+                addStudentLog(studentId, ANY_LITERACY_LOG_SENTINEL);
+                addStudentLog(studentId.toLowerCase(), ANY_LITERACY_LOG_SENTINEL);
+              }
+            } catch (logErr) {
+              // eslint-disable-next-line no-console
+              console.warn(
+                "[useTeacherNotificationInbox] skip invalid literacy_log row:",
+                child.key,
+                logErr
+              );
+            }
           });
         }
         logsByStudentRef.current = map;

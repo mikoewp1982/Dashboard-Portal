@@ -10,6 +10,7 @@ export type GuruStudent = {
   className: string;
   schoolId: string;
   religion: string;
+  gender: string;
   identities: string[];
 };
 
@@ -78,6 +79,7 @@ export function parseGuruStudent(
     className: readStudentClass(row),
     schoolId: normalizeSchoolId(row.schoolId) || schoolId,
     religion: String(row.religion || row.agama || "").trim(),
+    gender: String(row.gender || row.jenis_kelamin || "").trim(),
     identities,
   };
 }
@@ -129,6 +131,18 @@ export function isNonMuslim(religion: string): boolean {
   const normalized = religion.trim().toLowerCase();
   if (!normalized) return false;
   return normalized !== "islam" && normalized !== "muslim";
+}
+
+export function isMaleStudent(gender: string): boolean {
+  const normalized = gender.trim().toLowerCase();
+  if (!normalized) return false;
+  return (
+    normalized === "l" ||
+    normalized === "lk" ||
+    normalized === "male" ||
+    normalized.includes("laki") ||
+    normalized.includes("putra")
+  );
 }
 
 export function sanitizeRecordId(value: string): string {

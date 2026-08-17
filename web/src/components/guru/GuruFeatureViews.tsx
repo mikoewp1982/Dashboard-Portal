@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSupervisedStudents } from "@/hooks/guru/useSupervisedStudents";
@@ -9,6 +9,7 @@ import { teacherFetchRaw } from "@/lib/guru/teacherFetch";
 import { GuruShell } from "./GuruShell";
 import { GuruPresensiInteractive } from "./GuruPresensiInteractive";
 import { GuruSholatInteractive } from "./GuruSholatInteractive";
+import { GuruSholatV2Interactive } from "./GuruSholatV2Interactive";
 import { GuruLiterasiInteractive } from "./GuruLiterasiInteractive";
 import { GuruKaihInteractive } from "./GuruKaihInteractive";
 import { GuruKedisiplinanInteractive } from "./GuruKedisiplinanInteractive";
@@ -57,6 +58,14 @@ export function GuruSholatView() {
   );
 }
 
+export function GuruSholatV2View() {
+  return (
+    <FeatureShell>
+      <GuruSholatV2Interactive />
+    </FeatureShell>
+  );
+}
+
 export function GuruLiterasiView() {
   return (
     <FeatureShell>
@@ -99,11 +108,18 @@ const MONTH_NAMES = [
 export function GuruRekapView() {
   const user = useAuthStore((state) => state.user);
   const { students, loading: loadingStudents } = useSupervisedStudents(user?.schoolId, user?.class);
-  const now = new Date();
-  const [month, setMonth] = useState(now.getMonth());
-  const [year, setYear] = useState(now.getFullYear());
+  const [mounted, setMounted] = useState(false);
+  const [month, setMonth] = useState(0);
+  const [year, setYear] = useState(new Date().getFullYear());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    setMonth(now.getMonth());
+    setYear(now.getFullYear());
+    setMounted(true);
+  }, []);
 
   const years = useMemo(() => {
     const y = new Date().getFullYear();
@@ -180,7 +196,7 @@ export function GuruRekapView() {
             <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
               <div className="text-[11px] text-slate-400">Periode</div>
               <div className="mt-1 text-sm font-semibold text-white">
-                {MONTH_NAMES[month]} {year}
+                {mounted ? `${MONTH_NAMES[month]} ${year}` : "Memuat..."}
               </div>
             </div>
           </div>
