@@ -33,6 +33,8 @@ Dokumen ini adalah **pegangan resmi** agar deploy web tidak salah jalur.
 - **Jangan** buat lagi `package.json` / `package-lock.json` / `.yarnrc` / `apphosting.yaml` / `public/apk/*.apk` di **root** repo. Itu merusak deteksi package manager / menggembungkan checkout.
 - `web/public/apk` **hanya** menyimpan APK current yang dipakai tutorial (alias + 1 versi current per app). Arsip lama = `Apk Release/Final`, bukan App Hosting.
 - Regenerasi `web/package-lock.json` **WAJIB** dengan **Node 20.x + npm 10.x** (sama seperti Cloud Build). Jangan commit lockfile dari Node 25 / npm 11 — `npm ci` di App Hosting akan gagal (EUSAGE / Usage / exit 51).
+- **Jangan** commit ulang API `web/src/app/api/debug-*`, script `check-*` / `delete_*` sekali pakai, atau folder `web/Apk Release/`. Pola ini sudah di-ignore di `web/.gitignore`.
+- Agar menu/fitur admin tidak “hilang”: selalu `git pull` dulu, commit fitur stabil segera, dan jalankan checklist regresi di [README.md](./README.md) sebelum push.
 
 ## Jalur Deploy Dashboard Portal Utama
 

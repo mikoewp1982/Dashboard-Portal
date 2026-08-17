@@ -1,0 +1,208 @@
+# Aturan wajib untuk AI assistant di project ini
+
+## === BAGIAN 1: ATURAN DASAR KODE APK (Native Android Kotlin/Java) ===
+
+- src/main HANYA boleh berisi kode yang identik di ketiga flavor (siswa/guru/kepsek)
+- Logic spesifik role WAJIB ditaruh di src/<flavor>, bukan di main
+- JANGAN generate ulang file yang sudah ada — edit spesifik baris/fungsi yang diminta saja
+- Sebelum mengubah file yang dipakai bersama (model, layout shared),
+  tanya dulu apakah perubahan ini akan berdampak ke flavor lain
+- Setelah selesai, jelaskan file apa saja yang tersentuh
+
+## === BAGIAN 2: ATURAN DEPLOY WEB (Next.js + Firebase App Hosting) ===
+
+- Deploy Dashboard Portal WAJIB via `git push origin main` dari root repo `D:\Dashboard Portal`.
+  App Hosting otomatis rollout backend `gerbang-aplikasi-sekolah`. JANGAN deploy manual dari
+  Firebase Console untuk commit yang belum ada di GitHub.
+- Jika deploy website statis e-perpus, gunakan `cd apps/eperpus-sekolah ; .\deploy.bat`.
+  JANGAN deploy e-perpus dari folder `web`.
+- Backend App Hosting `rootDirectory` = **`web`**. JANGAN commit ulang app Next.js di root
+  (`/package.json`, `/package-lock.json`, `/.yarnrc`, `/apphosting.yaml`, `/public/apk/*.apk`).
+  Insiden 2026-08-16: file root sisa itu ikut merusak `npm ci` Cloud Build.
+- `web/public/apk` HANYA boleh berisi APK **current** yang dipakai tutorial (alias + 1 file
+  versioned current per app) + `apk-manifest.json`. Arsip versi lama = `Apk Release/Final`.
+  JANGAN menumpuk puluhan APK lama di `web/public/apk` (checkout App Hosting jadi berat).
+- Regenerasi / commit `web/package-lock.json` WAJIB memakai **Node 20.x + npm 10.x**
+  (selaras Cloud Build). JANGAN commit lockfile dari Node 25 / npm 11 — `npm ci` App Hosting
+  gagal dengan EUSAGE / Usage dump / exit 51 (kurang `@emnapi/*` dll). Verifikasi sebelum push:
+  `fnm use 20` → `cd web` → `npm ci --quiet --no-fund --no-audit` harus exit 0.
+- Manifest APK = SUMBER KEBENARAN TUNGGAL (SSOT) HANYA di
+  `web/public/apk/apk-manifest.json`.
+  File `web/src/data/apk-manifest.json` statusnya TIDAK TERPAKAI (legacy) — JANGAN edit,
+  JANGAN jadikan rujukan. Akan dihapus setelah 1 bulan stabil tanpa insiden.
+- Halaman `/edulock/install` + `/gas/install` render nama file unduhan dari helper
+  `web/src/lib/getApkDownloadHref.ts` (pakai `fs.readFileSync` cache by mtimeMs).
+  JANGAN kembalikan ke static import compile-time manifest.
+- Sebelum deploy, cek worktree dengan `git status --short`. JANGAN `git add web/` buta.
+  Stage HANYA file yang memang mau diterbitkan.
+- Pegangan deploy web: `Apk Release/Pegangan Build APK/PANDUAN_DEPLOY_WEB.md`
+  (ada tabel troubleshooting App Hosting 2026-08-16).
+- Baca dulu `Apk Release/Pegangan Build APK/README.md` (gate push + cegah fitur hilang +
+  peta menu Presensi/Rekap). JANGAN menghapus menu/panel yang tidak sedang dikerjakan.
+- JANGAN menambah lagi `web/src/app/api/debug-*` atau script `check-*`/`delete_*` sekali pakai
+  ke commit yang akan di-push ke `main`.
+
+## === BAGIAN 3: ATURAN SHIP APK BARU (GAS / EduLock) ===
+
+- Ship APK BARU WAJIB pakai script `D:\Dashboard Portal\web\scripts\Ship-Apk-Baru.ps1`
+  dengan Preset yang sesuai (`EduLock` atau `GasSiswa`). JANGAN copy file APK manual
+  ke `web/public/apk/` atau `Apk Release/Final/`.
+  **Catatan (rule tambahan 2026-08-08)**:
+  1. Script Ship-Apk-Baru.ps1 WAJIB menggunakan **karakter ASCII murni**:
+     Semua dash `—` (Em Dash U+2014) diganti menjadi hyphen `-` (ASCII 45).
+     Semua bullet `•` diganti menjadi `-`. Petik commit message WAJIB escape
+     backtick atau pakai petik ganda. Jika tidak, PowerShell 5 gagal parsing
+     dengan error `InvalidOperator: You must provide a value expression
+     following the '-' operator` walaupun copy file APK sebenarnya sukses.
+  2. Jika Preset tidak tersedia (misal: ship GAS Guru, GAS Kepala, flavor lain
+     yang belum ada preset default), gunakan **Mode Manual Parameter**:
+     `-Preset` dikosongkan, lalu tentukan sendiri `-SourceApk`, `-TargetFileName`,
+     `-VersionName`, `-VersionCode`, `-PackageName`.
+  3. **VERSIONING RULE WAJIB (TIDAK BOLEH DILANGGAR)**:
+     - Jika perubahan APK = **HANYA string / label / text** (misal ganti label
+       NUPTK menjadi NIP/NUPTK, ganti placeholder text, ganti toast validasi)
+       → boleh TIDAK bump versionCode (tetap sama), asal tidak ada logic state
+       baru.
+     - Jika perubahan APK = **ADA PERUBAHAN LOGIC / STATE / FLOW** (misal
+       conditional branching, tambah SharedPreferences state baru, ubah logic
+       reject block, tambah field penyimpanan, ubah behavior fitur existing
+       bukan cuma text) → **WAJIB BUMP versionCode (+1) dan versionName
+       (digit ke-3 atau ke-2 naik)**. ALASAN: Jika versionCode TIDAK dinaikkan,
+       HP yang sudah terpasang APK build lawas (logic lama) akan menolak update
+       dengan error **`INSTALL_FAILED_VERSION_DOWNGRADE`** (PackageManager
+       Android berpikir APK baru itu "versi lebih lama" karena versionCode
+       sama atau lebih kecil). Hal ini menyebabkan siswa/guru di lapangan
+       TIDAK BISA update ke build fix kecuali mereka UNINSTALL dulu → bahaya
+       kehilangan state session local.
+     - **Contoh benar kasus 2026-08-08**: GAS Siswa ada 2 perubahan logic:
+       (1) Ubah keyboardType Text → Number (conditional flavor)
+       (2) Ubah device binding reject jadi conditional AND (isSameUserSameDevice)
+       + tambah 3 helper SharedPreferences baru state → **WAJIB bump**:
+       `versionCode 23038 → 23039`, `versionName 1.0.41 → 1.0.42`.
+       (GAS Guru hanya ganti 3 text label → TIDAK bump, versionCode 1046
+       dan versionName 1.0.39-guru TETAP sama → benar, aman.)
+- Script Ship-Apk-Baru.ps1 exit code HARUS `0` (artinya SHA256 3 copy + manifest SAMA SEMUA).
+  Jika exit code BUKAN 0 → berhenti, perbaiki error, JANGAN lanjut.
+- Setelah ship APK baru, wajib ikuti 4 langkah manual yang dicetak script:
+  (1) `cd web ; npm run build` (2) QA lokal manifest (3) Update catatan pegangan
+  (4) Git commit push origin main.
+
+## === BAGIAN 4: ATURAN REKAP GURU DAN METADATA RULE DISIPLIN ===
+
+- Resolusi metadata rule disiplin (untuk rekap guru / export Excel di route
+  `/guru/rekap` / `api/teacher/recap/route.ts`) WAJIB baca DARI 3 SUMBER
+  FALLBACK BERURUTAN (PRIORITAS KANAN MENANG — sesuai Engineering Convention "Sekolah aktif meng-override default"):
+  1. (PALING TINGGI PRIORITAS) **School Specific Rules**: `schools/{schoolId}/discipline/rules/{ruleId}`
+  2. (JIKA TIDAK ADA) **Tenant Settings**: `tenant_settings/{tenantId}/discipline/rules/{ruleId}`
+  3. (JIKA KEDUANYA TIDAK ADA) **Global Rules**: `discipline_rules/{ruleId}`
+  4. (FALLBACK FINAL AMAN, WAJIB ADA TIDAK BOLEH HILANG)
+     Jika SEMUA 3 sumber tidak ada (rule lawas dihapus / record invalid / ruleId typo):
+     → `poin = 0`, `kategori = "Umum"`, `namaRule = record.rawNama ?? "(Aturan tidak tersedia)"`
+     JANGAN return `null` / `undefined` / string kosong — Excel cell JANGAN SAMPAI KOSONG.
+- Untuk lookup metadata berulang (ruleId sama di banyak record), GUNAKAN cache in-memory
+  `Map<ruleId, metadata>` PER REQUEST API, agar tidak baca Firebase 3x tiap record
+  (hindari rate limit RTDB dan latency lambat).
+- Pattern FALLBACK 3 SUMBER + DEFAULT AMAN di atas WAJIB DITERAPKAN untuk SEMUA kolom
+  rekap yang bergantung ke metadata referensi (namaKelas, namaGuru, namaAturan, kategori, dst).
+
+## === BAGIAN 5: ATURAN VENDOR SPESIFIK DAN TROUBLESHOOTING LAPANGAN ===
+
+- Nama Service Accessibility EduLock YANG BENAR =
+  `com.sekolah.edulock/com.sekolah.edulock.AntiUninstallService`.
+  JANGAN sampai salah tulis class (misal `EduLockAccessibilityService` — tidak ada di manifest).
+  `settings put secure enabled_accessibility_services` WAJIB pakai nama di atas.
+- SOP troubleshooting vendor-specific ADA DOKUMEN PEGANGAN RESMI di:
+  `D:\2026-2027\Launching GAS\TROUBLESHOOTING\TROUBLESHOOTING-VIVO-Aksesbilitas-Diblokir-Fitur-Tidak-Tersedia.md`
+  File ini = 1 pegangan untuk **4 vendor SEKALIGUS** (2026-08-08 update):
+  Bagian 1 VIVO (OriginOS/FuntouchOS), Bagian 2 NARZO / Realme, Bagian 3 OPPO,
+  **Bagian 4 TECNO HiOS (Chameleon OS Transsion group)**, dan Bagian 5 (SIGN MISMATCH + DPM).
+  SELALU rujuk file ini untuk SOP petugas lapangan (PILIHAN 1 = fisik tanpa laptop,
+  PILIHAN 2 = ADB USB dengan laptop). JANGAN buat SOP baru dari nol tanpa update file ini.
+- **Rule khusus 1 akun 1 device GAS Siswa (BAGIAN 3 kasus 2026-08-08)**:
+  1. Device binding di `SecurityUtils.kt` WAJIB memiliki **3 helper penyimpanan
+     last login identity** di SharedPrefs khusus `satupintu_mobile_security`:
+     `rememberLastLoginIdentity(ctx, loginKey, deviceId)` (saat login sukses),
+     `clearLastLoginIdentity(ctx)` (saat LOGOUT, 15 titik logout), dan
+     `isSameLoginUserOnSameDevice(ctx, loginKey, deviceId)` (saat bindStudent
+     check device binding).
+  2. Kondisi reject device binding (block "terkunci perangkat lain") **WAJIB
+     menggunakan conditional AND (keduanya harus FAIL)**:
+     ```kotlin
+     if (!matchesStoredDeviceBinding(ctx, registeredDeviceId) &&
+         !isSameLoginUserOnSameDevice(ctx, nisnValue, deviceId)) { onError(...) return }
+     ```
+     Artinya: Jika siswa LOGOUT dari HP SAMA lalu LOGIN ULANG (nisn sama + device
+     sama) → `isSameLoginUserOnSameDevice = TRUE` → SKIP BLOKIR, login SUKSES
+     (tidak perlu reset manual ke admin). HANYA NISN SAMA device BEDA → blokir benar.
+  3. SELURUH titik keluar LOGOUT (dimana saja: prefs.clear, auth.signOut, overlay
+     kick, role mismatch, isSessionExpired, StudentPetLockOverlay,
+     EduLockComplianceOverlay, Principal ×6 route logout lambda, HomeScreen logout)
+     → **WAJIB panggil `runCatching { SecurityUtils.clearLastLoginIdentity(ctx) }`
+     sebelum `prefs.edit().clear().apply()` dan sebelum `auth.signOut()`**.
+     Jangan ada titik logout yang terlewat (jika terlewat → data "HP terakhir"
+     nyangkut, user lain login kemudian di HP itu justru di-skip blokir → bahaya).
+- **Vendor BARU 2026-08-08: TECNO HiOS / Chameleon OS (Transsion Group — Tecno/Infinix/Itel)**
+  POLANYA = SAMA PERSIS DENGAN OPPO ColorOS 14 "Setelan Terbatas" (L1+L2):
+  Gejala: Accessibility "EduLock Protection" toggle UI ON (biru), tapi di bawah
+  tulis **"Layanan ini tidak berfungsi."** dan di list Accessibility status =
+  "Tidak berfungsi. Ketuk untuk melihat infonya." → padahal toggle ON.
+  Root Cause: Semua APK sideload (non Palm Store / Play Store) OTOMATIS masuk daftar
+  hitam "Restricted Settings Access" HiOS ChameleonOS → Accessibility Service TIDAK
+  dijalankan Android System Service walaupun user ON-kan toggle.
+  **4 LANGKAH FISIK WAJIB (TECNO = OPPO L1+L2 pola):**
+  1. **L1 (Info App EduLock → Section "Lanjutan/More" → IZINKAN SETELAN TERBATAS):**
+     LongPress icon EduLock → Info aplikasi → Gulir ke PALING BAWAH → cari nama
+     menu: `Izin khusus terbatas` / `Izinkan akses setelan terbatas` /
+     `Restricted settings access` → tap masuk → tap tombol **`IZINKAN (ALLOW)`**
+     pojok kanan bawah. WAJIB ON, tidak ada backdoor ADB.
+  2. **L2 (MATIKAN PEMBUNUH BESOK PAGI TECNO "Pause app activity if unused"):**
+     Info App EduLock → Battery / Penggunaan baterai → pilih `Izinkan aktivitas
+     latar belakang sepenuhnya (Unrestricted)`. Cari `Jeda aktivitas aplikasi
+     jika tak dipakai` / `Pause app activity if app is unused` /
+     `Hemat daya otomatis untuk aplikasi yang tidak aktif` → **MATIKAN (OFF)**.
+     (Jika ON → 24 jam tanpa buka → HiOS kill SEMUA service + cabut semua izin.)
+  3. **MATIKAN DAN NYALAKAN KEMBALI ACCESSIBILITY EDULOCK:**
+     Pengaturan → Aksesibilitas → EduLock Protection → OFF kan toggle → 3 detik
+     → ON-kan kembali → dialog "Izinkan EduLock mengontrol perangkat?" OK.
+     Hasil: Tulisan "Layanan ini tidak berfungsi" HILANG, status list = "Berfungsi".
+  4. **REBOOT HP SEKALI.**
+  Jika masih gagal → 3M (seperti OPPO) di Opsi Pengembang Tecno:
+  (M1) `USB debugging (Pengaturan keamanan)` ON, (M2) `Nonaktifkan validasi izin` ON,
+  (M3) `Instalasi melalui USB` ON → lalu jalankan 5 perintah ADB universal.
+- **Vendor BARU 2026-08-08: VIVO Y18 (FuntouchOS 14+ Android 14/15) — 3 LAYER BARU BATTERY KILLER.**
+  BEDA dengan VIVO lama (V23/V25/Y35 2023 yang ada di Bagian 1). VIVO Y18 2024/2025
+  punya 3 layer battery (bukan cuma 1). Gejala: Setup EduLock 5 badge awal HIJAU
+  semua, tapi tombol **"MULAI APLIKASI" ABU-ABU (DISABLED)** karena item **nomor 6
+  "Izin Latar Belakang" = MASIH biru "AKTIFKAN"** (belum hijau "SUDAH AKTIF"),
+  padahal toggle "Izinkan penggunaan latar belakang" ON di halaman Battery.
+  **5 LANGKAH BENAR VIVO Y18:**
+  1. JANGAN tap tombol "AKTIFKAN" di setup EduLock (sering nyasar ke halaman
+     salah). Lewati manual ke: Pengaturan → Aplikasi → Manajemen Aplikasi →
+     EduLock → **`Izin akses khusus (Special app access)` → BUKA SEMUA**:
+     Usage access (Allow Full, bukan hanya saat pakai), Notification access ON,
+     Display over other apps (IZINKAN), Modify system settings (IZINKAN),
+     Ignore battery optimizations (IZINKAN), Location always in background (IZINKAN).
+  2. Kembali ke halaman Battery EduLock → `Optimasi latar belakang (Background
+     optimization)` → SET **`Tidak pernah dioptimalkan (Never optimize)`**.
+     Toggle `Izinkan penggunaan latar belakang` tetap ON (sudah benar).
+  3. Pengaturan → Baterai → `Smart Battery Saver 2.0` / `Jadwalkan matikan daya
+     otomatis aplikasi` → CARI EduLock dan GAS → **MATIKAN toggle keduanya**.
+  4. **KUNCI RECENT APPS EduLock + GAS:** Recent Apps → Swipe kartu ↓ → ikon 🔒
+     berwarna biru tertutup.
+  5. Force Stop EduLock → Buka kembali → **item nomor 6 hijau "SUDAH AKTIF" &
+     tombol MULAI APLIKASI BERUBAH HIJAU BISA DITEKAN.**
+- OPPO ColorOS 13/14 (Android 13/14) khusus:
+  1. DEPRECATED `appops set` lama → GUNAKAN `cmd appops set --user 0 <pkg> GET_USAGE_STATS allow`
+  2. 3 TOGGLE MANUAL DI OPSI PENGEMBANG WAJIB ON DULU SEBELUM JALANKAN ADB:
+     (M1) USB debugging (Pengaturan keamanan) — ON (jika OFF → `pm grant` FAIL 100%)
+     (M2) Nonaktifkan validasi izin — ON
+     (M3) Instalasi melalui USB — ON
+  3. 2 LANGKAH FISIK MANUAL DI INFO APLIKASI EDULOCK WAJIB DILAKUKAN:
+     (L1) Section Lanjutan → "Izinkan akses setelan terbatas" → IZINKAN
+     (L2) PALING BAWAH → toggle "Jeda aktivitas aplikasi jika tak dipakai" → MATIKAN (OFF)
+     TIDAK ADA backdoor ADB untuk L1 dan L2 — harus fisik user sentuh 1x per unit.
+- Narzo / Realme ColorOS khusus: Wajib aktifkan "Nonaktifkan validasi izin" di Dev Options.
+  Install fisik selalu gagal → pakai Sideload via `adb install -r -d <path.apk>`
+  (100% bypass Play Protect + Realme Security Scan).
+- VIVO OriginOS/FuntouchOS khusus: Default USB Configuration di Dev Options WAJIB SET
+  ke "File Transfer (MTP)". Jika Charge only → `adb devices` konek-tidak konek / corrupt pipe.
