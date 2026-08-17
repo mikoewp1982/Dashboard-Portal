@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
-import { AlertCircle, Award, FileSpreadsheet, Pencil, Plus, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
+import { Award, FileSpreadsheet, RefreshCw } from "lucide-react";
 import { useGasDiscipline } from "@/hooks/gas/discipline/useGasDiscipline";
 import { useGasDisciplineRules } from "@/hooks/gas/discipline/useGasDisciplineRules";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -30,13 +30,14 @@ const createEmptyRuleForm = () => ({
 export function GasDisciplinePanel({ schoolId }: { schoolId: string }) {
   const { user } = useAuthStore();
   
+  const [viewMode, setViewMode] = useState<"records" | "statistics">("records");
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { rules, loading: rulesLoading, saveRules } = useGasDisciplineRules(schoolId);
-  const { records, students, classes, loading: recordsLoading, refresh, addRecord, deleteRecord } = useGasDiscipline(schoolId, selectedMonth, selectedYear);
+  const { records, classes, loading: recordsLoading, refresh, deleteRecord } = useGasDiscipline(schoolId, selectedMonth, selectedYear);
 
   // Rule Form States
   const [ruleForm, setRuleForm] = useState(createEmptyRuleForm);
@@ -72,6 +73,87 @@ export function GasDisciplinePanel({ schoolId }: { schoolId: string }) {
     const uniqueStudents = new Set(filteredRecords.map(r => r.studentId)).size;
     return { totalCases, totalPoints, uniqueStudents };
   }, [filteredRecords]);
+
+  const disciplineStatistics = useMemo(() => {
+    const severityMap = new Map<number, DisciplineRule["severity"]>();
+    rules.forEach((rule) => {
+      severityMap.set(rule.id, rule.severity);
+    });
+
+    const severityCounts = {
+      LOW: 0,
+      MEDIUM: 0,
+      HIGH: 0,
+      CRITICAL: 0,
+    } as Record<DisciplineRule["severity"], number>;
+
+    const studentMap = new Map<string, {
+      studentId: string;
+      name: string;
+      className: string;
+      totalCases: number;
+      totalPoints: number;
+    }>();
+    const ruleMap = new Map<string, { ruleName: string; totalCases: number; totalPoints: number }>();
+    const reporterMap = new Map<string, { reporterName: string; role: string; totalCases: number }>();
+
+    for (const record of filteredRecords) {
+      const severity = severityMap.get(record.ruleId) || "LOW";
+      severityCounts[severity] += 1;
+
+      const studentKey = String(record.studentId || "");
+      const existingStudent = studentMap.get(studentKey) || {
+        studentId: studentKey,
+        name: String(record.studentNameSnapshot || "Tidak Dikenal"),
+        className: String(record.classNameSnapshot || "-"),
+        totalCases: 0,
+        totalPoints: 0,
+      };
+      existingStudent.totalCases += 1;
+      existingStudent.totalPoints += Number(record.points || 0);
+      studentMap.set(studentKey, existingStudent);
+
+      const ruleKey = String(record.ruleNameSnapshot || "Aturan Tidak Diketahui");
+      const existingRule = ruleMap.get(ruleKey) || {
+        ruleName: ruleKey,
+        totalCases: 0,
+        totalPoints: 0,
+      };
+      existingRule.totalCases += 1;
+      existingRule.totalPoints += Number(record.points || 0);
+      ruleMap.set(ruleKey, existingRule);
+
+      const reporterName = String(record.recordedByName || record.recordedBy || "Tidak diketahui");
+      const reporterKey = `${reporterName}__${String(record.reportedByRole || "-")}`;
+      const existingReporter = reporterMap.get(reporterKey) || {
+        reporterName,
+        role: String(record.reportedByRole || "-"),
+        totalCases: 0,
+      };
+      existingReporter.totalCases += 1;
+      reporterMap.set(reporterKey, existingReporter);
+    }
+
+    const sortByCases = <T extends { totalCases: number }>(items: T[]) =>
+      items
+        .sort((a, b) => b.totalCases - a.totalCases)
+        .slice(0, 10);
+
+    const sortStudentsByPoints = Array.from(studentMap.values())
+      .sort((a, b) => {
+        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+        return a.name.localeCompare(b.name, "id-ID", { sensitivity: "base" });
+      })
+      .slice(0, 10);
+
+    return {
+      severityCounts,
+      topStudentsByCases: sortByCases(Array.from(studentMap.values())),
+      topStudentsByPoints: sortStudentsByPoints,
+      topRules: sortByCases(Array.from(ruleMap.values())),
+      topReporters: sortByCases(Array.from(reporterMap.values())),
+    };
+  }, [filteredRecords, rules]);
 
   const violationRules = useMemo(() => {
     return rules
@@ -252,6 +334,7 @@ export function GasDisciplinePanel({ schoolId }: { schoolId: string }) {
       </div>
 
       <DisciplineRecordsSection
+        viewMode={viewMode}
         selectedClassFilter={selectedClassFilter}
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
@@ -262,10 +345,18 @@ export function GasDisciplinePanel({ schoolId }: { schoolId: string }) {
         endYear={END_YEAR}
         dropdownClassName={dropdownClassName}
         dropdownStyle={dropdownStyle}
-        dropdownOptionStyle={dropdownOptionStyle}
         recordsLoading={recordsLoading}
         rulesLoading={rulesLoading}
         filteredRecords={filteredRecords}
+        statisticsContent={
+          <DisciplineStatisticsView
+            monthLabel={monthLabel}
+            selectedYear={selectedYear}
+            totalRecords={filteredRecords.length}
+            statistics={disciplineStatistics}
+          />
+        }
+        onViewModeChange={setViewMode}
         onClassFilterChange={setSelectedClassFilter}
         onMonthChange={setSelectedMonth}
         onYearChange={setSelectedYear}
@@ -293,6 +384,139 @@ export function GasDisciplinePanel({ schoolId }: { schoolId: string }) {
         onRuleFormChange={setRuleForm}
         onSubmitRule={handleRuleSubmit}
       />
+    </div>
+  );
+}
+
+function DisciplineStatisticsView({
+  monthLabel,
+  selectedYear,
+  totalRecords,
+  statistics,
+}: {
+  monthLabel: string;
+  selectedYear: number;
+  totalRecords: number;
+  statistics: {
+    severityCounts: Record<DisciplineRule["severity"], number>;
+    topStudentsByCases: Array<{ studentId: string; name: string; className: string; totalCases: number; totalPoints: number }>;
+    topStudentsByPoints: Array<{ studentId: string; name: string; className: string; totalCases: number; totalPoints: number }>;
+    topRules: Array<{ ruleName: string; totalCases: number; totalPoints: number }>;
+    topReporters: Array<{ reporterName: string; role: string; totalCases: number }>;
+  };
+}) {
+  const severityCards: Array<{ key: DisciplineRule["severity"]; label: string; className: string }> = [
+    { key: "LOW", label: "Ringan", className: "border-emerald-700/30 bg-emerald-900/20 text-emerald-300" },
+    { key: "MEDIUM", label: "Sedang", className: "border-yellow-700/30 bg-yellow-900/20 text-yellow-300" },
+    { key: "HIGH", label: "Berat", className: "border-orange-700/30 bg-orange-900/20 text-orange-300" },
+    { key: "CRITICAL", label: "Kritis", className: "border-red-700/30 bg-red-900/20 text-red-300" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-700/60 bg-slate-950/40 px-4 py-3 text-sm text-slate-300">
+        Statistik dihitung realtime dari catatan kedisiplinan periode <span className="font-semibold text-slate-100">{monthLabel} {selectedYear}</span>.
+        {" "}Total data terfilter saat ini: <span className="font-semibold text-slate-100">{totalRecords} catatan</span>.
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        {severityCards.map((card) => (
+          <div key={card.key} className={`rounded-2xl border p-5 ${card.className}`}>
+            <div className="text-xs font-semibold uppercase tracking-wider opacity-80">Kasus {card.label}</div>
+            <div className="mt-2 text-3xl font-black">{statistics.severityCounts[card.key]}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 2xl:grid-cols-4">
+        <DisciplineRankingCard
+          title="Siswa Kasus Terbanyak"
+          description="Ranking siswa berdasarkan jumlah catatan kedisiplinan."
+          accentClass="text-red-300 border-red-500/20 bg-red-500/10"
+          items={statistics.topStudentsByCases.map((item) => ({
+            title: item.name,
+            subtitle: `${item.className} • ${item.totalPoints} poin`,
+            badge: `${item.totalCases} kasus`,
+          }))}
+        />
+        <DisciplineRankingCard
+          title="Siswa Poin Tertinggi"
+          description="Siswa dengan akumulasi poin pelanggaran tertinggi."
+          accentClass="text-orange-300 border-orange-500/20 bg-orange-500/10"
+          items={statistics.topStudentsByPoints.map((item) => ({
+            title: item.name,
+            subtitle: `${item.className} • ${item.totalCases} kasus`,
+            badge: `${item.totalPoints} poin`,
+          }))}
+        />
+        <DisciplineRankingCard
+          title="Aturan Paling Sering"
+          description="Aturan/keterangan yang paling sering tercatat."
+          accentClass="text-blue-300 border-blue-500/20 bg-blue-500/10"
+          items={statistics.topRules.map((item) => ({
+            title: item.ruleName,
+            subtitle: `${item.totalPoints} total poin`,
+            badge: `${item.totalCases} kasus`,
+          }))}
+        />
+        <DisciplineRankingCard
+          title="Pelapor Paling Aktif"
+          description="Guru/admin/petugas yang paling sering mencatat pelanggaran."
+          accentClass="text-purple-300 border-purple-500/20 bg-purple-500/10"
+          items={statistics.topReporters.map((item) => ({
+            title: item.reporterName,
+            subtitle: `Peran: ${item.role}`,
+            badge: `${item.totalCases} catatan`,
+          }))}
+        />
+      </div>
+    </div>
+  );
+}
+
+function DisciplineRankingCard({
+  title,
+  description,
+  accentClass,
+  items,
+}: {
+  title: string;
+  description: string;
+  accentClass: string;
+  items: Array<{ title: string; subtitle: string; badge: string }>;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-700/60 bg-slate-900/50 p-5 shadow-sm">
+      <div className={`inline-flex rounded-lg border px-3 py-1 text-sm font-semibold ${accentClass}`}>
+        {title}
+      </div>
+      <p className="mt-3 text-sm text-slate-400">{description}</p>
+
+      <div className="mt-4 space-y-3">
+        {items.length > 0 ? (
+          items.map((item, index) => (
+            <div
+              key={`${title}-${index}-${item.title}`}
+              className="flex items-start justify-between gap-3 rounded-xl border border-slate-700/50 bg-slate-950/40 px-3 py-3"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500">#{index + 1}</span>
+                  <div className="truncate text-sm font-semibold text-slate-100">{item.title}</div>
+                </div>
+                <div className="mt-1 text-xs text-slate-400">{item.subtitle}</div>
+              </div>
+              <div className="shrink-0 rounded-full border border-slate-700/50 bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-slate-100">
+                {item.badge}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 py-6 text-center text-sm text-slate-500">
+            Belum ada data pada filter yang dipilih.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

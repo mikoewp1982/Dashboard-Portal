@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { AttendanceRecapPanel } from "./AttendanceRecapPanel";
 import { useGasSettings } from "@/hooks/gas/attendance/useGasSettings";

@@ -11,6 +11,14 @@ type GasStudentsPanelProps = {
   schoolId?: string;
 };
 
+const getStudentGradeCode = (classValue: unknown): "VII" | "VIII" | "IX" | "" => {
+  const normalized = String(classValue || "").trim().toUpperCase();
+  if (!normalized) return "";
+  const [gradeToken] = normalized.split("-");
+  if (gradeToken === "VII" || gradeToken === "VIII" || gradeToken === "IX") return gradeToken;
+  return "";
+};
+
 export function GasStudentsPanel({ schoolId }: GasStudentsPanelProps) {
   const { data, loading, lastSyncTime, refresh } = useGasStudents(schoolId);
   const { data: classes } = useClassesRealtime(schoolId);
@@ -37,7 +45,7 @@ export function GasStudentsPanel({ schoolId }: GasStudentsPanelProps) {
     const query = searchQuery.toLowerCase();
     return data.filter((row) => {
       const studentClass = String(row.class || "").trim().toUpperCase();
-      const matchesGrade = studentClass.startsWith(selectedGrade);
+      const matchesGrade = getStudentGradeCode(studentClass) === selectedGrade;
       const matchesClass = selectedClassName === "ALL" || studentClass === selectedClassName;
       const matchesQuery =
         row.name?.toLowerCase().includes(query) ||
@@ -53,7 +61,7 @@ export function GasStudentsPanel({ schoolId }: GasStudentsPanelProps) {
   }, [data, searchQuery, selectedClassName, selectedGrade]);
 
   const totalStudentsInGrade = useMemo(
-    () => data.filter((row) => String(row.class || "").trim().toUpperCase().startsWith(selectedGrade)).length,
+    () => data.filter((row) => getStudentGradeCode(row.class) === selectedGrade).length,
     [data, selectedGrade]
   );
 

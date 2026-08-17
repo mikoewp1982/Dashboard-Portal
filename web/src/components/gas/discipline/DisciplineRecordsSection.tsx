@@ -1,8 +1,10 @@
 "use client";
 
+import { BarChart3, List } from "lucide-react";
 import { DisciplineTable } from "./DisciplineTable";
 
 interface DisciplineRecordsSectionProps {
+  viewMode: "records" | "statistics";
   selectedClassFilter: string;
   selectedMonth: number;
   selectedYear: number;
@@ -13,10 +15,11 @@ interface DisciplineRecordsSectionProps {
   endYear: number;
   dropdownClassName: string;
   dropdownStyle: React.CSSProperties;
-  dropdownOptionStyle: React.CSSProperties;
   recordsLoading: boolean;
   rulesLoading: boolean;
   filteredRecords: any[];
+  statisticsContent: React.ReactNode;
+  onViewModeChange: (value: "records" | "statistics") => void;
   onClassFilterChange: (value: string) => void;
   onMonthChange: (value: number) => void;
   onYearChange: (value: number) => void;
@@ -26,6 +29,7 @@ interface DisciplineRecordsSectionProps {
 
 export function DisciplineRecordsSection(props: DisciplineRecordsSectionProps) {
   const {
+    viewMode,
     selectedClassFilter,
     selectedMonth,
     selectedYear,
@@ -36,10 +40,11 @@ export function DisciplineRecordsSection(props: DisciplineRecordsSectionProps) {
     endYear,
     dropdownClassName,
     dropdownStyle,
-    dropdownOptionStyle,
     recordsLoading,
     rulesLoading,
     filteredRecords,
+    statisticsContent,
+    onViewModeChange,
     onClassFilterChange,
     onMonthChange,
     onYearChange,
@@ -102,12 +107,43 @@ export function DisciplineRecordsSection(props: DisciplineRecordsSectionProps) {
         </div>
       </div>
 
+      <div className="flex w-fit space-x-1 rounded-lg bg-slate-800/30 p-1 border border-slate-700/60">
+        <button
+          onClick={() => onViewModeChange("records")}
+          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+            viewMode === "records"
+              ? "bg-slate-800/80 text-red-300 shadow"
+              : "text-slate-400 hover:text-slate-300"
+          }`}
+        >
+          <List className="h-4 w-4" />
+          Riwayat Catatan
+        </button>
+        <button
+          onClick={() => onViewModeChange("statistics")}
+          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+            viewMode === "statistics"
+              ? "bg-slate-800/80 text-red-300 shadow"
+              : "text-slate-400 hover:text-slate-300"
+          }`}
+        >
+          <BarChart3 className="h-4 w-4" />
+          Statistik
+        </button>
+      </div>
+
       <div className="space-y-4">
-        <h2 className="text-sm font-bold text-slate-200">Riwayat Catatan</h2>
-        {recordsLoading || rulesLoading ? (
-          <div className="py-20 text-center text-slate-400 font-semibold">Memuat riwayat kedisiplinan...</div>
+        {viewMode === "records" ? (
+          <>
+            <h2 className="text-sm font-bold text-slate-200">Riwayat Catatan</h2>
+            {recordsLoading || rulesLoading ? (
+              <div className="py-20 text-center text-slate-400 font-semibold">Memuat riwayat kedisiplinan...</div>
+            ) : (
+              <DisciplineTable records={filteredRecords} onDelete={onDeleteRecord} />
+            )}
+          </>
         ) : (
-          <DisciplineTable records={filteredRecords} onDelete={onDeleteRecord} />
+          statisticsContent
         )}
       </div>
     </div>
