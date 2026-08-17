@@ -24,7 +24,7 @@ export default function GasPrayerReportPanel({ schoolId }: GasPrayerReportPanelP
       <div className="glass-effect-dark-card rounded-3xl p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-100">Rekap Presensi Sholat</h2>
-          <p className="text-slate-400 mt-1">Laporan komprehensif kehadiran sholat wajib dan sunnah</p>
+          <p className="text-slate-400 mt-1">Rekap bulanan, riwayat harian, dan statistik sholat</p>
         </div>
         <div className="flex items-center gap-4">
           <button

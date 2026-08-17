@@ -33,8 +33,8 @@ export default function GasPrayerV2ReportPanel({ schoolId, initialPrayerType }: 
   const titleLabel = selectedPrayerType === "JUMAT" ? "Jumat" : "Dhuha";
   const subtitle =
     selectedPrayerType === "JUMAT"
-      ? "Monitoring presensi sholat Jumat (putra Muslim) berdasarkan jadwal per kelas + override tanggal"
-      : "Monitoring presensi sholat Dhuha berdasarkan jadwal per kelas + override tanggal";
+      ? "Rekap bulanan, riwayat harian, dan statistik Jumat (jadwal per kelas + override)"
+      : "Rekap bulanan, riwayat harian, dan statistik Dhuha (jadwal per kelas + override)";
 
   return (
     <div className="space-y-6 flex-1 overflow-y-auto p-6">

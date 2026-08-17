@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo } from "react";
-import { Activity, AlertCircle, CalendarDays, UserCheck } from "lucide-react";
+import { Activity, AlertCircle, CalendarDays, UserCheck, UserMinus, UserRound, UserX } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PrayerLog } from "@/hooks/gas/attendance/useGasPrayerAttendance";
 import {
@@ -211,9 +211,94 @@ export function PrayerStatisticsPanel({
     ];
   }, [summary.classChartData, summary.totals.effectiveObligation, summary.totals.prayRate]);
 
+  const topStudentsByStatus = useMemo(() => {
+    type Tally = {
+      id: string;
+      name: string;
+      className: string;
+      notPray: number;
+      permit: number;
+      halangan: number;
+      pray: number;
+    };
+    const byStudent = new Map<string, Tally>();
+
+    for (const student of filteredStudents) {
+      const id = String(student.id || "");
+      if (!id) continue;
+      byStudent.set(id, {
+        id,
+        name: String(student.name || "Tanpa nama"),
+        className: String(student.class || student.className || "-"),
+        notPray: 0,
+        permit: 0,
+        halangan: 0,
+        pray: 0,
+      });
+    }
+
+    for (const student of filteredStudents) {
+      const id = String(student.id || "");
+      const tally = byStudent.get(id);
+      if (!tally) continue;
+
+      for (const date of validDates) {
+        const log = filteredLogs.get(createStudentDateKey(id, toDateKey(date)));
+
+        if (log?.status === "HALANGAN") {
+          tally.halangan += 1;
+          continue;
+        }
+        if (!log || log.status === "NOT_PRAY") {
+          tally.notPray += 1;
+          continue;
+        }
+        if (log.status === "PERMIT") {
+          tally.permit += 1;
+          continue;
+        }
+        if (log.status === "PRAY") {
+          tally.pray += 1;
+        }
+      }
+    }
+
+    const list = Array.from(byStudent.values());
+    const pickTop = (key: keyof Pick<Tally, "notPray" | "permit" | "halangan">) => {
+      const sorted = [...list].sort((a, b) => {
+        if (b[key] !== a[key]) return b[key] - a[key];
+        return a.name.localeCompare(b.name, "id-ID", { sensitivity: "base" });
+      });
+      const top = sorted[0];
+      if (!top || top[key] <= 0) {
+        return { name: "—", className: "", count: 0 };
+      }
+      return { name: top.name, className: top.className, count: top[key] };
+    };
+
+    const pickFewestPray = () => {
+      if (list.length === 0 || validDates.length === 0) {
+        return { name: "—", className: "", count: 0 };
+      }
+      const sorted = [...list].sort((a, b) => {
+        if (a.pray !== b.pray) return a.pray - b.pray;
+        return a.name.localeCompare(b.name, "id-ID", { sensitivity: "base" });
+      });
+      const top = sorted[0];
+      return { name: top.name, className: top.className, count: top.pray };
+    };
+
+    return {
+      notPray: pickTop("notPray"),
+      permit: pickTop("permit"),
+      halangan: pickTop("halangan"),
+      fewestPray: pickFewestPray(),
+    };
+  }, [filteredLogs, filteredStudents, validDates]);
+
   return (
     <div className="space-y-6">
-      <div className="glass-effect-dark-card rounded-lg p-4 shadow-sm">
+      <div className="rounded-lg bg-slate-900/50 p-4 shadow-sm border border-slate-700/60">
         <div className="flex flex-col gap-4 md:flex-row">
           <select
             value={selectedClassName}
@@ -255,8 +340,40 @@ export function PrayerStatisticsPanel({
         <StatsMiniCard title="Pengecualian" value={summary.totals.halangan} description="Status yang tidak menurunkan persentase sholat" icon={AlertCircle} accent="purple" />
       </div>
 
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <TopStudentCard
+          title="Paling Sering Tidak Sholat (TS)"
+          student={topStudentsByStatus.notPray}
+          unitLabel="hari"
+          icon={UserX}
+          accent="red"
+        />
+        <TopStudentCard
+          title="Paling Sering Izin (I)"
+          student={topStudentsByStatus.permit}
+          unitLabel="hari"
+          icon={UserRound}
+          accent="blue"
+        />
+        <TopStudentCard
+          title="Paling Sering Halangan (Hal)"
+          student={topStudentsByStatus.halangan}
+          unitLabel="hari"
+          icon={UserMinus}
+          accent="purple"
+        />
+        <TopStudentCard
+          title="Paling Sedikit Sholat (Sh)"
+          student={topStudentsByStatus.fewestPray}
+          unitLabel="hari sholat"
+          icon={AlertCircle}
+          accent="amber"
+          emptyWhenZero={false}
+        />
+      </div>
+
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="glass-effect-dark-card rounded-lg p-6 shadow-sm">
+        <div className="rounded-lg bg-slate-900/50 p-6 shadow-sm border border-slate-700/60">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-slate-100">Komposisi Status Sholat</h3>
             <p className="mt-1 text-sm text-slate-400">Hari sholat aktif tanpa log ikut dihitung sebagai tidak sholat, kecuali jika berstatus pengecualian.</p>
@@ -281,7 +398,7 @@ export function PrayerStatisticsPanel({
           </div>
         </div>
 
-        <div className="glass-effect-dark-card rounded-lg p-6 shadow-sm">
+        <div className="rounded-lg bg-slate-900/50 p-6 shadow-sm border border-slate-700/60">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-slate-100">Perbandingan Antar Kelas</h3>
             <p className="mt-1 text-sm text-slate-400">Fokus pada sholat, tidak sholat, dan izin per kelas dari hari aktif yang valid.</p>
@@ -304,12 +421,60 @@ export function PrayerStatisticsPanel({
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
         {insightItems.map((item) => (
-          <div key={item.label} className="glass-effect-dark-card rounded-lg p-5 shadow-sm">
+          <div key={item.label} className="rounded-lg bg-slate-900/50 p-5 shadow-sm border border-slate-700/60">
             <div className="text-sm font-semibold uppercase tracking-wide text-slate-400">{item.label}</div>
             <div className="mt-3 text-2xl font-bold text-slate-100">{item.value}</div>
             <p className="mt-2 text-sm text-slate-400">{item.description}</p>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function TopStudentCard({
+  title,
+  student,
+  unitLabel,
+  icon: Icon,
+  accent,
+  emptyWhenZero = true,
+}: {
+  title: string;
+  student: { name: string; className: string; count: number };
+  unitLabel: string;
+  icon: any;
+  accent: "red" | "purple" | "blue" | "amber";
+  emptyWhenZero?: boolean;
+}) {
+  const accentMap = {
+    red: "bg-red-500/10 text-red-300 border-red-500/20",
+    purple: "bg-purple-500/10 text-purple-300 border-purple-500/20",
+    blue: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+    amber: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+  }[accent];
+
+  const showEmpty = emptyWhenZero && student.count <= 0;
+
+  return (
+    <div className="rounded-lg bg-slate-900/50 p-5 shadow-sm border border-slate-700/60">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold uppercase tracking-wide text-slate-400">{title}</div>
+          <div className="mt-3 truncate text-lg font-bold text-slate-100" title={student.name}>
+            {showEmpty ? "—" : student.name}
+          </div>
+          <p className="mt-1 text-sm text-slate-400">
+            {showEmpty
+              ? "Belum ada data pada filter ini"
+              : student.name === "—"
+                ? "Belum ada data pada filter ini"
+                : `${student.className} · ${student.count} ${unitLabel}`}
+          </p>
+        </div>
+        <div className={`rounded-xl border p-3 shrink-0 ${accentMap}`}>
+          <Icon className="h-5 w-5" />
+        </div>
       </div>
     </div>
   );
@@ -337,7 +502,7 @@ function StatsMiniCard({
   }[accent];
 
   return (
-    <div className="glass-effect-dark-card rounded-lg p-5 shadow-sm">
+    <div className="rounded-lg bg-slate-900/50 p-5 shadow-sm border border-slate-700/60">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-sm font-semibold uppercase tracking-wide text-slate-400">{title}</div>
