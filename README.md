@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dashboard Portal
 
-## Getting Started
+Peta folder **saat ini** (`D:\Dashboard Portal`). Baca ini dulu sebelum mengedit.
 
-First, run the development server:
+Sistem sekolah terintegrasi: **dashboard web + APK GAS + APK EduLock**, data di **Firebase**.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Bagian | Stack |
+|--------|--------|
+| Dashboard admin | Next.js 15 + React + TypeScript |
+| GAS / EduLock | Native Android (Kotlin), bukan Flutter / hybrid |
+| Backend | Firebase (Auth, RTDB, Functions, App Hosting) |
+
+---
+
+## Mau ubah apa?
+
+| Tujuan | Buka folder ini |
+|--------|-----------------|
+| Dashboard admin (menu, API, deploy web) | `web\` |
+| Kunci HP siswa (EduLock) | `native-mobile-edulock\` |
+| Absensi, pet, literasi, GAS Siswa/Guru/Kepala | `native-mobile-gas\` |
+| e-Perpustakaan (produk terpisah) | `apps\eperpus-sekolah\` |
+| Spesifikasi / PRD | `docs\` — mulai dari [`docs/00_BACA_SAYA_PERTAMA.md`](docs/00_BACA_SAYA_PERTAMA.md) |
+| Ambil APK untuk lapangan | `Apk Release\Final\` |
+| Cara build / ship APK + gate `git push` | [`Apk Release/Pegangan Build APK/README.md`](Apk%20Release/Pegangan%20Build%20APK/README.md) |
+| Skrip ADB lapangan | `scripts\field-adb\` |
+
+Jangan mengedit salinan di `Apk Release\Archived\` atau `docs\arsip-akar\` — itu arsip, bukan source aktif.
+
+---
+
+## Isi akar (yang sengaja ada)
+
+```text
+Dashboard Portal\
+├── web\                      dashboard admin + firebase.json + functions
+├── native-mobile-edulock\    source APK EduLock
+├── native-mobile-gas\        source APK GAS
+├── apps\eperpus-sekolah\     ePerpus (Vite + Firebase Hosting)
+├── docs\                     dokumen resmi
+├── scripts\field-adb\        ADB lapangan
+├── Apk Release\
+│   ├── Final\                APK yang boleh dibagikan / diinstal
+│   ├── Pegangan Build APK\   SOP build & deploy
+│   ├── Tutorial\             gambar panduan instal
+│   └── Archived\             versi lama (disimpan, bukan dipakai harian)
+└── .gitignore
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.gradle-home\` dan `.vscode\` boleh ada di akar: cache Gradle / setting editor, **bukan** source aplikasi.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## APK resmi (pintu Final)
 
-## Learn More
+Cek versi terkini di pegangan masing-masing app, bukan mengira dari nama file lama di `Final` (folder itu masih berisi banyak riwayat).
 
-To learn more about Next.js, take a look at the following resources:
+- EduLock: [`Pegangan Build APK/Edulock/README.md`](Apk%20Release/Pegangan%20Build%20APK/Edulock/README.md)  
+  File kanonik yang dicatat: `Apk Release\Final\EduLock-1.3.22-48.apk` dan alias `EduLock-studentRelease.apk`
+- GAS: [`Pegangan Build APK/GAS/README.md`](Apk%20Release/Pegangan%20Build%20APK/GAS/README.md)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Yang tidak ada di akar (sengaja)
 
-## Deploy on Vercel
+Source web **hanya** di `web\src`.  
+Dokumen **hanya** di `docs\` (plus arsip di `docs\arsip-akar`).  
+Jangan mencari project Android di dalam `web\`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Jaga file ini tetap benar
+
+File ini **tidak otomatis berubah**. Setiap kali folder level atas dipindah/diubah namanya, **update README ini di commit yang sama**.
+
+Yang wajib diselaraskan: tabel “Mau ubah apa?”, pohon folder akar, dan tautan pegangan. Jangan biarkan peta ini ketinggalan dari isi Explorer.

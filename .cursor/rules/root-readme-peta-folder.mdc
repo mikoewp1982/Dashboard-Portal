@@ -1,0 +1,15 @@
+---
+description: Keep root README.md in sync with the real top-level folder map.
+alwaysApply: true
+---
+
+# Peta folder di README akar
+
+`D:\Dashboard Portal\README.md` adalah peta folder **saat ini** untuk tim. Bukan dokumentasi stack lama.
+
+Jika kamu memindah, rename, atau menambah folder **level atas** (`web`, `native-mobile-edulock`, `native-mobile-gas`, `apps`, `docs`, `scripts`, `Apk Release`, dll.):
+
+1. Update `README.md` di akar pada commit/perubahan yang sama.
+2. Selaraskan tabel “Mau ubah apa?”, pohon folder, dan tautan pegangan.
+3. Jangan memindah `Apk Release/Pegangan Build APK/README.md` ke akar. Pegangan build tetap di situ.
+4. Jangan tulis folder yang sudah diarsip (`docs/arsip-akar`, `Apk Release/Archived`) sebagai source aktif.
