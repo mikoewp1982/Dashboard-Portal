@@ -38,11 +38,50 @@ export default function LoginPage() {
       // Format login: Jika tidak ada '@', asumsikan NPSN sekolah
       const emailLower = raw.includes("@") ? raw.toLowerCase() : `${raw}@edulock.local`;
 
+      const isEmailInput = raw.includes("@");
+      let candidateSchoolSnap: { id: string; data: any } | null = null;
+      if (!isEmailInput) {
+        const lookupSnap = await get(ref(rtdb, "schools"));
+        if (lookupSnap.exists()) {
+          const schools = lookupSnap.val() || {};
+          const candidate = String(raw || "").trim().toLowerCase();
+          for (const [key, row] of Object.entries<any>(schools)) {
+            const pool = [
+              String(key || "").trim().toLowerCase(),
+              String(row?.schoolId || "").trim().toLowerCase(),
+              String(row?.npsn || "").trim().toLowerCase(),
+              String(row?.authEmail || "").trim().toLowerCase(),
+              String(row?.adminEmail || "").trim().toLowerCase(),
+            ];
+            if (pool.includes(candidate)) {
+              candidateSchoolSnap = { id: row?.schoolId || key, data: row };
+              break;
+            }
+          }
+        }
+      }
+
+      if (candidateSchoolSnap?.data) {
+        const sc = candidateSchoolSnap.data;
+        const inactive = sc.isActive === false || sc.isActive === null || sc.isActive === undefined;
+        const adminBlocked = sc.adminAccessActive === false || sc.adminAccessActive === null || sc.adminAccessActive === undefined;
+        if (inactive) {
+          throw new Error(sc.isActive === false
+            ? "Layanan sekolah Anda sedang dinonaktifkan oleh Super Admin."
+            : "Status layanan sekolah tidak valid. Silakan hubungi Super Admin.");
+        }
+        if (adminBlocked) {
+          throw new Error(sc.adminAccessActive === false
+            ? "Akses admin sekolah ditutup sementara oleh Super Admin."
+            : "Akses admin sekolah tidak tersedia. Silakan hubungi Super Admin.");
+        }
+      }
+
       try {
         await signInWithEmailAndPassword(auth, emailLower, password);
       } catch (signInErr: unknown) {
         const authErrorCode = signInErr instanceof Error && "code" in signInErr ? String((signInErr as { code?: string }).code || "") : "";
-        if (authErrorCode === "auth/invalid-credential" && password === "admin123" && !raw.includes("@")) {
+        if (authErrorCode === "auth/invalid-credential" && password === "admin123" && !isEmailInput) {
           throw new Error("Akun admin sekolah belum disiapkan atau password default sudah direset. Minta Super Admin melakukan bootstrap/reset akun.");
         } else {
           throw signInErr;
@@ -53,15 +92,27 @@ export default function LoginPage() {
         const tokenResult = await auth.currentUser.getIdTokenResult(true);
         const token = tokenResult.token;
 
-        // Tenant Deactivation Check
-        const schoolId = tokenResult.claims.schoolId as string | undefined;
-        if (schoolId) {
-          const schoolSnap = await get(ref(rtdb, `schools/${schoolId}`));
-          if (schoolSnap.exists()) {
-            const schoolData = schoolSnap.val();
-            if (schoolData.isActive === false || schoolData.adminAccessActive === false) {
-              await signOut(auth);
-              throw new Error("Layanan sekolah Anda sedang dinonaktifkan oleh Super Admin.");
+        // Tenant Deactivation Check (double check after signIn for email login flow)
+        if (isEmailInput || !candidateSchoolSnap) {
+          const schoolId = tokenResult.claims.schoolId as string | undefined;
+          if (schoolId) {
+            const schoolSnap = await get(ref(rtdb, `schools/${schoolId}`));
+            if (schoolSnap.exists()) {
+              const schoolData = schoolSnap.val();
+              const inactive = schoolData.isActive === false || schoolData.isActive === null || schoolData.isActive === undefined;
+              const adminBlocked = schoolData.adminAccessActive === false || schoolData.adminAccessActive === null || schoolData.adminAccessActive === undefined;
+              if (inactive) {
+                await signOut(auth);
+                throw new Error(schoolData.isActive === false
+                  ? "Layanan sekolah Anda sedang dinonaktifkan oleh Super Admin."
+                  : "Status layanan sekolah tidak valid. Silakan hubungi Super Admin.");
+              }
+              if (adminBlocked) {
+                await signOut(auth);
+                throw new Error(schoolData.adminAccessActive === false
+                  ? "Akses admin sekolah ditutup sementara oleh Super Admin."
+                  : "Akses admin sekolah tidak tersedia. Silakan hubungi Super Admin.");
+              }
             }
           }
         }
