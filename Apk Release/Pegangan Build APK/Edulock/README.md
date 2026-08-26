@@ -8,9 +8,12 @@ Folder ini adalah pegangan operasional untuk perubahan **APK native EduLock sisw
 - Root project name: `EduLock`
 - Application ID dasar: `com.sekolah.edulock`
 - Versi distribusi terkini yang dicatat:
-  - `versionCode = 30`
-  - `versionName = 1.3.4`
-  - File kanonik Final: `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk`
+  - `versionCode = 48`
+  - `versionName = 1.3.22`
+  - File kanonik Final: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.22-48.apk`
+  - Alias Final: `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk`
+  - File Backup Rollback Teruji: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.12-38.apk`
+  - Rollback anti-uninstall selektif: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.19-45.apk`
 
 ## Scope Dokumen
 Dokumen di folder ini **hanya** untuk:
@@ -54,10 +57,11 @@ Tidak ada `src/student` dan `src/admin` terpisah saat ini. Perbedaan perilaku di
 - Student release: `app/build/outputs/apk/student/release/EduLock-studentRelease.apk`
 
 ## Catatan Build Penting
-- Release saat ini memakai `signingConfig = debug`
+- Release memakai `signingConfig` **release** dari `keystore.properties`
 - `isMinifyEnabled = true`
 - `isShrinkResources = true`
 - Nama file output release sudah diatur otomatis dengan format `EduLock-<variant>.apk`
+- Ship 1.3.22 (48) Final terkini = rebuild **2026-08-26 19:47 WIB** (CRITICAL SECURITY PATCH celah uninstall activation page + fix tombol Izin Latar Belakang 3 lapis fallback battery optimization). Link `/e` belum otomatis ikut sampai `npm run sync:apk:edulock` + push. Tetap Final only / distribusi manual internal QA sesuai instruksi user "versi ini belum saya rilis untuk umum".
 
 ## Folder Distribusi
 Rumah file distribusi kanonik:
@@ -72,7 +76,7 @@ Folder arsip/uji lama yang masih sering dipakai:
 D:\Dashboard Portal\Apk Release\OK_4
 ```
 
-Handoff lapangan (troubleshooting admin/guru IT):
+Handoff lapangan (troubleshooting admin/guru IT) — salinan MD juga di folder ini: `HANDOFF_LAPANGAN_EDULOCK.md`. Canonical:
 - Markdown: `D:\Dashboard Portal\native-mobile-edulock\HANDOFF_LAPANGAN_EDULOCK.md`
 - Word di Final: `D:\Dashboard Portal\Apk Release\Final\HANDOFF_LAPANGAN_EDULOCK.docx`
 
@@ -82,6 +86,10 @@ Handoff lapangan (troubleshooting admin/guru IT):
 - Alias pendek `/e` dipakai agar link browser siswa lebih ringkas saat belum ada custom domain.
 - Jika rollout App Hosting belum selesai, route live bisa sementara belum aktif walau source, build, commit, dan push sudah selesai.
 - Unduh APK di tutorial live sudah dipulihkan (`3c9b1413` + ship `24e3ffa6`); App Hosting standalone wajib mengemas ulang isi `public/apk`.
+- **Per 2026-08-26 19:47 WIB:** file Final = `1.3.22-48` (SHA `1E9C87FFBB19B5CBB2432C3A1E1A9280639CF61BDBE921C4CA25689BCD03E42D`, 3.925.320 bytes). Isi perbaikan 2 item utama:
+  1. **CRITICAL SECURITY PATCH Anti-Uninstall:** celah uninstall tanpa kode via halaman Device Admin Activation tombol "Uninstal aplikasi" (native Android typo 1 huruf L — lolos keyword detector + activation page post-Setup tidak masuk dangerousPage). Fix: 27 keyword uninstall diperluas + isActivationPageDangerous safety-net + cross-check hasUninstall.
+  2. **Fix tombol Izin Latar Belakang:** permission manifest + 3 lapis fallback Intent (direct popup → daftar Ignore Settings → App Details) untuk vendor ROM China.
+  Tutorial live `/e` **belum** diarahkan ke rebuild ini sampai `npm run sync:apk:edulock` + push. Tetap Final only internal QA.
 
 ## Perintah Build yang Paling Sering Dipakai
 
@@ -103,8 +111,27 @@ Handoff lapangan (troubleshooting admin/guru IT):
   - saat flow resmi dipicu, sistem melepas kiosk sementara, membersihkan overlay, dan memberi grace period,
   - enforcement agresif dilakukan lagi dari `MonitoringService` setelah target package benar-benar terdeteksi.
 - Aturan overlay `pet mati` yang saat ini dipakai: **aktif hanya di luar jam sekolah**. Saat masuk jam sekolah, overlay `pet mati` harus ikut tertutup otomatis agar EduLock tetap ringan di jam efektif.
-- Hard lock GPS-off / internet-off (build `1.3.4+`): **fail-closed berbasis presence**. Kunci keras hanya jika ada indikasi dekat/di sekolah (sticky / near-school / recent geofence). Sakit di rumah tanpa indikasi dekat sekolah tidak dipaksa terkunci.
+- Interval overlay `pet mati` (v1.3.22 rebuild): mengikuti policy admin `first → second → repeat`; setelah 3 interval pertama, **angka terakhir berulang**. Overlay pertama menunggu interval pertama (tidak langsung muncul saat pet baru mati). Tombol **Saya Mengerti** membuka akses sementara; HP tetap bisa dipakai, konsekuensinya gangguan berkala sampai pet di-revive.
+- Hard lock GPS-off / internet-off (build `1.3.4+`): **fail-closed berbasis presence**. Kunci keras HP (TikTok dll.) hanya jika ada indikasi dekat/di sekolah (sticky / near-school / recent geofence). Sakit di rumah tanpa indikasi dekat sekolah tidak dipaksa terkunci **di background**.
+- **Overlay wajib GPS (v1.3.22 rebuild 2026-08-20 09:52):** selama GPS/Lokasi HP mati, **jangan kiosk/lock screen** — siswa harus bisa membuka Pengaturan Lokasi. Overlay muncul saat **buka EduLock** (termasuk Mode Senyap). Jika GPS mati lalu **masuk area sekolah**, overlay **“GPS MATI DI AREA SEKOLAH”**. Setelah GPS nyala, proteksi sekolah berjalan normal. Pintu pusat: `GpsEnableOverlay`.
+- **Saklar proteksi ON (v1.3.22 rebuild 2026-08-20):** jangan set `isInsideSchoolZone = true` tanpa bukti GPS. Kunci hanya jam sekolah + presence/zona; retry lokasi ~2s dan ~5s.
 - Jika `Device Admin` sedang mati atau baru dibuka flow pemulihannya, **jangan** tumpuk prompt `Accessibility`. Prioritas recovery yang dipakai sekarang adalah:
   - `Device Admin` dipulihkan lebih dulu lewat prompt resmi di `MainActivity`,
   - `MonitoringService` menahan auto-open `Accessibility Settings` selama window recovery admin masih aktif,
   - overlay recovery harus menampilkan tombol sesuai target aktual agar user tidak bingung.
+- **Fail-safe Offline & Mode Pesawat (v1.3.12+)**: Siswa **DILARANG KERAS** offline > 2 menit atau menyalakan Mode Pesawat selama **Jam Sekolah**, meskipun "Status Proteksi" sedang dimatikan oleh admin (misal saat jam Istirahat). Hal ini untuk mencegah eksploitasi bypass.
+  - Jika admin ingin membebaskan siswa seharian (misal: *outclass*, *study tour*, atau pulang cepat), **WAJIB** menggunakan saklar **Mode Libur (Holiday Mode)**.
+  - Saat Mode Libur aktif, EduLock baru akan membebaskan siswa untuk menyalakan Mode Pesawat tanpa dikunci.
+- **Anti-uninstall (v1.3.19–1.3.22)**:
+  - 24/7, tidak terikat jam sekolah / status proteksi.
+  - Daftar aplikasi boleh dibuka; tendangan hanya halaman Device Admin, detail EduLock, atau dialog uninstall EduLock.
+  - v1.3.20: watchdog + poke wake setelah sleep lama.
+  - v1.3.21: Device Admin kick diperbaiki (XML aman).
+  - v1.3.22: setup Overlay/Baterai tidak ditendang sebelum setup selesai; UI versi + jarak terpenuhi; pet-dead interval first→second→repeat.
+  - **v1.3.22 (rebuild sore):** recovery jika OEM mencabut "Tampil di atas aplikasi lain" saat sleep/Mode Senyap — bangunkan EduLock + dialog/notifikasi saat proteksi ON kembali.
+  - **v1.3.22 (rebuild FCM, 19 Agu):** Firebase Messaging + token di `active_devices`; KeepAliveWorker; enforce on SCREEN_ON/boot/FCM Master Switch. OFFLINE ≠ HP tidak dipakai — artinya proses EduLock mati. Setelah install, **buka EduLock sekali** agar FCM terdaftar.
+  - **v1.3.22 (rebuild 20 Agu 09:52):** overlay GPS tanpa kiosk; buka EduLock meski senyap; GPS mati + masuk sekolah = overlay "GPS MATI DI AREA SEKOLAH", bukan lock screen.
+  - **v1.3.22 (rebuild 26 Agu 19:05):** Fix tombol "Izin Latar Belakang" (Konfigurasi Awal item 6). Manifest + permission REQUEST_IGNORE_BATTERY_OPTIMIZATIONS; 3 lapis fallback Intent battery optimization (direct popup -> daftar Ignore -> App Details) + Toast panduan vendor ROM China/MIUI/Funtouch/ColorOS. QA HP user vendor ROM China — LULUS (semua 6 izin berjalan normal).
+  - **v1.3.22 (rebuild 26 Agu 19:47 — CRITICAL SECURITY PATCH):** Tutup celah uninstall tanpa kode via halaman Device Admin Activation Android (tombol native "Uninstal aplikasi"). Akar 3 berantai: keyword "Uninstal" 1L (native typo) tidak match -> activation page post-Setup TIDAK masuk dangerousPage -> tidak ada cross-check hasUninstall. Fix: keyword uninstall 7->27 kata; isActivationPageDangerous safety-net = (activation && !isActivationAllowed) OR (activation && hasUninstall); SettingsGrace exclude juga activationPage (agar masa Setup awal tidak false-positive kick). QA HP user 26 Agu — LULUS (celah tertutup, semua rules anti-uninstall berjalan normal).
+  - Acuan uji Final terkini: **1.3.22 (48)** (SHA `1E9C87FFBB19B5CBB2432C3A1E1A9280639CF61BDBE921C4CA25689BCD03E42D`, ship 2026-08-26 19:47 WIB).
+  - Jadwal masuk/pulang di UI EduLock **read-only** (sumber: GAS Presensi). Ubah jam uji lewat GAS lalu pastikan kartu Jam Sekolah di HP ikut berubah.

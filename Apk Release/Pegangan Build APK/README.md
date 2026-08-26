@@ -83,7 +83,9 @@ Centang sebelum push jika Anda menyentuh `web/` atau area terkait:
 - [ ] **Rekap Sholat** — tiga tab termasuk Statistik
 - [ ] **Rekap Dhuha & Jum'at** — menu Monitoring masih ada + tiga tab; % wajib mengikuti jadwal per kelas
 - [ ] **Monitoring Virtual Pet** — Total Pets Aktif ≈ siswa yang punya pet terhubung (bukan hitung pet siluman/orphan)
-- [ ] **Unduhan APK** — `/gas/install` (dan EduLock bila diubah) menunjuk versi Final yang disepakati
+- [ ] **Unduhan APK** — `/gas/install` (dan EduLock bila diubah) menunjuk versi Final yang disepakati. EduLock Final terkini = **1.3.22 (48)** rebuild 2026-08-26 19:47 (CRITICAL SECURITY PATCH celah uninstall activation page + fix tombol Izin Latar Belakang 3 lapis fallback + permission manifest). SHA `1E9C87FFBB19B5CBB2432C3A1E1A9280639CF61BDBE921C4CA25689BCD03E42D`. Live `/e` **belum** di-sync sampai diminta (user: "versi ini belum saya rilis untuk umum" — Final only / distribusi manual internal QA).
+- [ ] Tenant nonaktif Super Admin sekarang harus menendang di **SEMUA submenu dashboard admin** (Dashboard Utama, GAS, Database, EduLock, Lentera) — bukan cuma halaman `/dashboard`. Payload guard ada di [dashboard/layout.tsx](file:///D:/Dashboard%20Portal/web/src/app/dashboard/layout.tsx); commit live `0828e1b9` → `99e77850`.
+- [ ] **DATABASE INDAK Super Admin (Sekolah & Tenant)** — UI wajib filter client-side 2 lapis hook [useSuperAdminDatabase.ts](file:///d:/Dashboard%20Portal/web/src/hooks/super/useSuperAdminDatabase.ts#L196-L209): hard-block schoolId `uninstallaccess` + reject row tanpa nama/NPSN/district/email kontak berarti (entry sisa seed sampah). Data RTDB fisik tetap ada, UI bersih. Commit push `2b96fafb..99e77850` → deploy Firebase sudah hijau live 2026-08-26 sore. Konfirmasi user refresh → row `- uninstallaccess` HILANG dari daftar ✅.
 - [ ] Tidak ada API `web/src/app/api/debug-*` baru yang ikut ter-commit
 
 Untuk APK native, pakai juga [GAS/REGRESSION_CHECKLIST.md](./GAS/REGRESSION_CHECKLIST.md) / [Edulock/REGRESSION_CHECKLIST.md](./Edulock/REGRESSION_CHECKLIST.md) sesuai area yang diubah.
