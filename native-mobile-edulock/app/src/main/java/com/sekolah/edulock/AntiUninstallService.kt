@@ -1,225 +1,441 @@
 package com.sekolah.edulock
 
 import android.accessibilityservice.AccessibilityService
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
-import android.content.Intent
+import kotlin.math.min
 
+/**
+ * Anti-uninstall berbasis Accessibility (jalur event 1.3.19 + watchdog aman).
+ *
+ * Jangan panggil AccessibilityService.windows dari timer: di beberapa OEM itu
+ * membuat service crash/unbind, sehingga Device Admin jadi bebas dibuka.
+ */
 class AntiUninstallService : AccessibilityService() {
 
-    private val permissionManager by lazy { PermissionManager(this) }
     private val lockStateManager by lazy { LockStateManager.getInstance(this) }
     private val lockEnforcer by lazy { LockEnforcer(this) }
     private val metricsLogger by lazy { LockMetricsLogger() }
+    private val devicePolicyManager by lazy { getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager }
+    private val compName by lazy { ComponentName(this, DeviceAdminReceiver::class.java) }
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var lastKickAt = 0L
+
+    private val watchdogRunnable = object : Runnable {
+        override fun run() {
+            try {
+                scanActiveRoot("watchdog")
+            } catch (t: Throwable) {
+                Log.w(TAG, "Watchdog failed: ${t.message}")
+            } finally {
+                mainHandler.postDelayed(this, WATCHDOG_INTERVAL_MS)
+            }
+        }
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        runtime = this
+        Log.i(TAG, "Accessibility connected")
+        mainHandler.removeCallbacks(watchdogRunnable)
+        mainHandler.post(watchdogRunnable)
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        mainHandler.removeCallbacks(watchdogRunnable)
+        if (runtime === this) runtime = null
+        Log.w(TAG, "Accessibility unbound")
+        return super.onUnbind(intent)
+    }
+
+    override fun onDestroy() {
+        mainHandler.removeCallbacks(watchdogRunnable)
+        if (runtime === this) runtime = null
+        super.onDestroy()
+    }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
+        try {
+            val prefsManager = PreferencesManager(this)
+            val now = System.currentTimeMillis()
+            val uninstallBypass = prefsManager.isUninstallBypassActive(now)
+            val packageName = event.packageName?.toString().orEmpty()
+
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && packageName.isNotBlank()) {
+                prefsManager.lastForegroundPackage = packageName
+            }
+
+            if (!uninstallBypass) {
+                val root = rootInActiveWindow
+                val rootPkg = root?.packageName?.toString().orEmpty()
+                val looksProtected = isProtectedSystemPackage(packageName) || isProtectedSystemPackage(rootPkg)
+                if (looksProtected || shouldInspectAnyway(packageName, rootPkg)) {
+                    if (kickIfDangerous(root, packageName.ifBlank { rootPkg }, "event:${event.eventType}")) {
+                        return
+                    }
+                    if (root == null) {
+                        mainHandler.postDelayed({ scanActiveRoot("retry-null-root") }, 300L)
+                    }
+                }
+            }
+
+            val isSettingsGrace = prefsManager.isSettingsOpen || now < prefsManager.settingsGraceUntil
+            val gpsOff = try {
+                LocationMonitor(this, prefsManager).isGpsEnabled().not()
+            } catch (_: Exception) {
+                false
+            }
+            val shouldSkipWhitelist = !prefsManager.isProtectionActive || uninstallBypass ||
+                !prefsManager.isSetupCompleted || prefsManager.isHolidayMode || isSettingsGrace || gpsOff
+
+            if (shouldSkipWhitelist) return
+
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                val decision = lockStateManager.onForegroundPackageChanged(packageName)
+                if (decision.shouldRelaunchEduLock) {
+                    val traceId = metricsLogger.startTrace("accessibility", packageName)
+                    metricsLogger.markDecisionEmitted(traceId, decision)
+                    lockEnforcer.showLockScreen("PERANGKAT TERKUNCI!\nKembali ke EduLock.", traceId)
+                    lockEnforcer.relaunchEduLock(traceId)
+                    if (decision.shouldAttemptKiosk) {
+                        lockEnforcer.requestKiosk(traceId)
+                    }
+                    metricsLogger.finishTrace(traceId)
+                    Toast.makeText(this, "AKSES DITOLAK! Hanya Aplikasi Sekolah yang diizinkan.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "onAccessibilityEvent crashed: ${t.message}", t)
+        }
+    }
+
+    fun pokeAfterWake() {
+        mainHandler.removeCallbacks(watchdogRunnable)
+        mainHandler.post(watchdogRunnable)
+        mainHandler.post { scanActiveRoot("wake-poke") }
+        mainHandler.postDelayed({ scanActiveRoot("wake-poke-delayed") }, 600L)
+    }
+
+    private fun scanActiveRoot(source: String) {
+        val root = try {
+            rootInActiveWindow
+        } catch (_: Exception) {
+            null
+        }
+        kickIfDangerous(root, root?.packageName?.toString().orEmpty(), source)
+    }
+
+    private fun kickIfDangerous(
+        rootNode: AccessibilityNodeInfo?,
+        packageName: String,
+        source: String
+    ): Boolean {
+        if (rootNode == null) return false
+
         val prefsManager = PreferencesManager(this)
         val now = System.currentTimeMillis()
+        if (prefsManager.isUninstallBypassActive(now)) return false
+
+        val isAdminActive = try {
+            devicePolicyManager.isAdminActive(compName)
+        } catch (_: Exception) {
+            true
+        }
+
+        if (isAdminActive) {
+            prefsManager.deviceAdminRequestUntil = 0L
+        }
+
+        // Halaman izin setup (overlay / baterai / aksesibilitas) JANGAN ditendang.
+        if (isBenignPermissionSettingsPage(rootNode)) return false
+
+        // GPS mati: izinkan halaman Lokasi agar overlay "Nyalakan GPS" bisa dipakai.
+        if (!LocationMonitor(this, prefsManager).isGpsEnabled() && isLocationSettingsPage(rootNode)) {
+            prefsManager.isSettingsOpen = true
+            prefsManager.settingsGraceUntil = now + 120_000L
+            return false
+        }
+
+        val uninstallDialog = isEduLockUninstallDialog(rootNode)
+        val deviceAdminPage = isEduLockDeviceAdminManagementPage(rootNode)
+        val appInfoPage = isEduLockAppInfoPage(rootNode)
+        val deviceAdminActivationPage = isEduLockDeviceAdminActivationPage(rootNode)
+
+        // Saat Konfigurasi Awal belum selesai: izinkan Settings untuk Overlay/Baterai/dll.
+        // Hanya blok dialog uninstall EduLock (kalau ada).
+        if (!prefsManager.isSetupCompleted) {
+            if (!uninstallDialog) return false
+        }
+
         val isSettingsGrace = prefsManager.isSettingsOpen || now < prefsManager.settingsGraceUntil
+        // Grace setup/izin Settings: jangan tendang halaman app info / settings biasa.
+        // Device Admin management + dialog uninstall tetap ditendang setelah setup selesai.
+        if (isSettingsGrace && !deviceAdminPage && !uninstallDialog && !deviceAdminActivationPage) {
+            return false
+        }
+
         val isDeviceAdminRequest = now < prefsManager.deviceAdminRequestUntil
-        val uninstallBypass = prefsManager.isUninstallBypassActive(now)
+        val isActivationAllowed =
+            !isAdminActive && isDeviceAdminRequest && deviceAdminActivationPage
 
-        val shouldSkipEnforcement = !prefsManager.isProtectionActive || uninstallBypass || !prefsManager.isSetupCompleted || prefsManager.isHolidayMode || isSettingsGrace
-
-        if (shouldSkipEnforcement) {
-            // Setup Mode / Settings Grace / Protection OFF: Izinkan user mengaktifkan permission (Overlay, Battery, dll)
-            return
-        }
-
-        // TRACK FOREGROUND PACKAGE (Untuk Whitelist App Sekolah)
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            val packageName = event.packageName?.toString() ?: ""
-            prefsManager.lastForegroundPackage = packageName
-            val rootNode = rootInActiveWindow
-
-            if (rootNode != null && handleProtectedAdminScreen(packageName, rootNode, isDeviceAdminRequest, prefsManager)) {
-                return
-            }
-
-            // LOGIKA WHITELIST ENFORCEMENT (Buka Paksa EduLock jika keluar dari Whitelist)
-            // Hanya aktif jika Proteksi Aktif DAN Di Sekolah DAN BUKAN Mode Acara/Libur
-            val decision = lockStateManager.onForegroundPackageChanged(packageName)
-            if (decision.shouldRelaunchEduLock) {
-                val traceId = metricsLogger.startTrace("accessibility", packageName)
-                metricsLogger.markDecisionEmitted(traceId, decision)
-                android.util.Log.d("AntiUninstall", "Blocking package: $packageName state=${decision.state}")
-                lockEnforcer.showLockScreen("PERANGKAT TERKUNCI!\nKembali ke EduLock.", traceId)
-                lockEnforcer.relaunchEduLock(traceId)
-                if (decision.shouldAttemptKiosk) {
-                    lockEnforcer.requestKiosk(traceId)
-                }
-                metricsLogger.finishTrace(traceId)
-                Toast.makeText(this, "AKSES DITOLAK! Hanya Aplikasi Sekolah yang diizinkan.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        // Monitor semua package yang relevan dengan Settings atau Installer
-        val packageName = event.packageName?.toString() ?: ""
-        
-        // Daftar package yang perlu diawasi (Settings, Package Installer)
-        // Permission Controller DIHAPUS dari blacklist agar runtime permission dialog bisa muncul
-        val suspiciousPackages = listOf(
-            "com.android.settings",
-            "com.google.android.packageinstaller",
-            "com.android.packageinstaller"
+        val activationPageHasUninstall = hasAnyText(
+            rootNode,
+            listOf(
+                "Uninstal aplikasi", "Uninstal app",
+                "Uninstall aplikasi", "Uninstall app",
+                "Uninstall", "Copot pemasangan", "Hapus instal",
+                "Deactivate & uninstall", "Deactivate and uninstall",
+                "Remove device admin"
+            )
         )
 
-        // Jika package termasuk yang dicurigai, lakukan pengecekan
-        if (suspiciousPackages.any { packageName.contains(it) }) {
-            val rootNode = rootInActiveWindow ?: return
-            
-            // Cek apakah halaman ini adalah halaman detail aplikasi EduLock atau dialog uninstall
-            if (isEduLockAppInfoPage(rootNode)) {
-                // Blokir akses dengan kembali ke Home atau Back
-                performGlobalAction(GLOBAL_ACTION_BACK)
-                performGlobalAction(GLOBAL_ACTION_HOME)
-                
-                Toast.makeText(this, "⛔ DILARANG! Minta Izin Uninstall dari Admin Sekolah dulu.", Toast.LENGTH_LONG).show()
-                
-                // Buka kembali aplikasi EduLock (langsung ke MainActivity agar tidak mampir ke halaman login)
-                val intent = Intent(this, MainActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                startActivity(intent)
+        // Safety net: Activation page diakses LUAR Setup awal (isDeviceAdminRequest habis)
+        // ATAU ada tombol uninstall apa pun di halaman Activation → KICK (bahaya!).
+        val isActivationPageDangerous = (deviceAdminActivationPage && !isActivationAllowed) ||
+            (deviceAdminActivationPage && activationPageHasUninstall)
+
+        val isDangerousPage =
+            uninstallDialog || appInfoPage || deviceAdminPage || isActivationPageDangerous
+        if (!isDangerousPage || isActivationAllowed) return false
+
+        if (now - lastKickAt < KICK_DEBOUNCE_MS) return true
+        lastKickAt = now
+
+        Log.w(TAG, "KICK anti-uninstall source=$source pkg=$packageName")
+        prefsManager.isSettingsOpen = false
+        prefsManager.settingsGraceUntil = 0L
+        prefsManager.deviceAdminRequestUntil = 0L
+        try {
+            performGlobalAction(GLOBAL_ACTION_BACK)
+        } catch (_: Exception) {
+        }
+        try {
+            performGlobalAction(GLOBAL_ACTION_HOME)
+        } catch (_: Exception) {
+        }
+
+        try {
+            val intent = Intent(this, MainActivity::class.java).apply {
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                )
             }
+            startActivity(intent)
+        } catch (t: Throwable) {
+            Log.e(TAG, "startActivity after kick failed: ${t.message}")
+        }
+        Toast.makeText(this, "⛔ Akses ditolak! EduLock dilindungi dari penghapusan.", Toast.LENGTH_SHORT).show()
+        return true
+    }
+
+    /** Overlay / baterai / aksesibilitas: sering ada teks EduLock + tombol Izinkan/Nonaktifkan. */
+    private fun isBenignPermissionSettingsPage(rootNode: AccessibilityNodeInfo): Boolean {
+        return hasAnyText(
+            rootNode,
+            listOf(
+                "Tampil di atas aplikasi lain",
+                "Tampilkan di atas aplikasi lain",
+                "Display over other apps",
+                "Appear on top",
+                "Draw over other apps",
+                "Izinkan tampil di atas aplikasi lain",
+                "izin menampilkan di atas aplikasi lain",
+                "Abaikan pengoptimalan baterai",
+                "Optimisasi baterai",
+                "Battery optimization",
+                "Ignore battery optimizations",
+                "Penghemat baterai",
+                "Layanan aksesibilitas",
+                "Installed services",
+                "Layanan terpasang",
+                "Layanan terinstal",
+                "EduLock Protection"
+            )
+        )
+    }
+
+    private fun isLocationSettingsPage(rootNode: AccessibilityNodeInfo): Boolean {
+        return hasAnyText(
+            rootNode,
+            listOf(
+                "Use location",
+                "Gunakan lokasi",
+                "Location services",
+                "Layanan lokasi",
+                "Nyalakan lokasi",
+                "Turn on location",
+                "Location accuracy",
+                "Akurasi lokasi",
+                "GPS"
+            )
+        )
+    }
+
+    private fun shouldInspectAnyway(eventPkg: String, rootPkg: String): Boolean {
+        val merged = "$eventPkg $rootPkg".lowercase()
+        return merged.contains("settings") ||
+            merged.contains("packageinstaller") ||
+            merged.contains("security") ||
+            merged.contains("deviceadmin") ||
+            merged.contains("safecenter") ||
+            merged.contains("systemmanager")
+    }
+
+    private fun isProtectedSystemPackage(packageName: String): Boolean {
+        val pkg = packageName.lowercase()
+        if (pkg.isBlank()) return false
+        return pkg.contains("settings") ||
+            pkg.contains("packageinstaller") ||
+            pkg.contains("permissioncontroller") ||
+            pkg.contains("securitycenter") ||
+            pkg.contains("safecenter") ||
+            pkg.contains("systemmanager") ||
+            pkg.contains("deviceadmin") ||
+            pkg.contains("samsung.android.sm")
+    }
+
+    private fun hasAnyText(rootNode: AccessibilityNodeInfo, keywords: List<String>): Boolean {
+        for (keyword in keywords) {
+            try {
+                if (rootNode.findAccessibilityNodeInfosByText(keyword).isNotEmpty()) return true
+            } catch (_: Exception) {
+            }
+        }
+        val blob = collectVisibleText(rootNode)
+        return keywords.any { blob.contains(it.lowercase()) }
+    }
+
+    private fun collectVisibleText(rootNode: AccessibilityNodeInfo): String {
+        val out = StringBuilder()
+        fun add(node: AccessibilityNodeInfo?) {
+            if (node == null) return
+            try {
+                out.append(node.text ?: "").append(' ')
+                out.append(node.contentDescription ?: "").append(' ')
+            } catch (_: Exception) {
+            }
+        }
+        add(rootNode)
+        val childCount = try {
+            min(rootNode.childCount, 48)
+        } catch (_: Exception) {
+            0
+        }
+        for (i in 0 until childCount) {
+            val child = try {
+                rootNode.getChild(i)
+            } catch (_: Exception) {
+                null
+            } ?: continue
+            add(child)
+            val grandCount = try {
+                min(child.childCount, 24)
+            } catch (_: Exception) {
+                0
+            }
+            for (j in 0 until grandCount) {
+                val grand = try {
+                    child.getChild(j)
+                } catch (_: Exception) {
+                    null
+                } ?: continue
+                add(grand)
+                try {
+                    grand.recycle()
+                } catch (_: Exception) {
+                }
+            }
+            try {
+                child.recycle()
+            } catch (_: Exception) {
+            }
+        }
+        return out.toString().lowercase()
+    }
+
+    private fun isEduLockUninstallDialog(rootNode: AccessibilityNodeInfo): Boolean {
+        return try {
+            val uninstallDialogKeywords = listOf(
+                "Do you want to uninstall", "mencopot pemasangan",
+                "uninstall this app", "hapus aplikasi ini",
+                "meng-uninstal", "ingin meng-uninstal", "hapus instalasi",
+                "Uninstal aplikasi", "Uninstal app",
+                "Uninstall aplikasi", "Uninstall app",
+                "Uninstall this", "Uninstall EduLock",
+                "Copot pemasangan", "Copot pemasangan aplikasi",
+                "Hapus instalan", "Hapus instal", "Hapus pemasangan",
+                "Deactivate & uninstall", "Deactivate and uninstall",
+                "Uninstall & deactivate", "Remove device admin",
+                "Disable this device admin", "Nonaktifkan admin perangkat ini",
+                "Uninstal", "Uninstall"
+            )
+            val hasUninstall = hasAnyText(rootNode, uninstallDialogKeywords)
+            val hasAppRef = hasAnyText(rootNode, listOf("EduLock", "com.sekolah.edulock"))
+            // Safety net longgar: jika ada keyword "Uninstal/Uninstall" + jelas tentang app kita
+            // (meskipun dialog tidak menulis "EduLock" di body, tapi package setting app info
+            //  sudah terdeteksi via isEduLockAppInfoPage).
+            hasUninstall && (hasAppRef || isEduLockAppInfoPage(rootNode))
+        } catch (_: Exception) {
+            false
         }
     }
 
     private fun isEduLockAppInfoPage(rootNode: AccessibilityNodeInfo): Boolean {
-        try {
-            // 1. Cek Spesifik: Dialog Konfirmasi Uninstall
-            // "Do you want to uninstall this app?" atau "Apakah Anda ingin mencopot pemasangan aplikasi ini?"
-            val uninstallDialogKeywords = listOf(
-                "Do you want to uninstall", "mencopot pemasangan",
-                "uninstall this app", "hapus aplikasi ini"
+        return try {
+            if (!hasAnyText(rootNode, listOf("EduLock", "com.sekolah.edulock"))) return false
+
+            val isAppListScreen = hasAnyText(
+                rootNode,
+                listOf(
+                    "Kelola aplikasi", "Daftar aplikasi", "Semua aplikasi", "Aplikasi terinstal",
+                    "App management", "Manage apps", "All apps", "Installed apps", "App list"
+                )
             )
-            for (keyword in uninstallDialogKeywords) {
-                if (rootNode.findAccessibilityNodeInfosByText(keyword).isNotEmpty()) {
-                    // Jika dialog muncul, kita asumsikan itu berbahaya jika EduLock baru saja aktif
-                    // Tapi lebih aman cek judulnya juga
-                    if (rootNode.findAccessibilityNodeInfosByText("EduLock").isNotEmpty()) {
-                        return true
-                    }
-                }
-            }
+            if (isAppListScreen) return false
 
-            // 2. Cek Halaman Detail Aplikasi atau Device Admin
-            // Cari teks "EduLock"
-            val list = rootNode.findAccessibilityNodeInfosByText("EduLock")
-            if (list.isNotEmpty()) {
-
-                val deviceAdminScreenKeywords = listOf(
-                    "Aplikasi admin perangkat",
-                    "Device admin apps",
-                    "Device administrators",
-                    "Administrator perangkat",
-                    "Administrators perangkat",
-                    "Admin perangkat"
+            hasAnyText(
+                rootNode,
+                listOf(
+                    "Paksa berhenti", "Force stop",
+                    "Copot pemasangan", "Hapus instalan", "Uninstall",
+                    "Penyimpanan & cache", "Penyimpanan dan cache", "Storage & cache",
+                    "Hapus data", "Clear data", "Clear storage"
                 )
-                for (keyword in deviceAdminScreenKeywords) {
-                    val nodes = rootNode.findAccessibilityNodeInfosByText(keyword)
-                    if (nodes.isNotEmpty()) {
-                        return true
-                    }
-                }
-                
-                val keywords = listOf(
-                    "Uninstall", "Copot", "Hapus", 
-                    "Force stop", "Paksa berhenti", "Berhenti",
-                    "Disable", "Nonaktifkan",
-                    "Deactivate", "Nonaktifkan admin", // Untuk Device Admin
-                    "Device admin", "Administrator perangkat",
-                    "Storage", "Penyimpanan", // Mencegah Clear Data
-                    "Permissions", "Izin", // Mencegah ubah izin
-                    "Open", "Buka" // Tombol Buka biasanya ada di App Info, ini indikator kuat kita di App Info
-                )
-
-                for (keyword in keywords) {
-                    // Case insensitive search
-                    val nodes = rootNode.findAccessibilityNodeInfosByText(keyword)
-                    if (nodes.isNotEmpty()) {
-                        return true
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            // Safe fallback
-            return false
+            )
+        } catch (_: Exception) {
+            false
         }
-        
-        return false
-    }
-
-    private fun handleProtectedAdminScreen(
-        packageName: String,
-        rootNode: AccessibilityNodeInfo,
-        isDeviceAdminRequest: Boolean,
-        prefsManager: PreferencesManager
-    ): Boolean {
-        val now = System.currentTimeMillis()
-        val isSettingsGrace = prefsManager.isSettingsOpen || now < prefsManager.settingsGraceUntil
-        val uninstallBypass = prefsManager.isUninstallBypassActive(now)
-
-        if (!prefsManager.isProtectionActive || uninstallBypass || !prefsManager.isSetupCompleted || prefsManager.isHolidayMode || isSettingsGrace) {
-            return false
-        }
-
-        if (!isProtectedSystemPackage(packageName)) {
-            return false
-        }
-
-        if (isDeviceAdminRequest && isEduLockDeviceAdminActivationPage(rootNode)) {
-            return false
-        }
-
-        val isBlockedAdminPage =
-            isEduLockAppInfoPage(rootNode) ||
-            isEduLockDeviceAdminManagementPage(rootNode)
-
-        if (!isBlockedAdminPage) {
-            return false
-        }
-
-        prefsManager.isSettingsOpen = false
-        prefsManager.settingsGraceUntil = 0L
-        prefsManager.deviceAdminRequestUntil = 0L
-
-        performGlobalAction(GLOBAL_ACTION_BACK)
-        performGlobalAction(GLOBAL_ACTION_HOME)
-
-        val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        }
-        startActivity(intent)
-
-        Toast.makeText(this, "⛔ Menu Admin Perangkat tidak boleh dibuka. Kembali ke EduLock.", Toast.LENGTH_LONG).show()
-        return true
-    }
-
-    private fun isProtectedSystemPackage(packageName: String): Boolean {
-        return packageName.contains("com.android.settings") ||
-            packageName.contains("com.google.android.packageinstaller") ||
-            packageName.contains("com.android.packageinstaller")
     }
 
     private fun isEduLockDeviceAdminActivationPage(rootNode: AccessibilityNodeInfo): Boolean {
         return try {
-            val appMentions = listOf("EduLock", "com.sekolah.edulock")
-            val deviceAdminKeywords = listOf(
-                "Aktifkan aplikasi admin perangkat ini",
-                "Administrator perangkat",
-                "Admin perangkat",
-                "Aplikasi admin perangkat",
-                "Activate this device admin app",
-                "Device administrator",
-                "Device admin"
+            val hasApp = hasAnyText(rootNode, listOf("EduLock", "com.sekolah.edulock"))
+            val hasActivate = hasAnyText(
+                rootNode,
+                listOf(
+                    "Aktifkan aplikasi admin perangkat ini",
+                    "Activate this device admin app",
+                    "Aktifkan",
+                    "Activate"
+                )
             )
-
-            val hasApp = appMentions.any { rootNode.findAccessibilityNodeInfosByText(it).isNotEmpty() }
-            val hasAdminKeyword = deviceAdminKeywords.any { rootNode.findAccessibilityNodeInfosByText(it).isNotEmpty() }
-            hasApp && hasAdminKeyword
+            val hasBlockedKeyword = hasAnyText(
+                rootNode,
+                listOf("Nonaktifkan", "Deactivate", "Turn off", "Matikan")
+            )
+            hasApp && hasActivate && !hasBlockedKeyword
         } catch (_: Exception) {
             false
         }
@@ -227,22 +443,41 @@ class AntiUninstallService : AccessibilityService() {
 
     private fun isEduLockDeviceAdminManagementPage(rootNode: AccessibilityNodeInfo): Boolean {
         return try {
-            val appMentions = listOf("EduLock", "com.sekolah.edulock")
-            val deviceAdminKeywords = listOf(
-                "Aplikasi admin perangkat",
-                "Administrator perangkat",
-                "Admin perangkat",
-                "Nonaktifkan",
-                "Matikan",
-                "Turn off",
-                "Deactivate",
-                "Device admin apps",
-                "Device administrators"
-            )
+            if (!hasAnyText(rootNode, listOf("EduLock", "com.sekolah.edulock"))) return false
 
-            val hasApp = appMentions.any { rootNode.findAccessibilityNodeInfosByText(it).isNotEmpty() }
-            val hasAdminKeyword = deviceAdminKeywords.any { rootNode.findAccessibilityNodeInfosByText(it).isNotEmpty() }
-            hasApp && hasAdminKeyword
+            // Harus ada konteks Device Admin — jangan cocokkan "Disable" sembarangan
+            // (halaman Overlay/Baterai sering punya tombol Nonaktifkan/Disable).
+            val hasAdminContext = hasAnyText(
+                rootNode,
+                listOf(
+                    "Aplikasi admin perangkat",
+                    "Device admin apps",
+                    "Device administrators",
+                    "Administrator perangkat",
+                    "Admin perangkat",
+                    "Device admin",
+                    "admin perangkat ini",
+                    "Remove device admin",
+                    "Deactivate & uninstall",
+                    "Uninstal aplikasi admin",
+                    "Uninstal aplikasi"
+                )
+            )
+            if (!hasAdminContext) return false
+
+            hasAnyText(
+                rootNode,
+                listOf(
+                    "Nonaktifkan",
+                    "Deactivate",
+                    "Turn off",
+                    "Matikan",
+                    "Disable this device admin",
+                    "Hapus instalasi",
+                    "Deactivate & uninstall",
+                    "Remove device admin"
+                )
+            ) || hasAdminContext // daftar admin yang menampilkan EduLock sudah cukup berbahaya
         } catch (_: Exception) {
             false
         }
@@ -250,5 +485,20 @@ class AntiUninstallService : AccessibilityService() {
 
     override fun onInterrupt() {
         // Required method
+    }
+
+    companion object {
+        private const val TAG = "AntiUninstall"
+        private const val WATCHDOG_INTERVAL_MS = 1_000L
+        private const val KICK_DEBOUNCE_MS = 700L
+
+        @Volatile
+        private var runtime: AntiUninstallService? = null
+
+        fun isRuntimeAlive(): Boolean = runtime != null
+
+        fun pokeAfterWakeIfAlive() {
+            runtime?.pokeAfterWake()
+        }
     }
 }

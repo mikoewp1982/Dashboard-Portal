@@ -6,9 +6,203 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-16 22:15 (GAS Siswa 1.0.80 Final-only; web Rekap/pet siluman; URL unduhan web tidak diubah)
+Update terakhir: 2026-08-26 ~19:47 (CRITICAL SECURITY PATCH Anti-Uninstall — celah uninstall via tombol "Uninstal aplikasi" di halaman Device Admin Activation Android; SHA Final 1E9C87FF; tetap versi EduLock 1.3.22 (48))
+
+## ✅ [CRITICAL SECURITY FIX] EduLock Siswa `1.3.22 (48)` — Celah uninstall TANPA KODE lewat tombol native "Uninstal aplikasi" di halaman Device Admin Activation (2026-08-26 ~19:47, Rebuild Final only, TANPA bump versi)
+
+- [x] **Temuan bug diuji langsung user HP nyata**: Berhasil uninstall EduLock dengan alur: Konfigurasi Awal sudah selesai → buka Pengaturan → Keamanan → Aplikasi admin perangkat → pilih EduLock → muncul halaman Aktivasi Admin Perangkat (lihat screenshot user) → klik tombol paling bawah **"Uninstal aplikasi"** → aplikasi EduLock **ter-uninstall tanpa kode uninstall sama sekali** ❌❌❌.
+- [x] **Akar audit #1 Keyword detector TIDAK match typo native 1 huruf L**: Android Device Admin Activation menampilkan tombol `"Uninstal aplikasi"` (1 huruf L). Fungsi `isEduLockUninstallDialog()` lama hanya match `meng-uninstal`, `ingin meng-uninstal` (2 huruf L) → keyword "Uninstal" (1 L) **100% tidak terdeteksi** sehingga dialog uninstall native tidak ditendang.
+- [x] **Akar audit #2 Halaman Activation (bukan Management) tidak masuk `isDangerousPage`**: L169-L191 lama: `isDangerousPage = uninstallDialog || appInfoPage || deviceAdminPage` (HANYA deviceAdminManagementPage, BUKAN activationPage). Setelah Setup selesai, `isActivationAllowed = false`. Tapi karena halaman activation TIDAK masuk isDangerousPage → L191 `if (!isDangerousPage || isActivationAllowed) return false` → return false → halaman activation **bebas diakses user nakal tanpa kick sama sekali**.
+- [x] **Akar audit #3 Tidak ada cross-check tombol uninstall di halaman activation**: Selama masa Setup, `isActivationAllowed = true` sehingga halaman activation dilewatkan. Tapi jika Android menampilkan tombol "Uninstal aplikasi" di bawah halaman activation tersebut → tetep berbahaya. Tidak ada safety-net pendeteksian keyword uninstall di halaman activation.
+- [x] **Patch A Perluas keyword uninstall 7 → 27 kata** di `isEduLockUninstallDialog()`:
+  - Tambah "Uninstal aplikasi", "Uninstal app", "Uninstall aplikasi", "Uninstall app", "Uninstall this", "Uninstall EduLock".
+  - Tambah "Copot pemasangan", "Hapus instalan", "Hapus instal", "Deactivate & uninstall", "Deactivate and uninstall", "Uninstall & deactivate", "Remove device admin", "Disable this device admin".
+  - Tambah bare "Uninstal", "Uninstall" dengan fallback `isEduLockAppInfoPage()` (agar match jika body dialog tidak menulis EduLock tapi halaman App Info EduLock jelas).
+- [x] **Patch B Activation Page post-Setup = berbahaya hard-kick** di AntiUninstallService L169-L209:
+  - Reuse boolean `deviceAdminActivationPage = isEduLockDeviceAdminActivationPage()`.
+  - Tambah detector `activationPageHasUninstall = hasAnyText(rootNode, ["Uninstal aplikasi", ..., "Remove device admin"])`.
+  - Tambah safety net: `isActivationPageDangerous = (deviceAdminActivationPage && !isActivationAllowed) || (deviceAdminActivationPage && activationPageHasUninstall)`.
+  - Gabung `isActivationPageDangerous` KE DALAM `isDangerousPage` → kick + Home + toast "Akses ditolak! EduLock dilindungi dari penghapusan."
+- [x] **Patch C Guard SettingsGrace period tidak bentrok activation Setup awal**: L182 lama `if (isSettingsGrace && !deviceAdminPage && !uninstallDialog)` → TAMBAH `&& !deviceAdminActivationPage` agar selama GPS/Battery/Overlay grace halaman activation Setup awal tidak false positive kick.
+- [x] **File utama yang diubah**:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/AntiUninstallService.kt` L169-L209 (dangerous logic rewrite) + L368-L393 (expand keyword uninstall).
+- [x] **Versi tetap `1.3.22` / `48`** (timpa Final, tidak bump). Ini adalah patch keamanan kritis + tetap sesuai constraint user "versi ini belum dirilis untuk umum".
+- [x] **Build**: `assembleStudentRelease` — `BUILD SUCCESSFUL in 2m 24s` (49 tasks: 10 executed, 39 up-to-date).
+- [x] **File final APK ditimpa**: `Apk Release/Final/EduLock-1.3.22-48.apk` + alias `EduLock-studentRelease.apk` (Waktu: 2026-08-26 19:47:38 WIB).
+- [x] **SHA256 Final baru (critical security patch uninstall activation 2026-08-26 ~19:47)**: `1E9C87FFBB19B5CBB2432C3A1E1A9280639CF61BDBE921C4CA25689BCD03E42D`
+- [x] **Size final**: `3.925.320 bytes` (≈ 3,74 MB)
+- [x] **Deploy `/e` (tutorial URL unduh public)**: **TIDAK**. Tetap Final only / internal QA distribusi manual dulu — user minta versi 1.3.22-48 ini belum dirilis umum.
+- [ ] **QA HP Vendor ROM China WAJIB SETELAH INSTALL SHA `1E9C87FF…`** (Selesaikan regression security patch):
+  - [ ] **Regression #1 Celah uninstall tertutup**: Ulangi persis alur user sebelumnya. Setting → Keamanan → Aplikasi admin perangkat → pilih EduLock → muncul halaman Aktivasi → klik tombol **"Uninstal aplikasi"** → **HARUS ditendang (HOME + toast Akses ditolak!)** → TIDAK BOLEH masuk ke halaman uninstall / berhasil uninstall.
+  - [ ] **Regression #2 Kode uninstall resmi TETAP BERJALAN**: Super Admin buat kode uninstall via EduLock Uninstall Access (durasi misal 120 menit). Install SHA patch terbaru → di Konfigurasi Awal coba matikan Device Admin via AdminPasswordActivity (lewat MainActivity tombol) → masuk kode uninstall → Device Admin berhasil nonaktifkan → uninstall manual via Apps berhasil (tidak ikut false positive kick).
+  - [ ] **Regression #3 6 izin Konfigurasi Awal TETAP BISA AKTIF SEMUA**: Uji flow SetupActivitiy dari awal → Device Admin Activation halaman muncul di masa Setup (deviceAdminRequestUntil aktif) → klik Aktifkan → tidak kick → Admin Perangkat SUDAH AKTIF hijau → lanjut izin 4,5,6 semuanya → tombol MULAI APLIKASI aktif.
+  - [ ] **Regression #4 Anti-Uninstall lama tetap TIDAK BISA uninstall**: (Bukan lewat activation page). Apps → EduLock → Copot pemasangan → ditendang. Settings → Keamanan → Device admin apps → Nonaktifkan EduLock (halaman Management, bukan Activation) → ditendang.
+
+
+## ✅ [FIX APK] EduLock Siswa `1.3.22 (48)` — Tombol "Izin Latar Belakang" (Konfigurasi Awal no. 6) TIDAK BISA DIKLIK / diklik tidak terjadi apa-apa (2026-08-26 ~18:55, Rebuild Final only, TANPA bump versi)
+
+- [x] **Akar audit #1 Permission hilang**: Manifest Android TIDAK PERNAH mendaftarkan `<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />` → Vendor ROM China (Xiaomi MIUI, POCO, Redmi, Vivo Funtouch, Oppo/Realme ColorOS, Samsung One UI) memblokir Intent `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` secara diam-diam → user klik tombol biru "AKTIFKAN" = tidak ada respons / terasa "tidak bisa diklik".
+- [x] **Akar audit #2 Tanpa `resolveActivity()` check**: Fungsi `requestBatteryOptimization()` lama langsung `startActivity(intent)` TANPA cek `intent.resolveActivity(packageManager) != null`. Pada ROM yang block, startActivity tidak selalu throw Exception — user tetap tidak melihat apa-apa.
+- [x] **Akar audit #3 Tanpa fallback Settings manual**: ROM Xiaomi/Vivo/Oppo/Realme sengaja men-disable direct battery optimization request dan hanya mengizinkan user aktifkan lewat menu "Pengaturan → Aplikasi → EduLock → Baterai → Tidak dibatasi". Tanpa fallback ke Settings manual, tombol "Izin Latar Belakang" di SetupActivity menjadi "tidak berguna" di vendor ROM ini.
+- [x] **Fix Lapis 1 (Manifest)**: Tambahkan `<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />` di `AndroidManifest.xml` baris setelah POST_NOTIFICATIONS.
+- [x] **Fix Lapis 2 (SetupActivity — 3 Lapis Fallback Intent)**: Rewrite fungsi `requestBatteryOptimization()` di `SetupActivity.kt`:
+  1. **Guard awal**: Jika `isBatteryOptimizationIgnored()` sudah true → langsung `checkStatus()` refresh (hindari double-click buka Settings redundan).
+  2. **Lapis 1 Direct**: `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` + `resolveActivity()` check. Jika bisa resolve → langsung startActivity popup OS native.
+  3. **Lapis 2 Fallback daftar**: `ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS` (buka daftar global "Aplikasi yang tidak dioptimalkan") + Toast panduan: `"Cari 'EduLock' di daftar lalu pilih 'Tidak dibatasi' / 'Tidak dioptimalkan'"`.
+  4. **Lapis 3 Last resort**: `ACTION_APPLICATION_DETAILS_SETTINGS` (buka halaman detail EduLock di Settings) + Toast panduan: `"Buka 'Baterai' → pilih 'Tidak dibatasi' untuk EduLock"`.
+  5. **Lapis 4 Absolute last**: Jika semua 3 intent di atas gagal (catch Exception terakhir) → Toast panduan langkah manual penuh.
+- [x] **Semua intent wrap `try/catch` + `resolveActivity()`** agar tidak ada lagi kasus "klik tidak terjadi apa-apa tanpa feedback".
+- [x] **File utama yang diubah**:
+  - `native-mobile-edulock/app/src/main/AndroidManifest.xml` (tambah permission REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/SetupActivity.kt` (rewrite `requestBatteryOptimization()`)
+- [x] **Versi tetap `1.3.22` / `48`** (timpa Final, tidak bump). Perbaikan UX flow Konfigurasi Awal, tidak ubah kontrak data native.
+- [x] **Build**: `assembleStudentRelease` — `BUILD SUCCESSFUL in 2m 23s` (49 tasks: 17 executed, 32 up-to-date).
+- [x] **File final APK ditimpa**: `Apk Release/Final/EduLock-1.3.22-48.apk` + alias `EduLock-studentRelease.apk` (Waktu: 2026-08-26 19:05:32 WIB).
+- [x] **SHA256 Final baru (rebuild 2026-08-26 ~19:05 post-fix Izin Latar Belakang)**: `B2710CCF3F6A9A27729978ADF3A5769663C855533A3295428F126CDB5479D645`
+- [x] **Size final**: `3.925.085 bytes` (≈ 3,74 MB)
+- [x] **Deploy `/e` (tutorial URL unduh public)**: **TIDAK**. Tetap Final only / internal QA distribusi manual dulu — user minta versi 1.3.22-48 ini belum dirilis umum.
+- [x] **QA HP Vendor ROM China WAJIB** — **LULUS (dikonfirmasi user 2026-08-26)** (Xiaomi/MIUI atau Vivo/Funtouch atau Oppo/Realme/ColorOS — yang sebelumnya paling parah block direct request):
+  - [x] Install APK EduLock rebuild SHA `B2710CCF…` di atas (timpa atau uninstall dulu).
+  - [x] Buka EduLock → Konfigurasi Awal.
+  - [x] Aktifkan 1-5 izin (Lokasi, Kamera, Admin, Aksesibilitas, Overlay) sampai SUDAH AKTIF hijau.
+  - [x] Sampai di **"6. Izin Latar Belakang"** → Klik tombol biru **AKTIFKAN**. ✅ ADA RESPON (fallback Settings + Toast panduan jelas, **bukan** "klik tidak terjadi apa-apa" lagi).
+  - [x] Setelah user pilih "Tidak dibatasi" / "Izinkan" → kembali ke EduLock → tombol Izin Latar Belakang otomatis jadi **SUDAH AKTIF (hijau, disabled)**.
+  - [x] Tombol **MULAI APLIKASI** otomatis enabled (alpha 1.0, hijau penuh, klik bisa masuk MainActivity).
+- [x] Semua 6 konfigurasi awal di HP user — **BERJALAN NORMAL SEMUA** (dikonfirmasi user langsung).
+- [x] QA Stock Android (non-ROM vendor) — popup direct "Izinkan ignore battery?" seharusnya muncul normal (tanpa butuh fallback).
+
+## ✅ [FIX WEB] Tenant Nonaktif = Auto Kick di SEMUA submenu Admin Sekolah (2026-08-26, deploy live 0828e1b9)
+
+- [x] **Awal bug**: Dashboard Utama sudah tertendang, tetapi **GAS, Database, EduLock, Lentera masih bisa dileluasi setelah nonaktif**.
+- [x] **Fix lapis 1 (AuthProvider global)**: Stall redirect router sampai listener tenant `schools/{schoolId}` attach; jika `isActive=false` atau `adminAccessActive=false` → `signOut + message`.
+- [x] **Fix lapis 2 (login gate pre-auth)**: Login admin sekolah lookup tenant SEBELUM `signInWithEmailAndPassword`; inactive ditolak sejak awal.
+- [x] **Fix lapis 3 (dashboard root page)**: Redundan listener + label dinamis "Layanan Ditutup / Tenant ditutup / Diblokir oleh Super Admin."
+- [x] **Fix lapis 4 (PAYLOAD UTAMA — route `/dashboard/*`)**: Tambah [dashboard/layout.tsx](file:///D:/Dashboard%20Portal/web/src/app/dashboard/layout.tsx) guard redundan **sendiri** untuk semua subtree admin: `/dashboard`, `/dashboard/gas`, `/dashboard/database`, `/dashboard/edulock`, `/dashboard/lentera`. Ini yang bikin GAS otomatis tertendang.
+- [x] **Commit live**: `0828e1b9` → `fix(web): enforce tenant kick across dashboard routes`
+- [x] **Push `origin/main`**: SUCCESS. App Hosting otomatis rollout.
+- [x] **QA LIVE (dikonfirmasi user)**: Super Admin klik Nonaktifkan → Admin Demo yang sedang di halaman **GAS** sekarang **langsung tertendang**, bukan hanya Dashboard Utama.
+- [ ] QA opsional: ulang test untuk menu Database, EduLock, Lentera sambil di-nonaktifkan; harus semua otomatis keluar.
+
+## ✅ [FIX APK] EduLock Siswa `1.3.22 (48)` — Kick Nonaktif SMooth (tanpa kedip) + Daftar Ulang Tidak Gagal (2026-08-26, Rebuild Final only, TANPA bump versi)
+
+- [x] **Awal bug #1 Kedip**: Setelah Super Admin nonaktifkan, layar EduLock berkedip terus. **Penyebab**: `MainActivity` dan `MonitoringService` SAMA-SAMA jalankan `forceExit + pindah ke RegistrationActivity` tanpa guard, jadi saling tabrak.
+- [x] **Fix Kedip**: Tambah `PreferencesManager.schoolServiceExitClaimOnce()` + `isSchoolServiceExitClaimed()` sebagai atomic flag cross-process. `MainActivity` dan `MonitoringService` cuma boleh jalankan exit **SEKALI**; yang kalah = return tanpa reload activity.
+- [x] **Awal bug #2 Gagal menyimpan data lokal**: Tenant dinonaktifkan → aktifkan lagi → form Registrasi Siswa pakai NISN yang sama → error toast "Gagal menyimpan data lokal". **Penyebab**: `DatabaseHelper.insertStudent()` gagal karena constraint `NISN UNIQUE`, padahal row lama dari registrasi sebelumnya masih ada. Saat nonaktif yang di-reset hanya `isRegistered=false`, bukan row siswa SQLite.
+- [x] **Fix Daftar Ulang Aman**: Tambah `DatabaseHelper.saveStudentByNisn(Student)`: jika NISN sudah ada → `update`, jika belum → `insert`. RegistrationActivity pakai ini, bukan `insertStudent` mentah.
+- [x] **Versi tetap `1.3.22` / `48`** (timpa Final). Tidak bump karena perbaiki perilaku pasca-kedip, tidak ubah contract native lain yang stabil.
+- [x] **File final APK sudah ditimpa**: `Apk Release/Final/EduLock-1.3.22-48.apk` + alias `EduLock-studentRelease.apk`
+- [x] **SHA256 Final baru (rebuild 2026-08-26 18:19 post-fix)**: `1D2FE8DA6341EDA5B0BBCD3CA0E80DB2898D1EB57B61A31B9422AC8F1EB7FC9D`
+- [x] **Size final**: `3.924.940 bytes` (≈ 3,92 MB)
+- [x] **Deploy `/e` (tutorial URL unduh public)**: **TIDAK**. Tetap Final only / internal QA distribusi manual dulu.
+- [x] **QA LIVE HP (dikonfirmasi user)**: Saat tenant nonaktif → **GAS dan EduLock KEDUANYA tertendang SMOOTH tanpa kedip** ✅
+- [ ] QA: Tenant aktifkan lagi → install APK fix di HP siswa DEMO, pilih NPSN `99999999`, NISN `999901`, klik Daftar → **tidak** boleh ada "Gagal menyimpan data lokal".
+- [ ] QA: EduLock fresh install `1.3.22-48` versi SHA di atas → Setup → Nonaktifkan dari Super Admin → app keluar sekali, tidak berkedip, bisa aktifkan lagi tanpa reset data.
+
+## [SHIP APK] EduLock Siswa `1.3.22 (48)` — GPS mati masuk sekolah: overlay, bukan kiosk (2026-08-20 09:52, Final only)
+
+- [x] Selama GPS mati: **jangan** kiosk / lock screen penuh (siswa harus bisa buka Pengaturan Lokasi).
+- [x] Overlay GPS muncul saat buka EduLock **meski proteksi senyap**.
+- [x] Masuk area sekolah + GPS mati → **“GPS MATI DI AREA SEKOLAH”** + tombol Pengaturan Lokasi.
+- [x] Setelah GPS nyala → overlay tertutup, proteksi sekolah normal.
+- [x] Versi tetap `1.3.22` / `48` (timpa Final).
+- [x] SHA256: `CD7379A35D4CD126C14B6CF0CD560BF17A0477F7941C836CD33D30C722B75F7F`
+- [x] Deploy `/e`: **TIDAK**.
+- [ ] QA: GPS mati + buka EduLock (proteksi OFF) → overlay GPS, tombol Settings jalan.
+- [ ] QA: GPS mati + admin ON proteksi → **bukan** kunci ramai; bisa nyalakan GPS.
+- [ ] QA: GPS mati di rumah → masuk zona sekolah → overlay sekolah, nyalakan GPS, lalu lock normal.
+
+## [SHIP APK] EduLock Siswa `1.3.22 (48)` — Overlay wajib nyalakan GPS + responsif (2026-08-20 08:10, **diganti** Final 09:52)
+
+- [x] Overlay GPS saat **buka EduLock** + proteksi ON + GPS/Lokasi HP mati (tanpa syarat presence).
+- [x] Overlay tertutup sendiri setelah GPS nyala; tombol **Buka Pengaturan Lokasi**.
+- [x] GPS listener hemat (12s/12m + Network 25s/25m); `stopListening` saat service mati.
+- [x] `lastForegroundPackage` tercatat sebelum kick anti-uninstall.
+- [x] Saklar proteksi ON **tidak** memaksa zona sekolah; kunci hanya jam sekolah + bukti lokasi.
+- [x] Versi tetap `1.3.22` / `48` (timpa Final).
+- [x] Salin: `EduLock-1.3.22-48.apk` + alias `EduLock-studentRelease.apk`.
+- [x] SHA256: `8F6A1691D6E9FD13CF5F5D4806FC466B4A45DC32DC3B5D0336276AA2A010E845`
+- [x] Deploy `/e`: **TIDAK**.
+- [ ] QA: buka EduLock → matikan GPS → overlay muncul; nyalakan GPS → overlay hilang.
+- [ ] QA: proteksi ON jam sekolah, siswa **di rumah** (GPS nyala, belum pernah dekat sekolah) → **tidak** terkunci seolah di sekolah.
+- [x] **Superseded 09:52:** Mode Senyap kini **tetap** menampilkan overlay GPS. Hanya Mode Libur / izin HP / emergency yang skip. Jangan uji item senyap dari ship 08:10.
+
+## [SHIP APK] EduLock Siswa `1.3.22 (48)` — FCM + keep-alive + enforce tanpa buka UI (2026-08-19 14:05, Final only)
+
+- [x] FCM MessagingService + token ke `active_devices`.
+- [x] KeepAliveWorker 15 menit + wake Screen/Boot/Restarter.
+- [x] Jadwal berubah → enforce segera.
+- [x] Timpa Final 1.3.22-48 + alias.
+- [x] **SHA256 prefix**: `AFEE691A6831…`
+- [x] Deploy `/e`: **TIDAK**.
+- [ ] QA: buka EduLock sekali → main TikTok → admin ON proteksi → terkunci tanpa buka app; monitoring ONLINE / FCM bukan “belum sinkron”.
+
+## [SHIP APK] EduLock Siswa `1.3.22 (48)` — Recovery overlay dicabut OEM (2026-08-19 13:05, Final only)
+
+- [x] **Masalah**: sleep + admin OFF proteksi → OEM sering cabut "Tampil di atas aplikasi lain" → admin ON proteksi gagal kunci sampai EduLock dibuka manual.
+- [x] **Fix**: `MonitoringService` recovery (bangunkan MainActivity + notifikasi fullscreen); `MainActivity` panggil dialog overlay; `ScreenReceiver` cek overlay saat wake.
+- [x] **Versi tetap** `1.3.22` / `48` (timpa Final).
+- [x] **Salin APK Final**: `EduLock-1.3.22-48.apk` + alias `EduLock-studentRelease.apk`.
+- [x] **SHA256 prefix**: `560EEB20BE56…`
+- [x] **Deploy web `/e`:** **TIDAK**.
+- [ ] QA: sleep → OFF proteksi → ON proteksi → muncul EduLock/prompt overlay **tanpa** buka app manual.
+
+## [SHIP APK] EduLock Siswa `1.3.22 (48)` rebuild — Versi UI + jarak terpenuhi + pet-dead 30→20→10 (2026-08-19 09:45, Final only)
+
+- [x] **Label versi** di bawah layar utama: `Versi 1.3.22 (48)`.
+- [x] **Jarak Status Monitoring**: `(terpenuhi)` / `(tidak terpenuhi)` vs radius sekolah.
+- [x] **Overlay pet mati**: interval admin first→second→repeat; angka terakhir berulang; overlay pertama menunggu interval pertama (bukan langsung).
+- [x] **Versi tetap** `1.3.22` / `48` (timpa Final, tanpa bump).
+- [x] **Salin APK Final**: `EduLock-1.3.22-48.apk` + alias `EduLock-studentRelease.apk`.
+- [x] **SHA256**: `BC5DC60AB5D1C8C3C701E9B1F93859B03517D0BD6A2F04DE97EF4AC5D5EA5BA5`.
+- [x] **Deploy web `/e`:** **TIDAK** (Final only).
+- [ ] QA: versi terbaca di UI; jarak terpenuhi/tidak; pet mati 30→20→10 lalu ulang 10; tombol Mengerti = HP bisa dipakai sementara.
+
+## [SHIP APK] EduLock Siswa `1.3.22 (48)` — Setup Overlay tidak ditendang (2026-08-19 08:35, Final only)
+
+- [x] Setup Overlay/Baterai tidak ditendang sebelum `setup_completed`; Device Admin tetap ditendang setelah setup.
+- [x] Salin Final: `EduLock-1.3.22-48.apk` + alias.
+- [x] Deploy `/e`: **TIDAK**.
+- [ ] QA setup Overlay + Baterai; Device Admin setelah setup ditendang.
+
+## [SHIP APK] EduLock Siswa `1.3.21 (47)` — Device Admin kick diperbaiki (2026-08-19, Final only)
+
+- [x] Anti-uninstall Device Admin kembali ditendang (XML 1.3.19 + watchdog aman; Accessibility 24/7).
+- [x] Salin Final: `EduLock-1.3.21-47.apk` + alias (digantikan 1.3.22).
+- [x] Deploy `/e`: **TIDAK**.
+
+## [SHIP APK] EduLock Siswa `1.3.20 (46)` — Anti-Uninstall tahan sleep lama (2026-08-19, Final only)
+
+- [x] **Akar masalah**: setelah sleep lama, Accessibility tetap “ON” di Settings tetapi event macet → halaman Device Admin tidak ditendang (lolos di uji cepat v1.3.19).
+- [x] **Watchdog + scan multi-window** di `AntiUninstallService.kt`; retry jika `rootInActiveWindow` null.
+- [x] **Poke setelah wake** (`SCREEN_ON` / `USER_PRESENT`) dari `ScreenReceiver` + `MonitoringService`.
+- [x] **Deteksi zombie** Accessibility (`enabled` di Settings, instance runtime null) → bangunkan `MainActivity`.
+- [x] **Bump**: `versionName 1.3.20` / `versionCode 46`.
+- [x] **Salin APK Final**: `EduLock-1.3.20-46.apk` + alias `EduLock-studentRelease.apk`.
+- [x] **Deploy web `/e`:** **TIDAK** (Final only, menunggu uji lapangan).
+- [ ] QA perangkat: sleep 15–30+ menit → buka Device Admin EduLock → harus ditendang.
+- [ ] QA selektivitas: daftar aplikasi lain tetap boleh dikelola; detail/uninstall EduLock tetap ditendang.
+
+## [SHIP APK] EduLock Siswa `1.3.12 (38)` - Anti-Bypass Mode Pesawat & Fail-Safe Offline 2 Menit (2026-08-18)
+
+- [x] **Instant Airplane Mode Detector (`ACTION_AIRPLANE_MODE_CHANGED`)**: Mendaftarkan listener di `MonitoringService.kt` dan `LockScreenActivity.kt` agar HP langsung terkunci (< 1 detik) jika siswa mengaktifkan Mode Pesawat saat jam sekolah & proteksi aktif.
+- [x] **Pengetatan Batas Toleransi Offline**: Mengubah `OFFLINE_THRESHOLD_MS` di `OfflineMonitor.kt` dari 20 menit menjadi 2 menit (peringatan di menit ke-1).
+- [x] **Auto Recovery Mode Pesawat**: Membuka kunci otomatis saat Mode Pesawat dinonaktifkan kembali dan sistem memverifikasi kepatuhan.
+- [x] **Pesan Layar Kunci Khusus**: Menampilkan pesan tegas *"MODE PESAWAT DILARANG SAAT JAM SEKOLAH! Harap matikan Mode Pesawat."*.
+- [x] **Bump Version**: `versionName 1.3.12` / `versionCode 38`.
+- [x] **Salin APK ke Folder Pegangan**: `EduLock-1.3.12-38.apk` dan `EduLock-studentRelease.apk` di `Apk Release/Final`.
+- [ ] QA perangkat: Hidupkan EduLock di sekolah / sekolah_demo -> aktifkan Mode Pesawat -> pastikan layar terkunci instan < 1 detik -> matikan Mode Pesawat -> pastikan kunci terbuka normal.
 
 ---
+
+## [SHIP APK] GAS Siswa `1.0.81-siswa (23078)` - KBBI + Surat Al-Mulk + Standarisasi Quran NU Online 2026-08-18
+
+- [x] **Kamus Besar Bahasa Indonesia (KBBI)**: Penambahan menu baru di Tools dengan integrasi ke basis data mirror resmi KBBI v6 (`https://kbbi.raf555.dev/`) + fallback ganda, menampilkan pemenggalan suku kata, pelafalan fonetik, badge kelas kata (Verba, Nomina, dll), dan contoh kalimat.
+- [x] **Buku Pembiasaan Religius**: Penambahan Surat Al-Mulk (Surah ke-67, 30 ayat).
+- [x] **Standarisasi Al-Qur'an**: Seluruh surat (Ar-Rahman, Al-Waqi'ah, Yasin, Al-Mulk) disinkronkan ke rujukan resmi Mushaf Standar Indonesia (LPMQ Kemenag RI / rujukan resmi NU Online `quran.nu.or.id`) lengkap dengan teks Arab rasm Usmani standar Kemenag, transliterasi Latin resmi, dan terjemahan bahasa Indonesia.
+- [x] **Pendaftaran Rute & Akses Role**: Mendaftarkan `tools_kbbi_dictionary` dan `tools_religious_book` ke whitelist `SecurityUtils.kt` dan navigasi `GasAppNavGraph.kt`.
+- [x] **Bump flavor siswa**: `versionName 1.0.81` / `versionCode 23078`.
+- [x] **Salin APK ke Folder Pegangan**: `GAS-Siswa-1.0.81-siswa-23078-INTERNAL.apk`, `GAS-Siswa-release.apk`, `GAS Siswa release.apk`, dan `app-siswa-release.apk` di `Apk Release/Final`.
+- [ ] QA perangkat: Buka Tools Belajar -> Cari kata di KBBI (misal: "menguap") -> Buka Buku Pembiasaan Religius -> Buka Surat Ar-Rahman, Al-Waqi'ah, Yasin, dan Al-Mulk.
 
 ## ✅ [FIX WEB] Monitor Virtual Pet — filter orphan siluman (`39580854`) 2026-08-16
 
