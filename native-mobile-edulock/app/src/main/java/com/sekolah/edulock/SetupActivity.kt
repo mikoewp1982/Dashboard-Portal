@@ -20,6 +20,102 @@ import androidx.core.content.ContextCompat
 
 class SetupActivity : AppCompatActivity() {
 
+    companion object {
+        private const val ALLOWED_EXIT_GRACE_MS = 8_000L
+
+        fun areAllPermissionsGranted(context: Context): Boolean {
+            val devicePolicyManager = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+            val compName = ComponentName(context, DeviceAdminReceiver::class.java)
+
+            val isLocationGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            val isCameraGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            val isAdminActive = devicePolicyManager.isAdminActive(compName)
+            val isAccessibilityEnabled = isAccessibilityServiceEnabled(context)
+            val isOverlayGranted = Settings.canDrawOverlays(context)
+            val isBatteryIgnored = isBatteryOptimizationIgnored(context)
+
+            return isLocationGranted && isCameraGranted && isAdminActive && isAccessibilityEnabled && isOverlayGranted && isBatteryIgnored
+        }
+
+        private fun isAccessibilityServiceEnabled(context: Context): Boolean {
+            val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+            val enabledServices = am.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+            for (service in enabledServices) {
+                if (service.resolveInfo.serviceInfo.packageName == context.packageName &&
+                    service.resolveInfo.serviceInfo.name.endsWith("AntiUninstallService")) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        private fun isBatteryOptimizationIgnored(context: Context): Boolean {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                return powerManager.isIgnoringBatteryOptimizations(context.packageName)
+            }
+            return true
+        }
+
+        /**
+         * Self-healing: Jika semua izin setup sudah ON (sesuai checklist SetupActivity)
+         * tetapi flag `setup_completed` masih false → set menjadi true, lalu force-flush
+         * ke RTDB via FirebaseReporter (jika identitas siswa sudah tersedia lokal).
+         * Mengembalikan true jika self-healing terpicu (setup_completed berubah false→true).
+         */
+        fun ensureSetupCompletedIfHealed(context: Context): Boolean {
+            val prefsManager = PreferencesManager(context)
+            if (prefsManager.isSetupCompleted) return false
+            if (!areAllPermissionsGranted(context)) return false
+
+            prefsManager.isSetupCompleted = true
+
+            try {
+                val nisn = prefsManager.nisn
+                val schoolId = prefsManager.schoolId
+                val deviceId = prefsManager.deviceId
+                if (nisn.isNotBlank() && schoolId.isNotBlank() && deviceId.isNotBlank()) {
+                    val reporter = FirebaseReporter(context, prefsManager)
+                    val devicePolicyManager = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                    val compName = ComponentName(context, DeviceAdminReceiver::class.java)
+                    val isAdminActive = devicePolicyManager.isAdminActive(compName)
+                    val isAccessibilityEnabled = isAccessibilityServiceEnabled(context)
+                    val health = when {
+                        !isAccessibilityEnabled -> "ACCESSIBILITY_OFF"
+                        !isAdminActive -> "DEVICE_ADMIN_OFF"
+                        else -> "HEALTHY"
+                    }
+                    val compliance = if (health == "HEALTHY") "COMPLIANT" else "NON_COMPLIANT"
+                    reporter.sendStatusUpdate(
+                        latitude = 0.0,
+                        longitude = 0.0,
+                        isInsideZone = true,
+                        trustScore = 100,
+                        isGpsActive = isLocationPermissionGranted(context),
+                        isInternetActive = true,
+                        statusMessage = "Self-healed setup_completed",
+                        isAccessibilityEnabled = isAccessibilityEnabled,
+                        isDeviceAdminEnabled = isAdminActive,
+                        isProtectionActive = prefsManager.isProtectionActive,
+                        isPermissionActive = false,
+                        complianceStatus = compliance,
+                        protectionHealth = health,
+                        lastProtectionCheckAt = System.currentTimeMillis(),
+                        appVersionCode = BuildConfig.VERSION_CODE,
+                        isSetupCompleted = true,
+                        forceFlush = true
+                    )
+                }
+            } catch (_: Exception) {
+            }
+            return true
+        }
+
+        private fun isLocationPermissionGranted(context: Context): Boolean {
+            return ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
     private lateinit var btnSetupLocation: Button
     private lateinit var btnSetupCamera: Button
     private lateinit var btnSetupAdmin: Button
@@ -185,25 +281,55 @@ class SetupActivity : AppCompatActivity() {
 
     private fun requestBatteryOptimization() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (isBatteryOptimizationIgnored()) {
+                checkStatus()
+                return
+            }
             prefsManager.isSettingsOpen = true
             prefsManager.settingsGraceUntil = System.currentTimeMillis() + 120_000L
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-            intent.data = Uri.parse("package:$packageName")
+            val directIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+            directIntent.data = Uri.parse("package:$packageName")
             try {
-                startActivity(intent)
+                if (directIntent.resolveActivity(packageManager) != null) {
+                    startActivity(directIntent)
+                    return
+                }
+            } catch (_: Exception) {
+            }
+            try {
+                val fallbackIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                if (fallbackIntent.resolveActivity(packageManager) != null) {
+                    startActivity(fallbackIntent)
+                    Toast.makeText(
+                        this,
+                        "Cari 'EduLock' di daftar lalu pilih 'Tidak dibatasi' / 'Tidak dioptimalkan'",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return
+                }
+            } catch (_: Exception) {
+            }
+            try {
+                val appDetailsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                appDetailsIntent.data = Uri.parse("package:$packageName")
+                startActivity(appDetailsIntent)
+                Toast.makeText(
+                    this,
+                    "Buka 'Baterai' → pilih 'Tidak dibatasi' untuk EduLock",
+                    Toast.LENGTH_LONG
+                ).show()
             } catch (e: Exception) {
-                Toast.makeText(this, "Buka Pengaturan Baterai manual", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Buka Pengaturan → Aplikasi → EduLock → Baterai → Tidak dibatasi",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
 
     private fun areAllPermissionsGranted(): Boolean {
-         return isLocationGranted() && 
-                isCameraGranted() &&
-                devicePolicyManager.isAdminActive(compName) &&
-                isAccessibilityServiceEnabled() &&
-                Settings.canDrawOverlays(this) &&
-                isBatteryOptimizationIgnored()
+         return areAllPermissionsGranted(this)
     }
 
     private fun updateButtonStatus(button: Button, isGranted: Boolean) {

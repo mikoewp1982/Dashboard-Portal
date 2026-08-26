@@ -21,6 +21,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- CAMERA PERMISSION untuk Barcode Scanner -->
@@ -148,14 +150,14 @@
             </intent-filter>
         </receiver>
 
-        <!-- Screen Receiver (Restart Service on Unlock) -->
+        <!-- Screen Receiver (Restart Service on Unlock + self-heal sync) -->
         <receiver
             android:name=".ScreenReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.USER_PRESENT" />
-                <!-- SCREEN_ON tidak jalan di Manifest Android 8+, ditangani MonitoringService secara dinamis -->
+                <action android:name="android.intent.action.SCREEN_ON" />
             </intent-filter>
         </receiver>
 
@@ -177,6 +179,15 @@
             android:exported="false"
             android:stopWithTask="false"
             android:foregroundServiceType="location" />
+
+        <!-- FCM: wake HP saat admin ubah Master Switch / push perintah -->
+        <service
+            android:name=".EduLockMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
         <!-- Setup Protection Service (Overlay) -->
         <service

@@ -193,6 +193,19 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
             updatedAt: typeof record.updatedAt === "number" ? record.updatedAt : null,
             lastLoginAt: typeof record.lastLoginAt === "number" ? record.lastLoginAt : null,
           };
+        }).filter((row) => {
+          const id = String(row.schoolId || "").trim().toLowerCase();
+          if (id === "uninstallaccess") return false;
+          const meaningfulName = String(row.name || "").trim() && String(row.name || "").trim() !== "-";
+          const meaningfulNpsn = String(row.npsn || "").trim() && String(row.npsn || "").trim() !== "-";
+          const hasAnyMeaningfulField =
+            meaningfulName ||
+            meaningfulNpsn ||
+            Boolean(String(row.district || "").trim()) ||
+            Boolean(String(row.authEmail || "").trim()) ||
+            Boolean(String(row.adminEmail || "").trim()) ||
+            Boolean(String(row.backupEmail || "").trim());
+          return hasAnyMeaningfulField;
         });
         list.sort((a, b) => String(a.name || a.schoolId).localeCompare(String(b.name || b.schoolId)));
         setSuperSchools(list);
