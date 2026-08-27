@@ -11,6 +11,7 @@ import {
 } from "firebase/database";
 import { rtdb } from "@/lib/firebase/client";
 import { normalizeSchoolId } from "@/lib/gas/schoolId";
+import { isDeadByRule } from "@/lib/guru/petStatus";
 import type { SupervisedStudent } from "./useSupervisedStudents";
 
 export type TeacherInboxItem = {
@@ -78,19 +79,13 @@ function showBrowserNotification(title: string, body: string) {
 }
 
 function isPetDead(row: Record<string, unknown>) {
-  const status = safeStr(row.status || "HAPPY");
-  const health = Number(row.health ?? 100);
-  const happiness = Number(row.happiness ?? 100);
-  const energy = Number(row.energy ?? 100);
-  const hunger = Number(row.hunger ?? 0);
-  const manualReviveUntil = Number(row.manualReviveUntil ?? 0);
-  const fullness = Math.max(0, Math.min(100, 100 - hunger));
-  const lowestVital = Math.min(health, happiness, energy, fullness);
-  const graceActive = manualReviveUntil > Date.now();
-  return (
-    !graceActive &&
-    (status.toUpperCase() === "DEAD" || health <= 0 || lowestVital <= 0)
-  );
+  return isDeadByRule({
+    health: Number(row.health ?? 100),
+    happiness: Number(row.happiness ?? 100),
+    energy: Number(row.energy ?? 100),
+    hunger: Number(row.hunger ?? 0),
+    manualReviveUntil: Number(row.manualReviveUntil ?? 0),
+  });
 }
 
 export function useTeacherNotificationInbox({

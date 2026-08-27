@@ -1,6 +1,7 @@
 "use client";
 
 import { PetData } from "@/hooks/gas/virtual-pet/useGasVirtualPet";
+import { isDeadByRule } from "@/lib/guru/petStatus";
 
 export function analyzePetRisk(pet: PetData) {
   const health = Number(pet.stats.health || 0);
@@ -9,14 +10,16 @@ export function analyzePetRisk(pet: PetData) {
   const hunger = Number(pet.stats.hunger || 0);
   const fullness = Math.max(0, 100 - hunger);
   const lowestVital = Math.min(health, happiness, energy, fullness);
-  const normalizedStatus = String(pet.status || "").trim().toUpperCase();
 
   const avgStatus = (health + happiness + energy + fullness) / 4;
   const isReviveGraceActive = Number(pet.manualReviveUntil || 0) > Date.now();
-  const isDead = !isReviveGraceActive && (
-    normalizedStatus === "DEAD" ||
-    health <= 0
-  );
+  const isDead = isDeadByRule({
+    health,
+    happiness,
+    energy,
+    hunger,
+    manualReviveUntil: pet.manualReviveUntil,
+  });
 
   const isSick = health < 30 && !isDead;
   const isSad = happiness < 30 && !isDead;

@@ -42,12 +42,11 @@ export function isManualReviveGraceActive(
   return Number(pet.manualReviveUntil ?? 0) > now;
 }
 
-/** Same rule as APK `VirtualPet.isDeadByRule`. */
+/** Same rule as APK `VirtualPet.isDeadByRule`: vitals only, no sticky status=DEAD. */
 export function isDeadByRule(pet: PetVitalInput, now = Date.now()): boolean {
   if (isManualReviveGraceActive(pet, now)) return false;
-  const status = String(pet.status || "").trim().toUpperCase();
   const health = Number(pet.health ?? 100);
-  return status === "DEAD" || health <= 0 || lowestVitalScore(pet) <= 0;
+  return health <= 0 || lowestVitalScore(pet) <= 0;
 }
 
 /** Labels/colors from TeacherStudentsScreen PET column. */
