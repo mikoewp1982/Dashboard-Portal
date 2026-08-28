@@ -1,5 +1,28 @@
 # Build Log GAS
 
+## 2026-08-28 21:03 - [DEPLOY LIVE] Web guru 7 KAIH samakan pola penilaian dengan APK
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `deploy-web`
+- **Flavor terdampak:** `guru` (portal web / PWA guru)
+- **Versioning:** tidak relevan untuk APK
+- **Tujuan perubahan:** Menyamakan pengalaman tab `Penilaian` pada menu `/guru/kaih` dengan APK GAS Guru, karena web sebelumnya masih memakai alur massal berbasis dialog tambahan dan input yang tidak sepraktis APK.
+- **File utama perilaku yang diubah:**
+  - [web/src/components/guru/GuruKaihInteractive.tsx](file:///D:/Dashboard%20Portal/web/src/components/guru/GuruKaihInteractive.tsx)
+- **Perubahan inti:**
+  - preset cepat `Nilai 25 / Nilai 20 / Reset` kini tampil langsung di panel `Isi Cepat Semua` seperti APK guru
+  - preset langsung menerapkan nilai ke semua siswa tanpa membuka dialog massal tambahan
+  - dialog edit per siswa sekarang memakai 4 field angka `Kejujuran`, `Perilaku`, `Inisiatif`, `Komitmen`, plus preset cepat yang sama seperti APK
+- **Verifikasi yang dijalankan:**
+  - `npm run lint -- src/components/guru/GuruKaihInteractive.tsx` → bersih
+  - `git pull origin main` → up to date
+  - `git push origin main` → berhasil
+- **Commit live:**
+  - `4822f24e` — `fix(web): samakan penilaian 7 kaih guru dengan apk`
+- **Status distribusi:**
+  - **SUDAH LIVE** di Firebase App Hosting untuk review user
+- **Belum diuji:**
+  - audit visual lintas perangkat untuk memastikan tinggi tombol preset dan field angka tetap nyaman di layar HP kecil
+
 ## 2026-08-28 20:39 - [DEPLOY LIVE] Web guru sholat sinkron hari efektif Dzuhur
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix` + `deploy-web`

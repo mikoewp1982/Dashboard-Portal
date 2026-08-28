@@ -38,6 +38,7 @@ Tambahkan nama pelaksana jika perlu:
 
 ### Web Admin / PWA
 - Fixed: **Portal Guru `/guru/sholat`** yang live sekarang menghitung `TS / Tidak Sholat` dengan kontrak hari efektif Dzuhur yang sama seperti web admin dan APK siswa. Deploy live commit `9f42a276`.
+- Fixed: **Portal Guru `/guru/kaih`** tab `Penilaian` sekarang mengikuti pola APK GAS Guru: preset cepat `Nilai 25 / Nilai 20 / Reset` tampil langsung di halaman, dan dialog edit per siswa memakai 4 field angka (`Kejujuran`, `Perilaku`, `Inisiatif`, `Komitmen`) plus preset cepat yang sama. Deploy live commit `4822f24e`.
 
 ## [1.0.82-siswa] - 2026-08-27
 ### Fixed
