@@ -26,6 +26,8 @@ Tambahkan nama pelaksana jika perlu:
 ## [Unreleased]
 
 ### Siswa
+- Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.83-siswa (23080)` untuk uji cepat patch gate EduLock; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
+- Fixed: **Siswa (Gate EduLock/Login)** pembukaan ulang aplikasi tidak lagi lama tertahan di overlay `Memeriksa Proteksi EduLock` saat aksesibilitas EduLock belum aktif, karena gate sekarang memutuskan **blokir lokal lebih dulu** sebelum menunggu fetch jadwal sekolah atau telemetry remote.
 - Changed: Build distribusi GAS Siswa `1.0.82-siswa (23079)` dibuild ulang lagi pada **2026-08-28 13:25**, hash Final/public alias menjadi `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`, lalu **SUDAH disinkronkan** ke `web/public/apk` dan live unduhan Firebase/App Hosting.
 - Fixed: **Siswa (Gate EduLock)** sekarang dibangun dengan konsep baru bahwa hard block kepatuhan EduLock hanya aktif saat **hari efektif + jam sekolah aktif**, dengan **grace period** saat proteksi drop sesaat di tengah sesi.
 

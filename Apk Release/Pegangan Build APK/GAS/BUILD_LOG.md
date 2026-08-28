@@ -1,5 +1,31 @@
 # Build Log GAS
 
+## 2026-08-28 21:40 - [BUILD] GAS Siswa 1.0.83-siswa (23080) — fast-path gate EduLock lokal
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `build`
+- **Flavor terdampak:** `siswa`
+- **Versioning:** `1.0.82-siswa (23079)` → `1.0.83-siswa (23080)`
+- **Tujuan perubahan:** Menghilangkan anomali saat pembukaan kedua APK GAS siswa yang lama tertahan di overlay `Memeriksa Proteksi EduLock` ketika aksesibilitas EduLock belum aktif. Sebelumnya gate login menunggu fetch `attendance/schedules`, `attendance/holidays`, dan telemetry `active_devices` sebelum memutuskan blokir lokal, sehingga user melihat loading lama padahal penyebabnya sudah jelas dari kondisi lokal perangkat.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/EduLockComplianceGate.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/EduLockComplianceGate.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - `checkEduLockComplianceOnce(...)` sekarang melakukan **fast-path cek lokal** lebih dulu
+  - jika `setup/accessibility/device admin/protection` belum sehat, GAS siswa langsung blokir dengan alasan yang tepat tanpa menunggu fetch Firebase
+  - fetch jadwal sekolah + telemetry remote hanya dilanjutkan ketika kondisi lokal sudah sehat
+- **Build yang dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease :app:assembleGuruRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.83-siswa-23080.apk`
+- **Metadata final aktif lokal:**
+  - SHA256 `2A405CBA2DCA6551385614584B098A9AD81E26F8B7B8F2105B7BD98586E13F4A`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - **BELUM** disinkronkan ke `web/public/apk` / live App Hosting
+- **Belum diuji:**
+  - instal/uji langsung di device untuk memastikan pembukaan kedua kini langsung menampilkan blokir lokal yang cepat tanpa spinner panjang
+
 ## 2026-08-28 21:03 - [DEPLOY LIVE] Web guru 7 KAIH samakan pola penilaian dengan APK
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix` + `deploy-web`

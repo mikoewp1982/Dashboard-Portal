@@ -8,7 +8,7 @@ Folder ini adalah pegangan operasional untuk semua perubahan APK `GAS` pada proy
 - Root project name: `SatuPintuNativeMobile`
 - Application ID dasar: `com.satupintu.mobile`
 - Versi distribusi terkini (update 2026-08-28 malam):
-  - `flavor siswa` → `versionName 1.0.82-siswa` / `versionCode 23079` (Final + live unduhan web sinkron per deploy 2026-08-28 13:25)
+  - `flavor siswa` → `versionName 1.0.83-siswa` / `versionCode 23080` (Final lokal terbaru untuk uji cepat gate EduLock; live unduhan web masih `1.0.82-siswa (23079)`)
   - `flavor guru` → `versionName 1.0.61-guru` / `versionCode 1053` (Final terbaru yang sudah dicatat di folder Final)
   - `flavor legacySiswa versionCode = 23003` (kompatibilitas; jangan turun di bawah ini)
   - Pastikan `native-mobile-gas/app/build.gradle.kts` selaras sebelum assemble
@@ -69,7 +69,7 @@ D:\Dashboard Portal\Apk Release\Final
 Jika user meminta folder lain, catat di [BUILD_LOG.md](./BUILD_LOG.md).
 
 Rilis final terbaru yang sudah dicatat saat ini:
-- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.82-siswa-23079.apk` (`1.0.82-siswa` / `versionCode 23079`, SHA256 `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`) — rebuild final terbaru 2026-08-28 13:25. Muatan fix: seluruh perubahan build 11:37 tetap ikut, termasuk **Kedisiplinan otomatis** dari presensi siswa untuk **Terlambat** dan **Pulang Awal** memakai **rule/poin dari admin sekolah**, trigger hanya setelah simpan absensi sukses, serta **anti-double** dengan input manual OSIS/guru melalui key deterministik + merge di repository. File Final aktif berukuran `21.494.650 bytes` (`20,50 MB`) dan **SUDAH sinkron** ke `web/public/apk/GAS-Siswa-release.apk` dengan hash yang sama, lalu live lewat Firebase/App Hosting.
+- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.83-siswa-23080.apk` (`1.0.83-siswa` / `versionCode 23080`, SHA256 `2A405CBA2DCA6551385614584B098A9AD81E26F8B7B8F2105B7BD98586E13F4A`) — rebuild final lokal terbaru 2026-08-28 malam untuk **uji cepat gate EduLock**. Muatan fix: gate login siswa kini melakukan **cek lokal EduLock lebih dulu** (setup, aksesibilitas, device admin, proteksi aktif) sebelum menunggu fetch jadwal sekolah / telemetry remote, sehingga kasus aksesibilitas EduLock belum aktif tidak lagi lama tertahan di overlay `Memeriksa Proteksi EduLock`. **BELUM disinkronkan** ke `web/public/apk`; live unduhan web masih memakai build `1.0.82-siswa (23079)` hash `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`.
 - Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` + `GAS-Guru-1.0.61-guru-1053.apk` (`1.0.61-guru` / `versionCode 1053`, SHA256 `9393A11DE46D22D99378E32ABA506BB620B55A268E94B55118C15453D6CB5376`). Muatan final terkini: hitungan **TS / Tidak Sholat** di `Presensi Sholat` dan `Rekapitulasi` guru sudah sinkron dengan web admin + APK siswa memakai **hari efektif Dzuhur** (`attendance/schedules`, `attendance/holidays`, dan `prayer_v2/types/DZUHUR/activeDays`), UI Home guru tetap 2 kolom khas guru tetapi kartu menu dipendekkan/diringankan agar di layar terasa lebih kecil, badge merah notifikasi digeser sedikit ke dalam agar tidak mepet pinggir kanan atas, dan portal web guru `/guru/kaih` kini menyamai pola **Penilaian 7 KAIH** APK guru (preset cepat `Nilai 25 / Nilai 20 / Reset` langsung di halaman + dialog edit per siswa dengan 4 field angka). Lihat bagian **PERBEDAAN UI GAS SISWA vs GAS GURU** di bawah ini — WAJIB BACA sebelum ubah UI Home.
 
 ---
