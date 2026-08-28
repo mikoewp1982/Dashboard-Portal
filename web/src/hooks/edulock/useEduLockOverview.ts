@@ -52,6 +52,7 @@ export interface EduLockLatestMasterSwitchCommand {
 
 export interface EduLockLatestFindDeviceCommand {
   commandId: string;
+  commandType: "find_device_start" | "find_device_stop";
   targetDeviceId: string;
   targetStudentName: string;
   targetNisn: string;
@@ -189,6 +190,15 @@ export function useEduLockOverview(schoolId: string | undefined) {
     await refresh();
   };
 
+  const stopFindDevice = async (deviceId: string) => {
+    await callAdminApi("/api/admin/edulock", "POST", {
+      action: "stop-find-device",
+      schoolId,
+      deviceId,
+    });
+    await refresh();
+  };
+
   return {
     overview,
     loading,
@@ -197,5 +207,6 @@ export function useEduLockOverview(schoolId: string | undefined) {
     toggleUninstall,
     toggleUninstallMass,
     findDevice,
+    stopFindDevice,
   };
 }

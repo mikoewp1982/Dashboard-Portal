@@ -26,10 +26,10 @@ type EduLockClassRecord = {
 export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
   const [monitoringClassFilterKey, setMonitoringClassFilterKey] = useState("all");
   const [nowTs, setNowTs] = useState(() => Date.now());
-  const [pendingFindDeviceId, setPendingFindDeviceId] = useState("");
+  const [pendingFindDeviceKey, setPendingFindDeviceKey] = useState("");
   const { data: classesData, loading: classesLoading } = useClassesRealtime(schoolId);
   const { data: studentsData, loading: studentsLoading } = useStudentsRealtime(schoolId);
-  const { overview, loading: overviewLoading, refresh, findDevice } = useEduLockOverview(schoolId);
+  const { overview, loading: overviewLoading, refresh, findDevice, stopFindDevice } = useEduLockOverview(schoolId);
 
   const loading = classesLoading || studentsLoading || overviewLoading;
   const latestMasterSwitchCommand = overview.latestMasterSwitchCommand;
@@ -200,13 +200,15 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
           {latestFindDeviceCommand && (
             <div className="mt-4 rounded-xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
               <div className="font-semibold text-white">
-                Temukan Perangkat Terakhir: {latestFindDeviceCommand.targetStudentName || latestFindDeviceCommand.targetNisn || latestFindDeviceCommand.targetDeviceId}
+                {latestFindDeviceCommand.commandType === "find_device_stop" ? "Matikan Bunyi Terakhir" : "Temukan Perangkat Terakhir"}: {latestFindDeviceCommand.targetStudentName || latestFindDeviceCommand.targetNisn || latestFindDeviceCommand.targetDeviceId}
               </div>
               <div className="mt-1 text-xs text-rose-100/90">
                 {latestFindDeviceCommand.requestedAt
                   ? `Dikirim ${new Date(latestFindDeviceCommand.requestedAt).toLocaleString("id-ID")}`
                   : "Waktu kirim tidak tersedia"}
-                {" • "}Durasi {Math.round(latestFindDeviceCommand.durationMs / 1000)} detik
+                {latestFindDeviceCommand.commandType === "find_device_start"
+                  ? ` • Durasi ${Math.round(latestFindDeviceCommand.durationMs / 1000)} detik`
+                  : " • Instruksi hentikan alarm"}
                 {" • "}ACK {latestFindDeviceCommand.ackedDeviceCount}/{latestFindDeviceCommand.targetedDeviceCount}
                 {" • "}FCM sukses {latestFindDeviceCommand.fcmSuccessCount}/{latestFindDeviceCommand.targetedTokenCount}
                 {latestFindDeviceCommand.pendingDeviceCount > 0 ? ` • Pending ${latestFindDeviceCommand.pendingDeviceCount}` : " • Device target sudah merespons"}
@@ -265,10 +267,20 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                     isFindDeviceTarget &&
                     student.findDeviceCommandId === latestFindDeviceCommand?.commandId &&
                     student.findDeviceStatus.trim() !== "";
+                  const isAlarmActive =
+                    student.findDeviceStatus === "ALARM_STARTED" &&
+                    (student.findDeviceAlarmUntil ?? 0) > nowTs;
                   const canTriggerFindDevice =
                     Boolean(student.deviceId) &&
                     student.hasFcmToken &&
                     isOnline;
+                  const canStopFindDevice =
+                    Boolean(student.deviceId) &&
+                    student.hasFcmToken &&
+                    isOnline &&
+                    isAlarmActive;
+                  const startPendingKey = `start:${student.deviceId}`;
+                  const stopPendingKey = `stop:${student.deviceId}`;
                   return (
                     <tr key={student.id || student.nisn} className="hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
                       <td className="px-6 py-4">
@@ -404,23 +416,41 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                         <div className="flex flex-col gap-2">
                           <button
                             type="button"
-                            disabled={!canTriggerFindDevice || pendingFindDeviceId === student.deviceId}
+                            disabled={
+                              isAlarmActive
+                                ? !canStopFindDevice || pendingFindDeviceKey === stopPendingKey
+                                : !canTriggerFindDevice || pendingFindDeviceKey === startPendingKey
+                            }
                             onClick={async () => {
                               if (!student.deviceId) return;
-                              setPendingFindDeviceId(student.deviceId);
+                              const pendingKey = isAlarmActive ? stopPendingKey : startPendingKey;
+                              setPendingFindDeviceKey(pendingKey);
                               try {
-                                await findDevice(student.deviceId);
+                                if (isAlarmActive) {
+                                  await stopFindDevice(student.deviceId);
+                                } else {
+                                  await findDevice(student.deviceId);
+                                }
                               } finally {
-                                setPendingFindDeviceId("");
+                                setPendingFindDeviceKey("");
                               }
                             }}
                             className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                              canTriggerFindDevice && pendingFindDeviceId !== student.deviceId
-                                ? "bg-rose-500/20 text-rose-200 border border-rose-400/30 hover:bg-rose-500/30"
+                              ((isAlarmActive && canStopFindDevice && pendingFindDeviceKey !== stopPendingKey) ||
+                                (!isAlarmActive && canTriggerFindDevice && pendingFindDeviceKey !== startPendingKey))
+                                ? isAlarmActive
+                                  ? "bg-amber-500/20 text-amber-200 border border-amber-400/30 hover:bg-amber-500/30"
+                                  : "bg-rose-500/20 text-rose-200 border border-rose-400/30 hover:bg-rose-500/30"
                                 : "bg-slate-800 text-slate-500 border border-white/10 cursor-not-allowed"
                             }`}
                           >
-                            {pendingFindDeviceId === student.deviceId ? "Mengirim..." : "Bunyikan HP"}
+                            {pendingFindDeviceKey === startPendingKey
+                              ? "Mengirim..."
+                              : pendingFindDeviceKey === stopPendingKey
+                                ? "Mematikan..."
+                                : isAlarmActive
+                                  ? "Matikan Bunyi"
+                                  : "Bunyikan HP"}
                           </button>
                           {!student.hasBinding ? (
                             <span className="text-xs text-slate-500">Belum binding</span>
@@ -434,6 +464,8 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                                 ? "Alarm sedang dibunyikan"
                                 : student.findDeviceStatus === "ALARM_FINISHED"
                                   ? "Alarm selesai diputar"
+                                  : student.findDeviceStatus === "ALARM_STOPPED"
+                                    ? "Alarm dihentikan admin"
                                   : student.findDeviceStatus === "FAILED"
                                     ? "Device gagal memulai alarm"
                                     : `ACK ${student.findDeviceStatus || "diterima"}`}
@@ -444,9 +476,15 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                               </div>
                             </div>
                           ) : isFindDeviceTarget ? (
-                            <span className="text-xs text-amber-300">Menunggu ACK alarm</span>
+                            <span className="text-xs text-amber-300">
+                              {latestFindDeviceCommand?.commandType === "find_device_stop"
+                                ? "Menunggu ACK stop alarm"
+                                : "Menunggu ACK alarm"}
+                            </span>
                           ) : (
-                            <span className="text-xs text-slate-500">Siap dibunyikan</span>
+                            <span className="text-xs text-slate-500">
+                              {isAlarmActive ? "Alarm aktif, siap dihentikan" : "Siap dibunyikan"}
+                            </span>
                           )}
                         </div>
                       </td>

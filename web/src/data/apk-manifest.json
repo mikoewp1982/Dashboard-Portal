@@ -1,5 +1,5 @@
 ﻿{
-    "updatedAt":  "2026-08-28T13:38:58",
+    "updatedAt":  "2026-08-28T14:02:22",
     "files":  {
                   "EduLock-1.3.11-37.apk":  {
                                                 "lastModified":  "2026-08-15T09:01:50",
@@ -11,13 +11,13 @@
                                                 "sizeBytes":  3790306
                                             },
                   "EduLock-studentRelease.apk":  {
-                                                     "lastModified":  "2026-08-28T13:28:49",
+                                                     "lastModified":  "2026-08-28T14:01:29",
                                                      "packageName":  "com.sekolah.edulock",
                                                      "sizeMB":  3.75,
-                                                     "sha256":  "8FB7CC53FD3F7C24680EE6FF391BF55B8270776445FBE8DBBD2A46C92AF01063",
+                                                     "sha256":  "1A44D78CA0763EC74A3E5272F8DF762FAB2D4378B7D9E143FC521EB60154B4FB",
                                                      "versionName":  "1.3.22",
                                                      "versionCode":  48,
-                                                     "sizeBytes":  3929074
+                                                     "sizeBytes":  3929282
                                                  },
                   "GAS-Siswa-release.apk":  {
                                                 "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",

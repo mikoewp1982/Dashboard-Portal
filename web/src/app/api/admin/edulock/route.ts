@@ -5,7 +5,7 @@ import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoo
 import { dispatchMasterSwitchCommand } from "@/lib/admin/edulockMasterSwitch";
 import { dispatchFindDeviceCommand } from "@/lib/admin/edulockFindDevice";
 
-type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "grant-class-permission" | "revoke-class-permission" | "authorize-uninstall" | "authorize-uninstall-mass" | "toggle-uninstall" | "toggle-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions" | "find-device";
+type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "grant-class-permission" | "revoke-class-permission" | "authorize-uninstall" | "authorize-uninstall-mass" | "toggle-uninstall" | "toggle-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions" | "find-device" | "stop-find-device";
 
 type EduLockRequestBody = {
   action?: EduLockAction;
@@ -66,6 +66,7 @@ type LatestMasterSwitchCommandSnapshot = {
 
 type LatestFindDeviceCommandSnapshot = {
   commandId: string;
+  commandType: "find_device_start" | "find_device_stop";
   targetDeviceId: string;
   targetStudentName: string;
   targetNisn: string;
@@ -327,6 +328,10 @@ function parseLatestFindDeviceCommand(rawValue: unknown, activeDevices: ActiveDe
   const targetedDeviceCount = readNumber(delivery, "targetedDeviceCount") ?? 0;
   return {
     commandId,
+    commandType:
+      readString(record, "commandType") === "find_device_stop"
+        ? "find_device_stop"
+        : "find_device_start",
     targetDeviceId,
     targetStudentName: readString(record, "targetStudentName"),
     targetNisn: readString(record, "targetNisn"),
@@ -959,6 +964,27 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         message: "Perintah bunyi keras berhasil dikirim ke perangkat siswa.",
+        latestFindDeviceCommand,
+      });
+    }
+
+    if (body.action === "stop-find-device") {
+      const targetDeviceId = String(body.deviceId || "").trim();
+      if (!targetDeviceId) {
+        return NextResponse.json({ success: false, error: "deviceId wajib diisi" }, { status: 400 });
+      }
+
+      const latestFindDeviceCommand = await dispatchFindDeviceCommand({
+        schoolId,
+        targetDeviceId,
+        requestedByUid: String(decodedToken.uid || ""),
+        requestedByEmail: String(decodedToken.email || ""),
+        commandType: "find_device_stop",
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Perintah matikan bunyi berhasil dikirim ke perangkat siswa.",
         latestFindDeviceCommand,
       });
     }

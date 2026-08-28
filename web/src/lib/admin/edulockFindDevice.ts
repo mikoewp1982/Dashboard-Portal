@@ -2,7 +2,7 @@ import { adminDb, adminMessaging } from "@/lib/firebase-admin";
 
 export type FindDeviceCommandRecord = {
   commandId: string;
-  commandType: "find_device";
+  commandType: "find_device_start" | "find_device_stop";
   targetDeviceId: string;
   targetStudentName: string;
   targetNisn: string;
@@ -35,11 +35,13 @@ export async function dispatchFindDeviceCommand(params: {
   requestedByUid: string;
   requestedByEmail: string;
   durationMs?: number;
+  commandType?: "find_device_start" | "find_device_stop";
 }) {
   const { schoolId, targetDeviceId, requestedByUid, requestedByEmail } = params;
+  const commandType = params.commandType ?? "find_device_start";
   const durationMs = Math.min(Math.max(params.durationMs ?? 45_000, 15_000), 120_000);
   const requestedAt = Date.now();
-  const commandId = `find_device_${requestedAt}`;
+  const commandId = `${commandType}_${requestedAt}`;
 
   const deviceSnap = await adminDb.ref(`active_devices/${schoolId}/${targetDeviceId}`).get();
   const deviceValue =
@@ -53,7 +55,7 @@ export async function dispatchFindDeviceCommand(params: {
 
   const commandRecord: FindDeviceCommandRecord = {
     commandId,
-    commandType: "find_device",
+    commandType,
     targetDeviceId,
     targetStudentName,
     targetNisn,
@@ -79,7 +81,7 @@ export async function dispatchFindDeviceCommand(params: {
   const response = await adminMessaging.sendEachForMulticast({
     tokens: [token],
     data: {
-      type: "edulock_find_device",
+      type: commandType === "find_device_stop" ? "edulock_stop_find_device" : "edulock_find_device",
       schoolId,
       commandId,
       targetDeviceId,
