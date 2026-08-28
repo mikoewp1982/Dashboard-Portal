@@ -44,6 +44,49 @@ const RUBRIC_FIELDS: Array<{
   { key: "commitment", label: "Komitmen" },
 ];
 
+const RUBRIC_PRESETS: Array<{
+  label: string;
+  className: string;
+  value: Pick<
+    TeacherHabitRubric,
+    "honesty" | "behavior" | "initiative" | "commitment"
+  >;
+}> = [
+  {
+    label: "Nilai 25",
+    className:
+      "border-emerald-400/55 bg-emerald-500/20 text-white hover:bg-emerald-500/25",
+    value: {
+      honesty: 25,
+      behavior: 25,
+      initiative: 25,
+      commitment: 25,
+    },
+  },
+  {
+    label: "Nilai 20",
+    className:
+      "border-sky-400/55 bg-sky-500/20 text-white hover:bg-sky-500/25",
+    value: {
+      honesty: 20,
+      behavior: 20,
+      initiative: 20,
+      commitment: 20,
+    },
+  },
+  {
+    label: "Reset",
+    className:
+      "border-rose-400/55 bg-rose-500/20 text-white hover:bg-rose-500/25",
+    value: {
+      honesty: 0,
+      behavior: 0,
+      initiative: 0,
+      commitment: 0,
+    },
+  },
+];
+
 function MetricChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-h-[64px] flex-1 flex-col items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-2 py-2 text-center">
@@ -95,12 +138,70 @@ function ProgressBar({ score }: { score: number }) {
   );
 }
 
+function PresetActionButton({
+  label,
+  className,
+  busy,
+  onClick,
+}: {
+  label: string;
+  className: string;
+  busy: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={onClick}
+      className={`flex-1 rounded-xl border px-3 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function RubricNumberField({
+  label,
+  value,
+  busy,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  busy: boolean;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm text-white/80">{label}</span>
+      <input
+        type="number"
+        min={0}
+        max={25}
+        step={1}
+        inputMode="numeric"
+        value={value}
+        disabled={busy}
+        onChange={(e) => {
+          const parsed = Number(e.target.value);
+          if (!Number.isFinite(parsed)) {
+            onChange(0);
+            return;
+          }
+          onChange(Math.max(0, Math.min(25, parsed)));
+        }}
+        className="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-base text-white outline-none focus:border-sky-300"
+      />
+    </label>
+  );
+}
+
 function RubricDialog({
   title,
   subtitle,
   rubric,
   busy,
-  showQuickActions,
   onChange,
   onClose,
   onSave,
@@ -110,7 +211,6 @@ function RubricDialog({
   subtitle: string;
   rubric: TeacherHabitRubric;
   busy: boolean;
-  showQuickActions?: boolean;
   onChange: (next: TeacherHabitRubric) => void;
   onClose: () => void;
   onSave: () => void;
@@ -149,73 +249,32 @@ function RubricDialog({
         </div>
 
         <div className="space-y-4 px-4 py-4">
-          {showQuickActions && (
-            <div className="flex gap-2">
-              {[
-                {
-                  label: "Nilai 20",
-                  value: {
-                    honesty: 20,
-                    behavior: 20,
-                    initiative: 20,
-                    commitment: 20,
-                  },
-                },
-                {
-                  label: "Nilai 25",
-                  value: {
-                    honesty: 25,
-                    behavior: 25,
-                    initiative: 25,
-                    commitment: 25,
-                  },
-                },
-                {
-                  label: "Reset",
-                  value: {
-                    honesty: 0,
-                    behavior: 0,
-                    initiative: 0,
-                    commitment: 0,
-                  },
-                },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  disabled={busy}
-                  onClick={() =>
-                    onChange({
-                      ...item.value,
-                      total: rubricTotal(item.value),
-                      ratedAt: rubric.ratedAt,
-                    })
-                  }
-                  className="flex-1 rounded-xl border border-white/20 bg-white/10 px-2 py-2 text-xs font-semibold text-white"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex gap-2">
+            {RUBRIC_PRESETS.map((item) => (
+              <PresetActionButton
+                key={item.label}
+                label={item.label}
+                className={item.className}
+                busy={busy}
+                onClick={() =>
+                  onChange({
+                    ...item.value,
+                    total: rubricTotal(item.value),
+                    ratedAt: rubric.ratedAt,
+                  })
+                }
+              />
+            ))}
+          </div>
 
           {RUBRIC_FIELDS.map((field) => (
-            <div key={field.key}>
-              <div className="mb-1 flex items-center justify-between text-sm">
-                <span className="font-medium text-white/85">{field.label}</span>
-                <span className="font-bold text-sky-300">{rubric[field.key]}</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={25}
-                step={1}
-                value={rubric[field.key]}
-                disabled={busy}
-                onChange={(e) => setField(field.key, Number(e.target.value))}
-                className="w-full accent-sky-400"
-              />
-            </div>
+            <RubricNumberField
+              key={field.key}
+              label={field.label}
+              value={rubric[field.key]}
+              busy={busy}
+              onChange={(value) => setField(field.key, value)}
+            />
           ))}
 
           <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white">
@@ -263,10 +322,6 @@ export function GuruKaihInteractive() {
   const [error, setError] = useState("");
   const [editRow, setEditRow] = useState<TeacherKaihGradeRow | null>(null);
   const [rubricDraft, setRubricDraft] = useState<TeacherHabitRubric>({
-    ...EMPTY_RUBRIC,
-  });
-  const [bulkOpen, setBulkOpen] = useState(false);
-  const [bulkDraft, setBulkDraft] = useState<TeacherHabitRubric>({
     ...EMPTY_RUBRIC,
   });
 
@@ -344,11 +399,20 @@ export function GuruKaihInteractive() {
     }
   }
 
-  async function saveBulk() {
+  async function applyPresetToAll(
+    preset: Pick<
+      TeacherHabitRubric,
+      "honesty" | "behavior" | "initiative" | "commitment"
+    >
+  ) {
     setBusy(true);
     setError("");
     setMessage("");
     try {
+      const rubric = {
+        ...preset,
+        total: rubricTotal(preset),
+      };
       const res = await teacherFetch("/api/teacher/kaih", {
         method: "POST",
         body: JSON.stringify({
@@ -356,11 +420,10 @@ export function GuruKaihInteractive() {
           studentIds: gradingRows.map((r) => r.student.id),
           month,
           year,
-          rubric: bulkDraft,
+          rubric,
         }),
       });
       setMessage(res?.message || "Nilai kelas berhasil diterapkan.");
-      setBulkOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menerapkan nilai.");
     } finally {
@@ -642,12 +705,23 @@ export function GuruKaihInteractive() {
             <>
               <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5">
                 <div className="text-sm font-bold text-white">
-                  Input Cepat Nilai Kelas
+                  Isi Cepat Semua ({gradingRows.length} siswa)
                 </div>
                 <p className="mt-1 text-xs text-white/70">
-                  Isi 4 nilai sekali lalu terapkan ke semua siswa. Setelah itu
-                  guru cukup koreksi siswa yang berbeda.
+                  Setiap kriteria (Kejujuran, Perilaku, Inisiatif, Komitmen)
+                  otomatis diisi sama untuk semua siswa di kelas ini.
                 </p>
+                <div className="mt-3 flex gap-2">
+                  {RUBRIC_PRESETS.map((preset) => (
+                    <PresetActionButton
+                      key={preset.label}
+                      label={preset.label}
+                      className={preset.className}
+                      busy={busy}
+                      onClick={() => applyPresetToAll(preset.value)}
+                    />
+                  ))}
+                </div>
                 <div className="mt-3 flex gap-2">
                   <MetricChip label="Sudah Dinilai" value={String(ratedCount)} />
                   <MetricChip label="Belum Dinilai" value={String(unratedCount)} />
@@ -656,18 +730,6 @@ export function GuruKaihInteractive() {
                     value={String(gradingRows.length)}
                   />
                 </div>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => {
-                    setBulkDraft({ ...EMPTY_RUBRIC });
-                    setBulkOpen(true);
-                    setError("");
-                  }}
-                  className="mt-3 w-full rounded-xl border border-white/25 bg-transparent px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {busy ? "Menyimpan..." : "Terapkan Nilai ke Semua Siswa"}
-                </button>
               </div>
 
               <div className="space-y-2.5">
@@ -754,20 +816,6 @@ export function GuruKaihInteractive() {
           onClose={() => setEditRow(null)}
           onSave={saveSingle}
           saveLabel="Simpan"
-        />
-      )}
-
-      {bulkOpen && (
-        <RubricDialog
-          title="Nilai Kelas 7 KAIH"
-          subtitle={`Nilai ini akan diterapkan ke ${gradingRows.length} siswa. Rumus tetap sama: 4 kriteria x maksimal 25 = total 100.`}
-          rubric={bulkDraft}
-          busy={busy}
-          showQuickActions
-          onChange={setBulkDraft}
-          onClose={() => setBulkOpen(false)}
-          onSave={saveBulk}
-          saveLabel="Terapkan"
         />
       )}
     </ApkPageFrame>
