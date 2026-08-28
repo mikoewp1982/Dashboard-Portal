@@ -24,6 +24,11 @@ export interface EduLockActiveDevice {
   lastMasterSwitchAppliedAt: number | null;
   lastMasterSwitchAppliedState: boolean | null;
   lastMasterSwitchAckSource: string;
+  lastFindDeviceCommandId: string;
+  lastFindDeviceAckAt: number | null;
+  lastFindDeviceAckSource: string;
+  lastFindDeviceStatus: string;
+  lastFindDeviceAlarmUntil: number | null;
   isAccessibilityEnabled: boolean | null;
   isDeviceAdminEnabled: boolean | null;
   isProtectionActive: boolean | null;
@@ -37,6 +42,21 @@ export interface EduLockLatestMasterSwitchCommand {
   commandId: string;
   requestedState: boolean;
   requestedAt: number | null;
+  targetedDeviceCount: number;
+  targetedTokenCount: number;
+  fcmSuccessCount: number;
+  fcmFailureCount: number;
+  ackedDeviceCount: number;
+  pendingDeviceCount: number;
+}
+
+export interface EduLockLatestFindDeviceCommand {
+  commandId: string;
+  targetDeviceId: string;
+  targetStudentName: string;
+  targetNisn: string;
+  requestedAt: number | null;
+  durationMs: number;
   targetedDeviceCount: number;
   targetedTokenCount: number;
   fcmSuccessCount: number;
@@ -59,6 +79,7 @@ export interface EduLockOverview {
   latestMirrorCount: number;
   activeDevices: EduLockActiveDevice[];
   latestMasterSwitchCommand: EduLockLatestMasterSwitchCommand | null;
+  latestFindDeviceCommand: EduLockLatestFindDeviceCommand | null;
 }
 
 const emptyOverview: EduLockOverview = {
@@ -75,6 +96,7 @@ const emptyOverview: EduLockOverview = {
   latestMirrorCount: 0,
   activeDevices: [],
   latestMasterSwitchCommand: null,
+  latestFindDeviceCommand: null,
 };
 
 export function useEduLockOverview(schoolId: string | undefined) {
@@ -158,6 +180,15 @@ export function useEduLockOverview(schoolId: string | undefined) {
     await refresh();
   };
 
+  const findDevice = async (deviceId: string) => {
+    await callAdminApi("/api/admin/edulock", "POST", {
+      action: "find-device",
+      schoolId,
+      deviceId,
+    });
+    await refresh();
+  };
+
   return {
     overview,
     loading,
@@ -165,5 +196,6 @@ export function useEduLockOverview(schoolId: string | undefined) {
     resetStudentDevice,
     toggleUninstall,
     toggleUninstallMass,
+    findDevice,
   };
 }

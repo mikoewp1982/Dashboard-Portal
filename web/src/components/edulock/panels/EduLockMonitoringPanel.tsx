@@ -26,12 +26,14 @@ type EduLockClassRecord = {
 export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
   const [monitoringClassFilterKey, setMonitoringClassFilterKey] = useState("all");
   const [nowTs, setNowTs] = useState(() => Date.now());
+  const [pendingFindDeviceId, setPendingFindDeviceId] = useState("");
   const { data: classesData, loading: classesLoading } = useClassesRealtime(schoolId);
   const { data: studentsData, loading: studentsLoading } = useStudentsRealtime(schoolId);
-  const { overview, loading: overviewLoading, refresh } = useEduLockOverview(schoolId);
+  const { overview, loading: overviewLoading, refresh, findDevice } = useEduLockOverview(schoolId);
 
   const loading = classesLoading || studentsLoading || overviewLoading;
   const latestMasterSwitchCommand = overview.latestMasterSwitchCommand;
+  const latestFindDeviceCommand = overview.latestFindDeviceCommand;
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowTs(Date.now()), 60_000);
@@ -108,6 +110,11 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
             runtime?.lastMasterSwitchAppliedState === latestMasterSwitchCommand?.requestedState,
           masterSwitchAckAt: runtime?.lastMasterSwitchAppliedAt ?? null,
           masterSwitchAckSource: runtime?.lastMasterSwitchAckSource ?? "",
+          findDeviceCommandId: runtime?.lastFindDeviceCommandId ?? "",
+          findDeviceAckAt: runtime?.lastFindDeviceAckAt ?? null,
+          findDeviceAckSource: runtime?.lastFindDeviceAckSource ?? "",
+          findDeviceStatus: runtime?.lastFindDeviceStatus ?? "",
+          findDeviceAlarmUntil: runtime?.lastFindDeviceAlarmUntil ?? null,
           complianceStatus: String(runtime?.complianceStatus || "").toUpperCase(),
           protectionHealth: String(runtime?.protectionHealth || "").toUpperCase(),
           isAccessibilityEnabled: runtime?.isAccessibilityEnabled ?? null,
@@ -190,6 +197,22 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
               </div>
             </div>
           )}
+          {latestFindDeviceCommand && (
+            <div className="mt-4 rounded-xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+              <div className="font-semibold text-white">
+                Temukan Perangkat Terakhir: {latestFindDeviceCommand.targetStudentName || latestFindDeviceCommand.targetNisn || latestFindDeviceCommand.targetDeviceId}
+              </div>
+              <div className="mt-1 text-xs text-rose-100/90">
+                {latestFindDeviceCommand.requestedAt
+                  ? `Dikirim ${new Date(latestFindDeviceCommand.requestedAt).toLocaleString("id-ID")}`
+                  : "Waktu kirim tidak tersedia"}
+                {" • "}Durasi {Math.round(latestFindDeviceCommand.durationMs / 1000)} detik
+                {" • "}ACK {latestFindDeviceCommand.ackedDeviceCount}/{latestFindDeviceCommand.targetedDeviceCount}
+                {" • "}FCM sukses {latestFindDeviceCommand.fcmSuccessCount}/{latestFindDeviceCommand.targetedTokenCount}
+                {latestFindDeviceCommand.pendingDeviceCount > 0 ? ` • Pending ${latestFindDeviceCommand.pendingDeviceCount}` : " • Device target sudah merespons"}
+              </div>
+            </div>
+          )}
           {duplicateBindingMap.size > 0 && (
             <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
               <div className="font-semibold text-white">Peringatan Konflik Binding</div>
@@ -211,19 +234,20 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                 <th className="px-6 py-4 font-semibold">Trust Score</th>
                 <th className="px-6 py-4 font-semibold">Last Update</th>
                 <th className="px-6 py-4 font-semibold">Command ACK</th>
+                <th className="px-6 py-4 font-semibold">Temukan HP</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
               {loading ? (
                 <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
+                  <td colSpan={8} className="px-6 py-8 text-center text-slate-400">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-400" />
                     Memuat snapshot runtime EduLock...
                   </td>
                 </tr>
               ) : monitoringStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
+                  <td colSpan={8} className="px-6 py-8 text-center text-slate-400">
                     Tidak ada data siswa ditemukan
                   </td>
                 </tr>
@@ -234,6 +258,17 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                   const isOnline = student.status === "ONLINE";
                   const duplicateBindingStudents = duplicateBindingMap.get(String(student.deviceId || "").trim()) || [];
                   const hasBindingConflict = duplicateBindingStudents.length > 1;
+                  const isFindDeviceTarget =
+                    Boolean(latestFindDeviceCommand?.commandId) &&
+                    latestFindDeviceCommand?.targetDeviceId === student.deviceId;
+                  const findDeviceAcked =
+                    isFindDeviceTarget &&
+                    student.findDeviceCommandId === latestFindDeviceCommand?.commandId &&
+                    student.findDeviceStatus.trim() !== "";
+                  const canTriggerFindDevice =
+                    Boolean(student.deviceId) &&
+                    student.hasFcmToken &&
+                    isOnline;
                   return (
                     <tr key={student.id || student.nisn} className="hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
                       <td className="px-6 py-4">
@@ -364,6 +399,56 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                         ) : (
                           <span className="text-xs text-amber-300">Pending ACK</span>
                         )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-2">
+                          <button
+                            type="button"
+                            disabled={!canTriggerFindDevice || pendingFindDeviceId === student.deviceId}
+                            onClick={async () => {
+                              if (!student.deviceId) return;
+                              setPendingFindDeviceId(student.deviceId);
+                              try {
+                                await findDevice(student.deviceId);
+                              } finally {
+                                setPendingFindDeviceId("");
+                              }
+                            }}
+                            className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                              canTriggerFindDevice && pendingFindDeviceId !== student.deviceId
+                                ? "bg-rose-500/20 text-rose-200 border border-rose-400/30 hover:bg-rose-500/30"
+                                : "bg-slate-800 text-slate-500 border border-white/10 cursor-not-allowed"
+                            }`}
+                          >
+                            {pendingFindDeviceId === student.deviceId ? "Mengirim..." : "Bunyikan HP"}
+                          </button>
+                          {!student.hasBinding ? (
+                            <span className="text-xs text-slate-500">Belum binding</span>
+                          ) : !student.hasFcmToken ? (
+                            <span className="text-xs text-amber-300">FCM belum sinkron</span>
+                          ) : !isOnline ? (
+                            <span className="text-xs text-slate-500">Device offline</span>
+                          ) : findDeviceAcked ? (
+                            <div className="text-xs text-rose-300">
+                              {student.findDeviceStatus === "ALARM_STARTED"
+                                ? "Alarm sedang dibunyikan"
+                                : student.findDeviceStatus === "ALARM_FINISHED"
+                                  ? "Alarm selesai diputar"
+                                  : student.findDeviceStatus === "FAILED"
+                                    ? "Device gagal memulai alarm"
+                                    : `ACK ${student.findDeviceStatus || "diterima"}`}
+                              <div className="text-slate-400">
+                                {student.findDeviceAckAt
+                                  ? new Date(student.findDeviceAckAt).toLocaleTimeString("id-ID")
+                                  : "Waktu ACK tidak tersedia"}
+                              </div>
+                            </div>
+                          ) : isFindDeviceTarget ? (
+                            <span className="text-xs text-amber-300">Menunggu ACK alarm</span>
+                          ) : (
+                            <span className="text-xs text-slate-500">Siap dibunyikan</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )

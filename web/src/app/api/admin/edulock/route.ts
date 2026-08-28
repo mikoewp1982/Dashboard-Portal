@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 import { dispatchMasterSwitchCommand } from "@/lib/admin/edulockMasterSwitch";
+import { dispatchFindDeviceCommand } from "@/lib/admin/edulockFindDevice";
 
-type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "grant-class-permission" | "revoke-class-permission" | "authorize-uninstall" | "authorize-uninstall-mass" | "toggle-uninstall" | "toggle-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions";
+type EduLockAction = "reset-student-device" | "save-settings" | "generate-access-code" | "delete-access-code" | "delete-expired-codes" | "grant-class-permission" | "revoke-class-permission" | "authorize-uninstall" | "authorize-uninstall-mass" | "toggle-uninstall" | "toggle-uninstall-mass" | "revoke-student-permission" | "revoke-all-permissions" | "find-device";
 
 type EduLockRequestBody = {
   action?: EduLockAction;
@@ -12,6 +13,7 @@ type EduLockRequestBody = {
   schoolId?: string;
   nisn?: string;
   nisns?: string[];
+  deviceId?: string;
 };
 
 type ActiveDeviceSnapshot = {
@@ -36,6 +38,11 @@ type ActiveDeviceSnapshot = {
   lastMasterSwitchAppliedAt: number | null;
   lastMasterSwitchAppliedState: boolean | null;
   lastMasterSwitchAckSource: string;
+  lastFindDeviceCommandId: string;
+  lastFindDeviceAckAt: number | null;
+  lastFindDeviceAckSource: string;
+  lastFindDeviceStatus: string;
+  lastFindDeviceAlarmUntil: number | null;
   isAccessibilityEnabled: boolean | null;
   isDeviceAdminEnabled: boolean | null;
   isProtectionActive: boolean | null;
@@ -49,6 +56,21 @@ type LatestMasterSwitchCommandSnapshot = {
   commandId: string;
   requestedState: boolean;
   requestedAt: number | null;
+  targetedDeviceCount: number;
+  targetedTokenCount: number;
+  fcmSuccessCount: number;
+  fcmFailureCount: number;
+  ackedDeviceCount: number;
+  pendingDeviceCount: number;
+};
+
+type LatestFindDeviceCommandSnapshot = {
+  commandId: string;
+  targetDeviceId: string;
+  targetStudentName: string;
+  targetNisn: string;
+  requestedAt: number | null;
+  durationMs: number;
   targetedDeviceCount: number;
   targetedTokenCount: number;
   fcmSuccessCount: number;
@@ -86,6 +108,43 @@ function getDateWithMinutes(baseDate: Date, dayOffset: number, totalMinutes: num
   return result;
 }
 
+/** Wall-clock sekolah selalu Asia/Jakarta (WIB, UTC+7, tanpa DST). */
+const SCHOOL_TIME_ZONE = "Asia/Jakarta";
+const SCHOOL_UTC_OFFSET_HOURS = 7;
+
+function readJakartaCalendar(now: Date): { year: number; month: number; day: number; currentMinutes: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: SCHOOL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+
+  const pick = (type: string) => Number(parts.find((p) => p.type === type)?.value || 0);
+  const year = pick("year");
+  const month = pick("month");
+  const day = pick("day");
+  const hour = pick("hour");
+  const minute = pick("minute");
+  return {
+    year,
+    month,
+    day,
+    currentMinutes: hour * 60 + minute,
+  };
+}
+
+function jakartaWallTimeToUtcMs(year: number, month: number, day: number, totalMinutes: number, dayOffset = 0) {
+  const hour = Math.floor(totalMinutes / 60);
+  const minute = totalMinutes % 60;
+  // Bangun tanggal kalender WIB lalu konversi ke UTC epoch (WIB = UTC+7).
+  const utcMs = Date.UTC(year, month - 1, day + dayOffset, hour - SCHOOL_UTC_OFFSET_HOURS, minute, 0, 0);
+  return utcMs;
+}
+
 function normalizeClassName(value: unknown) {
   return String(value || "").trim();
 }
@@ -98,7 +157,8 @@ function resolveAccessCodeWindow(sessionStartRaw: string, sessionEndRaw: string,
   if (sessionEnd.totalMinutes === sessionStart.totalMinutes) return null;
 
   const crossesMidnight = sessionEnd.totalMinutes < sessionStart.totalMinutes;
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const jakarta = readJakartaCalendar(now);
+  const currentMinutes = jakarta.currentMinutes;
   const totalDurationMinutes = crossesMidnight
     ? (24 * 60 - sessionStart.totalMinutes) + sessionEnd.totalMinutes
     : sessionEnd.totalMinutes - sessionStart.totalMinutes;
@@ -112,8 +172,8 @@ function resolveAccessCodeWindow(sessionStartRaw: string, sessionEndRaw: string,
       sessionStart: sessionStart.normalized,
       sessionEnd: sessionEnd.normalized,
       duration: totalDurationMinutes,
-      windowStartAt: getDateWithMinutes(now, dayOffset, sessionStart.totalMinutes).getTime(),
-      windowEndAt: getDateWithMinutes(now, dayOffset, sessionEnd.totalMinutes).getTime(),
+      windowStartAt: jakartaWallTimeToUtcMs(jakarta.year, jakarta.month, jakarta.day, sessionStart.totalMinutes, dayOffset),
+      windowEndAt: jakartaWallTimeToUtcMs(jakarta.year, jakarta.month, jakarta.day, sessionEnd.totalMinutes, dayOffset),
     };
   }
 
@@ -122,8 +182,8 @@ function resolveAccessCodeWindow(sessionStartRaw: string, sessionEndRaw: string,
       sessionStart: sessionStart.normalized,
       sessionEnd: sessionEnd.normalized,
       duration: totalDurationMinutes,
-      windowStartAt: getDateWithMinutes(now, -1, sessionStart.totalMinutes).getTime(),
-      windowEndAt: getDateWithMinutes(now, 0, sessionEnd.totalMinutes).getTime(),
+      windowStartAt: jakartaWallTimeToUtcMs(jakarta.year, jakarta.month, jakarta.day, sessionStart.totalMinutes, -1),
+      windowEndAt: jakartaWallTimeToUtcMs(jakarta.year, jakarta.month, jakarta.day, sessionEnd.totalMinutes, 0),
     };
   }
 
@@ -131,8 +191,8 @@ function resolveAccessCodeWindow(sessionStartRaw: string, sessionEndRaw: string,
     sessionStart: sessionStart.normalized,
     sessionEnd: sessionEnd.normalized,
     duration: totalDurationMinutes,
-    windowStartAt: getDateWithMinutes(now, 0, sessionStart.totalMinutes).getTime(),
-    windowEndAt: getDateWithMinutes(now, 1, sessionEnd.totalMinutes).getTime(),
+    windowStartAt: jakartaWallTimeToUtcMs(jakarta.year, jakarta.month, jakarta.day, sessionStart.totalMinutes, 0),
+    windowEndAt: jakartaWallTimeToUtcMs(jakarta.year, jakarta.month, jakarta.day, sessionEnd.totalMinutes, 1),
   };
 }
 
@@ -223,11 +283,16 @@ function parseActiveDevices(rawValue: unknown) {
       isEmergencyUnlock,
       isUninstallBypass,
       isPermissionActive,
-        hasFcmToken: Boolean(readString(record, "fcmToken")),
-        lastMasterSwitchCommandId: readString(record, "lastMasterSwitchCommandId"),
-        lastMasterSwitchAppliedAt: readNumber(record, "lastMasterSwitchAppliedAt"),
-        lastMasterSwitchAppliedState,
-        lastMasterSwitchAckSource: readString(record, "lastMasterSwitchAckSource"),
+      hasFcmToken: Boolean(readString(record, "fcmToken")),
+      lastMasterSwitchCommandId: readString(record, "lastMasterSwitchCommandId"),
+      lastMasterSwitchAppliedAt: readNumber(record, "lastMasterSwitchAppliedAt"),
+      lastMasterSwitchAppliedState,
+      lastMasterSwitchAckSource: readString(record, "lastMasterSwitchAckSource"),
+      lastFindDeviceCommandId: readString(record, "lastFindDeviceCommandId"),
+      lastFindDeviceAckAt: readNumber(record, "lastFindDeviceAckAt"),
+      lastFindDeviceAckSource: readString(record, "lastFindDeviceAckSource"),
+      lastFindDeviceStatus: readString(record, "lastFindDeviceStatus"),
+      lastFindDeviceAlarmUntil: readNumber(record, "lastFindDeviceAlarmUntil"),
       isAccessibilityEnabled,
       isDeviceAdminEnabled,
       isProtectionActive,
@@ -237,6 +302,43 @@ function parseActiveDevices(rawValue: unknown) {
       appVersionCode: readNumber(record, "appVersionCode"),
     };
   });
+}
+
+function parseLatestFindDeviceCommand(rawValue: unknown, activeDevices: ActiveDeviceSnapshot[]) {
+  if (!rawValue || typeof rawValue !== "object") return null;
+
+  const record = rawValue as Record<string, unknown>;
+  const delivery =
+    record.delivery && typeof record.delivery === "object"
+      ? (record.delivery as Record<string, unknown>)
+      : {};
+
+  const commandId = readString(record, "commandId");
+  const targetDeviceId = readString(record, "targetDeviceId");
+  if (!commandId || !targetDeviceId) return null;
+
+  const ackedDeviceCount = activeDevices.filter(
+    (device) =>
+      device.deviceId === targetDeviceId &&
+      device.lastFindDeviceCommandId === commandId &&
+      device.lastFindDeviceStatus.toUpperCase() !== "FAILED"
+  ).length;
+
+  const targetedDeviceCount = readNumber(delivery, "targetedDeviceCount") ?? 0;
+  return {
+    commandId,
+    targetDeviceId,
+    targetStudentName: readString(record, "targetStudentName"),
+    targetNisn: readString(record, "targetNisn"),
+    requestedAt: readNumber(record, "requestedAt"),
+    durationMs: readNumber(record, "durationMs") ?? 45_000,
+    targetedDeviceCount,
+    targetedTokenCount: readNumber(delivery, "targetedTokenCount") ?? 0,
+    fcmSuccessCount: readNumber(delivery, "fcmSuccessCount") ?? 0,
+    fcmFailureCount: readNumber(delivery, "fcmFailureCount") ?? 0,
+    ackedDeviceCount,
+    pendingDeviceCount: Math.max(targetedDeviceCount - ackedDeviceCount, 0),
+  } satisfies LatestFindDeviceCommandSnapshot;
 }
 
 function parseLatestMasterSwitchCommand(rawValue: unknown, activeDevices: ActiveDeviceSnapshot[]) {
@@ -307,12 +409,13 @@ export async function GET(request: Request) {
     const schoolContext = await resolveAuthorizedSchoolId(request, schoolIdParam);
     const schoolId = schoolContext.schoolId;
 
-        const [studentsSnap, tenantRegistrySnap, activeDevicesSnap, mirrorRootSnap, latestMasterSwitchCommandSnap] = await Promise.all([
+        const [studentsSnap, tenantRegistrySnap, activeDevicesSnap, mirrorRootSnap, latestMasterSwitchCommandSnap, latestFindDeviceCommandSnap] = await Promise.all([
       adminDb.ref(`gas/schools/${schoolId}/students`).get(),
       adminDb.ref(`tenant_registry/${schoolId}`).get(),
       adminDb.ref(`active_devices/${schoolId}`).get(),
       adminDb.ref(`daily_attendance_mirror/${schoolId}`).limitToLast(7).get(),
-          adminDb.ref(`schools/${schoolId}/commands/master_switch/latest`).get(),
+      adminDb.ref(`schools/${schoolId}/commands/master_switch/latest`).get(),
+      adminDb.ref(`schools/${schoolId}/commands/find_device/latest`).get(),
     ]);
 
     const studentsValue = studentsSnap.val() as Record<string, Record<string, unknown>> | null;
@@ -332,10 +435,14 @@ export async function GET(request: Request) {
 
     const activeDevices = parseActiveDevices(activeDevicesSnap.val())
       .sort((a, b) => (b.lastSeenAt || 0) - (a.lastSeenAt || 0));
-        const latestMasterSwitchCommand = parseLatestMasterSwitchCommand(
-          latestMasterSwitchCommandSnap.val(),
-          activeDevices
-        );
+    const latestMasterSwitchCommand = parseLatestMasterSwitchCommand(
+      latestMasterSwitchCommandSnap.val(),
+      activeDevices
+    );
+    const latestFindDeviceCommand = parseLatestFindDeviceCommand(
+      latestFindDeviceCommandSnap.val(),
+      activeDevices
+    );
     const onlineDevices = activeDevices.filter((device) => device.isOnline);
     const outsideZoneCount = onlineDevices.filter((device) => device.isOutOfZone).length;
     const latestHeartbeatAt = onlineDevices.reduce<number | null>((latest, device) => {
@@ -372,7 +479,8 @@ export async function GET(request: Request) {
         latestMirrorDate,
         latestMirrorCount: latestMirrorEntries.length,
         activeDevices,
-            latestMasterSwitchCommand,
+        latestMasterSwitchCommand,
+        latestFindDeviceCommand,
       },
     });
   } catch (error: unknown) {
@@ -832,6 +940,26 @@ export async function POST(request: Request) {
         message: isAuthorized
           ? `Mode Uninstall massal untuk ${studentsToToggle.length} siswa berhasil diaktifkan.`
           : `Izin Uninstall massal untuk ${studentsToToggle.length} siswa berhasil dicabut.`,
+      });
+    }
+
+    if (body.action === "find-device") {
+      const targetDeviceId = String(body.deviceId || "").trim();
+      if (!targetDeviceId) {
+        return NextResponse.json({ success: false, error: "deviceId wajib diisi" }, { status: 400 });
+      }
+
+      const latestFindDeviceCommand = await dispatchFindDeviceCommand({
+        schoolId,
+        targetDeviceId,
+        requestedByUid: String(decodedToken.uid || ""),
+        requestedByEmail: String(decodedToken.email || ""),
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Perintah bunyi keras berhasil dikirim ke perangkat siswa.",
+        latestFindDeviceCommand,
       });
     }
 
