@@ -5,7 +5,13 @@ import {
   TeacherAuthError,
   verifyTeacherRequest,
 } from "@/lib/guru/verifyTeacherRequest";
-import { asLong, loadAttendanceRules, loadHomeroomStudents } from "@/lib/guru/loadClassRoster";
+import {
+  asLong,
+  isEffectivePrayerDay,
+  loadAttendanceRules,
+  loadHomeroomStudents,
+  loadPrayerRules,
+} from "@/lib/guru/loadClassRoster";
 import {
   createStoredTimestampForSelectedDate,
   endOfDay,
@@ -96,15 +102,27 @@ function buildDailyItems(
   logs: PrayerLog[],
   selectedDateMs: number,
   schedules: Awaited<ReturnType<typeof loadAttendanceRules>>["schedules"],
-  holidays: Awaited<ReturnType<typeof loadAttendanceRules>>["holidays"]
+  holidays: Awaited<ReturnType<typeof loadAttendanceRules>>["holidays"],
+  prayerRules: Awaited<ReturnType<typeof loadPrayerRules>>
 ) {
   const dayStart = startOfDay(selectedDateMs);
   const dayEnd = endOfDay(selectedDateMs);
   const targetDay = new Date(selectedDateMs);
-  const validDay = isValidPrayerDay(targetDay, schedules, holidays);
 
   return students.map((student) => {
     const nonMuslim = isNonMuslim(student.religion);
+    const baseValid = isValidPrayerDay(targetDay, schedules, holidays);
+    const validDay = isEffectivePrayerDay(
+      {
+        date: targetDay,
+        className: student.classId || student.class || student.className,
+        prayerType: "DZUHUR",
+      },
+      prayerRules,
+      { schedules, holidays },
+      () => baseValid,
+      toDateKey
+    );
     const todayLog = logs
       .filter((log) => matchesStudent(log, student) && log.date >= dayStart && log.date <= dayEnd)
       .sort((a, b) => b.date - a.date)[0];
@@ -144,7 +162,8 @@ function buildMonthlyRecap(
   month: number,
   year: number,
   schedules: Awaited<ReturnType<typeof loadAttendanceRules>>["schedules"],
-  holidays: Awaited<ReturnType<typeof loadAttendanceRules>>["holidays"]
+  holidays: Awaited<ReturnType<typeof loadAttendanceRules>>["holidays"],
+  prayerRules: Awaited<ReturnType<typeof loadPrayerRules>>
 ): Record<string, MonthlyStats> {
   const result: Record<string, MonthlyStats> = {};
   const lastDay = lastCountableDay(year, month);
@@ -163,7 +182,19 @@ function buildMonthlyRecap(
 
     for (let day = 1; day <= lastDay; day++) {
       const date = new Date(jakartaCivilDateMs(year, month, day));
-      if (!isValidPrayerDay(date, schedules, holidays)) continue;
+      const baseValid = isValidPrayerDay(date, schedules, holidays);
+      const effective = isEffectivePrayerDay(
+        {
+          date,
+          className: student.classId || student.class || student.className,
+          prayerType: "DZUHUR",
+        },
+        prayerRules,
+        { schedules, holidays },
+        () => baseValid,
+        toDateKey
+      );
+      if (!effective) continue;
       const dayStart = startOfDay(date.getTime());
       const dayEnd = endOfDay(date.getTime());
       const dayLog = logs
@@ -214,9 +245,10 @@ export async function GET(req: NextRequest) {
         )
       : studentsAll;
 
-    const [logs, rules] = await Promise.all([
+    const [logs, rules, prayerRules] = await Promise.all([
       loadPrayerLogs(teacher.schoolId),
       loadAttendanceRules(teacher.schoolId),
+      loadPrayerRules(teacher.schoolId),
     ]);
 
     if (mode === "monthly") {
@@ -229,7 +261,8 @@ export async function GET(req: NextRequest) {
         month,
         year,
         rules.schedules,
-        rules.holidays
+        rules.holidays,
+        prayerRules
       );
 
       return NextResponse.json({
@@ -250,7 +283,14 @@ export async function GET(req: NextRequest) {
     }
 
     const dateMs = parseDateParam(params.get("date"));
-    const items = buildDailyItems(students, logs, dateMs, rules.schedules, rules.holidays);
+    const items = buildDailyItems(
+      students,
+      logs,
+      dateMs,
+      rules.schedules,
+      rules.holidays,
+      prayerRules
+    );
 
     return NextResponse.json({
       success: true,
