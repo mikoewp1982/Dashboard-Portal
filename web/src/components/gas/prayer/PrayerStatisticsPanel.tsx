@@ -1,12 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Activity, AlertCircle, CalendarDays, UserCheck, UserMinus, UserRound, UserX } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PrayerLog } from "@/hooks/gas/attendance/useGasPrayerAttendance";
 import {
   createStudentDateKey,
-  getValidDatesInMonth,
+  getValidPrayerDatesInMonth,
   pickNewestLog,
+  PrayerClassScheduleLike,
+  PrayerDateOverrideLike,
   toDateKey,
 } from "@/utils/presensiRules";
 
@@ -43,6 +44,10 @@ interface Props {
   setSelectedClassName: (v: string) => void;
   schedules?: any[];
   holidays?: any[];
+  prayerType?: "DZUHUR" | "DHUHA" | "JUMAT" | (string & {});
+  globalActiveDays?: number[];
+  prayerSchedules?: PrayerClassScheduleLike[];
+  prayerOverrides?: PrayerDateOverrideLike[];
 }
 
 export function PrayerStatisticsPanel({
@@ -56,7 +61,11 @@ export function PrayerStatisticsPanel({
   selectedClassName,
   setSelectedClassName,
   schedules = [],
-  holidays = []
+  holidays = [],
+  prayerType = "DZUHUR",
+  globalActiveDays,
+  prayerSchedules = [],
+  prayerOverrides = [],
 }: Props) {
   const dropdownClassName =
     "px-3 py-2 rounded-md border border-slate-500/70 bg-slate-950/90 text-sm font-medium text-slate-50 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/60";
@@ -73,10 +82,45 @@ export function PrayerStatisticsPanel({
     return result;
   }, [scopedStudents, selectedClassName]);
 
-  const validDates = useMemo(
-    () => getValidDatesInMonth({ year: selectedYear, month: selectedMonth, schedules, holidays }),
-    [selectedMonth, selectedYear, schedules, holidays]
-  );
+  const validDatesByClass = useMemo(() => {
+    const byClass = new Map<string | undefined, Date[]>();
+    const keys = new Set<string | undefined>();
+    keys.add(selectedClassName || undefined);
+    if (!selectedClassName) {
+      for (const s of scopedStudents || []) {
+        keys.add(s?.class || s?.className || undefined);
+      }
+    }
+    for (const k of keys) {
+      byClass.set(
+        k,
+        getValidPrayerDatesInMonth({
+          year: selectedYear,
+          month: selectedMonth,
+          schedules,
+          holidays,
+          prayerType,
+          className: k,
+          globalActiveDays,
+          prayerSchedules,
+          prayerOverrides,
+        })
+      );
+    }
+    return byClass;
+  }, [selectedMonth, selectedYear, schedules, holidays, prayerType, selectedClassName, globalActiveDays, prayerSchedules, prayerOverrides, scopedStudents]);
+
+  const validDates = useMemo(() => {
+    return Array.from(validDatesByClass.values())
+      .flat()
+      .filter((date, idx, arr) => arr.findIndex((d) => d.getTime() === date.getTime()) === idx)
+      .sort((a, b) => a.getTime() - b.getTime());
+  }, [validDatesByClass]);
+
+  const getStudentValidDates = useCallback((studentClassOrName: string | undefined) => {
+    if (selectedClassName) return validDatesByClass.get(selectedClassName) || [];
+    return validDatesByClass.get(studentClassOrName) || validDatesByClass.get(undefined) || validDates;
+  }, [selectedClassName, validDatesByClass, validDates]);
 
   const filteredLogs = useMemo(() => {
     const validDateSet = new Set(validDates.map((date) => toDateKey(date)));
@@ -121,12 +165,13 @@ export function PrayerStatisticsPanel({
     for (const student of filteredStudents) {
       const canonicalId = student.id;
       const className = student.class || student.className || "-";
+      const studentValidDates = getStudentValidDates(className);
 
       if (className && !classMap.has(className)) {
         classMap.set(className, { className, sholat: 0, tidakSholat: 0, izin: 0 });
       }
 
-      for (const date of validDates) {
+      for (const date of studentValidDates) {
         const log = filteredLogs.get(createStudentDateKey(canonicalId, toDateKey(date)));
         totals.totalValidSlots += 1;
 
@@ -175,7 +220,7 @@ export function PrayerStatisticsPanel({
       },
       classChartData: Array.from(classMap.values()).sort((a, b) => a.className.localeCompare(b.className, "id-ID")),
     };
-  }, [filteredLogs, filteredStudents, validDates]);
+  }, [filteredLogs, filteredStudents, validDates.length, getStudentValidDates]);
 
   const pieData = useMemo(() => ([
     { name: "Sholat", value: summary.totals.pray, color: CHART_COLORS.pray },
@@ -242,7 +287,8 @@ export function PrayerStatisticsPanel({
       const tally = byStudent.get(id);
       if (!tally) continue;
 
-      for (const date of validDates) {
+      const studentValidDates = getStudentValidDates(student.class || student.className);
+      for (const date of studentValidDates) {
         const log = filteredLogs.get(createStudentDateKey(id, toDateKey(date)));
 
         if (log?.status === "HALANGAN") {
@@ -294,7 +340,7 @@ export function PrayerStatisticsPanel({
       halangan: pickTop("halangan"),
       fewestPray: pickFewestPray(),
     };
-  }, [filteredLogs, filteredStudents, validDates]);
+  }, [filteredLogs, filteredStudents, validDates.length, getStudentValidDates]);
 
   return (
     <div className="space-y-6">

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Loader2, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PrayerRecapPanel } from "./PrayerRecapPanel";
 import { useGasSettings } from "@/hooks/gas/attendance/useGasSettings";
 import { useGasPrayerAttendance } from "@/hooks/gas/attendance/useGasPrayerAttendance";
+import { useGasPrayerConfig } from "@/hooks/gas/attendance/useGasPrayerConfig";
 
 interface GasPrayerReportPanelProps {
   schoolId: string;
@@ -17,7 +18,21 @@ export default function GasPrayerReportPanel({ schoolId }: GasPrayerReportPanelP
   const [selectedClassName, setSelectedClassName] = useState<string>("");
 
   const { schedules, holidays } = useGasSettings(schoolId);
+  const { prayerTypes, schedules: prayerSchedules, overrides: prayerOverrides, loading: prayerConfigLoading } = useGasPrayerConfig(schoolId);
   const { classes, students, logs, loading, refresh } = useGasPrayerAttendance(schoolId, selectedMonth, selectedYear);
+
+  const dzuhurActiveDays = useMemo(() => {
+    const dzuhur = prayerTypes.find((t) => t.id === "DZUHUR");
+    return dzuhur?.activeDays;
+  }, [prayerTypes]);
+
+  const dzuhurSchedules = useMemo(() => {
+    return prayerSchedules.filter((s) => s.prayerType === "DZUHUR");
+  }, [prayerSchedules]);
+
+  const dzuhurOverrides = useMemo(() => {
+    return prayerOverrides.filter((o) => o.prayerType === "DZUHUR");
+  }, [prayerOverrides]);
 
   return (
     <div className="space-y-6 flex-1 overflow-y-auto p-6">
@@ -29,15 +44,15 @@ export default function GasPrayerReportPanel({ schoolId }: GasPrayerReportPanelP
         <div className="flex items-center gap-4">
           <button
             onClick={() => void refresh()}
-            disabled={loading}
+            disabled={loading || prayerConfigLoading}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
+            {loading || prayerConfigLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            {loading ? "Memuat..." : "Muat Ulang"}
+            {loading || prayerConfigLoading ? "Memuat..." : "Muat Ulang"}
           </button>
           <Link
             href="/dashboard"
@@ -59,7 +74,11 @@ export default function GasPrayerReportPanel({ schoolId }: GasPrayerReportPanelP
         selectedClassName={selectedClassName}
         setSelectedClassName={setSelectedClassName}
         schedules={schedules} 
-        holidays={holidays} 
+        holidays={holidays}
+        prayerType="DZUHUR"
+        globalActiveDays={dzuhurActiveDays}
+        prayerSchedules={dzuhurSchedules}
+        prayerOverrides={dzuhurOverrides}
       />
     </div>
   );

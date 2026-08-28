@@ -104,3 +104,113 @@ export function pickNewestLog<T extends { updatedAt?: number; createdAt?: number
   const nextScore = typeof next.date === 'string' ? new Date(next.date).getTime() : Number(next.updatedAt || next.createdAt || next.date || 0);
   return nextScore >= currentScore ? next : current;
 }
+
+export interface PrayerClassScheduleLike {
+  id: string;
+  prayerType: "DZUHUR" | "DHUHA" | "JUMAT" | (string & {});
+  classIds: string[];
+  dayOfWeek: number;
+  active: boolean;
+}
+
+export interface PrayerDateOverrideLike {
+  id: string;
+  date: string;
+  prayerType: "DZUHUR" | "DHUHA" | "JUMAT" | (string & {});
+  classIds: string[];
+  action: "activate" | "deactivate";
+}
+
+const DEFAULT_PRAYER_ACTIVE_DAYS: Record<string, number[]> = {
+  DZUHUR: [1, 2, 3, 4, 5, 6],
+  DHUHA: [1, 2, 3, 4, 5, 6],
+  JUMAT: [5],
+};
+
+export function resolvePrayerActiveDaysForClass(
+  prayerType: "DZUHUR" | "DHUHA" | "JUMAT" | (string & {}),
+  classNameOrId: string | undefined,
+  globalActiveDays: number[] | undefined,
+  schedules: PrayerClassScheduleLike[] = []
+): number[] {
+  const fallbackDays = DEFAULT_PRAYER_ACTIVE_DAYS[prayerType] ?? [1, 2, 3, 4, 5, 6];
+  const canonicalClass = String(classNameOrId || "").trim().toUpperCase();
+  const scoped = schedules.filter(
+    (s) =>
+      s &&
+      s.prayerType === prayerType &&
+      s.active !== false &&
+      (s.classIds || []).some((c) => String(c || "").trim().toUpperCase() === canonicalClass)
+  );
+  if (scoped.length > 0) {
+    return scoped.map((s) => Number(s.dayOfWeek)).filter((d) => Number.isFinite(d) && d >= 0 && d <= 6);
+  }
+  if (Array.isArray(globalActiveDays) && globalActiveDays.length > 0) {
+    return globalActiveDays.slice();
+  }
+  return fallbackDays;
+}
+
+export interface PrayerValidDatesOptions {
+  year: number;
+  month: number;
+  schedules: PresensiScheduleLike[];
+  holidays: PresensiHolidayLike[];
+  today?: Date;
+  prayerType: "DZUHUR" | "DHUHA" | "JUMAT" | (string & {});
+  className?: string;
+  globalActiveDays?: number[];
+  prayerSchedules?: PrayerClassScheduleLike[];
+  prayerOverrides?: PrayerDateOverrideLike[];
+}
+
+export function getValidPrayerDatesInMonth(options: PrayerValidDatesOptions): Date[] {
+  const {
+    year,
+    month,
+    schedules,
+    holidays,
+    today = new Date(),
+    prayerType,
+    className,
+    globalActiveDays,
+    prayerSchedules = [],
+    prayerOverrides = [],
+  } = options;
+
+  const baseDates = getValidDatesInMonth({ year, month, schedules, holidays, today });
+  const effectiveActiveDays = new Set(
+    resolvePrayerActiveDaysForClass(prayerType, className, globalActiveDays, prayerSchedules)
+  );
+
+  const canonicalClass = String(className || "").trim().toUpperCase();
+  const overrideByDate = new Map<string, "activate" | "deactivate">();
+  for (const ov of prayerOverrides || []) {
+    if (!ov || ov.prayerType !== prayerType) continue;
+    if (canonicalClass && (ov.classIds || []).length > 0) {
+      const matched = (ov.classIds || []).some(
+        (c) => String(c || "").trim().toUpperCase() === canonicalClass
+      );
+      if (!matched) continue;
+    }
+    const dk = String(ov.date || "").trim();
+    if (!dk) continue;
+    overrideByDate.set(dk, ov.action === "activate" ? "activate" : "deactivate");
+  }
+
+  const result: Date[] = [];
+  for (const date of baseDates) {
+    const jsDay = date.getDay();
+    const dateKey = toDateKey(date);
+    const override = overrideByDate.get(dateKey);
+    const inActive = effectiveActiveDays.has(jsDay);
+    if (override === "activate") {
+      result.push(date);
+      continue;
+    }
+    if (override === "deactivate") continue;
+    if (!inActive) continue;
+    result.push(date);
+  }
+  return result;
+}

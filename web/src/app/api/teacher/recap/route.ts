@@ -10,6 +10,8 @@ import {
   asLong,
   loadAttendanceRules,
   loadHomeroomStudents,
+  loadPrayerRules,
+  isEffectivePrayerDay,
 } from "@/lib/guru/loadClassRoster";
 import { normalizeClassName } from "@/lib/guru/normalizeClass";
 import {
@@ -451,6 +453,7 @@ export async function GET(req: NextRequest) {
     }
 
     const rules = await loadAttendanceRules(schoolId);
+    const prayerRules = await loadPrayerRules(schoolId);
     const days = eachDayMs(startMs, endMs);
 
     // Attendance: latest status per student per day; missing effective day = Alpa
@@ -549,9 +552,18 @@ export async function GET(req: NextRequest) {
       if (!row) continue;
       if (isNonMuslim(student.religion)) continue;
       const byDay = prayerByStudentDay.get(rk) || new Map();
+      const className = student.classId || student.class || student.className;
       for (const dayMs of days) {
         const date = new Date(dayMs);
-        if (!isValidPrayerDay(date, rules.schedules, rules.holidays)) continue;
+        const baseValid = isValidPrayerDay(date, rules.schedules, rules.holidays);
+        const effective = isEffectivePrayerDay(
+          { date, className, prayerType: "DZUHUR" },
+          prayerRules,
+          rules,
+          () => baseValid,
+          toDateKey
+        );
+        if (!effective) continue;
         const dayKey = toDateKey(dayMs);
         const bucket = normalizePrayerStatus(byDay.get(dayKey)?.status);
         if (bucket === "PRAY") row.sholatSudah += 1;
