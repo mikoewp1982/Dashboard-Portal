@@ -26,6 +26,34 @@ Tambahkan nama pelaksana jika perlu:
 ## [Unreleased]
 
 ### Siswa
+- Changed: Build distribusi GAS Siswa `1.0.82-siswa (23079)` dibuild ulang lagi pada **2026-08-28 13:25**, hash Final/public alias menjadi `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`, lalu **SUDAH disinkronkan** ke `web/public/apk` dan live unduhan Firebase/App Hosting.
+- Fixed: **Siswa (Gate EduLock)** sekarang dibangun dengan konsep baru bahwa hard block kepatuhan EduLock hanya aktif saat **hari efektif + jam sekolah aktif**, dengan **grace period** saat proteksi drop sesaat di tengah sesi.
+
+### Guru
+- Changed: Build distribusi GAS Guru saat ini menjadi `1.0.61-guru (1053)` dengan file final aktif `GAS-Guru-release.apk`.
+- Fixed: **Guru (Presensi Sholat)** hitungan `TS / Tidak Sholat` di APK guru sekarang mengikuti **hari efektif Dzuhur** yang sama dengan APK siswa dan web admin (`attendance/schedules` + `attendance/holidays` + `prayer_v2/types/DZUHUR/activeDays`), tidak lagi jatuh ke hitungan lama `24`.
+- Fixed: **Guru (Rekapitulasi)** ekspor/rekap guru di APK sekarang memakai denominator hari efektif Dzuhur yang sama, sehingga kolom `TS` sinkron dengan web admin yang sudah diperbaiki.
+- Changed: **Guru (Home)** kartu menu dipendekkan dan diringankan agar tidak terasa terlalu besar di layar, tetapi identitas UI guru tetap 2 kolom glassmorphism tanpa bottom nav.
+- Fixed: **Guru (Home)** badge merah notifikasi di kartu menu digeser sedikit masuk agar tidak mepet ke sudut kanan atas dan lebih jelas terlihat.
+
+### Web Admin / PWA
+- Fixed: **Portal Guru `/guru/sholat`** yang live sekarang menghitung `TS / Tidak Sholat` dengan kontrak hari efektif Dzuhur yang sama seperti web admin dan APK siswa. Deploy live commit `9f42a276`.
+
+## [1.0.82-siswa] - 2026-08-27
+### Fixed
+- **Siswa (Presensi Sholat)**: Kartu **Aturan Hari → Hari efektif** mengikuti pengaturan **Presensi Sekolah** (`attendance/schedules`), bukan jadwal sholat warisan. Kunci hari yang tidak ada di map tidak dianggap libur.
+- **Siswa (Virtual Pet)**: Indikator hari efektif Dzuhur memakai path attendance yang sama.
+- **Siswa (7 KAIH)**: Setelah laporan minggu berjalan dikirim, checklist minggu itu terkunci sehingga siswa tidak bisa submit ulang atau mengubah centang lagi.
+- **Siswa (7 KAIH)**: Kotak centang hanya aktif untuk hari yang memang aktif pada tanggal hari ini; hari lain tetap terlihat tetapi tidak bisa dicentang.
+- **Siswa (Lentera Digital)**: Reader buku mendukung `zoom in/out`, mode `fullscreen`, dan panel bawah native (`halaman saat ini / total halaman` + tombol `Sebelumnya/Berikutnya`) agar teks kecil lebih nyaman dibaca.
+- **Siswa (Gate EduLock)**: Jalur buka dari EduLock tidak lagi tertahan delay ketika aksesibilitas / admin perangkat lokal sudah pulih tetapi telemetry remote belum menyusul.
+- **Siswa (Presensi/Kedisiplinan)**: Siswa yang **datang terlambat** sekarang otomatis tercatat sebagai **pelanggaran** sesuai rule aktif admin sekolah setelah simpan absensi berhasil.
+- **Siswa (Presensi/Kedisiplinan)**: Siswa yang **pulang awal** sekarang juga otomatis tercatat sebagai **pelanggaran** sesuai rule aktif admin sekolah.
+- **Siswa (Kedisiplinan)**: Guard anti-double ditambahkan agar auto-record dari presensi tidak membuat duplikat ketika OSIS atau guru mencatat pelanggaran harian yang sama pada tanggal yang sama.
+### Note (audit, tanpa kode baru)
+- **Siswa (Presensi Dhuha & Jum'at)**: Sudah membaca `prayer_v2` (Jadwal Per Kelas + Override) selaras web admin. Hari/kelas/override menggerakkan status & tombol. Baris **Jam** tetap **statis** (sengaja, termasuk saat Tidak dijadwalkan).
+- Changed: Build distribusi GAS Siswa `1.0.82` (`versionCode 23079`) dibuild ulang internal QA pada 2026-08-28 02:05 dan disalin ke Final dengan SHA256 `C4B84E8370D55EAFFC7809020A94BB76265541219547782DA0454A5BCB8B9A44`. Final only — URL unduhan web belum di-update.
+- Changed: Build distribusi GAS Siswa `1.0.82` (`versionCode 23079`) dibuild ulang lagi pada 2026-08-28 11:37 dan disalin ke Final dengan SHA256 `76EEF68BB9E0C426615141629B9D2D4AB16C3E1B9E552EA99BF290F7F74B7B73`. Muatan build ini juga membawa perapihan home/presensi sholat dari rebuild 09:26. Final only — URL unduhan web belum di-update.
 
 ### Web Admin / PWA (2026-08-16)
 - Restored: Menu **Rekap Dhuha & Jumat** + pengaturan sistem `prayer_v2` kembali di live App Hosting (`39f8bb48`).
@@ -35,6 +63,15 @@ Tambahkan nama pelaksana jika perlu:
 - Note kontrak: **Override / Generator Jumat** hanya tanggal + kelas; **Jam** wajib di **Jadwal Sholat Per Kelas**.
 - Note kontrak: **Kenyang** hanya hari sekolah efektif + baca >=30 menit; baca di hari libur -> quest **+10 Kecerdasan** (bukan Kenyang).
 - Note: Selisih hitungan pet 104 vs 100 = orphan siluman RTDB; monitor sekarang memfilter.
+
+## [1.0.81-siswa] - 2026-08-18
+### Added
+- **Siswa (Tools)**: Menambahkan fitur **Kamus Besar Bahasa Indonesia (KBBI)** pada menu Tools Belajar berbasis mirror resmi KBBI v6 (`https://kbbi.raf555.dev/`) dengan fallback ganda. Dilengkapi pemenggalan suku kata, badge kelas kata (Verba, Nomina, dll), dan contoh penggunaan dalam kalimat.
+- **Siswa (Buku Pembiasaan Religius)**: Menambahkan **Surat Al-Mulk** (Surah ke-67, 30 ayat) pada daftar surat pilihan.
+### Changed
+- **Siswa (Buku Pembiasaan Religius)**: Sinkronisasi seluruh naskah Al-Qur'an (Surat Ar-Rahman, Surat Al-Waqi'ah, Surat Yasin, dan Surat Al-Mulk) menggunakan naskah resmi **Mushaf Standar Indonesia** (Lajnah Pentashihan Mushaf Al-Qur'an Kemenag RI / rujukan NU Online `quran.nu.or.id`), mencakup teks Arab rasm Usmani standar, transliterasi Latin, dan terjemahan resmi bahasa Indonesia.
+- **Siswa (Security & Navigasi)**: Mendaftarkan rute `tools_kbbi_dictionary` dan `tools_religious_book` ke whitelist akses di `SecurityUtils.kt` dan `GasAppNavGraph.kt`.
+- Changed: Build distribusi GAS Siswa `1.0.81` (`versionCode 23078`). Disalin menimpa `GAS-Siswa-1.0.81-siswa-23078-INTERNAL.apk`, `GAS-Siswa-release.apk`, `GAS Siswa release.apk`, dan `app-siswa-release.apk` di `Apk Release/Final`.
 
 ## [1.0.80-siswa] - 2026-08-16
 ### Fixed

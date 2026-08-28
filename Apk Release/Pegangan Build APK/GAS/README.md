@@ -7,9 +7,9 @@ Folder ini adalah pegangan operasional untuk semua perubahan APK `GAS` pada proy
 - Gradle module: `:app`
 - Root project name: `SatuPintuNativeMobile`
 - Application ID dasar: `com.satupintu.mobile`
-- Versi distribusi terkini (update 2026-08-16 22:15):
-  - `flavor siswa` → `versionName 1.0.80-siswa` / `versionCode 23077` (live unduhan web `1.0.80` / `23077`)
-  - `flavor guru` → `versionName 1.0.30-guru` / `versionCode 1039` (terakhir dicatat di Final)
+- Versi distribusi terkini (update 2026-08-28 malam):
+  - `flavor siswa` → `versionName 1.0.82-siswa` / `versionCode 23079` (Final + live unduhan web sinkron per deploy 2026-08-28 13:25)
+  - `flavor guru` → `versionName 1.0.61-guru` / `versionCode 1053` (Final terbaru yang sudah dicatat di folder Final)
   - `flavor legacySiswa versionCode = 23003` (kompatibilitas; jangan turun di bawah ini)
   - Pastikan `native-mobile-gas/app/build.gradle.kts` selaras sebelum assemble
 
@@ -69,8 +69,44 @@ D:\Dashboard Portal\Apk Release\Final
 Jika user meminta folder lain, catat di [BUILD_LOG.md](./BUILD_LOG.md).
 
 Rilis final terbaru yang sudah dicatat saat ini:
-- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.80-siswa-23077.apk` (`1.0.80-siswa` / `versionCode 23077`, SHA256 `CB5CF41398A815AB43678A0DC3CEE52CDF83593A69980F590DDDC5FB2F3EDB98`) — Virtual Pet no SEKARAT flash sampai sync penuh; rantai Final 1.0.78 classIds+jam → 1.0.79 MultiDex NavigationKt → 1.0.80. **Live unduhan web** = `1.0.80-siswa` / `23077` (`web/public/apk`, SHA256 `CB5CF413…`).
-- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` (`1.0.30-guru` / `versionCode 1039`, rebuild 2026-08-03 ~14:30 + ikon `cb3bed4d`) — notifikasi literasi belum + pet mati (scope wali/diampu), badge Notifikasi, ikon Data Siswa/Rekapitulasi normal; tanpa FCM (tray saat app hidup). PWA Guru: `/guru` (9 menu parity; Web Push VAPID masih terbuka).
+- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.82-siswa-23079.apk` (`1.0.82-siswa` / `versionCode 23079`, SHA256 `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`) — rebuild final terbaru 2026-08-28 13:25. Muatan fix: seluruh perubahan build 11:37 tetap ikut, termasuk **Kedisiplinan otomatis** dari presensi siswa untuk **Terlambat** dan **Pulang Awal** memakai **rule/poin dari admin sekolah**, trigger hanya setelah simpan absensi sukses, serta **anti-double** dengan input manual OSIS/guru melalui key deterministik + merge di repository. File Final aktif berukuran `21.494.650 bytes` (`20,50 MB`) dan **SUDAH sinkron** ke `web/public/apk/GAS-Siswa-release.apk` dengan hash yang sama, lalu live lewat Firebase/App Hosting.
+- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` + `GAS-Guru-1.0.61-guru-1053.apk` (`1.0.61-guru` / `versionCode 1053`, SHA256 `9393A11DE46D22D99378E32ABA506BB620B55A268E94B55118C15453D6CB5376`). Muatan final terkini: hitungan **TS / Tidak Sholat** di `Presensi Sholat` dan `Rekapitulasi` guru sudah sinkron dengan web admin + APK siswa memakai **hari efektif Dzuhur** (`attendance/schedules`, `attendance/holidays`, dan `prayer_v2/types/DZUHUR/activeDays`), UI Home guru tetap 2 kolom khas guru tetapi kartu menu dipendekkan/diringankan agar di layar terasa lebih kecil, dan badge merah notifikasi digeser sedikit ke dalam agar tidak mepet pinggir kanan atas. Lihat bagian **PERBEDAAN UI GAS SISWA vs GAS GURU** di bawah ini — WAJIB BACA sebelum ubah UI Home.
+
+---
+
+# ⚠️⚠️⚠️ PERBEDAAN UI GAS SISWA vs GAS GURU (HARD CONSTRAINT — JANGAN SAMPAI KESALAHAN 4x TERULANG) ⚠️⚠️⚠️
+
+> **Latar belakang kejadian 2026-08-28 build 1048→1049→1050**: Saya (Assistant) salah implementasi UI Home GAS GURU malah mencontek style 100% UI GAS SISWA (4 kolom kartu kecil + bottom nav 3 tab dengan tombol absen hitam floating). User komplain hebat karena UI asli guru sudah jelas beda dari screenshot HP lawas. **Mulai hari ini perbedaan di bawah ini WAJIB dijadikan acuan MUTLAK setiap kali akan mengubah file HomeScreen.kt atau komponen menu beranda.**
+
+## TABEL PERBANDINGAN LENGKAP
+| Area UI | GAS SISWA (flavor `siswa` + `kepala`) | GAS GURU (flavor `guru`) |
+|---|---|---|
+| **Implementasi di HomeScreen.kt** | `if (!isGuruFlavor)` → pakai `StudentFeatureCard` | `if (isGuruFlavor)` → pakai `GuruMenuCard` (composable TERSEPARATE) |
+| **Background gradien** | Linear gradien horizontal gelap: `slate-900 (#0F172A) → indigo-800 (#1E3A8A)` | **Vertical gradien 5 stops MAKIN KE BAWAH MAKIN GELAP:** `teal-700 (#0E7490) → sky-600 (#0284C7) → blue-700 (#1D4ED8) → indigo-800 (#1E3A8A) → navy-blue-950 (#172554)` |
+| **Judul section kartu menu** | **`MENU UTAMA`** (caps, kecil `labelLarge`) | **`Menu Guru`** (besar, `headlineSmall`, TIDAK caps) |
+| **Grid kolom jumlah** | **4 kolom (GridCells.Fixed 4)** | **2 kolom (GridCells.Fixed 2) — KARTU LEBIH BESAR** |
+| **Spacing kartu** | horizontal 12dp / vertikal 16dp | horizontal **14dp / vertikal 14dp** (lebih rapat agar layar terasa memuat lebih banyak kartu, tetap 2 kolom guru) |
+| **Struktur tiap kartu menu** | **1 blok vertikal ringkas**: `kotak 64dp berisi icon 36dp + tulisan kecil label dibawah (polos, tanpa wadah pill shape)** | **2 BARIS JELAS, glassmorphism**: (1) ATAS: area icon persegi dalam rounded 20dp dalam outer rounded 26dp, tinggi kartu dipendekkan agar guru terasa melihat sekitar **3 baris** menu di layar, badge merah notifikasi digeser agak ke dalam. (2) BAWAH: **NAMA MENU didalam PILL SHAPE BIRU-MUDA TRANSLUSCENT (bukan text polos)**, text size lebih ringkas dari build 1050 agar kartu tidak tampak terlalu tinggi. |
+| **Icon size** | `36.dp` di dalam box `64dp` | **68.dp** — tetap jelas lebih besar dari siswa, tetapi tidak sebesar build guru awal 1050 |
+| **Outer rounded corner kartu** | tidak ada border luar / ringkas | **border tebal 1.2dp putih alpha 50%**, kartu terlihat jelas "muncul" 3D** |
+| **Bottom Nav 3 tab (Beranda / Absen Float / Profil)** | ✅ **WAJIB ADA**. Termasuk **tombol hitam absen FLOAT TENGAH BESAR (offset -28dp). Ini ciri khas SISWA.** | ❌ **HARAM ADA — WAJIB NULL di `Scaffold.bottomBar = null`**. Guru **TIDAK PERLU shortcut absensi floating, karena guru tidak meng-absen diri lewat sini. |
+| **Akses Profil & Logout** | Klik icon Profil di **Bottom Nav kanan** | HANYA lewat **ICON BUTTON KECIL 28.dp di POJOK KANAN ATAS HEADER**: `Icons.Default.ArrowForward` → `onLogout()`. (Tidak usah icon orang / Person duplikat, karena kiri sudah ada avatar.) |
+| **Padding bawah dari Scaffold** | Bottom padding otomatis 56dp dari navbar | Tidak ada / 0. Kartu menu turun sampai area bawah dekat system navigation bar. |
+| **Contoh versi acuan benar** | GAS Siswa `1.0.82-siswa (23079)` | GAS Guru **`1.0.61-guru (1053)`** build final 2026-08-28 malam |
+| **Lokasi composable di HomeScreen.kt** | `StudentFeatureCard` (TIDAK DIUBAH tanpa persetujuan user!) | `GuruMenuCard` + `isGuruFlavor` branch di Scaffold, LazyVerticalGrid, dan screenBackground. |
+
+## LANGKAH KONTROL SETIAP MAU UBAH UI HOME
+1. Buka `HomeScreen.kt`.
+2. **Cari 2 string `isGuruFlavor`**: Pastikan SEMUA percabangan UI (background, grid column count, nav bar, card composable call, top-right header buttons) **SUDAH di-wrap if/else dengan benar**.
+3. **Commit kecil dulu sebelum build**: KALAU UBAH UI GURU → Cek JANGAN SAMPAI code path StudentFeatureCard / Bottom Nav 3 tab berubah.
+4. **Build 2 flavor untuk cross-check sebelum ship** (wajib minimal `:app:assembleSiswaRelease` + `:app:assembleGuruRelease`) kalau perubahan ada di `src/main/java` bersama.
+5. Setelah build sukses, **CEK DULU 3 hal sebelum copy ke Final**:
+   - [ ] Apakah Bottom Nav 3 tab HILANG di flavor guru?
+   - [ ] Apakah Background gradien flavor guru LEBIH TUA / navy?
+   - [ ] Apakah Kartu Menu Guru 2 KOLOM & ada pill label transluscent?
+6. **JALANKAN REGRESSION_CHECKLIST.md** bagian Home UI — GAS Guru dan GAS Siswa.
+
+---
 
 ## Perintah Build yang Paling Sering Dipakai
 
@@ -84,13 +120,27 @@ Rilis final terbaru yang sudah dicatat saat ini:
 - Untuk `GAS Siswa`, `versionCode` release harus selalu naik untuk package `com.satupintu.mobile.siswa`.
 - Riwayat proyek ini sudah memakai jalur kompatibilitas `legacySiswa` dengan `versionCode 23003`, jadi release siswa reguler tidak boleh kembali ke angka di bawah itu.
 - Sebelum APK dibagikan lewat portal/web, jalankan `npm run sync:apk:gas` dari folder `web`.
-- Per 2026-08-16: **Public unduhan web** = `1.0.80-siswa (23077)` — sudah sync `web/public/apk` + manifest; push App Hosting menyusul commit ini.
+- Per 2026-08-28 13:38: **Public unduhan web** = `1.0.82-siswa (23079)` — `web/public/apk/GAS-Siswa-release.apk` + manifest sudah sinkron. SHA public `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`.
 - Skrip sinkronisasi web sekarang akan:
   - membaca metadata APK (`packageName`, `versionCode`, `versionName`)
   - menolak sinkronisasi jika `versionCode` GAS siswa turun
   - menolak sinkronisasi jika `versionCode` tetap sama tetapi isi APK berbeda
   - menolak sinkronisasi jika signature APK berbeda dari file publik sebelumnya
   - menulis metadata versi dan signer ke `web/public/apk/apk-manifest.json`
+
+## Kontrak Presensi Sholat (APK vs web admin)
+
+Jangan campur sumber. Audit 2026-08-27:
+
+| Menu APK Siswa | Path yang benar | Status |
+|----------------|-----------------|--------|
+| Presensi Sholat (Dzuhur) — **Hari efektif** | `school_settings/{id}/attendance/schedules` (sama Presensi Sekolah). Libur = `isHoliday == true` saja; kunci hari yang tidak ada ≠ libur. | Diperbaiki di **1.0.82** (`PrayerScreen.kt`). Pet Dzuhur `isEffectiveDay` ikut path ini (`VirtualPetRepository`). |
+| Presensi Sholat (Dzuhur) — **Tanggal merah** | `school_settings/{id}/attendance/holidays` | Sudah benar |
+| Presensi Sholat (Dzuhur) — **Aturan sholat** | `school_settings/{id}/prayer_v2/types/DZUHUR` (`enabled` + `activeDays`) | Sudah benar |
+| Presensi Dhuha & Jum'at — wajib hari ini | `prayer_v2/types` + `prayer_v2/schedules` (kelas + `dayOfWeek` JS 0–6 + jam) + `prayer_v2/overrides` (tanggal + kelas, tanpa jam) + `gas/schools/{id}/classes` | **Sudah selaras admin** (audit kode; tidak rebuild). Bukan dari Dzuhur / Presensi Sekolah. |
+| Presensi Dhuha & Jum'at — baris **Jam** | Tampil **statis** dari jadwal kelas (sengaja, termasuk saat Tidak dijadwalkan). Tombol/status tetap mengikuti jadwal hari ini. | Dikonfirmasi user 2026-08-27 |
+
+Lokasi musholla (radius) adalah gerbang terpisah: `school_settings/{id}/prayer/musholla_location`. Jarak siswa di luar radius memblokir submit meski hari efektif = Ya.
 
 ## Aturan Singkat
 1. Setiap perubahan APK wajib tercatat di [BUILD_LOG.md](./BUILD_LOG.md).

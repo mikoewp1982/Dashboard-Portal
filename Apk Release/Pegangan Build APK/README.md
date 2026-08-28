@@ -15,6 +15,20 @@ Live Dashboard = isi **`origin/main`** saja. Yang hanya jalan di laptop (belum c
 | Build / ship **EduLock** | [Edulock/README.md](./Edulock/README.md) → [Edulock/RELEASE.md](./Edulock/RELEASE.md) |
 | Aturan AI / script ship | [# Aturan wajib untuk AI assistant.txt](./%23%20Aturan%20wajib%20untuk%20AI%20assistant.txt) |
 
+---
+
+### ⚠️ CATATAN PENTING TERKAIT UI APK GAS (GARIS BAWAH — JANGAN SAMPAI SALAH LAGI)
+> **Insiden 2026-08-28 build 1048→1049→1050**: UI Home **GAS GURU** salah implementasi malah mencontek 100% style **GAS SISWA** (4 kolom kartu kecil + bottom nav 3 tab tombol absen floating tengah). Padahal UI keduanya **SUDAH DITETAPKAN BERBEDA JELAS** oleh user (screenshot HP lawas sebagai bukti).
+
+**Aturan lanjutan yang WAJIB diikuti:**
+1. **SEBELUM UBAH UI Home / kartu menu GAS**: Baca section **`PERBEDAAN UI GAS SISWA vs GAS GURU`** di **[GAS/README.md L75-L109](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/GAS/README.md#L75-L109)**. Daftar perbedaan 13 area detail, TABEL perbandingan, + langkah kontrol sebelum ship. JANGAN pernah anggap UI siswa = UI guru.
+2. **Lihat juga sub-aturan khusus UI GAS** di **[# Aturan wajib untuk AI assistant.txt L14-L43](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/%23%20Aturan%20wajib%20untuk%20AI%20assistant.txt#L14-L43)** — 6 butir mutlak termasuk list 7 titik WAJIB branch `isGuruFlavor`, wajib build 2 flavor sekaligus sebelum ship, dan 3 cek visual cepat sebelum Final copy.
+3. **Ringkasan cepat (hapal / cek setiap kali):**
+   - **GAS SISWA** = 4 kolom kartu kecil + Bottom Nav 3 tab (Beranda / Absen hitam floating / Profil) WAJIB ADA. Background = gelap.
+   - **GAS GURU** = 2 kolom kartu BESAR glassmorphism 2 baris (label di dalam pill transluscent), Bottom Nav 3 tab **HARAM ADA**, Hanya icon Tutup panah kanan di header kanan atas. Background = teal tua → navy makin gelap ke bawah.
+
+---
+
 **Arsip (bukan bacaan harian):** `CHECKLIST_PERUBAHAN_APK_TERKINI.md`, `GAS/BUILD_LOG.md`, `GAS/CHANGELOG.md`, roadmap `.docx`.
 
 ---
@@ -68,6 +82,15 @@ Ini penyebab paling sering, dan cara menghindarinya:
 | **Rekap Sholat** | Tab: Rekap Bulanan → Riwayat Harian → **Statistik** (Dzuhur / sholat harian sekolah). |
 | **Rekap Dhuha & Jum'at** | Tab: Rekap Bulanan → Riwayat Harian → **Statistik**. Wajib dihitung dari **Jadwal Sholat Per Kelas** (+ override), **bukan** jadwal Dzuhur harian. |
 
+**APK Siswa (kontrak baca, update 2026-08-27):**
+
+| Menu HP | Sumber web admin | Bukan dari |
+|---------|------------------|------------|
+| **Presensi Sholat** (Dzuhur) kartu Aturan Hari | **Hari efektif** = Presensi Sekolah (`attendance/schedules`); **Tanggal merah** = libur tanggal; **Aturan sholat** = Dzuhur `prayer_v2` | `prayer/schedules` warisan |
+| **Presensi Dhuha & Jum'at** | `prayer_v2` jenis + **Jadwal Sholat Per Kelas** + **Override Tanggal** | kalender Dzuhur / hari efektif Presensi Sekolah |
+
+Baris **Jam** Dhuha/Jumat di APK **statis** (sengaja tampil dari jadwal kelas, termasuk saat status Tidak dijadwalkan). Status wajib vs tombol presensi yang mengikuti hari/kelas/override.
+
 CRUD literasi = di **GAS** (bukan Lentera “Kelola Literasi”). Lentera **Katalog Buku** = baca saja dari project e-perpus.
 
 ---
@@ -83,7 +106,12 @@ Centang sebelum push jika Anda menyentuh `web/` atau area terkait:
 - [ ] **Rekap Sholat** — tiga tab termasuk Statistik
 - [ ] **Rekap Dhuha & Jum'at** — menu Monitoring masih ada + tiga tab; % wajib mengikuti jadwal per kelas
 - [ ] **Monitoring Virtual Pet** — Total Pets Aktif ≈ siswa yang punya pet terhubung (bukan hitung pet siluman/orphan)
-- [ ] **Unduhan APK** — `/gas/install` (dan EduLock bila diubah) menunjuk versi Final yang disepakati. EduLock Final terkini = **1.3.22 (48)** rebuild 2026-08-26 19:47 (CRITICAL SECURITY PATCH celah uninstall activation page + fix tombol Izin Latar Belakang 3 lapis fallback + permission manifest). SHA `1E9C87FFBB19B5CBB2432C3A1E1A9280639CF61BDBE921C4CA25689BCD03E42D`. Live `/e` **belum** di-sync sampai diminta (user: "versi ini belum saya rilis untuk umum" — Final only / distribusi manual internal QA).
+- [ ] **Unduhan APK** — `/gas/install` (dan EduLock bila diubah) menunjuk versi Final yang disepakati.
+  - **GAS Siswa Final + Live saat ini** = **1.0.82-siswa (23079)** rebuild terbaru **2026-08-28 13:25**. Mencakup fix build 11:37 (**auto pelanggaran Kedisiplinan** untuk **Terlambat** dan **Pulang Awal**, baca **rule/poin admin**, guard **anti-double** dengan input manual OSIS/guru), lalu disinkronkan ke `web/public/apk` dan live unduhan Firebase/App Hosting. SHA Final/public alias `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`. File kanonik: `Apk Release/Final/GAS-Siswa-1.0.82-siswa-23079.apk`.
+  - **GAS Guru Final saat ini** = **1.0.61-guru (1053)** rebuild terbaru **2026-08-28 malam**. Mencakup sinkronisasi hitungan **TS / Tidak Sholat** di APK guru agar mengikuti **hari efektif Dzuhur** (`attendance/schedules` + `attendance/holidays` + `prayer_v2/types/DZUHUR/activeDays`) seperti APK siswa/web admin, plus perapihan UI Home guru: kartu menu dipendekkan agar terasa lebih ringan di layar dan badge merah notifikasi digeser sedikit masuk agar lebih jelas terlihat. File final aktif: `Apk Release/Final/GAS-Guru-release.apk` dan `Apk Release/Final/GAS-Guru-1.0.61-guru-1053.apk`. SHA256 alias final `9393A11DE46D22D99378E32ABA506BB620B55A268E94B55118C15453D6CB5376`.
+  - **EduLock Final saat ini** = **1.3.22 (48)** rebuild terbaru **2026-08-28 18:51**. Membawa patch keamanan `1.3.22` sebelumnya plus build kerja terbaru fitur **Temukan Perangkat** (alarm keras + ACK status ke admin), **patch fallback audio 2 lapis** (alarm + fallback `STREAM_MUSIC` + Vibrator), dan **hardening enforcement** untuk 2 bug lapangan yang baru lulus uji HP fisik: (1) internet mati total > 60 detik benar-benar mengunci, (2) `Accessibility OFF` yang diabaikan tidak lagi cuma popup berulang, tetapi tetap memaksa stay di jalur EduLock. File `Final` dan `web/public/apk` lokal sudah sinkron. **Git push / live App Hosting BELUM dilakukan** karena user masih menyempurnakan versi ini sebelum final. SHA Final/public lokal alias `F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34`.
+  - **Deploy web admin live terbaru** = commit `0c6f83a6` — panel EduLock sekarang punya fitur **Temukan Perangkat** untuk mengirim alarm keras ke HP siswa yang masih online/FCM-ready dan menampilkan ACK `ALARM_STARTED / ALARM_FINISHED / FAILED`. Detail fallback alarm (STREAM_MUSIC / Vibrator) ditulis di `active_devices` via field baru `lastFindDeviceStreamUsed`, `lastFindDeviceUsedMusicFallback`, `lastFindDeviceUsedVibrationFallback` (panel UI bisa ditampilkan kemudian).
+  - **Deploy live terbaru untuk portal guru (sholat)** = commit `9f42a276` — endpoint `/api/teacher/prayer` kini mengikuti kontrak hari efektif Dzuhur yang sama dengan web admin dan APK siswa, sehingga menu `/guru/sholat` tidak lagi menghitung `TS` dari semua hari sekolah lama.
 - [ ] Tenant nonaktif Super Admin sekarang harus menendang di **SEMUA submenu dashboard admin** (Dashboard Utama, GAS, Database, EduLock, Lentera) — bukan cuma halaman `/dashboard`. Payload guard ada di [dashboard/layout.tsx](file:///D:/Dashboard%20Portal/web/src/app/dashboard/layout.tsx); commit live `0828e1b9` → `99e77850`.
 - [ ] **DATABASE INDAK Super Admin (Sekolah & Tenant)** — UI wajib filter client-side 2 lapis hook [useSuperAdminDatabase.ts](file:///d:/Dashboard%20Portal/web/src/hooks/super/useSuperAdminDatabase.ts#L196-L209): hard-block schoolId `uninstallaccess` + reject row tanpa nama/NPSN/district/email kontak berarti (entry sisa seed sampah). Data RTDB fisik tetap ada, UI bersih. Commit push `2b96fafb..99e77850` → deploy Firebase sudah hijau live 2026-08-26 sore. Konfirmasi user refresh → row `- uninstallaccess` HILANG dari daftar ✅.
 - [ ] Tidak ada API `web/src/app/api/debug-*` baru yang ikut ter-commit
@@ -91,6 +119,33 @@ Centang sebelum push jika Anda menyentuh `web/` atau area terkait:
 Untuk APK native, pakai juga [GAS/REGRESSION_CHECKLIST.md](./GAS/REGRESSION_CHECKLIST.md) / [Edulock/REGRESSION_CHECKLIST.md](./Edulock/REGRESSION_CHECKLIST.md) sesuai area yang diubah.
 
 **Catatan:** ubah UX rekap/statistik di web admin **tidak** otomatis butuh rebuild APK, kecuali kontrak data/API native ikut berubah.
+
+## Status EduLock hari ini
+
+- **Acuan Final/public lokal saat ini** EduLock **1.3.22 (48)** hash `F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34`. Build ini sudah sinkron di folder `Final` dan `web/public/apk` lokal, tetapi **BELUM di-push** sehingga live tutorial `/e` belum perlu dianggap final. Perubahan utama build ini (dibanding build 16:40 hash `5F4E2EE3...`): **hardening enforcement offline + Accessibility recovery** sampai lolos uji HP fisik.
+- **USB E2E realtime 2026-08-27** di HP fisik menunjukkan enforcement inti **lulus**: device berada di area sekolah, jam sekolah aktif, proteksi aktif, dan percobaan buka app hiburan tetap tertahan di EduLock.
+- **Flow resmi izin guru** juga **lulus** end-to-end.
+- **Update malam 2026-08-27:** bug utama keluarga recovery Settings untuk jalur **`Accessibility OFF -> admin ON`** sudah **berhasil ditembus di HP fisik** pada build kerja terakhir. Gejala awalnya: overlay recovery sempat muncul lalu terlalu cepat hilang / user tidak sempat masuk ke Settings Accessibility.
+- **Kasus yang wajib dianggap satu PR bug yang sama sampai terbukti terpisah:**
+  1. `Accessibility OFF -> admin ON`
+  2. `Overlay/Tampil di atas aplikasi lain OFF -> admin ON`
+  3. `Izin Latar Belakang / Battery Optimization OFF -> admin ON`
+  4. `Izin Lokasi aplikasi OFF -> admin ON`
+- **Akar yang sudah teridentifikasi dari pembanding jalur GPS yang dulu sudah fix:**
+  - [OverlayLockActivity.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/OverlayLockActivity.kt) sempat `finish()` terlalu cepat pada `onResume()` untuk target recovery settings sebelum user sempat menekan tombol ke halaman Aksesibilitas.
+  - [LockEnforcer.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LockEnforcer.kt) perlu menahan spam relaunch overlay recovery dengan pola debounce ala recovery GPS, tetapi **tidak boleh** memblokir overlay hanya karena `lastForegroundPackage` terbaca `settings` secara stale.
+- **Status retest terbaru:**
+  - jalur **GPS mati -> buka Pengaturan Lokasi** = **normal / lulus**
+  - jalur **internet mati total -> lewat masa tenggang 60 detik** = **lulus di HP fisik** (sudah benar-benar mengunci)
+  - jalur **Accessibility OFF -> admin ON -> overlay diabaikan** = **lulus di HP fisik pada APK Final terbaru** (tidak lagi cuma popup berulang; sekarang tetap memaksa stay di jalur EduLock)
+  - **catatan distribusi:** APK final bersih terbaru sudah dibuild ulang dan disalin ke folder `Apk Release/Final` serta `web/public/apk` lokal. **Push live masih ditahan** sampai user menyatakan versi ini benar-benar final.
+- **Behavior Temukan Perangkat terbaru:**
+  - User silent volume Alarm biasa → EduLock paksa max via `setStreamVolume` + `adjustStreamVolume` bertubi `FLAG_SHOW_UI` (user lihat slider OS naik otomatis).
+  - Jika stream Alarm tetap 0 (DND atau OEM tolak) → **fallback ke STREAM_MUSIC** volume max + laporkan status `ALARM_STARTED_FALLBACK_MUSIC`.
+  - Jika kedua stream tetap nol → fallback Vibrator pattern panjang + laporkan `ALARM_STARTED_VIBRATION_ONLY`.
+  - Jika semuanya gagal → laporkan `FAILED_SILENT` ke admin.
+  - Setelah selesai, volume Alarm dan Music dikembalikan ke level semula.
+- Handoff detail untuk tim lanjutan ada di [Edulock/HANDOFF_LAPANGAN_EDULOCK.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/Edulock/HANDOFF_LAPANGAN_EDULOCK.md) dan log build hari ini ada di [Edulock/BUILD_LOG.md](file:///D:/Dashboard%20Portal/Apk%20Release/Pegangan%20Build%20APK/Edulock/BUILD_LOG.md).
 
 ---
 
@@ -117,3 +172,5 @@ Bukan karena live “lupa sendiri”. Biasanya:
 | **Rekap Dhuha & Jum'at** | Hitung wajib dari jadwal/override di atas, bukan dari kalender Dzuhur |
 
 Tanpa jadwal berjam, APK siswa tidak punya jendela operasional meskipun override sudah ada.
+
+Audit 2026-08-27: APK Siswa **Presensi Dhuha & Jum'at** sudah membaca `prayer_v2` (types + schedules + overrides + peta kelas) selaras admin. Tidak perlu rebuild khusus Dhuha/Jumat. Build **1.0.82** hanya untuk kartu **Aturan Hari** Dzuhur.

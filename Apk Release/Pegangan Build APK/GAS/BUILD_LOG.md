@@ -1,5 +1,426 @@
 # Build Log GAS
 
+## 2026-08-28 20:39 - [DEPLOY LIVE] Web guru sholat sinkron hari efektif Dzuhur
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `deploy-web`
+- **Flavor terdampak:** `guru` (portal web / PWA guru)
+- **Versioning:** tidak relevan untuk APK
+- **Tujuan perubahan:** Menyamakan hitungan `TS / Tidak Sholat` pada menu web guru `/guru/sholat` dengan web admin dan APK siswa, karena sebelumnya endpoint guru masih memakai rule lama semua hari sekolah sehingga nilai bisa tetap `24`.
+- **File utama perilaku yang diubah:**  
+  - [web/src/app/api/teacher/prayer/route.ts](file:///D:/Dashboard%20Portal/web/src/app/api/teacher/prayer/route.ts)
+- **Perubahan inti:**  
+  - endpoint guru sekarang memuat `loadPrayerRules(...)` dan mengecek hari efektif Dzuhur dengan `isEffectivePrayerDay(...)`
+  - mode harian dan `Rekap Bulanan` guru kini memakai kontrak yang sama: `attendance/schedules` + `attendance/holidays` + `prayer_v2/types/DZUHUR/activeDays`
+- **Verifikasi yang dijalankan:**  
+  - `npm run lint -- src/app/api/teacher/prayer/route.ts` → bersih
+  - `git pull origin main` → up to date
+  - `git push origin main` → berhasil
+- **Commit live:**  
+  - `9f42a276` — `fix(web): samakan rekap sholat guru dengan aturan hari efektif dzuhur`
+- **Status distribusi:**  
+  - **SUDAH LIVE** di Firebase App Hosting untuk review user
+- **Belum diuji:**  
+  - audit runtime endpoint live dengan data sekolah lain selain tenant review saat ini
+
+## 2026-08-28 20:19 - [BUILD] GAS Guru 1.0.61-guru (1053) — badge notifikasi digeser ke dalam
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `build`
+- **Flavor terdampak:** `guru`
+- **Versioning:** `1.0.60-guru (1052)` → `1.0.61-guru (1053)`
+- **Tujuan perubahan:** Menggeser badge merah notifikasi di kartu menu guru agar tidak terlalu mepet ke sudut kanan atas dan lebih mudah terlihat di layar HP.
+- **File utama perilaku yang diubah:**  
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)  
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Build yang dijalankan:**  
+  - `./gradlew :app:assembleSiswaRelease :app:assembleGuruRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**  
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`  
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.61-guru-1053.apk`
+- **Metadata final aktif:**  
+  - SHA256 `9393A11DE46D22D99378E32ABA506BB620B55A268E94B55118C15453D6CB5376`
+- **Catatan:**  
+  - perubahan hanya menggeser posisi badge notifikasi guru; identitas UI 2 kolom guru tetap dipertahankan
+
+## 2026-08-28 20:04 - [BUILD] GAS Guru 1.0.60-guru (1052) — kartu menu dipendekkan
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `build`
+- **Flavor terdampak:** `guru`
+- **Versioning:** `1.0.59-guru (1051)` → `1.0.60-guru (1052)`
+- **Tujuan perubahan:** Mengecilkan tampilan kartu menu Home GAS Guru agar tidak terasa terlalu besar di layar dan secara visual mendekati kesan memuat sekitar 3 baris kartu, tanpa mengubah ciri khas 2 kolom guru.
+- **File utama perilaku yang diubah:**  
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)  
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Build yang dijalankan:**  
+  - `./gradlew :app:assembleSiswaRelease :app:assembleGuruRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**  
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`  
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.60-guru-1052.apk`
+- **Metadata final aktif saat build ini:**  
+  - SHA256 `2A1BBA99417CB0DCE580F2EC6FBA4B72285ACEFF97659E31731E014645D0DEC9`
+- **Catatan:**  
+  - kartu guru tetap 2 kolom glassmorphism; yang diringankan adalah tinggi area ikon, ukuran ikon, spacing grid, dan ukuran label pill
+
+## 2026-08-28 19:56 - [BUILD] GAS Guru 1.0.59-guru (1051) — sinkron TS guru dengan hari efektif Dzuhur
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `build`
+- **Flavor terdampak:** `guru`
+- **Versioning:** `1.0.58-guru (1050)` → `1.0.59-guru (1051)`
+- **Tujuan perubahan:** Menyamakan hitungan `TS / Tidak Sholat` di APK GAS Guru (menu `Presensi Sholat` dan `Rekapitulasi`) dengan web admin dan APK siswa, karena sebelumnya masih memakai hitungan lama seperti web admin pra-fix sehingga dapat muncul `TS = 24`.
+- **File utama perilaku yang diubah:**  
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherPrayerViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherPrayerViewModel.kt)  
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherRecapViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherRecapViewModel.kt)  
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**  
+  - logika guru kini membaca `attendance/schedules`, `attendance/holidays`, dan `prayer_v2/types/DZUHUR/activeDays`
+  - perhitungan harian dan bulanan guru memakai `isDzuhurEffectiveDay(...)` agar denominator `TS` sama dengan APK siswa
+- **Build yang dijalankan:**  
+  - `./gradlew :app:compileGuruDebugKotlin` → **BUILD SUCCESSFUL**
+  - `./gradlew :app:assembleGuruRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**  
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`  
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.59-guru-1051.apk`
+- **Metadata final aktif saat build ini:**  
+  - SHA256 `268C41D0BD3A077692210B70518294A8878FBB2DE9A8AD57DB31C1BD6BD18AD9`
+- **Belum diuji:**  
+  - verifikasi langsung pada beberapa tenant guru selain data review utama
+
+## 2026-08-28 13:25 - [BUILD+SYNC LIVE] GAS Siswa 1.0.82-siswa (23079) — rebuild gate EduLock berbasis jam sekolah + sinkron unduhan live Firebase
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `feature` + `build-deploy`
+- **Flavor terdampak:** `siswa`
+- **Versioning:** **TIDAK BUMP**. Tetap `versionName 1.0.82-siswa` / `versionCode 23079` sesuai instruksi user.
+- **Tujuan perubahan:** Membawa dua hal terbaru ke build siswa yang bisa direview user: (1) perilaku **gate EduLock** yang lebih manusiawi, yakni hard block hanya saat **hari efektif + jam sekolah aktif** dengan **grace period** ketika proteksi drop sesaat di tengah sesi; (2) sinkronisasi file Final ke `web/public/apk` agar halaman unduhan live Firebase/App Hosting mengarah ke APK siswa terbaru yang benar.
+- **File utama perilaku yang dibawa build ini:**  
+  - [EduLockComplianceGate.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/EduLockComplianceGate.kt)  
+  - [Navigation.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt)
+- **Build yang dijalankan:**  
+  - `./gradlew.bat :app:assembleSiswaRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**  
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`  
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.82-siswa-23079.apk`
+- **Sinkronisasi live yang dijalankan:**  
+  - `cd D:\Dashboard Portal\web`  
+  - `npm run sync:apk`  
+  - `npm run build`  
+  - commit/push Firebase App Hosting commit `0c6f83a6`
+- **Metadata final/public aktif:**  
+  - SHA256 `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`  
+  - Size `21.494.650 bytes / 20,50 MB`
+- **Status distribusi:**  
+  - File Final dan `web/public/apk/GAS-Siswa-release.apk` **sama persis** (hash cocok).  
+  - URL live `/gas/install` sekarang diarahkan ke build siswa `1.0.82-siswa (23079)`.
+- **Belum diuji end-to-end:**  
+  - retest di HP siswa untuk skenario aksesibilitas drop di luar jam aktif vs di dalam jam aktif  
+  - verifikasi browser live setelah rollout App Hosting benar-benar hijau
+
+## 2026-08-28 11:37 - [FIX] GAS Siswa 1.0.82-siswa (23079) — Auto Catat Pelanggaran Terlambat & Pulang Awal + Anti Double dengan OSIS/Guru
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix logic` + `integrasi data`
+- **Flavor terdampak:** `siswa` saja
+- **Versioning:** **TIDAK BUMP**. Tetap `versionName 1.0.82-siswa` / `versionCode 23079` sesuai instruksi user; build ini adalah rebuild internal final setelah perubahan logic kedisiplinan.
+- **Latar belakang request user:** User meminta agar pada menu **Kedisiplinan** GAS Siswa, ketika siswa **datang terlambat** atau **pulang awal**, pelanggaran otomatis tercatat mengikuti **kriteria/poin di halaman admin**. User juga secara eksplisit meminta audit agar data **tidak double** jika petugas **OSIS** di gerbang atau guru tetap mencatat manual pada hari yang sama.
+- **Temuan audit sebelum fix:**
+  - `AttendanceViewModel.kt` sudah punya embrio auto-pelanggaran untuk status terlambat, tetapi trigger belum ditempatkan pada titik paling aman.
+  - Kondisi **pulang awal** sudah terdeteksi (`isEarlyCheckout`), tetapi belum otomatis dibuatkan record kedisiplinan.
+  - Jalur input manual OSIS dan guru sama-sama tetap bisa membuat record baru, sehingga tanpa guard pusat ada potensi duplikasi untuk pelanggaran harian tunggal seperti **Terlambat** dan **Pulang Awal**.
+- **Solusi yang diterapkan:**
+  1. **Auto-record setelah absensi benar-benar sukses**
+     - Trigger auto-pelanggaran dipindah agar baru berjalan setelah `updateChildren` absensi sukses, bukan sebelum simpan selesai.
+  2. **Tambah auto-record untuk dua kasus**
+     - Saat check-in menghasilkan status **terlambat**, sistem membuat record pelanggaran **Terlambat**.
+     - Saat check-out terdeteksi **pulang awal**, sistem membuat record pelanggaran **Pulang Awal**.
+  3. **Rule dan poin baca dari admin sekolah**
+     - `AttendanceViewModel.kt` memanggil `DisciplineRepository.getRulesOnce(...)`, mengambil rule aktif kategori `VIOLATION`, lalu mencocokkan keyword `Terlambat` / `Pulang Awal` agar point mengikuti konfigurasi admin yang sedang aktif.
+  4. **Anti-double lintas auto vs manual**
+     - `DisciplineRepository.kt` sekarang membuat **key deterministik** untuk pelanggaran harian tunggal berbasis sekolah + siswa + tanggal + rule.
+     - Bila OSIS/guru menginput rule harian yang sama pada tanggal yang sama, repository akan **merge** ke record existing alih-alih membuat duplikat baru.
+     - Hasil desain: `telat auto + telat OSIS = 1 record`; `pulang awal auto + pulang awal guru = 1 record`; tetapi `telat + pulang awal` tetap **2 record** karena memang dua rule berbeda.
+- **File yang diubah:**
+  1. [AttendanceViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/AttendanceViewModel.kt) — tambah `DisciplineRepository`, trigger auto setelah simpan absensi sukses, auto-record `Terlambat` dan `Pulang Awal`.
+  2. [DisciplineRepository.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/DisciplineRepository.kt) — tambah helper `getRulesOnce`, resolver rules, key deterministik pelanggaran harian tunggal, dan merge anti-double.
+- **Build verifikasi:**
+  - `./gradlew.bat :app:assembleSiswaRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.82-siswa-23079.apk`
+- **Metadata Final aktif:**
+  - SHA256 `76EEF68BB9E0C426615141629B9D2D4AB16C3E1B9E552EA99BF290F7F74B7B73`
+  - Size `21.494.631 bytes / 20,50 MB`
+  - Last write time `2026-08-28 11:37:17`
+- **QA checklist singkat yang WAJIB dicek di HP siswa / operator:**
+  1. [ ] Siswa check-in terlambat → record **Pelanggaran: Terlambat** otomatis muncul dengan poin sesuai admin.
+  2. [ ] Siswa check-out pulang awal → record **Pelanggaran: Pulang Awal** otomatis muncul dengan poin sesuai admin.
+  3. [ ] Jika OSIS input rule yang sama di hari yang sama, hasil tetap **1 record** saja.
+  4. [ ] Jika guru input rule yang sama di hari yang sama, hasil tetap **1 record** saja.
+  5. [ ] Jika satu siswa telat **dan** pulang awal di hari yang sama, harus tetap muncul **2 record** berbeda.
+
+## 2026-08-28 09:26 - [FIX] GAS Siswa 1.0.82-siswa (23079) — Kunci Tombol Presensi Sholat, Tegaskan Kartu Ibadah Virtual Pet Ikut Jadwal Admin, Rapikan Home Siswa
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix logic UI` + `clarify UX`
+- **Flavor terdampak:** `siswa` saja
+- **Versioning:** **TIDAK BUMP**. Tetap `versionName 1.0.82-siswa` / `versionCode 23079` sesuai instruksi user karena perubahan ini adalah penyempurnaan perilaku pada build internal yang belum diminta naik versi distribusi.
+- **Latar belakang request user:**
+  1. Pastikan **Presensi Sholat** (Dzuhur, Dhuha, Jum'at) setelah siswa berhasil absen, tombol berubah menjadi **`Sudah Absen`** supaya tidak bisa melakukan absen berulang pada hari yang sama.
+  2. Audit kartu **Virtual Pet → Tugas Harian - Ibadah** karena sekolah user menjalankan Dzuhur hanya hari tertentu dan aturan itu bisa berubah dari admin sewaktu-waktu. User menegaskan kartu Ibadah **WAJIB membaca jadwal Dzuhur dari halaman admin**, bukan hardcode Senin-Kamis.
+  3. Perbaiki UI **Home GAS Siswa**: hapus footer versi yang ternyata kebawa pola APK Guru karena versi siswa sudah tampil di halaman Profil; kecilkan tonjolan tombol hitam tengah **Absensi** pada bottom nav karena terlalu melebar/naik ke atas dan terlihat jelek.
+- **Temuan audit sebelum fix:**
+  - **Dzuhur (`PrayerScreen.kt`)**: ada celah UX. Riwayat presensi harian memang tersimpan, tapi `canSubmit` belum eksplisit memeriksa “sudah presensi hari ini”, dan label tombol tetap `Presensi Sholat` walau user sudah tercatat hari itu.
+  - **Dhuha/Jum'at (`PrayerDhuhaJumatScreen.kt`)**: logic status harian sebenarnya SUDAH membaca `currentStatus == "PRAY"` → `canSubmit = false`, tetapi label tombol tetap `Presensi` sehingga tidak sejelas yang diinginkan user.
+  - **Virtual Pet Ibadah**: sumber logika hari efektif SUDAH benar membaca `prayer_v2/types/DZUHUR` admin (`enabled + activeDays`) via `VirtualPetRepository.isDzuhurEffectiveDay(...)`, tetapi teks UI masih generik “sesuai aturan hari ini” / “Libur / tidak wajib”, sehingga konteks “ikut jadwal sekolah dari admin” kurang eksplisit di mata user/siswa.
+  - **Home GAS Siswa**: footer versi di bawah grid menu tampil seperti pola APK Guru padahal user ingin versi siswa cukup di halaman Profil; tombol hitam tengah `Absensi` di bottom nav terlalu besar (`76dp`, offset `-28dp`) sehingga tampak terlalu menonjol.
+- **Solusi yang diterapkan:**
+  1. **Kunci tombol Presensi Sholat Dzuhur berdasarkan riwayat hari ini**
+     - Tambah `hasSubmittedToday` di `PrayerScreen.kt` dengan memeriksa `prayerHistory` dan mencocokkan `record.date` ke `todayYmd`.
+     - `canSubmit` sekarang mensyaratkan `!hasSubmittedToday`.
+     - `submitPrayer()` diberi guard awal: jika `hasSubmittedToday == true`, tampil toast **`Anda sudah absen hari ini.`** dan return.
+     - Label tombol jadi:
+       - `Memproses...` saat submit
+       - **`Sudah Absen`** bila hari itu sudah presensi
+       - `Presensi Sholat` bila belum
+  2. **Perjelas tombol Dhuha/Jum'at**
+     - Saat item status = `Sudah Presensi`, label tombol kini berubah menjadi **`Sudah Absen`**. Logic data tetap sama (masih `canSubmit = false` bila status `PRAY`).
+  3. **Perjelas kartu Virtual Pet → Ibadah agar eksplisit ikut jadwal sekolah**
+     - Subtitle kriteria **Ibadah Tertib**: dari `Presensi sholat sesuai aturan hari ini` → **`Presensi sholat sesuai jadwal sekolah`**
+     - Subtitle action card **Ibadah**: dari `Presensi sholat` → **`Presensi sholat sesuai jadwal sekolah`**
+     - Status hari non-jadwal: dari `Libur / tidak wajib sholat` → **`Hari ini tidak ada tugas ibadah sekolah`**
+     - Label action card non-jadwal: dari `Libur / tidak wajib` → **`Tidak ada tugas hari ini`**
+     - Logic penentuan hari efektif **tidak diubah sumbernya**: tetap baca `prayer_v2/types/DZUHUR.enabled + activeDays` dari admin sekolah. Jadi jika admin kelak mengaktifkan Jumat/Sabtu, kartu Ibadah otomatis ikut berubah tanpa patch code lagi.
+  4. **Rapikan Home GAS Siswa**
+     - Footer versi di Home siswa disembunyikan (`showHomeVersionLabel = BuildConfig.FLAVOR == "guru"`), sehingga **APK GAS Siswa tidak lagi menampilkan versi di footer home**.
+     - Tombol hitam tengah **Absensi** di bottom nav dikecilkan:
+       - `requiredSize 76.dp → 68.dp`
+       - `offset y -28.dp → -20.dp`
+       - `border 5.dp → 4.dp`
+       - `icon 38.dp → 34.dp`
+       - label `Absensi` sedikit diturunkan (`-14.dp → -10.dp`)
+- **File yang diubah:**
+  1. [PrayerScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/PrayerScreen.kt) — guard `hasSubmittedToday`, kunci `canSubmit`, toast duplikasi, label tombol `Sudah Absen`.
+  2. [PrayerDhuhaJumatScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/student/PrayerDhuhaJumatScreen.kt) — label tombol disabled jadi `Sudah Absen` saat status `Sudah Presensi`.
+  3. [VirtualPetViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/VirtualPetViewModel.kt) — perjelas subtitle/status kartu Ibadah agar menegaskan basisnya adalah **jadwal sekolah** dari admin.
+  4. [HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt) — sembunyikan footer versi di flavor siswa, kecilkan tonjolan tombol tengah `Absensi`.
+- **File audit yang dikonfirmasi sebagai sumber aturan admin (tanpa perubahan logic inti):**
+  - [VirtualPetRepository.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/VirtualPetRepository.kt) — `PrayerRealtimeInfo.isEffectiveDay` tetap dihitung dengan `isDzuhurEffectiveDay(...)` dari `prayer_v2/types/DZUHUR.enabled + activeDays` dan jadwal/libur sekolah.
+- **Build verifikasi:**
+  - `./gradlew :app:assembleSiswaRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.82-siswa-23079.apk`
+- **SHA256 2 copy SAMA PERSIS dengan output build:**
+  - `3513EC4B396FF1E44151FE6C28F30E0166FD4CA68112468F86D1DB4258EDD9AD`
+  - Size `21.356.876 bytes / 20,37 MB`
+- **QA checklist singkat yang WAJIB dicek di HP siswa:**
+  1. [ ] Dzuhur: setelah berhasil presensi, tombol berubah menjadi **`Sudah Absen`** dan tap ulang hanya memunculkan toast sudah absen.
+  2. [ ] Dhuha/Jum'at: setelah berhasil presensi, tombol juga tampil **`Sudah Absen`**.
+  3. [ ] Virtual Pet → kartu **Ibadah** menulis **`sesuai jadwal sekolah`**.
+  4. [ ] Pada hari non-jadwal Dzuhur dari admin, kartu Ibadah tampil **`Hari ini tidak ada tugas ibadah sekolah`** / `Status: Tidak ada tugas hari ini`, dan tidak menghukum siswa.
+  5. [ ] Home siswa: footer versi **hilang** dari bawah grid menu.
+  6. [ ] Bottom nav: tombol hitam tengah **Absensi** terlihat lebih pendek/lebih proporsional, tidak terlalu melebar ke atas.
+
+## 2026-08-28 04:31 - [FIX] GAS Guru 1.0.58-guru (1050) — Hapus Ikon Duplikat Profil Header + Gelapkan Background Gradien UI (Sesuai Kontras Screenshot Lawas)
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix UI` (2 perbaikan dari user setelah instal 1049)
+- **Flavor terdampak:** Hanya `guru` (siswa & kepala tidak diubah)
+- **Masalah user dari screenshot + teks:**
+  1. **Ikon profil (orang) sebelah KANAN header dihapus**: Di 1049 user menambahkan 2 icon: (orang Profil + panah Tutup). Ternyata **sebelah KIRI** di area avatar salam **SUDAH ADA icon profil bulat besar lagi** (duplikat). User protes → cukup icon **panah kanan (Tutup)** saja yang ditampilkan di pojok kanan atas. Ikon orang Profil di header → **HAPUS**.
+  2. **Background UI masih kurang gelap / kurang kontras**: Di 1048–1049 background gradien saya pakai `cyan cerah → sky biru → royal blue`. User bandingkan dengan 2 screenshot UI lawas: **background lawas LEBIH GELAP di area bawah & gradasi start lebih tua (teal → navy → biru tua royal)**. User minta tingkatkan kontras / gelapkan kembali background gradien sesuai UI asli sebelum saya modifikasi.
+- **Solusi:**
+  1. `HomeScreen.kt` area `if (isGuruFlavor)` header kanan → **hapus Row dan icon Person**; tinggal `IconButton(onLogout) { ArrowForward 28.dp }` saja.
+  2. Background gradien guru diganti 5 stop warna **LEBIH GELAP** (lebih tua) persis sesuai visual UI lawas:
+     - `#0E7490` (Cyan teal TUA / bunting stone)
+     - `#0284C7` (Sky 600)
+     - `#1D4ED8` (Blue 700 / royal blue lebih dalam)
+     - `#1E3A8A` (Indigo 800 / navy)
+     - `#172554` (Blue 950 / navy SANGAT TUA di bottom area)
+     - Vertical Gradient (bukan linear horizontal) agar gradien "turun makin gelap" ke bawah seperti screenshot lawas.
+  3. NavBar containerColor (hanya berlaku untuk siswa) disesuaikan juga referensi `#172554`. (guru navBar null jadi tidak terpengaruh).
+- **File yang diubah:**
+  1. [HomeScreen.kt#L850-L868](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt#L850-L868): upgrade gradien screenBackground guru (5 stops lebih gelap vertikal).
+  2. [HomeScreen.kt#L1025-L1034](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt#L1025-L1034): hapus Row + icon Person (tinggal icon ArrowForward Tutup saja). Ukuran icon dinaikkan 28.dp agar jelas.
+  3. [build.gradle.kts#L47-L55](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts#L47-L55): **bump** `versionCode 1049 → 1050`, `versionName "1.0.57" → "1.0.58"`. Wajib bump karena perubahan state visual structure + color palette.
+- **Build:** `./gradlew :app:assembleGuruRelease` → **BUILD SUCCESSFUL in 2m 59s**.
+- **Output asli:** `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- **Copy Final:** `GAS-Guru-1.0.58-guru-1050.apk` + `GAS-Guru-release.apk` di `D:\Dashboard Portal\Apk Release\Final`
+- **SHA256 2 copy SAMA PERSIS:** `6AA5E2F68F7F16946C9B6674BD9326123A9C91917ED8FB879A176D8C02C7F3B2` (21.356.874 bytes / 20,37 MB)
+- **Metadata APK:** Package `com.satupintu.mobile.guru`, `versionCode 1050`, `versionName 1.0.58-guru`.
+- **Fitur build sebelumnya TETAP dipertahankan:**
+  - ✅ UI Menu Guru 2 kolom glassmorphism 2 baris pill (1048)
+  - ✅ Label versi Login + Home footer (1048)
+  - ✅ Bottom Nav 3 Tab HILANG di guru, tetap ada di siswa (1049)
+  - ✅ 7 KAIH preset cepat nilai 4 kriteria massal (1047)
+- **QA checklist wajib test via ADB:**
+  1. [ ] Header sebelah kanan: HANYA ADA 1 icon → **ikon panah kanan (Tutup)**. Tidak ada icon orang Profil di sebelahnya.
+  2. [ ] Background gradien: **Atas = hijau tosca TUA (cyan gelap) → Tengah = biru laut tua → Bawah = navy biru SANGAT TUA**. Kontras jelas lebih gelap dibanding 1048/1049 yang cerah biru sky.
+  3. [ ] Bandingkan kontrasnya dengan UI lawas (screenshot no 2 user): warna biru bawah + kartu menu harus MIRIP / SAMA KONTRASNYA (tidak lebih cerah).
+  4. [ ] Label versi di footer home: **`APK GAS Guru — v1.0.58 (1050)`**.
+  5. [ ] Label versi di Login: **`APK GAS Guru — v1.0.58-guru (build 1050)`**.
+
+## 2026-08-28 04:15 - [FIX] GAS Guru 1.0.57-guru (1049) — Hapus Bottom Nav 3 Tab (Bawaan Siswa) + Tambah Ikon Header Profil & Logout Khusus Guru
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix UI` (respon komplain user setelah instal 1048: "kenapa kok ada 3 menu dibawah, itu kan bawaan versi apk GAS siswa")
+- **Flavor terdampak:** Hanya `guru`. UI `siswa` & `kepala` TETAP pakai Bottom Nav 3 tab (Beranda + Absensi Float + Profil) — TIDAK DIUBAH.
+- **Masalah user:** Di APK 1048 home screen guru masih menampilkan **Bottom Navigation 3 item berwarna gelap navy** di bawah layar:
+  - **Beranda** (kiri) + **Absensi** (tengah floating hitam lingkaran besar, pattern 👈 PATTERN SISWA, guru tidak butuh ini) + **Profil** (kanan). Padahal dari screenshot UI lawas guru TIDAK ADA bottom nav 3 tab. User protes karena itu bawaan siswa.
+- **Solusi (sesuai referensi UI lawas + preferensi user):
+  1. **Branch `Scaffold.bottomBar`** di HomeScreen: `if (!isGuruFlavor) { NavigationBar(3 item) } else { null }`
+     - `guru` → **Bottom Nav HILANG TOTAL**
+     - `siswa / kepala` → tetap `Beranda | Absen Float Tengah | Profil` (seperti semula)
+  2. **Ganti akses Profil + Logout** yang tadinya lewat bottom tab → dijadikan **2 IconButton kecil di sebelah KANAN HEADER (row user profile area)** HANYA untuk flavor guru (letaknya setelah teks role sekolah):
+     - Icon ⚪ **Profil** (Icons.Default.Person, 26.dp) → `onNavigate("profile")`
+     - Icon ➡ **Tutup Aplikasi** (Icons.Default.ArrowForward, 26.dp) → `onLogout()` (sesuai user profile: prefer label "Tutup" daripada "Keluar")
+  3. Karena bottom nav hilang di flavor guru, **paddingValues dari Scaffold bottom = 0**, sehingga konten Home (Menu Guru) **tidak lagi punya ruang kosong navbar di bawah → lebih lega 56dp**.
+- **File yang diubah:**
+  1. [HomeScreen.kt#L876-L928](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt#L876-L928): Branch `bottomBar = { if (!isGuruFlavor) NavigationBar(3 tab) else null }`.
+  2. [HomeScreen.kt#L1025-L1047](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt#L1025-L1047): Tambah `Row` `if (isGuruFlavor)` berisi 2 `IconButton` Profil + Tutup di sisi kanan header.
+  3. [build.gradle.kts#L47-L55](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts#L47-L55): **bump**: `versionCode 1048 → 1049`, `versionName "1.0.56" → "1.0.57"`. WAJIB bump karena branch struktur layout Scaffold berubah + penambahan state IconButton header.
+- **Build:** `./gradlew :app:assembleGuruRelease` → **BUILD SUCCESSFUL in 3m 8s**.
+- **Output asli:** `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- **Copy Final:** `GAS-Guru-1.0.57-guru-1049.apk` + `GAS-Guru-release.apk` di `D:\Dashboard Portal\Apk Release\Final`
+- **SHA256 2 copy SAMA PERSIS:** `C1560B3934F02E1172B1A0AA9946E3877BBC13E554CB173689EC6B4C28D78C72` (21.356.880 bytes / 20,37 MB)
+- **Metadata APK:** Package `com.satupintu.mobile.guru`, `versionCode 1049`, `versionName 1.0.57-guru`.
+- **Fitur sebelumnya TETAP dipertahankan (TIDAK rollback):**
+  - ✅ UI Menu Guru 2 kolom glassmorphism 2 baris pill (1048)
+  - ✅ Label versi di Login & Home footer (1048)
+  - ✅ 7 KAIH preset cepat nilai 4 kriteria (1047)
+- **QA checklist WAJIB test via ADB `adb install -r GAS-Guru-release.apk`:**
+  1. [ ] **TIDAK ADA** 3 tab bottom nav di bawah (yang tadinya Beranda | Absen Float | Profil) — yang muncul di 1048.
+  2. [ ] Di **header sebelah KANAN salam (samping nama guru + role sekolah)** ada 2 icon bulat kecil: (a) icon orang (Profil), (b) icon panah kanan (Tutup).
+  3. [ ] Klik icon orang: navigasi ke halaman Profil, berhasil. Back ke home normal.
+  4. [ ] Klik icon panah kanan: logout ke Login Screen (muncul kembali ke halaman login).
+  5. [ ] Tidak ada jarak kosong / putih tua navbar di bawah layar Home; grid kartu menu & label versi "APK GAS Guru — v1.0.57 (1049)" menyentuh area navigasi sistem.
+  6. [ ] Bandingkan dengan APK GAS Siswa: di GAS Siswa BOTTOM NAV 3 TAB MASIH ADA (tidak ikut hilang).
+
+## 2026-08-28 03:42 - [FIX] GAS Guru 1.0.56-guru (1048) — Kembalikan UI Menu Guru + Label Versi Jelas
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix UI` + `minor feature` (sesuai komplain user: "kartu menu guru malah sama seperti siswa")
+- **Flavor terdampak:** hanya `guru` (siswa & kepala tidak tersentuh sama sekali, pakai UI 4 kolom StudentFeatureCard seperti semula)
+- **Masalah user:** User install APK 1.0.55-guru & terlihat kartu menu Home GURU **MIRIP PERSIS SISWA** (4 kolom, icon kecil di kotak kecil, label polos dibawah). Padahal user **meminta di catatan JANGAN rubah UI yang tidak diminta** & UI guru sebelumnya beda styling sesuai screenshot HP lawas. Di sisi lain user **juga minta tambahkan keterangan versi agar mudah lihat build yang terinstal**.
+- **Screenshot referensi UI lama guru (dari HP user):**
+  - **2 KOLOM** (bukan 4) kartu menu, kartu besar persegi + rounded 28dp
+  - **Struktur kartu 2 baris**: Atas = area icon dalam kotak inner rounded (lebih terang, border lembut); Bawah = **label di dalam PILL shape background biru-muda transluscent** (bukan tulisan polos)
+  - **Badge merah** angka notif di pojok kanan atas area icon (contoh: Notifikasi = badge 1)
+  - **Background gradien cerah Cyan → Sky → Blue** (#22D3EE → #38BDF8 → #2563EB) — bukan indigo gelap milik siswa
+  - Judul section **`Menu Guru`** (besar, headlineSmall, TIDAK CAPS "MENU UTAMA")
+- **File yang diubah:**
+  1. [HomeScreen.kt#L847-L1447](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt#L847-L1447):
+     - Tambah `isGuruFlavor = BuildConfig.FLAVOR == "guru"`
+     - **Branch `screenBackground`**: guru pakai `verticalGradient(Cyan→Sky→Blue)` cerah; siswa/kepala tetap indigo gelap
+     - **Branch NavigationBar containerColor**: guru = navy transparan; siswa tetap gelap
+     - **Branch grid + card**:
+       - `guru` → GridCells.Fixed(2) + `GuruMenuCard()` (icon 84dp, outer glassmorphism, label pill shape biru-muda, badge offset lebih jauh)
+       - `siswa / kepala / staff` → GridCells.Fixed(4) + `StudentFeatureCard` (ICON 36dp di box 64dp, label text kecil polos) — KEMBALI seperti semula, TIDAK DIUBAH
+     - **Tambah label versi di HOME FOOTER (di bawah grid menu)**: `APK GAS Guru — v1.0.56 (1048)` (tengah, abu-putih transparan). Nilainya auto dari `BuildConfig.VERSION_NAME` + `BuildConfig.VERSION_CODE`.
+  2. [LoginScreen.kt#L312-L319](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/LoginScreen.kt#L312-L319):
+     - `displayVersion` sebelumnya cuma `"v<namaVersi>"` (pendek). Diupgrade jadi **`APK GAS <FlavorLabel> — v<VERSION_NAME> (build <VERSION_CODE>)`**. Contoh: `APK GAS Guru — v1.0.56-guru (build 1048)`. Posisi tetap di antara subjudul "Gerbang Aplikasi Sekolah" dan field input sekolah. Jadi user sebelum login pun langsung tau versi & build berapa APK yang terinstal.
+  3. [build.gradle.kts#L47-L55](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts#L47-L55) — **bump**: `versionCode 1047 → 1048`, `versionName "1.0.55" → "1.0.56"`. WAJIB bump karena ada perubahan state/logic branching UI berdasarkan FLAVOR, penambahan state `isGuruFlavor`, dan 2 lokasi label versi baru.
+- **Build:** `./gradlew :app:assembleGuruRelease` → **BUILD SUCCESSFUL in 2m 24s**.
+- **Output asli:** `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- **Copy Final:** `GAS-Guru-1.0.56-guru-1048.apk` + `GAS-Guru-release.apk` di `D:\Dashboard Portal\Apk Release\Final` (mtime 2026-08-28 03:42)
+- **SHA256 2 copy SAMA PERSIS:** `9417D0701E7F5E324CF8AEA4D26E6E0652901E44969D3D27714D959431B388CB` (21.356.864 bytes / 20,37 MB)
+- **Metadata APK:** Package `com.satupintu.mobile.guru`, `versionCode 1048`, `versionName 1.0.56-guru`.
+- **Distribusi:** Final only (GAS Guru tetap jalur manual, tidak sync apk-manifest / public-apk).
+- **Catatan penting SESUAI ATURAN PEGANGAN (BAGIAN 3 Poin 7):**
+  - ✅ Hanya menyentuh **2 area yang user minta**: (a) UI kartu menu GURU dibalikin sesuai referensi screenshot lawas; (b) Tambah label versi di Login & Home.
+  - ✅ `StudentFeatureCard` / UI siswa & kepala TIDAK DIUBAH SATU PUN (tetap 4 kolom gelap).
+  - ✅ Logic 7 KAIH preset batch dari build 1047 TETAP DIpertahankan (TIDAK rollback, karena user tadi minta fitur itu lalu lanjut request UI).
+- **QA checklist WAJIB di HP Guru (instal via ADB `adb install -r GAS-Guru-release.apk`):**
+  1. [ ] Sebelum login: di login screen dibawah subtitle "Gerbang Aplikasi Sekolah" teksnya **`APK GAS Guru — v1.0.56-guru (build 1048)`**.
+  2. [ ] Home screen background: **CERAH gradien tosca→biru** (bukan gelap indigo).
+  3. [ ] Judul section kartu: **`Menu Guru`** (besar, BUKAN caps MENU UTAMA).
+  4. [ ] Kartu menu: **2 KOLOM** (bandingkan: GAS Siswa = 4 kolom).
+  5. [ ] Bentuk tiap kartu: 2 baris jelas. Baris atas = icon besar (84dp) dalam rounded square lebih terang. **Baris bawah = NAMA MENU di dalam pill shape biru-muda** (bukan text polos).
+  6. [ ] Jika ada notifikasi, **badge merah bulat angka** muncul di pojok kanan atas area icon kartu (mirip screenshot Notifikasi no. 1).
+  7. [ ] Paling bawah, DI BAWAH grid kartu menu ada teks abu-putih kecil center: **`APK GAS Guru — v1.0.56 (1048)`**.
+  8. [ ] Menu **7 KAIH → tab Penilaian**: fitur preset cepat dari 1047 TETAP ADA (header preset Nilai 25/20/Reset massal + preset chip di dialog per siswa).
+
+## 2026-08-28 03:05 - [FEATURE] GAS Guru 1.0.55-guru (1047) - Input Cepat Nilai 7 KAIH (Preset 4 Kriteria Massal)
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `feature` (mengembalikan fitur yang sempat hilang)
+- **Flavor terdampak:** `guru` (file `src/main` + `src/guru` tidak ada perubahan spesifik)
+- **Tujuan perubahan:**
+  - Guru menilai 7 KAIH tidak perlu isi **4 kriteria (Kejujuran, Perilaku, Inisiatif, Komitmen)** satu per satu untuk setiap siswa.
+  - Sediakan **3 preset cepat** di dialog penilaian per siswa: `Nilai 25` (semua kriteria = 25), `Nilai 20` (semua kriteria = 20), `Reset` (semua = 0).
+  - Sediakan **bar preset massal satu kelas** di header tab Penilaian: klik `Nilai 25` / `Nilai 20` / `Reset` -> semua siswa kelas tersimpan langsung tanpa buka dialog satu per satu.
+- **File yang diubah:**
+  1. [TeacherHabitRubric.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/model/TeacherHabitRubric.kt) — Tambah `companion object` helper `presetAll(value)`, `reset()`, `preset20()`, `preset25()` (nilai otomatis clamp 0..25, semua 4 kriteria diisi sama).
+  2. [TeacherSevenHabitsRepository.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/TeacherSevenHabitsRepository.kt#L158-L207) — Tambah `saveTeacherRatingBatch()`: loop `setValue()` paralel untuk semua `studentId`, hitung `successCount/failCount`, callback dengan daftar error.
+  3. [TeacherSevenHabitsViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherSevenHabitsViewModel.kt#L89-L246) — Tambah `isSavingBatch` state + `saveTeacherRubricBatch(studentIds, rubricFactory)`: resolve id ke Student via `filterStudentsForScope`, simpan batch, lalu update local map `teacherRatingsFlow` agar UI reaktif langsung berubah tanpa reload RTDB.
+  4. [TeacherSevenHabitsScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherSevenHabitsScreen.kt#L811-L1154) — (a) `PresetBatchBar` di header tab Penilaian (3 chip: Nilai 25 hijau, Nilai 20 biru, Reset merah); (b) `SmallPresetChip` 3 tombol di dalam `TeacherRubricDialog` siswa; (c) semua chip `Modifier.weight()` ditulis sebagai extension `RowScope.Chip` (menghindari error `Unresolved reference 'weight'` saat chip dipakai di dalam Row).
+  5. [build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts#L47-L55) — flavor `guru`: `versionCode 1046 -> 1047` (+1), `versionName "" -> "1.0.55"` (menyesuaikan karena defaultConfig set 1.0.54 untuk siswa). Final = `1.0.55-guru`. WAJIB bump karena fitur ini menambah state `isSavingBatch` + logic branch batch save.
+- **Build:** `./gradlew :app:compileGuruReleaseKotlin` (FAIL karena `Unresolved reference 'weight'`) -> perbaiki extension `RowScope.PresetChip` & `RowScope.SmallPresetChip` -> `./gradlew :app:assembleGuruRelease` -> **BUILD SUCCESSFUL in 2m 57s**.
+- **Output asli:** `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+- **Copy Final:** `GAS-Guru-1.0.55-guru-1047.apk` + `GAS-Guru-release.apk` di `D:\Dashboard Portal\Apk Release\Final` (mtime 2026-08-28 03:05)
+- **SHA256 2 copy SAMA PERSIS:** `23B67144D7D11834299340F3A1205220988E23DAE3CB78492C4D8A1DE82F3F79` (21.356.863 bytes / 20,37 MB)
+- **Metadata APK:** Package `com.satupintu.mobile.guru`, `versionCode 1047`, `versionName 1.0.55-guru`, minSdk 23.
+- **Distribusi:** Final only (GAS Guru = jalur manual install, TIDAK sync ke `web/public/apk` / `apk-manifest.json`; file `Ship-Apk-Baru.ps1` tidak ada di disk jadi ship via copy manual verify SHA).
+- **Flavor yang diuji compile/assemble:** `guru` saja. `siswa` / `kepala` tidak di-rebuild; versioning mereka tetap.
+- **QA checklist yang WAJIB di HP guru:**
+  1. [ ] Login Guru -> pilih kelas -> menu `7 KAIH` -> tab `Penilaian`.
+  2. [ ] Header muncul bar **"Isi Cepat Semua (N siswa)"** dengan 3 tombol: `Nilai 25` (hijau), `Nilai 20` (biru), `Reset` (merah).
+  3. [ ] Klik **`Nilai 25`** -> muncul toast "Berhasil simpan X nilai guru." -> semua kartu `Nilai Guru (Belum)` langsung berubah jadi **`Nilai Guru 100`** (total 4x25) tanpa reload halaman.
+  4. [ ] Klik tombol `Nilai Guru 100` di salah satu siswa -> dialog terbuka.
+  5. [ ] Di atas 4 input field **ada 3 chip kecil**: `Nilai 25`, `Nilai 20`, `Reset`.
+  6. [ ] Klik **`Nilai 20`** -> semua 4 field berubah jadi `20`, Total = **80**. Klik Simpan -> teks tombol berubah jadi `Nilai Guru 80`.
+  7. [ ] Klik **`Reset`** di dialog -> semua field = 0, Total = 0. Simpan.
+  8. [ ] Klik tombol massal **`Reset`** di header -> semua siswa kembali `Belum`.
+  9. [ ] Seluruh proses di atas **tidak loop / loading stuck**. Toast pesan Sukses/Gagal muncul (jika RTDB timeout = muncul failCount).
+
+## 2026-08-28 02:05 - [FIX] GAS Siswa 1.0.82-siswa (23079) - 7 KAIH + Lentera + gate EduLock
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** `siswa` (`src/main`)
+- **Tujuan perubahan:**
+  - Kunci **7 KAIH** setelah submit mingguan agar siswa tidak bisa kirim ulang / mengubah centang minggu yang sama.
+  - Batasi checkbox **7 KAIH** agar hanya hari aktif hari ini yang bisa dicentang.
+  - Tambah kenyamanan baca **Lentera Digital**: `zoom`, `fullscreen`, swipe normal di `1x`, dan panel bawah native untuk halaman.
+  - Hilangkan delay gate **EduLock** saat aksesibilitas / admin perangkat lokal sudah pulih tetapi telemetry remote belum menyusul.
+- **Build:** `./gradlew :app:compileSiswaDebugKotlin` -> **BUILD SUCCESSFUL**. `./gradlew :app:assembleSiswaRelease` -> **BUILD SUCCESSFUL**.
+- **Output asli:** `native-mobile-gas/app/build/outputs/apk/siswa/release/app-siswa-release.apk`
+- **Copy Final:** `GAS-Siswa-1.0.82-siswa-23079.apk` + `GAS-Siswa-release.apk` di `D:\Dashboard Portal\Apk Release\Final` (mtime 2026-08-28 02:05)
+- **SHA256:** `C4B84E8370D55EAFFC7809020A94BB76265541219547782DA0454A5BCB8B9A44` (21.356.882 bytes)
+- **Distribusi:** Final only. Unduhan web tetap `1.0.80-siswa` / `23077`; belum sync `web/public/apk`.
+- **Verifikasi lapangan:** user mengonfirmasi perilaku Lentera Digital sudah sesuai ekspektasi, dan bug delay buka GAS dari EduLock setelah aksesibilitas aktif sudah selesai.
+
+## 2026-08-27 13:58 - [DOCS] Pegangan sync - 1.0.82 + audit Dhuha/Jumat + jam statis
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `docs`
+- **Flavor terdampak:** pegangan saja (tidak rebuild APK)
+- **Tujuan perubahan:**
+  - Selaraskan README akar pegangan, GAS README/RELEASE/CHANGELOG/ARCHITECTURE/REGRESSION, CHECKLIST, dan catatan Rekap Dhuha ke progres 27 Agu 2026.
+  - Catat audit: **Presensi Dhuha & Jum'at** APK sudah baca `prayer_v2` (Jadwal Per Kelas + Override) sesuai web admin; tidak perlu rebuild khusus.
+  - Catat keputusan user: baris **Jam** Dhuha/Jumat **statis** (sengaja), bukan bug.
+  - Kartu **Aturan Hari** Dzuhur = Presensi Sekolah — sudah di APK **1.0.82** (entry build di bawah).
+- **Build:** tidak rebuild APK
+
+## 2026-08-27 13:31 - [FIX] GAS Siswa 1.0.82-siswa (23079) - Kartu Aturan Hari = Presensi Sekolah
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Flavor terdampak:** `siswa` (`PrayerScreen.kt` + `VirtualPetRepository.kt` di `src/main`)
+- **Tujuan perubahan:**
+  - Kartu **Aturan Hari** di Presensi Sholat membaca **hari efektif Presensi Sekolah** (`school_settings/{id}/attendance/schedules`), bukan `prayer/schedules`.
+  - Kamis dengan Presensi Sekolah nyala harus **Hari efektif: Ya**, **Tanggal merah: Tidak**, **Aturan sholat: Berlaku** (Dzuhur `prayer_v2`).
+  - Hari tanpa kunci di map tidak lagi dianggap libur otomatis (`isHoliday == true` saja).
+  - Pet Dzuhur (`isEffectiveDay`) memakai path attendance yang sama agar tidak beda dengan kartu.
+- **Build:** `./gradlew :app:compileSiswaDebugKotlin` -> **BUILD SUCCESSFUL in 4m 41s**. `./gradlew :app:assembleSiswaRelease` -> **BUILD SUCCESSFUL in 4m 37s**.
+- **Output asli:** `native-mobile-gas/app/build/outputs/apk/siswa/release/app-siswa-release.apk`
+- **Copy Final:** `GAS-Siswa-1.0.82-siswa-23079.apk`, `GAS-Siswa-release.apk`, `GAS Siswa release.apk`, `app-siswa-release.apk` di `D:\Dashboard Portal\Apk Release\Final` (mtime 2026-08-27 13:31:34)
+- **SHA256:** `2F7639FEED97E9B917E3EDFA6892F98FD07A3A86F0BB13D272E07BA1CD7C7318` (21.324.109 bytes)
+- **Distribusi:** Final only. Unduhan web tetap `1.0.80-siswa` / `23077`. `web/scripts/Ship-Apk-Baru.ps1` tidak ada; tidak menjalankan `npm run sync:apk:gas`.
+- **Flavor yang diuji compile/assemble:** `siswa` saja. `guru` / `kepala` tidak di-rebuild.
+- **Belum diuji:** QA HP lapangan kartu Aturan Hari + tombol absen Dzuhur. Radius musholla 5m vs jarak siswa adalah masalah terpisah (bukan hari efektif).
+- **Audit lanjutan (kode, 2026-08-27 ~13:58):** Presensi Dhuha & Jum'at sudah selaras admin; baris Jam statis dikonfirmasi user — tidak diubah.
+
+## 2026-08-18 11:05 - [FEATURE & FIX] GAS Siswa 1.0.81-siswa (23078) - KBBI + Surat Al-Mulk + Standarisasi Quran NU Online
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `feature` & `fix`
+- **Flavor terdampak:** `siswa`
+- **Tujuan perubahan:**
+  - Menambahkan menu **Kamus Besar Bahasa Indonesia (KBBI)** pada Tools Belajar menggunakan API mirror resmi KBBI v6 (`https://kbbi.raf555.dev/`) dengan fallback ganda, lengkap dengan pemenggalan suku kata, badge kelas kata, dan contoh kalimat.
+  - Menambahkan **Surat Al-Mulk** (Surah ke-67, 30 ayat) pada Buku Pembiasaan Religius.
+  - Menyinkronkan seluruh naskah surat (Ar-Rahman, Al-Waqi'ah, Yasin, Al-Mulk) ke rujukan resmi **Mushaf Standar Indonesia** (LPMQ Kemenag RI / rujukan NU Online di `quran.nu.or.id`), lengkap dengan teks Arab rasm Usmani standar, transliterasi Latin resmi, dan terjemahan bahasa Indonesia.
+  - Mendaftarkan rute `tools_kbbi_dictionary` dan `tools_religious_book` di `SecurityUtils.kt` dan `GasAppNavGraph.kt`.
+- **Build:** `./gradlew assembleSiswaRelease` -> **BUILD SUCCESSFUL**
+- **Output:** Disalin dan menimpa `GAS-Siswa-1.0.81-siswa-23078-INTERNAL.apk`, `GAS-Siswa-release.apk`, `GAS Siswa release.apk`, dan `app-siswa-release.apk` di `D:\Dashboard Portal\Apk Release\Final`.
+
 ## 2026-08-16 22:15 - [SHIP WEB] GAS-Siswa v1.0.80-siswa (23077) - URL unduhan publik
 
 - **Tujuan:** Point unduhan siswa di portal ke APK Final 1.0.80 (Virtual Pet sync fix).
