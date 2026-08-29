@@ -178,7 +178,13 @@ export function GuruPresensiInteractive() {
       });
       setMessage(data.message || "Presensi tersimpan.");
       setManualSelections({});
-      await loadDaily();
+      const savedDate = new Date(selectedDate);
+      const sameMonthlyPeriod =
+        savedDate.getMonth() === month && savedDate.getFullYear() === year;
+      await Promise.all([
+        loadDaily(),
+        sameMonthlyPeriod ? loadMonthly() : Promise.resolve(),
+      ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menyimpan");
     } finally {
@@ -276,6 +282,7 @@ export function GuruPresensiInteractive() {
                         key={meta.key}
                         selected={effective === meta.key}
                         color={meta.color}
+                        label={meta.label}
                         onClick={() => toggleStatus(item, meta.key)}
                       />
                     ))}

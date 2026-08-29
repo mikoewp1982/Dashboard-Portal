@@ -178,11 +178,13 @@ export function StatusCheckCell({
   color,
   onClick,
   disabled,
+  label,
 }: {
   selected: boolean;
   color: string;
   onClick: () => void;
   disabled?: boolean;
+  label?: string;
 }) {
   return (
     <button
@@ -190,12 +192,16 @@ export function StatusCheckCell({
       disabled={disabled}
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex h-12 min-h-[48px] flex-1 touch-manipulation items-center justify-center border-r border-white/40 transition-colors last:border-r-0 disabled:cursor-not-allowed disabled:opacity-35 ${
-        selected ? "bg-white/25" : "active:bg-white/10"
+      className={`flex h-12 min-h-[48px] flex-1 touch-manipulation items-center justify-center gap-1 border-r border-white/40 transition-colors last:border-r-0 disabled:cursor-not-allowed disabled:opacity-35 ${
+        selected ? "bg-white/28 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.28)]" : "active:bg-white/10"
       }`}
+      style={selected ? { backgroundColor: `${color}33`, boxShadow: `inset 0 0 0 1px ${color}` } : undefined}
     >
       {selected ? (
-        <Check className="h-5 w-5 drop-shadow-sm" style={{ color }} strokeWidth={3.5} />
+        <>
+          <Check className="h-4 w-4 drop-shadow-sm" style={{ color }} strokeWidth={3.5} />
+          {label ? <span className="text-[10px] font-bold text-white">{label}</span> : null}
+        </>
       ) : null}
     </button>
   );

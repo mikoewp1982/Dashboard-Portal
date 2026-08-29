@@ -319,16 +319,17 @@ export function GuruSholatV2Interactive() {
           ) : (
             <TableShell headers={["NO", "NAMA SISWA", "S", "TS", "I", "H"]}>
               {items.map((item, index) => {
-                const selected = manualSelections[item.identityKey];
+                const effective = manualSelections[item.identityKey] || item.status;
                 return (
                   <TableRow key={item.identityKey || item.studentId} index={index + 1} name={item.name}>
                     {PRAYER_META.map((meta) => (
                       <StatusCheckCell
                         key={meta.key}
-                        selected={item.status === meta.key || selected === meta.key}
+                        selected={effective === meta.key}
                         color={meta.color}
                         disabled={!item.canSelect}
                         onClick={() => toggleStatus(item, meta.key)}
+                        label={meta.label}
                       />
                     ))}
                   </TableRow>

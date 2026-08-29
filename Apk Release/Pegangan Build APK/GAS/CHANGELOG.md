@@ -26,19 +26,28 @@ Tambahkan nama pelaksana jika perlu:
 ## [Unreleased]
 
 ### Siswa
+- Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.84-siswa (23081)` untuk perbaikan logika `Virtual Pet`; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
+- Fixed: **Siswa (Virtual Pet)** evaluasi empat kartu harian (`E-Perpus`, `7 KAIH`, `Kehadiran`, `Ibadah`) kini dieksekusi berdasarkan **rekap hari sebelumnya**, sehingga pet tidak lagi bisa langsung mati di pagi hari sebelum siswa sempat beraktivitas pada hari baru.
 - Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.83-siswa (23080)` untuk uji cepat patch gate EduLock; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
 - Fixed: **Siswa (Gate EduLock/Login)** pembukaan ulang aplikasi tidak lagi lama tertahan di overlay `Memeriksa Proteksi EduLock` saat aksesibilitas EduLock belum aktif, karena gate sekarang memutuskan **blokir lokal lebih dulu** sebelum menunggu fetch jadwal sekolah atau telemetry remote.
 - Changed: Build distribusi GAS Siswa `1.0.82-siswa (23079)` dibuild ulang lagi pada **2026-08-28 13:25**, hash Final/public alias menjadi `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`, lalu **SUDAH disinkronkan** ke `web/public/apk` dan live unduhan Firebase/App Hosting.
 - Fixed: **Siswa (Gate EduLock)** sekarang dibangun dengan konsep baru bahwa hard block kepatuhan EduLock hanya aktif saat **hari efektif + jam sekolah aktif**, dengan **grace period** saat proteksi drop sesaat di tengah sesi.
 
 ### Guru
-- Changed: Build distribusi GAS Guru saat ini menjadi `1.0.61-guru (1053)` dengan file final aktif `GAS-Guru-release.apk`.
+- Changed: Build distribusi GAS Guru saat ini menjadi `1.0.64-guru (1056)` dengan file final aktif `GAS-Guru-release.apk`.
+- Fixed: **Guru (Presensi Siswa)** input manual guru sekarang tetap sinkron ke `Rekap Bulanan` setelah `Simpan Presensi Manual`, tidak hanya terlihat di `Monitoring Harian`.
+- Fixed: **Guru (Presensi Dhuha & Jum'at)** pilihan status di tabel kini meninggalkan jejak visual yang lebih tegas (warna status + ikon centang) agar guru langsung tahu siswa sudah dicentang.
+- Fixed: **Guru (Home)** fase loading awal tidak lagi sempat menampilkan campuran UI siswa ketika sesi guru belum selesai terbaca.
+- Changed: **Guru (Home)** kartu menu diperkecil sedikit lagi agar lebih ringkas tanpa mengubah identitas UI guru.
 - Fixed: **Guru (Presensi Sholat)** hitungan `TS / Tidak Sholat` di APK guru sekarang mengikuti **hari efektif Dzuhur** yang sama dengan APK siswa dan web admin (`attendance/schedules` + `attendance/holidays` + `prayer_v2/types/DZUHUR/activeDays`), tidak lagi jatuh ke hitungan lama `24`.
 - Fixed: **Guru (Rekapitulasi)** ekspor/rekap guru di APK sekarang memakai denominator hari efektif Dzuhur yang sama, sehingga kolom `TS` sinkron dengan web admin yang sudah diperbaiki.
 - Changed: **Guru (Home)** kartu menu dipendekkan dan diringankan agar tidak terasa terlalu besar di layar, tetapi identitas UI guru tetap 2 kolom glassmorphism tanpa bottom nav.
 - Fixed: **Guru (Home)** badge merah notifikasi di kartu menu digeser sedikit masuk agar tidak mepet ke sudut kanan atas dan lebih jelas terlihat.
 
 ### Web Admin / PWA
+- Fixed: **Portal Guru `/guru/presensi`** kini me-refresh `Rekap Bulanan` setelah guru menekan `Simpan Presensi Manual` bila periode bulan/tahunnya sama, sehingga parity-nya mengikuti perilaku terbaru APK GAS Guru.
+- Fixed: **Portal Guru `/guru/sholat-dhuha-jumat`** kini memakai `status efektif` (manual atau tersimpan) untuk highlight tabel, sehingga tidak ada lagi dua status aktif bersamaan saat guru memilih status manual yang berbeda dari data lama.
+- Changed: **Portal Guru `/guru/presensi`** dan `/guru/sholat-dhuha-jumat` sekarang memakai indikator sel aktif yang lebih tegas (warna status, inset border, ikon centang, label kecil) agar jejak pilihan guru lebih jelas seperti di APK.
 - Fixed: **Portal Guru `/guru/sholat`** yang live sekarang menghitung `TS / Tidak Sholat` dengan kontrak hari efektif Dzuhur yang sama seperti web admin dan APK siswa. Deploy live commit `9f42a276`.
 - Fixed: **Portal Guru `/guru/kaih`** tab `Penilaian` sekarang mengikuti pola APK GAS Guru: preset cepat `Nilai 25 / Nilai 20 / Reset` tampil langsung di halaman, dan dialog edit per siswa memakai 4 field angka (`Kejujuran`, `Perilaku`, `Inisiatif`, `Komitmen`) plus preset cepat yang sama. Deploy live commit `4822f24e`.
 

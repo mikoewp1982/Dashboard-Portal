@@ -1,5 +1,84 @@
 # Build Log GAS
 
+## 2026-08-29 09:57 - [DEPLOY LIVE] Web guru parity presensi siswa + Dhuha/Jum'at dengan APK
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `deploy-web`
+- **Flavor terdampak:** `guru` (portal web / PWA guru)
+- **Versioning:** tidak relevan untuk APK
+- **Tujuan perubahan:** Menyamakan perilaku web guru dengan APK untuk dua area yang baru diverifikasi user: (1) `Presensi Siswa` harus langsung menjaga sinkronisasi `Monitoring Harian` -> `Rekap Bulanan` setelah guru menekan `Simpan Presensi Manual`, dan (2) `Presensi Dhuha & Jum'at` harus meninggalkan jejak visual status yang lebih jelas agar guru tahu siswa sudah dicentang.
+- **File utama perilaku yang diubah:**
+  - [web/src/components/guru/GuruPresensiInteractive.tsx](file:///D:/Dashboard%20Portal/web/src/components/guru/GuruPresensiInteractive.tsx)
+  - [web/src/components/guru/GuruSholatV2Interactive.tsx](file:///D:/Dashboard%20Portal/web/src/components/guru/GuruSholatV2Interactive.tsx)
+  - [web/src/components/guru/GuruApkTheme.tsx](file:///D:/Dashboard%20Portal/web/src/components/guru/GuruApkTheme.tsx)
+- **Perubahan inti:**
+  - setelah `Simpan Presensi Manual`, web guru kini me-refresh data harian **dan** `Rekap Bulanan` bila bulan/tahun yang dibuka sama dengan tanggal simpan
+  - sel status web guru sekarang memakai `status efektif` (`manualSelections` atau status tersimpan) sehingga tidak ada lagi dua status aktif bersamaan
+  - jejak visual status aktif diperjelas dengan warna status, garis inset, ikon centang, dan label kecil seperti pola APK
+- **Verifikasi yang dijalankan:**
+  - `npm run build` → **sukses**
+  - `npm run lint` → ada error lama di file lain project, **bukan** dari file guru yang baru diubah
+- **Status distribusi:**
+  - siap push ke `origin/main` untuk memicu Firebase App Hosting live
+- **Belum diuji:**
+  - smoke test visual live setelah rollout App Hosting hijau
+
+## 2026-08-29 09:05 - [BUILD] GAS Guru 1.0.64-guru (1056) — parity presensi + hardening home guru
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `build`
+- **Flavor terdampak:** `guru`
+- **Versioning:** `1.0.63-guru (1055)` → `1.0.64-guru (1056)`
+- **Tujuan perubahan:** Menyelesaikan iterasi UX/bug yang user temukan di GAS Guru: sinkronisasi alur presensi manual guru, jejak centang Dhuha/Jum'at, ukuran kartu Home, dan flash UI siswa saat startup.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherPrayerDhuhaJumatScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherPrayerDhuhaJumatScreen.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - `Presensi Siswa`: data manual guru kini konsisten dibaca `Rekap Bulanan` setelah tersimpan
+  - `Presensi Dhuha & Jum'at`: status aktif meninggalkan jejak visual yang lebih tegas
+  - `Home guru`: kartu menu diperkecil sedikit agar lebih ringkas
+  - startup `GAS Guru`: tidak lagi sempat memunculkan kartu/status UI siswa saat sesi guru masih loading
+- **Build yang dijalankan:**
+  - `./gradlew :app:assembleGuruRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.64-guru-1056.apk`
+- **Metadata final aktif lokal:**
+  - SHA256 `49CFFD991B264090F5C28549A79553842B11EA626591B2609A04F94556AFB3EA`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - guru tidak disinkronkan ke `web/public/apk`
+- **Belum diuji:**
+  - audit fisik ulang pada startup cold launch untuk memastikan tidak ada flash UI siswa sama sekali di semua device guru
+
+## 2026-08-29 08:35 - [BUILD] GAS Siswa 1.0.84-siswa (23081) — eksekusi Virtual Pet pindah ke rekap hari sebelumnya
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `build`
+- **Flavor terdampak:** `siswa`
+- **Versioning:** `1.0.83-siswa (23080)` → `1.0.84-siswa (23081)`
+- **Tujuan perubahan:** Menghilangkan bug yang membuat pet siswa bisa langsung mati pada pagi hari sebelum siswa sempat mengerjakan empat kartu aktivitas hari itu.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/VirtualPetRepository.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/VirtualPetRepository.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/VirtualPetViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/VirtualPetViewModel.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/util/PresensiRuleUtils.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/util/PresensiRuleUtils.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - status aktif pet kini membaca **rekap hari sebelumnya**
+  - 4 kartu `Tugas Harian` tetap menunjukkan progres **hari ini**
+  - konsekuensi gagal memenuhi target hari ini baru dieksekusi pada **00.00** hari berikutnya
+- **Build yang dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.84-siswa-23081.apk`
+- **Metadata final aktif lokal:**
+  - SHA256 `C6F1CBB088286BADE53A4557B0C3122BBED69164E12AEA555B663B98C39C5CA4`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - **BELUM** disinkronkan ke `web/public/apk` / live App Hosting
+- **Belum diuji:**
+  - uji device fisik untuk skenario buka pagi hari sebelum aktivitas sekolah, memastikan pet tetap aman bila kemarin sudah memenuhi target
+
 ## 2026-08-28 21:40 - [BUILD] GAS Siswa 1.0.83-siswa (23080) — fast-path gate EduLock lokal
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix` + `build`
