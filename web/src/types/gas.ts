@@ -1,5 +1,11 @@
 export type AttendanceStatus = "PRESENT" | "LATE" | "ALPHA" | "IZIN" | "SAKIT";
-export type AttendanceSource = "SELF" | "MANUAL";
+export type AttendanceSource =
+  | "SELF"
+  | "TEACHER_MANUAL"
+  | "CLASS_SECRETARY"
+  | "ADMIN_MANUAL"
+  | "SYSTEM"
+  | "MANUAL";
 
 export interface AttendanceRecord {
   id?: string;
@@ -10,9 +16,12 @@ export interface AttendanceRecord {
   date: string;
   status: AttendanceStatus;
   source: AttendanceSource;
+  sourceLabel?: string;
   note?: string;
   checkInTime?: string | number | null;
   checkOutTime?: string | number | null;
+  checkInMethod?: string | null;
+  recordedBy?: string | null;
   distanceMeters?: number;
   mockLocationFlag?: boolean;
   serverTimestamp?: string;

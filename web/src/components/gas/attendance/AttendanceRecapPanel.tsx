@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { exportToExcel } from "@/utils/export";
 import { Search, Download, Printer, List, Calendar, BarChart3 } from "lucide-react";
 import { createStudentDateKey, getValidDatesInMonth, pickNewestLog, toDateKey } from "@/utils/presensiRules";
-import { AttendanceRecord } from "@/types/gas";
+import { AttendanceRecord, AttendanceSource } from "@/types/gas";
 import { AttendanceStatisticsPanel } from "./AttendanceStatisticsPanel";
 
 const MONTHS = [
@@ -40,11 +40,47 @@ const STATUS_BADGE_CLASSES: Record<string, string> = {
   ALPHA: "bg-red-900/30 text-red-400 border border-red-700/30",
 };
 
+const SOURCE_BADGE_META: Record<AttendanceSource, { label: string; className: string }> = {
+  SELF: {
+    label: "Siswa",
+    className: "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20",
+  },
+  TEACHER_MANUAL: {
+    label: "Wali Kelas",
+    className: "bg-blue-500/10 text-blue-300 border border-blue-500/20",
+  },
+  CLASS_SECRETARY: {
+    label: "Sekretaris Kelas",
+    className: "bg-cyan-500/10 text-cyan-300 border border-cyan-500/20",
+  },
+  ADMIN_MANUAL: {
+    label: "Admin",
+    className: "bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/20",
+  },
+  SYSTEM: {
+    label: "Sistem",
+    className: "bg-slate-500/10 text-slate-300 border border-slate-500/20",
+  },
+  MANUAL: {
+    label: "Input Manual",
+    className: "bg-amber-500/10 text-amber-300 border border-amber-500/20",
+  },
+};
+
 const HIDE_TIME_STATUSES = new Set(["ALPHA", "SAKIT", "IZIN"]);
 
 function getDisplayTime(status: string | undefined, time: string | number | null | undefined) {
   if (!status || HIDE_TIME_STATUSES.has(status)) return "-";
   return formatTime(time ?? null);
+}
+
+function getSourceMeta(source?: AttendanceSource, fallbackLabel?: string) {
+  const normalizedSource = source && SOURCE_BADGE_META[source] ? source : "MANUAL";
+  const meta = SOURCE_BADGE_META[normalizedSource];
+  return {
+    label: fallbackLabel || meta.label,
+    className: meta.className,
+  };
 }
 
 interface Props {
@@ -153,6 +189,9 @@ export function AttendanceRecapPanel({
             studentNisn: student.nisn || "-",
             status: String(existingLog.status || "ALPHA"),
             notes: String(existingLog.note || ""),
+            source: existingLog.source || "MANUAL",
+            sourceLabel: String(existingLog.sourceLabel || ""),
+            recordedBy: String(existingLog.recordedBy || ""),
             isSystemGenerated: false,
           });
           continue;
@@ -171,6 +210,9 @@ export function AttendanceRecapPanel({
           studentNisn: student.nisn || "-",
           status: "ALPHA",
           notes: "Otomatis dari hari sekolah aktif tanpa log presensi.",
+          source: "SYSTEM",
+          sourceLabel: "Sistem",
+          recordedBy: "System (Attendance)",
           isSystemGenerated: true,
         });
       }
@@ -178,6 +220,28 @@ export function AttendanceRecapPanel({
 
     return rows;
   }, [filteredLogMap, filteredStudents, validDates]);
+
+  const sourceStats = useMemo(() => {
+    const totals: Record<AttendanceSource, number> = {
+      SELF: 0,
+      TEACHER_MANUAL: 0,
+      CLASS_SECRETARY: 0,
+      ADMIN_MANUAL: 0,
+      SYSTEM: 0,
+      MANUAL: 0,
+    };
+
+    for (const row of recapRows) {
+      const source = row.source as AttendanceSource;
+      if (totals[source] !== undefined) {
+        totals[source] += 1;
+        continue;
+      }
+      totals.MANUAL += 1;
+    }
+
+    return totals;
+  }, [recapRows]);
 
   const monthlySummaryRows = useMemo(() => {
     return filteredStudents
@@ -416,6 +480,32 @@ export function AttendanceRecapPanel({
         {" "}x <span className="font-semibold text-slate-100">{validDates.length} hari aktif</span>
       </div>
 
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6 no-print">
+        {(
+          [
+            "SELF",
+            "TEACHER_MANUAL",
+            "CLASS_SECRETARY",
+            "ADMIN_MANUAL",
+            "SYSTEM",
+            "MANUAL",
+          ] as AttendanceSource[]
+        ).map((sourceKey) => {
+          const meta = SOURCE_BADGE_META[sourceKey];
+          return (
+            <div key={sourceKey} className="rounded-lg border border-slate-700/60 bg-slate-900/40 px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Sumber</div>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${meta.className}`}>
+                  {meta.label}
+                </span>
+                <span className="text-lg font-bold text-slate-100">{sourceStats[sourceKey]}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Table */}
       <div id="print-area">
         <div className="mb-6 hidden print:block text-black">
@@ -491,6 +581,7 @@ export function AttendanceRecapPanel({
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Siswa</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Kelas</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Sumber Input</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Keterangan</th>
               </tr>
             </thead>
@@ -519,6 +610,21 @@ export function AttendanceRecapPanel({
                         {STATUS_LABELS[log.status] || log.status}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+                      {(() => {
+                        const sourceMeta = getSourceMeta(log.source, log.sourceLabel);
+                        return (
+                          <>
+                            <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${sourceMeta.className}`}>
+                              {sourceMeta.label}
+                            </span>
+                            <div className="mt-1 text-xs text-slate-500">
+                              {log.recordedBy || (log.isSystemGenerated ? "System (Attendance)" : "-")}
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                       {log.notes || (log.isSystemGenerated ? "Otomatis dari hari sekolah aktif tanpa log presensi." : '-')}
                     </td>
@@ -526,7 +632,7 @@ export function AttendanceRecapPanel({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-slate-500">
+                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-slate-500">
                     Tidak ada data absensi yang ditemukan.
                   </td>
                 </tr>

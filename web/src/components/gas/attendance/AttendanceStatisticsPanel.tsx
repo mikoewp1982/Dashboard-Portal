@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { Activity, CalendarDays, Clock, ShieldAlert, UserCheck, UserMinus, UserRound, UserX } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { compareClassNames, createStudentDateKey, getValidDatesInMonth, normalizeClassName, pickNewestLog, toDateKey } from "@/utils/presensiRules";
-import { AttendanceRecord } from "@/types/gas";
+import { AttendanceRecord, AttendanceSource } from "@/types/gas";
 
 const MONTHS = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -16,6 +16,15 @@ const CHART_COLORS = {
   sick: "#60a5fa",
   permit: "#c084fc",
   absent: "#f87171",
+};
+
+const SOURCE_META: Record<AttendanceSource, { label: string; accent: string }> = {
+  SELF: { label: "Siswa", accent: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" },
+  TEACHER_MANUAL: { label: "Wali Kelas", accent: "bg-blue-500/10 text-blue-300 border-blue-500/20" },
+  CLASS_SECRETARY: { label: "Sekretaris Kelas", accent: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20" },
+  ADMIN_MANUAL: { label: "Admin", accent: "bg-fuchsia-500/10 text-fuchsia-300 border-fuchsia-500/20" },
+  SYSTEM: { label: "Sistem", accent: "bg-slate-500/10 text-slate-300 border-slate-500/20" },
+  MANUAL: { label: "Input Manual", accent: "bg-amber-500/10 text-amber-300 border-amber-500/20" },
 };
 
 interface Props {
@@ -226,6 +235,35 @@ export function AttendanceStatisticsPanel({
     { name: "Tidak Hadir", value: summary.totals.absent, color: CHART_COLORS.absent },
   ]).filter((item) => item.value > 0), [summary.totals]);
 
+  const sourceBreakdown = useMemo(() => {
+    const totals: Record<AttendanceSource, number> = {
+      SELF: 0,
+      TEACHER_MANUAL: 0,
+      CLASS_SECRETARY: 0,
+      ADMIN_MANUAL: 0,
+      SYSTEM: 0,
+      MANUAL: 0,
+    };
+
+    for (const student of filteredStudents) {
+      const id = String(student.id || "");
+      if (!id) continue;
+
+      for (const date of validDates) {
+        const dateKey = toDateKey(date);
+        const log = filteredLogs.get(createStudentDateKey(id, dateKey));
+        const source = (log?.source as AttendanceSource | undefined) || "SYSTEM";
+        if (totals[source] !== undefined) {
+          totals[source] += 1;
+          continue;
+        }
+        totals.MANUAL += 1;
+      }
+    }
+
+    return totals;
+  }, [filteredLogs, filteredStudents, validDates]);
+
   const insightItems = useMemo(() => {
     const topAbsentClass = [...summary.classChartData].sort((a, b) => b.alpha - a.alpha)[0];
     const topLateClass = [...summary.classChartData].sort((a, b) => b.terlambat - a.terlambat)[0];
@@ -327,6 +365,27 @@ export function AttendanceStatisticsPanel({
           icon={Clock}
           accent="amber"
         />
+      </div>
+
+      <div className="rounded-lg bg-slate-900/50 p-6 shadow-sm border border-slate-700/60">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-slate-100">Komposisi Sumber Input</h3>
+          <p className="mt-1 text-sm text-slate-400">Menunjukkan asal presensi pada seluruh slot hari aktif di filter saat ini.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {(Object.keys(SOURCE_META) as AttendanceSource[]).map((sourceKey) => {
+            const meta = SOURCE_META[sourceKey];
+            return (
+              <div key={sourceKey} className="rounded-lg border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+                <div className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${meta.accent}`}>
+                  {meta.label}
+                </div>
+                <div className="mt-3 text-2xl font-bold text-slate-100">{sourceBreakdown[sourceKey]}</div>
+                <p className="mt-1 text-xs text-slate-500">slot presensi</p>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">

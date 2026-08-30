@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { rtdb } from "@/lib/firebase/client";
 import { ref as rtdbRef, get } from "firebase/database";
-import { AttendanceRecord, AttendanceStatus } from "@/types/gas";
+import { AttendanceRecord, AttendanceSource, AttendanceStatus } from "@/types/gas";
 import { normalizeSchoolId } from "@/lib/gas/schoolId";
 
 function normalizeIdentity(value: unknown) {
@@ -52,6 +52,65 @@ function parseAttendanceDate(value: unknown): Date | null {
     if (!Number.isNaN(parsed.getTime())) return parsed;
   }
   return null;
+}
+
+function deriveAttendanceSource(record: Record<string, unknown>): AttendanceSource {
+  const recordedBy = String(record.recordedBy || "").trim().toLowerCase();
+  const checkInMethod = String(record.checkInMethod || "").trim().toUpperCase();
+
+  if (
+    checkInMethod === "MANUAL_CLASS_SECRETARY" ||
+    recordedBy.includes("sekretaris kelas")
+  ) {
+    return "CLASS_SECRETARY";
+  }
+
+  if (
+    checkInMethod === "MANUAL_TEACHER" ||
+    recordedBy.includes("teacher_manual") ||
+    recordedBy.includes("wali kelas") ||
+    recordedBy.includes("guru")
+  ) {
+    return "TEACHER_MANUAL";
+  }
+
+  if (
+    recordedBy.includes("admin") ||
+    checkInMethod === "MANUAL_ADMIN"
+  ) {
+    return "ADMIN_MANUAL";
+  }
+
+  if (
+    recordedBy.includes("system") ||
+    checkInMethod === "SYSTEM"
+  ) {
+    return "SYSTEM";
+  }
+
+  if (recordedBy.includes("student")) {
+    return "SELF";
+  }
+
+  return "MANUAL";
+}
+
+function getAttendanceSourceLabel(source: AttendanceSource): string {
+  switch (source) {
+    case "SELF":
+      return "Siswa";
+    case "TEACHER_MANUAL":
+      return "Wali Kelas";
+    case "CLASS_SECRETARY":
+      return "Sekretaris Kelas";
+    case "ADMIN_MANUAL":
+      return "Admin";
+    case "SYSTEM":
+      return "Sistem";
+    case "MANUAL":
+    default:
+      return "Input Manual";
+  }
 }
 
 function studentAliases(student: Record<string, unknown>) {
@@ -165,6 +224,8 @@ export function useGasAttendance(schoolId: string | undefined, selectedMonth: nu
 
         const matchedStudent = roster.find((student) => normalizeIdentity(student.id) === canonicalStudentId);
 
+        const source = deriveAttendanceSource(record);
+
         result.push({
           id,
           studentId: canonicalStudentId,
@@ -181,10 +242,13 @@ export function useGasAttendance(schoolId: string | undefined, selectedMonth: nu
             "",
           date: parsedDate.toISOString(),
           status: toAttendanceStatus(record.status),
-          source: String(record.recordedBy || "").toLowerCase().includes("student") ? "SELF" : "MANUAL",
-          note: normalizeIdentity(record.notes) || undefined,
+          source,
+          sourceLabel: getAttendanceSourceLabel(source),
+          note: normalizeIdentity(record.notes) || normalizeIdentity(record.note) || undefined,
           checkInTime: record.checkInTime ?? null,
           checkOutTime: record.checkOutTime ?? null,
+          checkInMethod: normalizeIdentity(record.checkInMethod) || null,
+          recordedBy: normalizeIdentity(record.recordedBy) || null,
           mockLocationFlag: Boolean(record.isMockLocation),
           createdAt: typeof record.date === "number" ? record.date : millis,
           updatedAt: typeof record.date === "number" ? record.date : millis,
