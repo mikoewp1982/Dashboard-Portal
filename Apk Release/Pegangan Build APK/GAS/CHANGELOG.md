@@ -26,6 +26,12 @@ Tambahkan nama pelaksana jika perlu:
 ## [Unreleased]
 
 ### Siswa
+- Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.92-siswa (23089)` dan jalur unduhan web publik LIVE commit `81bdb467` sudah menunjuk versi ini melalui `apk-manifest.json`.
+- Changed: **Siswa (Presensi Siswa)** rule operasional sekretaris kini di-**cleanup total**: logika `PENDING_TEACHER` dan jalur usulan/verifikasi bertahap tidak lagi dipakai untuk data baru; seluruh input `Wali Kelas` dan `Sekretaris Kelas` langsung menjadi final; audit trail `proposedBy` / `proposedStatus` tidak lagi di-set pada record baru (field legacy tetap dibaca untuk data lama).
+- Added: **Siswa (Presensi Siswa)** hasil build `1.0.92` mencakup parity UI dengan web admin/portal guru: label badge audit sekarang menampilkan "Dicatat oleh: <verifier>" alih-alih narasi "Final dari usulan sekretaris".
+- Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.91-siswa (23088)` dan jalur unduhan web lokal sudah disinkronkan ke versi yang sama melalui `apk-manifest.json`.
+- Changed: **Siswa (Presensi Siswa)** jalur `Sekretaris Kelas` sekarang mengikuti rule operasional baru: input sekretaris langsung dicatat sebagai data final, bukan lagi usulan `PENDING_TEACHER`.
+- Fixed: **Siswa (Presensi Siswa)** teks aksi dan badge audit di layar presensi diperjelas agar membedakan rule baru vs data legacy yang masih pending.
 - Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.90-siswa (23087)` untuk membawa `Rekap Mingguan` pada menu `Presensi Siswa`; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
 - Added: **Siswa (Presensi Siswa)** sekarang memiliki tab baru `Rekap Mingguan` agar wali kelas dan sekretaris kelas bisa memantau tren absensi lebih cepat tanpa menunggu akhir bulan.
 - Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.89-siswa (23086)` untuk membawa guard verifikasi `Sekretaris Kelas`; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
@@ -48,6 +54,11 @@ Tambahkan nama pelaksana jika perlu:
 - Fixed: **Siswa (Gate EduLock)** sekarang dibangun dengan konsep baru bahwa hard block kepatuhan EduLock hanya aktif saat **hari efektif + jam sekolah aktif**, dengan **grace period** saat proteksi drop sesaat di tengah sesi.
 
 ### Guru
+- Changed: Build distribusi GAS Guru saat ini menjadi `1.0.72-guru (1064)` dengan file final aktif `GAS-Guru-release.apk`.
+- Changed: **Guru (Presensi Siswa)** kontrak UI dan badge audit sekarang di-**cleanup total**: tidak ada lagi badge `PENDING_TEACHER` atau tombol `Finalisasi Usulan Sekretaris` untuk data baru; data legacy yang masih pending tetap bisa diedit/diupdate melalui jalur edit manual biasa.
+- Changed: Build distribusi GAS Guru saat ini menjadi `1.0.71-guru (1063)` dengan file final aktif `GAS-Guru-release.apk`.
+- Changed: **Guru (Presensi Siswa)** input wali kelas dan sekretaris kini sama-sama dianggap final, sementara data legacy yang masih `pending` tetap bisa difinalkan dari layar guru/admin.
+- Fixed: **Guru / Web Guru / Web Admin** copy UI audit presensi sekarang membedakan jelas `pending legacy` vs rule baru `final langsung`, sehingga operator tidak lagi melihat narasi verifikasi bertahap pada data baru.
 - Changed: Build distribusi GAS Guru saat ini menjadi `1.0.70-guru (1062)` dengan file final aktif `GAS-Guru-release.apk`.
 - Added: **Guru (Presensi Siswa)** sekarang memiliki tab `Rekap Mingguan` agar monitoring absensi kelas tidak harus menunggu rekap bulanan.
 - Changed: Build distribusi GAS Guru saat ini menjadi `1.0.69-guru (1061)` dengan file final aktif `GAS-Guru-release.apk`.
@@ -72,7 +83,17 @@ Tambahkan nama pelaksana jika perlu:
 - Fixed: **Guru (Home)** badge merah notifikasi di kartu menu digeser sedikit masuk agar tidak mepet ke sudut kanan atas dan lebih jelas terlihat.
 
 ### Web Admin / PWA
+- Changed: **Web Admin / Rekap Kehadiran** + **Portal Guru `/guru/presensi`** sekarang di-**cleanup total** rule usulan sekretaris: endpoint `/api/admin/attendance-verification` dihapus; tombol `Finalkan Legacy`, panel statistik `Usulan Sekretaris Pending`, dan badge `PENDING_TEACHER` dihilangkan dari UI untuk data baru (hanya data lama yang masih `PENDING_TEACHER` yang tetap bisa diedit manual). Bersama commit ini juga di-ship APK publik: GAS Siswa `1.0.92-siswa (23089)` dan EduLock `1.3.22 (48)` live via `/gas/install` dan `/e`. Deploy live commit `81bdb467`.
+- Removed: **Web Admin + Portal Guru** debug-point `fetch 127.0.0.1:7777/event` di AuthProvider guard dan halaman `/dashboard/database` (sample hit ke local server saat development).
+- Fixed: **Web Admin / Presensi Sekolah** pengaturan `attendance-settings` sekarang menyertakan helper `normalizeTimeValue` agar input waktu manual `07:30` vs `07:30:00` tidak dibaca beda oleh backend.
+- Changed: **Web Admin / Rekap Kehadiran** kini menganggap input `Wali Kelas` dan `Sekretaris Kelas` sebagai data final langsung; panel verifikasi admin dipertahankan hanya untuk membereskan data legacy yang masih `PENDING_TEACHER`.
+- Changed: **Portal Guru `/guru/presensi`** kini selaras dengan rule baru tersebut, sambil tetap mempertahankan badge audit sumber input dan finalisasi legacy bila masih ada data lama.
+- Changed: Perubahan rule `final langsung` untuk **Web Admin / Rekap Kehadiran** dan **Portal Guru `/guru/presensi`** sudah live melalui deploy commit `089fe1da`.
+- Added: **Web Admin / Rekap Kehadiran** sekarang memiliki tab baru `Rekap Mingguan` langsung di dashboard admin GAS, lengkap dengan navigator `Minggu Sebelumnya / Minggu Berikutnya` untuk memantau absensi tanpa harus menunggu rekap bulanan penuh. Deploy live commit `69706d10`.
+- Fixed: **Web Admin / Rekap Kehadiran** tab `Rekap Mingguan` kini menghitung slot lintas batas bulan dengan benar, dan tetap menahan usulan `Sekretaris Kelas` yang masih `pending` agar belum masuk hitungan final.
+- Changed: **Portal Guru `/guru/presensi`** yang live sekarang benar-benar menyamai APK GAS Guru terbaru: tab `Monitoring Harian / Rekap Mingguan / Rekap Bulanan` tersedia, data pending usulan sekretaris tidak dihitung final, dan badge audit verifikasi tampil di monitoring harian. Deploy live commit `7bae9684`.
 - Fixed: **Web Admin / Rekap Kehadiran** admin sekolah sekarang bisa memverifikasi usulan presensi `Sekretaris Kelas` langsung dari `Riwayat Harian` jika wali kelas berhalangan, tanpa menghapus jejak audit pengusul.
+- Changed: **Web Admin / Rekap Kehadiran** perubahan verifikasi admin sekolah untuk usulan `Sekretaris Kelas` sudah live di App Hosting. Deploy live commit `c781bc8f`.
 - Changed: **Web Admin / Rekap Kehadiran** label verifikasi dan statistik pending kini menyebut jalur `wali kelas atau admin sekolah` agar sesuai dengan kontrak verifikasi terbaru.
 - Fixed: **Web Admin / Rekap Kehadiran** riwayat harian dan statistik sekarang membedakan jelas usulan sekretaris yang masih `pending verifikasi guru` vs data yang sudah final, serta mempertahankan jejak audit pengusul setelah guru menyetujui.
 - Changed: **Web Admin / Rekap Kehadiran** panel statistik kini menampilkan jumlah `Usulan Sekretaris Pending` dan `Usulan Sekretaris Disetujui` agar kolaborasi sekretaris-guru bisa dipantau lebih mudah.

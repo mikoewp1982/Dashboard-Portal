@@ -1,5 +1,144 @@
 # Build Log GAS
 
+## 2026-08-30 14:53 - [BUILD + SHIP + DEPLOY WEB] Bersih total rule usulan sekretaris + rilis APK terbaru
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `build-release` + `ship-apk` + `deploy-web` + `attendance-cleanup`
+- **Tujuan perubahan:** Menutup sisa rule dan jejak UI lama `usulan/pending sekretaris` pada Web Admin, Portal Guru, serta APK GAS siswa/guru; lalu merilis APK baru dan menyinkronkan unduhan web ke versi siswa terbaru.
+- **Flavor terdampak:** `siswa`, `guru` (`src/main`)
+- **Versioning:**
+  - `siswa` `1.0.91-siswa (23088)` -> `1.0.92-siswa (23089)`
+  - `guru` `1.0.71-guru (1063)` -> `1.0.72-guru (1064)`
+- **File utama yang diubah:**
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt)
+  - [web/src/app/api/teacher/attendance/route.ts](file:///D:/Dashboard%20Portal/web/src/app/api/teacher/attendance/route.ts)
+  - [web/src/components/guru/GuruPresensiInteractive.tsx](file:///D:/Dashboard%20Portal/web/src/components/guru/GuruPresensiInteractive.tsx)
+  - [web/src/components/gas/attendance/AttendanceRecapPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceRecapPanel.tsx)
+  - [web/src/components/gas/attendance/AttendanceStatisticsPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceStatisticsPanel.tsx)
+  - [web/public/apk/apk-manifest.json](file:///D:/Dashboard%20Portal/web/public/apk/apk-manifest.json)
+- **Build yang dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease :app:assembleGuruRelease`
+  - `./gradlew :app:assembleSiswaRelease :app:assembleGuruRelease -x lintVitalAnalyzeSiswaRelease -x lintVitalAnalyzeGuruRelease`
+  - `npm run sync:apk:gas`
+  - `npm run build`
+- **Hasil build:** sukses
+- **Catatan build:** run pertama menghasilkan artefak APK tetapi exit gagal karena crash internal Android Lint `GradleDetector` pada task `lintVitalAnalyzeSiswaRelease`; assemble diulang dengan skip task lint-vital yang crash, lalu sukses penuh.
+- **Output APK:**
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.92-siswa-23089.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.72-guru-1064.apk`
+  - `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\web\public\apk\GAS-Siswa-1.0.92-siswa-23089.apk`
+- **Hash final:**
+  - GAS Siswa `1.0.92-siswa (23089)` -> `D16CDD254843B121D850E3ED772A5A2E287A8DF7457321875B3DA515958A7F12`
+  - GAS Guru `1.0.72-guru (1064)` -> `06A775096952C592F6E00B43C420311165BE7189BABEF9609D2B5A4DD19A02E3`
+- **Regression / verifikasi yang dijalankan:**
+  - `npm run build` web -> lolos
+  - manifest publik GAS siswa -> sinkron ke `1.0.92-siswa (23089)`
+  - build standalone web -> memuat `GAS-Siswa-1.0.92-siswa-23089.apk`
+- **Deploy live App Hosting (2 tahap commit):**
+  - Tahap 1 (rule inti): commit `089fe1da` live `feat(attendance): finalkan langsung input sekretaris kelas`.
+  - Tahap 2 (cleanup + APK publik): commit `81bdb467` live `chore(attendance): bersihkan rule final langsung sekretaris + update apk publik`. Isinya: hapus endpoint `/api/admin/attendance-verification`; bersihkan logika `PENDING_TEACHER` di Rekap Kehadiran, Statistik, dan Portal Guru; hapus tombol `Finalkan Legacy` dan panel statistik pending; cleanup debug-point fetch `127.0.0.1:7777/event` di AuthProvider & DatabasePage; sinkron `GAS-Siswa-1.0.92-siswa-23089.apk` dan `EduLock-studentRelease.apk` (1.3.22) ke `web/public/apk/`; bump manifest publik.
+- **Belum diuji:**
+  - QA device fisik pasca-rilis untuk skenario operator sekretaris pada kelas produksi
+
+## 2026-08-30 13:43 - [BUILD + SHIP] Rule final langsung untuk presensi sekretaris kelas
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `build-release` + `deploy-web` + `attendance-finalization`
+- **Tujuan perubahan:** Menyederhanakan operasional presensi kelas dengan menjadikan input `Wali Kelas` dan `Sekretaris Kelas` sama-sama final, sambil tetap mempertahankan audit trail dan jalur finalisasi untuk data legacy yang masih pending.
+- **Flavor terdampak:** `siswa`, `guru` (`src/main`), serta verifikasi compile `kepala`
+- **File utama yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt)
+  - [web/src/components/gas/attendance/AttendanceRecapPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceRecapPanel.tsx)
+  - [web/src/components/gas/attendance/AttendanceStatisticsPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceStatisticsPanel.tsx)
+  - [web/src/components/guru/GuruPresensiInteractive.tsx](file:///D:/Dashboard%20Portal/web/src/components/guru/GuruPresensiInteractive.tsx)
+  - [web/src/app/api/admin/attendance-verification/route.ts](file:///D:/Dashboard%20Portal/web/src/app/api/admin/attendance-verification/route.ts)
+- **Build yang dijalankan:**
+  - `:app:assembleSiswaRelease`
+  - `:app:assembleGuruRelease`
+  - `:app:compileKepalaDebugKotlin`
+  - `npm run build`
+- **Hasil build:** sukses
+- **Output APK:**
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.91-siswa-23088.apk`
+  - `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\web\public\apk\GAS-Siswa-1.0.91-siswa-23088.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.71-guru-1063.apk`
+- **Hash final:**
+  - GAS Siswa `1.0.91-siswa (23088)` -> `135DB6B26D57C2E4F4508EFE1D37E2F266E388C9EB8FC4DFFA3B4A7FB1872063`
+  - GAS Guru `1.0.71-guru (1063)` -> `7996542805F349B11828A01549DD4690BE7738C1D9A8DD16606DED8ECD34F58D`
+- **Regression check yang dijalankan:**
+  - lint file web yang disentuh -> lolos
+  - build Next.js + prerender `/gas/install` -> lolos
+  - manifest APK publik -> sinkron ke `1.0.91-siswa (23088)`
+- **Deploy live:**
+  - commit `089fe1da` berhasil di-push ke `origin/main` untuk memicu rollout App Hosting rule `final langsung` pada Web Admin dan Portal Guru
+- **Belum diuji:**
+  - QA device fisik untuk skenario bentrok input wali kelas vs sekretaris pada hari yang sama
+- **Catatan operasional:**
+  - ship `GAS Siswa` dijalankan memakai script pakem `Ship-Apk-Baru.ps1` dari salinan Git HEAD karena file script sedang tidak ada secara fisik di working tree
+  - panel admin/guru tetap mempertahankan aksi finalisasi untuk data legacy `PENDING_TEACHER`, tetapi data baru sekretaris tidak lagi masuk jalur usulan
+  - folder `web/public/apk` dirapikan agar hanya menyimpan artefak current yang dipakai tutorial
+
+## 2026-08-30 13:15 - [DEPLOY WEB] Rekap Mingguan live di admin GAS
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `deploy-web` + `attendance-admin`
+- **Tujuan perubahan:** Menutup miss requirement sebelumnya dengan menambahkan tab **Rekap Mingguan** langsung di **Dashboard Admin > Rekap Kehadiran**, bukan hanya di APK/portal guru.
+- **Commit live:** `69706d10` — `feat(attendance): tambah rekap mingguan admin gas`
+- **File web utama yang menjadi acuan deploy ini:**
+  - [web/src/components/gas/attendance/AttendanceRecapPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceRecapPanel.tsx)
+  - [web/src/components/gas/attendance/GasAttendanceReportPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/GasAttendanceReportPanel.tsx)
+  - [web/src/hooks/gas/attendance/useGasAttendance.ts](file:///D:/Dashboard%20Portal/web/src/hooks/gas/attendance/useGasAttendance.ts)
+- **Perubahan perilaku yang sekarang live:**
+  - menu **Rekap Kehadiran** admin sekarang punya empat tab: `Rekap Bulanan / Rekap Mingguan / Riwayat Harian / Statistik`
+  - tab **Rekap Mingguan** memiliki navigator `Minggu Sebelumnya / Minggu Berikutnya`
+  - minggu yang melintasi batas bulan tetap terbaca benar karena hook attendance admin sekarang mendukung rentang tanggal lintas bulan
+  - rule final tetap sama: usulan `Sekretaris Kelas` yang masih `PENDING_TEACHER` belum dihitung final
+- **Verifikasi sebelum push:**
+  - `npx eslint "src/components/gas/attendance/AttendanceRecapPanel.tsx" "src/components/gas/attendance/GasAttendanceReportPanel.tsx" "src/hooks/gas/attendance/useGasAttendance.ts"` → lolos
+  - `npm run build` → sukses
+- **Catatan operasional:**
+  - deploy ini melengkapi deploy admin sebelumnya `c781bc8f` yang sudah membuka jalur **Verifikasi Admin** untuk usulan presensi sekretaris
+  - server lokal review tetap bisa dipakai untuk smoke test cepat di `http://127.0.0.1:3000/dashboard/gas?tab=attendance-report`
+
+## 2026-08-30 12:40 - [DEPLOY WEB] Parity portal guru + verifikasi admin attendance live
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `deploy-web` + `parity`
+- **Tujuan perubahan:** Menutup gap antara APK GAS Guru dan versi web guru/admin pada area presensi setelah perubahan `Rekap Mingguan` dan hardening verifikasi `Sekretaris Kelas`.
+- **Deploy live yang dicapai:**
+  - commit `c781bc8f` -> **Web Admin / Rekap Kehadiran** live dengan tombol verifikasi cadangan oleh **Admin Sekolah** untuk usulan presensi `Sekretaris Kelas`
+  - commit `7bae9684` -> **Portal Guru `/guru/presensi`** live dengan parity ke APK GAS Guru terbaru
+- **File web utama yang menjadi acuan deploy ini:**
+  - [web/src/app/api/admin/attendance-verification/route.ts](file:///D:/Dashboard%20Portal/web/src/app/api/admin/attendance-verification/route.ts)
+  - [web/src/components/gas/attendance/AttendanceRecapPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceRecapPanel.tsx)
+  - [web/src/components/gas/attendance/GasAttendanceReportPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/GasAttendanceReportPanel.tsx)
+  - [web/src/components/gas/attendance/AttendanceStatisticsPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceStatisticsPanel.tsx)
+  - [web/src/app/api/teacher/attendance/route.ts](file:///D:/Dashboard%20Portal/web/src/app/api/teacher/attendance/route.ts)
+  - [web/src/components/guru/GuruPresensiInteractive.tsx](file:///D:/Dashboard%20Portal/web/src/components/guru/GuruPresensiInteractive.tsx)
+  - [web/src/components/guru/GuruApkTheme.tsx](file:///D:/Dashboard%20Portal/web/src/components/guru/GuruApkTheme.tsx)
+- **Perubahan perilaku yang sekarang live:**
+  - admin sekolah bisa mengambil alih verifikasi usulan presensi siswa bila wali kelas berhalangan
+  - portal guru kini memiliki tab `Monitoring Harian / Rekap Mingguan / Rekap Bulanan`
+  - data `PENDING_TEACHER` tidak dihitung final pada rekap mingguan maupun bulanan portal guru
+  - monitoring harian portal guru menampilkan badge audit `pending`, `pengusul sekretaris`, dan `final verifier`
+- **Gate deploy yang dijalankan:**
+  - `git pull --ff-only origin main` -> **AMAN**
+  - `npx eslint src/app/api/teacher/attendance/route.ts src/components/guru/GuruApkTheme.tsx src/components/guru/GuruPresensiInteractive.tsx` -> **PASS**
+- **Status distribusi:**
+  - **SUDAH LIVE** di App Hosting via push ke `origin/main`
+  - **BELUM** ada sinkronisasi APK `web/public/apk`; perubahan sesi ini fokus pada parity web
+
 ## 2026-08-30 12:26 - [BUILD] GAS Siswa 1.0.90-siswa (23087) + GAS Guru 1.0.70-guru (1062) - rekap mingguan + verifikasi admin web
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `feature` + `hardening` + `build` + `deploy-web`

@@ -6,7 +6,155 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-26 ~19:47 (CRITICAL SECURITY PATCH Anti-Uninstall — celah uninstall via tombol "Uninstal aplikasi" di halaman Device Admin Activation Android; SHA Final 1E9C87FF; tetap versi EduLock 1.3.22 (48))
+Update terakhir: 2026-08-30 14:53 (GAS Siswa 1.0.92 + GAS Guru 1.0.72 + commit 81bdb467 cleanup rule final langsung sekretaris + APK EduLock 1.3.22 live)
+
+## ✅ [SHIP APK + DEPLOY WEB] GAS Siswa `1.0.92-siswa (23089)` + GAS Guru `1.0.72-guru (1064)` — cleanup rule final langsung sekretaris + APK EduLock live (2026-08-30 14:53)
+
+- [x] **Bump flavor siswa**: `versionName 1.0.92-siswa` / `versionCode 23089`.
+- [x] **Bump flavor guru**: `versionName 1.0.72-guru` / `versionCode 1064`.
+- [x] **Build release APK**: `:app:assembleSiswaRelease` dan `:app:assembleGuruRelease` sukses (skip lintVital yang crash GradleDetector).
+- [x] **Ship GAS Siswa ke Final** + `web/public/apk` + update `apk-manifest.json` (rename 1.0.91 → 1.0.92).
+- [x] **Ship GAS Guru ke Final**: `GAS-Guru-release.apk` dan `GAS-Guru-1.0.72-guru-1064.apk`.
+- [x] **Sinkron unduhan web GAS Siswa** ke `1.0.92-siswa (23089)` dengan SHA `D16CDD254843B121D850E3ED772A5A2E287A8DF7457321875B3DA515958A7F12`.
+- [x] **Sinkron unduhan web GAS Guru** hash `06A775096952C592F6E00B43C420311165BE7189BABEF9609D2B5A4DD19A02E3`.
+- [x] **Push EduLock 1.3.22 live** bersama sesi ini: `EduLock-studentRelease.apk` hash `F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34` di-push ke `web/public/apk/` (route `/e`).
+- [x] **Web Admin cleanup rule final langsung**:
+  - [x] Hapus endpoint `/api/admin/attendance-verification` (tidak dibutuhkan).
+  - [x] Bersihkan logika `PENDING_TEACHER` + tombol `Finalkan Legacy` + panel statistik `Usulan Sekretaris Pending` dari `AttendanceRecapPanel.tsx`, `AttendanceStatisticsPanel.tsx`, `GuruPresensiInteractive.tsx`, dan route `/api/teacher/attendance`.
+  - [x] Hapus semua debug-point fetch `127.0.0.1:7777/event` di `AuthProvider.tsx` dan `/dashboard/database/page.tsx`.
+  - [x] Tambah helper `normalizeTimeValue` di route `/api/admin/attendance-settings` agar input `07:30` vs `07:30:00` konsisten.
+- [x] **Build web**: `npm run build` sukses dan prerender `/gas/install` membawa file `GAS-Siswa-1.0.92-siswa-23089.apk`.
+- [x] **Deploy live web admin + portal guru**: commit `81bdb467` (lanjutan tahap 2 setelah rule inti `089fe1da`) di-push ke `origin/main` untuk rollout App Hosting.
+- [ ] **Cek di HP**: data baru dari sekretaris kelas langsung final, tidak ada badge "pending usulan", panel admin tidak memunculkan tombol finalisasi legacy kecuali untuk data PENDING_TEACHER lama.
+- [ ] **Cek di HP**: EduLock route `/e` menyajikan APK hash `F6D6C3EEE...` (1.3.22 fallback audio hardening).
+- [ ] **Cek di HP**: bentrok wali kelas vs sekretaris (siswa/tanggal sama) — audit trail record `recordedBy` tetap menunjukkan siapa yang terakhir update final, tanpa flag `proposedStatus`.
+
+## ✅ [SHIP APK + DEPLOY WEB] GAS Siswa `1.0.91-siswa (23088)` + GAS Guru `1.0.71-guru (1063)` — rule final langsung presensi sekretaris kelas (2026-08-30)
+
+- [x] **Bump flavor siswa**: `versionName 1.0.91-siswa` / `versionCode 23088`.
+- [x] **Bump flavor guru**: `versionName 1.0.71-guru` / `versionCode 1063`.
+- [x] **Build release APK**: `:app:assembleSiswaRelease` dan `:app:assembleGuruRelease` sukses.
+- [x] **Compile pagar shared source**: `:app:compileKepalaDebugKotlin` sukses.
+- [x] **Ship GAS Siswa lewat script pakem** ke `Apk Release/Final` + `web/public/apk` + `apk-manifest.json`.
+- [x] **Salin GAS Guru ke folder Final**: `GAS-Guru-release.apk` dan `GAS-Guru-1.0.71-guru-1063.apk`.
+- [x] **Sinkron unduhan web lokal GAS Siswa** ke `1.0.91-siswa (23088)` dengan SHA `135DB6B26D57C2E4F4508EFE1D37E2F266E388C9EB8FC4DFFA3B4A7FB1872063`.
+- [x] **Rule baru diterapkan**: input `Wali Kelas` dan `Sekretaris Kelas` kini sama-sama final; panel guru/admin hanya dipakai untuk memfinalkan data legacy yang masih `PENDING_TEACHER`.
+- [x] **Audit trail tetap dipertahankan**: sumber input, petugas pencatat, dan jejak legacy proposal masih tampil di mobile/web.
+- [x] **Self-lock sekretaris tetap aktif**: sekretaris kelas tidak boleh melakukan presensi untuk dirinya sendiri.
+- [x] **Build web**: `npm run build` sukses dan prerender `/gas/install` sudah membawa file `GAS-Siswa-1.0.91-siswa-23088.apk`.
+- [x] **Deploy live web**: commit `089fe1da` sudah di-push ke `origin/main` untuk membawa rule `final langsung` ke Web Admin dan Portal Guru `/guru/presensi`.
+- [ ] **Cek di HP**: input baru dari sekretaris kelas langsung muncul sebagai final di web admin tanpa langkah verifikasi lanjutan.
+- [ ] **Cek di HP**: jika ada data lama `PENDING_TEACHER`, guru/admin masih bisa memfinalkan tanpa merusak audit trail.
+- [ ] **Cek di HP**: skenario bentrok input wali kelas vs sekretaris pada siswa/tanggal yang sama sudah sesuai keputusan operasional lapangan.
+
+## ✅ [RANGKUMAN TERBARU] GAS Siswa `1.0.84-siswa (23081)` + GAS Guru `1.0.68-guru (1060)` + parity web guru (2026-08-29)
+
+- [x] **GAS Siswa / Virtual Pet**: hukuman empat kartu harian tidak lagi dieksekusi di pagi buta hari yang sama. Status aktif pet sekarang membaca **rekap hari sebelumnya**, sehingga jika siswa kemarin sudah memenuhi target maka saat buka jam `05.30` pet tetap aman.
+- [x] **Build GAS Siswa final lokal**:
+  - `Apk Release/Final/GAS-Siswa-1.0.84-siswa-23081.apk`
+  - `Apk Release/Final/GAS-Siswa-release.apk`
+  - SHA256 alias final: `C6F1CBB088286BADE53A4557B0C3122BBED69164E12AEA555B663B98C39C5CA4`
+- [x] **GAS Guru / Presensi Siswa**: input manual guru sekarang tetap sinkron ke `Rekap Bulanan` setelah tombol **Simpan Presensi Manual** ditekan.
+- [x] **GAS Guru / Presensi Dhuha & Jum'at**: kolom status yang dicentang kini meninggalkan jejak visual yang lebih jelas.
+- [x] **GAS Guru / Home**:
+  - bingkai kartu menu diperkecil bertahap sampai proporsinya lebih ringkas
+  - reduksi terakhir memangkas bingkai kartu sekitar 30% dari iterasi sebelumnya
+  - ikon menu tetap besar; yang dikecilkan adalah kotak/bingkainya
+  - badge merah menu `Notifikasi` digeser lebih masuk ke dalam sudut kartu
+  - startup cold launch tidak lagi sempat mem-flash potongan UI siswa saat sesi guru masih loading
+- [x] **Build GAS Guru final lokal**:
+  - `Apk Release/Final/GAS-Guru-1.0.68-guru-1060.apk`
+  - `Apk Release/Final/GAS-Guru-release.apk`
+  - SHA256 alias final: `8EFFBC73A3ECB109DEA28D9B46FFDEC688231621D09393DFAF1BF811D7EEE4BB`
+- [x] **Parity web guru yang disamakan dengan APK**:
+  - `/guru/presensi` kini me-refresh `Rekap Bulanan` setelah simpan manual
+  - `/guru/sholat-dhuha-jumat` kini hanya menampilkan **satu** status aktif secara visual, dan jejak pilihannya dibuat lebih tegas
+- [ ] **Retest live guru setelah deploy**:
+  - buka `/guru/presensi`, ubah status manual, klik `Simpan Presensi Manual`, lalu pastikan `Rekap Bulanan` ikut berubah tanpa perlu reload aneh
+  - buka `/guru/sholat-dhuha-jumat`, centang status manual, lalu pastikan hanya satu status yang aktif dan jejak warnanya jelas
+  - buka `GAS Guru` dari cold start, pastikan tidak ada lagi kilatan UI siswa di awal
+  - buka menu Home `GAS Guru`, pastikan bingkai kartu sudah lebih pendek/ringkas dan badge merah `Notifikasi` tidak lagi terlalu keluar
+
+## [REBUILD PUBLIK] EduLock Siswa `1.3.22 (48)` — Patch fallback audio Temukan Perangkat 2 lapis (STREAM_MUSIC + Vibrator) + ACK detail status (2026-08-28 ~16:40, TANPA bump versi)
+
+- [x] **Konteks user request**: setelah uji nyata bahwa matikan slider Alarm = paksa balik ke MAX saat admin bunyikan (perilaku lama memang benar), user minta tambah 2 patch:
+  1. `adjustStreamVolume FLAG_SHOW_UI` + ROM-confirm izin ubah audio
+  2. Jika volume tetap 0 (DND / OEM tolak), fallback ke `STREAM_MUSIC` volume max. Jika audio tetap nol, fallback ke **Vibrator** pattern panjang. Jika semuanya nol, report ke admin **`FAILED_SILENT`** (bukan palsu ALARM_STARTED).
+- [x] **Patch izin**: tambah `<uses-permission android:name="android.permission.VIBRATE" />` dan `<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />` di `AndroidManifest.xml` EduLock (ROM vendor China lebih "hormat" jika izin dideklarasikan eksplisit).
+- [x] **Patch DeviceLocatorAlarm.kt L30-L177**:
+  - `start(...)` sekarang ambil snapshot volume ALARM DAN MUSIC (restore keduanya nanti).
+  - Force volume ALARM ke max: `setStreamVolume + 2x adjustStreamVolume(ADJUST_RAISE, FLAG_SHOW_UI)` (slider OS tampil naik, bukan berubah diam-diam).
+  - Putar player ALARM → cek volume aktual after play. Jika ≤ 0 atau ≤ max/2 → stop player ALARM (dianggap gagal/DND/OEM-tolak).
+  - Jika ALARM gagal: fallback ke STREAM_MUSIC (USAGE_MEDIA) dengan force max yang sama, cek volume aktual kembali.
+  - Baik audio berhasil maupun tidak, jalankan **Vibrator waveform pattern panjang** (untuk API ≥ S pakai VibratorManager.defaultVibrator; dibawah pakai Context.VIBRATOR_SERVICE). Audio + getar berjalan bersamaan.
+  - Tambah callback baru `onStartedWithFallback(usedMusicStreamFallback, usedVibrationFallback)` untuk notify caller status fallback.
+  - Volume `ALARM` dan `MUSIC` dikembalikan persis ke level semula di `stopInternal`.
+- [x] **Patch FirebaseReporter.kt acknowledgeFindDeviceCommand**: tambah 3 parameter opsional (`usedMusicFallback`, `usedVibrationFallback`, `streamUsed`) dan tulis field baru ke RTDB: `lastFindDeviceUsedMusicFallback` (bool), `lastFindDeviceUsedVibrationFallback` (bool), `lastFindDeviceStreamUsed` = `ALARM | MUSIC_FALLBACK | EXCEPTION`.
+- [x] **Patch MonitoringService.kt ACTION_FIND_DEVICE_ALARM (L317-L382)**: kaitkan callback `onStartedWithFallback` dengan memilih status ACK yang benar → `ALARM_STARTED`, `ALARM_STARTED_FALLBACK_MUSIC`, `ALARM_STARTED_VIBRATION_ONLY`, atau `FAILED_SILENT`. Kirim field baru ke FirebaseReporter. Status selesai `ALARM_FINISHED` dan henti `ALARM_STOPPED` juga menyertakan field fallback.
+- [x] **Build release**:
+  - Lokasi: `native-mobile-edulock`
+  - Command: `.\gradlew.bat :app:assembleStudentRelease --no-daemon`
+  - Hasil: **BUILD SUCCESSFUL in 2m 34s** (49 tasks: 17 executed, 32 up-to-date).
+- [x] **Salin ke Final dan publik**:
+  - Versioned: `Apk Release/Final/EduLock-1.3.22-48.apk`
+  - Alias Final: `Apk Release/Final/EduLock-studentRelease.apk`
+  - Sync web publik: `web/public/apk/EduLock-studentRelease.apk` (menimpa alias agar `/e` serve patch terbaru).
+- [x] **SHA256 Final alias aktif (patch fallback audio)**: `5F4E2EE3D27FDA29724E11595FDDD7BABE5F1CF467E07799B8DB4C27966336DB`
+- [x] **SHA256 build 13:28 (superseded)**: `8FB7CC53FD3F7C24680EE6FF391BF55B8270776445FBE8DBBD2A46C92AF01063`
+- [x] **Versi tetap** `1.3.22` / `48` (tidak bump — sesuai instruksi user "pertahankan saja versi saat ini").
+- [x] **Sinkron dokumentasi pegangan**:
+  - `Pegangan Build APK/README.md` baris EduLock Final + Live saat ini dan section **Status EduLock hari ini** + subsection **Behavior Temukan Perangkat terbaru**.
+  - `Pegangan Build APK/Edulock/RELEASE.md` Versi distribusi terkini (hash, waktu, status `/e`).
+  - `Pegangan Build APK/Edulock/BUILD_LOG.md` entry paling atas patch 16:40 (detail scope/file/hasil/QA).
+  - `Pegangan Build APK/Edulock/CHANGELOG.md` `[Unreleased]` Student section.
+- [ ] **QA WAJIB HP fisik sebelum nyatakan live aman ( regression Temukan Perangkat )**:
+  - [ ] Slider Alarm = 0, admin bunyikan 45 detik → HP BERBUNYI keras (volume max) atau status ACK `ALARM_STARTED_FALLBACK_MUSIC`.
+  - [ ] Aktifkan Do Not Disturb — **Total Silence** (mode ketat ROM), admin bunyikan → HP TIDAK BOLEH "senyap total tanpa feedback". Minimal status ACK = `ALARM_STARTED_VIBRATION_ONLY` dan HP GETAR.
+  - [ ] Kedua slider = 0 + vibrator juga dinonaktifkan vendor (jika ada mode seperti itu) → status ACK admin **`FAILED_SILENT`** (tidak boleh menipu ALARM_STARTED padahal nol).
+  - [ ] Setelah alarm berakhir (atau tombol Stop), buka Settings Sound → volume ALARM dan MUSIC kembali ke level semula (tidak permanen MAX).
+  - [ ] Command Stop Find Device dari panel admin → alarm dan getar berhenti; status ACK `ALARM_STOPPED`.
+  - [ ] Panel admin monitoring masih membaca status Online/Offline/Trust Score/Device Admin dengan benar (patch tidak mengubah heartbeat).
+- [ ] Deploy `/e` live App Hosting — commit + push (opsional menunggu user).
+
+## [WIP FIX APK] EduLock Siswa `1.3.22 (48)` - Recovery Accessibility OFF -> admin ON sudah tembus di HP fisik, tunggu retest clean build (2026-08-27 larut malam)
+
+- [x] **Akar utama ditemukan**: [OverlayLockActivity.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/OverlayLockActivity.kt) bisa `finish()` terlalu cepat pada `onResume()` untuk target recovery settings, sehingga overlay Accessibility sempat muncul lalu hilang sebelum user sempat menekan tombol.
+- [x] **Akar pendamping ditemukan**: [LockEnforcer.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LockEnforcer.kt) perlu debounce recovery overlay ala jalur GPS yang dulu sudah berhasil, tetapi guard berbasis `lastForegroundPackage == settings` terbukti salah arah dan sudah dicabut kembali.
+- [x] **Fix yang dipertahankan di source**:
+  - recovery settings diprioritaskan dulu di `OverlayLockActivity.onResume()`
+  - `OverlayLockActivity.shouldStayLocked()` menganggap recovery target aktif sebagai kondisi valid untuk tetap tampil
+  - `LockEnforcer.showRecoveryOverlay()` tetap mengaktifkan recovery target + `stopKiosk()` lebih dulu dan mempertahankan debounce overlay recovery
+  - skip overlay berbasis `lastForegroundPackage` **dibatalkan** karena sempat membuat kasus “admin ON tapi di HP tidak terjadi apa-apa”
+- [x] **Versi tetap `1.3.22` / `48`** (tidak bump; internal QA only).
+- [x] **Build clean berhasil**: `assembleStudentRelease` sukses setelah instrumentation debug dibersihkan kembali.
+- [x] **APK clean sudah disalin ke folder Final**:
+  - `Apk Release/Final/EduLock-1.3.22-48.apk`
+  - `Apk Release/Final/EduLock-studentRelease.apk`
+- [x] **QA HP fisik pada build kerja terakhir**: jalur `Accessibility OFF -> admin ON` **sudah berhasil**.
+- [x] **Retest pada APK clean dari folder Final**:
+  - [x] install ulang APK final bersih
+  - [x] ulang skenario `Accessibility OFF -> admin ON`
+  - [x] hasil user: **lulus** pada APK final terbaru; jika overlay diabaikan, HP tidak lagi bebas dipakai
+- [ ] **Retest keluarga bug lain yang masih satu PR**:
+  - [ ] `Overlay OFF -> admin ON`
+  - [ ] `Battery Optimization OFF -> admin ON`
+  - [ ] `App Location Permission OFF -> admin ON`
+- [x] **Regression offline fail-safe di HP fisik**:
+  - [x] `internet mati total -> lewat masa tenggang 60 detik` sekarang **benar-benar mengunci**
+
+## [SHIP APK] GAS Siswa `1.0.82-siswa (23079)` - Kartu Aturan Hari = Presensi Sekolah 2026-08-27 (Final only)
+
+- [x] **Akar**: Kartu **Hari efektif** membaca `prayer/schedules`; hari tanpa entri dianggap libur. Web admin **Presensi Sekolah** memakai `attendance/schedules`.
+- [x] **Fix kartu**: `PrayerScreen.kt` listen `school_settings/{id}/attendance/schedules`. **Hari efektif: Ya** jika hari itu bukan libur attendance (`isHoliday == true` saja). **Tanggal merah** tetap dari holidays. **Aturan sholat** tetap Dzuhur `prayer_v2`.
+- [x] **Fix pet**: `VirtualPetRepository` Dzuhur `isEffectiveDay` memakai `attendance/schedules` yang sama.
+- [x] **Bump flavor siswa**: `versionName 1.0.82` / `versionCode 23079`.
+- [x] **Build**: `compileSiswaDebugKotlin` SUCCESS 4m 41s; `assembleSiswaRelease` SUCCESS 4m 37s.
+- [x] **Salin APK ke Folder Pegangan**: `GAS-Siswa-1.0.82-siswa-23079.apk` + alias `GAS-Siswa-release.apk` / `GAS Siswa release.apk` / `app-siswa-release.apk` di `Apk Release/Final` (2026-08-27 13:31:34).
+- [x] **SHA256**: `2F7639FEED97E9B917E3EDFA6892F98FD07A3A86F0BB13D272E07BA1CD7C7318` (21.324.109 bytes).
+- [x] **Deploy web download URL:** **TIDAK** (Final only). Live `/gas/install` tetap `1.0.80-siswa` / `23077`.
+- [x] **Audit Dhuha & Jum'at (kode, tanpa rebuild)**: APK sudah baca `prayer_v2` types + Jadwal Per Kelas + Override, selaras web admin. Bukan dari Dzuhur / Presensi Sekolah.
+- [x] **Baris Jam Dhuha/Jumat**: **statis** sesuai setelan user (tampil meski Tidak dijadwalkan). Status/tombol tetap mengikuti jadwal hari ini.
+- [ ] QA perangkat Dzuhur: Kamis efektif di web → kartu HP **Hari efektif: Ya**, **Tanggal merah: Tidak**, **Aturan sholat: Berlaku**. Tombol absen masih bisa terblokir radius musholla (masalah terpisah).
 
 ## ✅ [CRITICAL SECURITY FIX] EduLock Siswa `1.3.22 (48)` — Celah uninstall TANPA KODE lewat tombol native "Uninstal aplikasi" di halaman Device Admin Activation (2026-08-26 ~19:47, Rebuild Final only, TANPA bump versi)
 
@@ -2259,3 +2407,18 @@ Build acuan:
 - [x] Data Siswa (Guru): Kolom nama diatur menjadi 2 baris (maxLines=2) agar nama siswa yang panjang tidak terpotong.
 - [x] Presensi Siswa & Sholat (Guru): Menghilangkan baris teks NISN di bawah nama dan mengatur nama menjadi 2 baris agar nama siswa yang panjang dapat tertulis lengkap.
 - [x] Virtual Pet (Guru): Label kolom `PET` diperbaiki agar benar mengenali status `Sekarat` tanpa tertukar menjadi `Sakit`.
+
+### QA USB E2E EduLock - 2026-08-27 malam
+- [x] Verifikasi device fisik target memakai EduLock `1.3.22 (48)`
+- [x] Jadwal sekolah untuk tenant uji sudah diperpanjang sehingga window E2E aktif
+- [x] Device fisik terbaca di area sekolah dan enforcement inti aktif
+- [x] Percobaan buka app hiburan tetap tertahan di EduLock
+- [x] Flow resmi `Minta Izin Guru` berhasil end-to-end
+- [x] Jalur recovery `GPS mati -> buka Pengaturan Lokasi` lulus pada retest terbaru
+- [ ] Jalur `Accessibility OFF -> admin ON` masih gagal; user belum diberi cukup waktu masuk ke Settings
+- [ ] Perlakukan satu PR bug yang sama untuk retest 4 jalur recovery saat admin mengubah proteksi `OFF -> ON`:
+  - `Accessibility OFF`
+  - `Tampil di atas aplikasi lain OFF`
+  - `Izin Latar Belakang / Battery Optimization OFF`
+  - `Izin Lokasi aplikasi OFF`
+- [ ] Jangan rilis hasil patch malam ini sebagai fix final sebelum 4 jalur recovery di atas lulus di device fisik
