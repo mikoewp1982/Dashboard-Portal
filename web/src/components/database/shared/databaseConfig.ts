@@ -5,6 +5,7 @@ export const databaseMenuItems = [
   { label: "Siswa", id: "Siswa" },
   { label: "Guru/Wali Kelas", id: "Guru/Wali Kelas" },
   { label: "Petugas OSIS", id: "Petugas OSIS" },
+  { label: "Sekretaris Kelas", id: "Sekretaris Kelas" },
   { label: "Kelas Paralel", id: "Kelas Paralel" },
 ] as const;
 
@@ -70,6 +71,7 @@ export const getDatabasePath = (tab: DatabaseTab, schoolId: string) => {
   if (tab === "Siswa") return `gas/schools/${schoolId}/students`;
   if (tab === "Guru/Wali Kelas") return `gas/schools/${schoolId}/teachers`;
   if (tab === "Petugas OSIS") return `gas/schools/${schoolId}/staff`;
+  if (tab === "Sekretaris Kelas") return `gas/schools/${schoolId}/students`;
   if (tab === "Kelas Paralel") return `gas/schools/${schoolId}/classes`;
   return "";
 };

@@ -66,5 +66,25 @@ export function DatabaseBanner({ activeTab }: DatabaseBannerProps) {
     );
   }
 
+  if (activeTab === "Sekretaris Kelas") {
+    return (
+      <div className="mb-6 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4">
+        <div className="flex gap-3">
+          <div className="mt-0.5 text-cyan-400">
+            <Lock className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="font-semibold text-cyan-100">Data Induk Akses Sekretaris Kelas</div>
+            <div className="mt-1 text-sm leading-relaxed text-cyan-200/80">
+              Sekretaris kelas tetap memakai akun induk siswa. Hak akses menu
+              {" "}<span className="font-semibold text-cyan-100">Presensi Siswa</span> di APK GAS Siswa akan aktif
+              jika data siswa ditandai sebagai <span className="font-semibold text-cyan-100">Sekretaris Kelas</span>.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return null;
 }

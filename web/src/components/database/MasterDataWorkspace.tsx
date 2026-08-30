@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { DatabaseSidebar } from "./shared/DatabaseSidebar";
 import { DatabaseTab } from "./shared/databaseConfig";
@@ -8,17 +8,12 @@ import { OverviewPanel } from "./overview/OverviewPanel";
 import { StudentsPanel } from "./students/StudentsPanel";
 import { TeachersPanel } from "./teachers/TeachersPanel";
 import { StaffPanel } from "./staff/StaffPanel";
+import { ClassSecretaryPanel } from "./class-secretary/ClassSecretaryPanel";
 import { ClassesPanel } from "./classes/ClassesPanel";
 
 export default function MasterDataWorkspace() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<DatabaseTab>("Siswa");
-
-  useEffect(() => {
-    // #region debug-point B:database-workspace-render
-    fetch("http://127.0.0.1:7777/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: "admin-kick-gate", runId: "pre-fix", hypothesisId: "B", location: "MasterDataWorkspace.tsx", msg: "[DEBUG] database workspace effect", data: { hasUser: !!user, role: user?.role ?? null, schoolId: user?.schoolId ?? null, activeTab, pathname: typeof window !== "undefined" ? window.location.pathname : null }, ts: Date.now() }) }).catch(() => {});
-    // #endregion
-  }, [user, activeTab]);
 
   if (!user || user.role !== "admin") {
     return (
@@ -37,6 +32,7 @@ export default function MasterDataWorkspace() {
         {activeTab === "Siswa" && <StudentsPanel schoolId={user.schoolId} />}
         {activeTab === "Guru/Wali Kelas" && <TeachersPanel schoolId={user.schoolId} />}
         {activeTab === "Petugas OSIS" && <StaffPanel schoolId={user.schoolId} />}
+        {activeTab === "Sekretaris Kelas" && <ClassSecretaryPanel schoolId={user.schoolId} />}
         {activeTab === "Kelas Paralel" && <ClassesPanel schoolId={user.schoolId} />}
       </div>
     </div>
