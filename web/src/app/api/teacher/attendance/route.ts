@@ -43,6 +43,12 @@ type AttendanceRecord = {
   username?: string;
   studentName?: string;
   className?: string;
+  verificationStatus?: string;
+  verifiedBy?: string;
+  verifiedAt?: number;
+  proposedBy?: string;
+  proposedAt?: number;
+  proposedStatus?: string;
 };
 
 type MonthlyStats = {
@@ -93,10 +99,40 @@ async function loadAttendanceRange(
       username: normalizeIdentity(row.username),
       studentName: String(row.studentName || ""),
       className: String(row.className || ""),
+      verificationStatus: normalizeIdentity(row.verificationStatus) || "APPROVED",
+      verifiedBy: normalizeIdentity(row.verifiedBy),
+      verifiedAt: asLong(row.verifiedAt),
+      proposedBy: normalizeIdentity(row.proposedBy),
+      proposedAt: asLong(row.proposedAt),
+      proposedStatus: normalizeIdentity(row.proposedStatus),
     });
   });
 
   return records;
+}
+
+function normalizeVerificationStatus(value: unknown) {
+  return String(value || "APPROVED").trim().toUpperCase() || "APPROVED";
+}
+
+function isPendingTeacherVerification(record: AttendanceRecord | undefined) {
+  return normalizeVerificationStatus(record?.verificationStatus) === "PENDING_TEACHER";
+}
+
+function hasSecretaryProposal(record: AttendanceRecord | undefined) {
+  return String(record?.proposedBy || "")
+    .trim()
+    .toLowerCase()
+    .includes("sekretaris");
+}
+
+function resolveEffectiveAttendanceStatus(record: AttendanceRecord | undefined) {
+  if (!record) return "UNMARKED";
+  return normalizeAttendanceStatus(
+    isPendingTeacherVerification(record) && record.proposedStatus
+      ? record.proposedStatus
+      : record.status
+  );
 }
 
 function buildDailyItems(students: GuruStudent[], records: AttendanceRecord[]) {
@@ -119,19 +155,7 @@ function buildDailyItems(students: GuruStudent[], records: AttendanceRecord[]) {
       .filter((r): r is AttendanceRecord => Boolean(r))
       .sort((a, b) => b.date - a.date)[0];
 
-    let resolvedStatus = "UNMARKED";
-    if (record) {
-      const upper = String(record.status || "").trim().toUpperCase();
-      if (["PRESENT", "HADIR", "TEPAT WAKTU", "ON TIME", "LATE", "TERLAMBAT"].includes(upper)) {
-        resolvedStatus = "PRESENT";
-      } else if (["SICK", "SAKIT"].includes(upper)) {
-        resolvedStatus = "SICK";
-      } else if (["PERMIT", "IZIN", "LEAVE"].includes(upper)) {
-        resolvedStatus = "PERMIT";
-      } else if (["ABSENT", "ALPA", "ALPHA"].includes(upper)) {
-        resolvedStatus = "ABSENT";
-      }
-    }
+    const resolvedStatus = resolveEffectiveAttendanceStatus(record);
 
     return {
       studentId: student.id,
@@ -146,22 +170,26 @@ function buildDailyItems(students: GuruStudent[], records: AttendanceRecord[]) {
       status: resolvedStatus,
       notes: record?.notes || "",
       attendanceId: record?.id || null,
+      verificationStatus: normalizeVerificationStatus(record?.verificationStatus),
+      proposedBy: record?.proposedBy || "",
+      proposedAt: record?.proposedAt || 0,
+      proposedStatus: record?.proposedStatus || "",
+      verifiedBy: record?.verifiedBy || "",
+      verifiedAt: record?.verifiedAt || 0,
+      isPendingTeacherVerification: isPendingTeacherVerification(record),
+      hasSecretaryProposal: hasSecretaryProposal(record),
     };
   });
 }
 
-function buildMonthlyRecap(
+function buildRecapForDates(
   students: GuruStudent[],
   records: AttendanceRecord[],
-  month: number,
-  year: number,
-  schedules: Awaited<ReturnType<typeof loadAttendanceRules>>["schedules"],
-  holidays: Awaited<ReturnType<typeof loadAttendanceRules>>["holidays"]
+  validDateKeys: string[]
 ): Record<string, MonthlyStats> {
   const result: Record<string, MonthlyStats> = {};
   const aliasMap = new Map<string, string>();
-  const byStudentDay = new Map<string, Map<number, AttendanceRecord>>();
-  const lastDay = lastCountableDay(year, month);
+  const byStudentDate = new Map<string, Map<string, AttendanceRecord>>();
 
   students.forEach((student) => {
     const canonical = monthlyCanonicalStudentId(student);
@@ -177,13 +205,13 @@ function buildMonthlyRecap(
       .filter(Boolean);
     const canonical = aliases.map((a) => aliasMap.get(a)).find(Boolean);
     if (!canonical) return;
-    const day = Number(toDateKey(rec.date).slice(-2));
-    const dayMap = byStudentDay.get(canonical) || new Map<number, AttendanceRecord>();
-    const current = dayMap.get(day);
+    const dateKey = toDateKey(rec.date);
+    const dayMap = byStudentDate.get(canonical) || new Map<string, AttendanceRecord>();
+    const current = dayMap.get(dateKey);
     if (!current || rec.date > current.date) {
-      dayMap.set(day, rec);
+      dayMap.set(dateKey, rec);
     }
-    byStudentDay.set(canonical, dayMap);
+    byStudentDate.set(canonical, dayMap);
   });
 
   students.forEach((student) => {
@@ -193,13 +221,13 @@ function buildMonthlyRecap(
     let sickCount = 0;
     let permitCount = 0;
     let absentCount = 0;
-    const dayMap = byStudentDay.get(canonical) || new Map();
+    const dayMap = byStudentDate.get(canonical) || new Map<string, AttendanceRecord>();
 
-    for (let day = 1; day <= lastDay; day++) {
-      const date = new Date(jakartaCivilDateMs(year, month, day));
-      if (!isValidSchoolDay(date, schedules, holidays)) continue;
-      const dayLog = dayMap.get(day);
-      const status = normalizeAttendanceMonthStatus(dayLog?.status);
+    for (const dateKey of validDateKeys) {
+      const dayLog = dayMap.get(dateKey);
+      const status = isPendingTeacherVerification(dayLog)
+        ? "ABSENT"
+        : normalizeAttendanceMonthStatus(dayLog?.status);
       if (status === "PRESENT" || status === "LATE") presentCount += 1;
       else if (status === "SICK") sickCount += 1;
       else if (status === "PERMIT") permitCount += 1;
@@ -210,6 +238,46 @@ function buildMonthlyRecap(
   });
 
   return result;
+}
+
+function buildValidMonthlyDateKeys(
+  year: number,
+  month: number,
+  schedules: Awaited<ReturnType<typeof loadAttendanceRules>>["schedules"],
+  holidays: Awaited<ReturnType<typeof loadAttendanceRules>>["holidays"]
+) {
+  const validDateKeys: string[] = [];
+  const lastDay = lastCountableDay(year, month);
+  for (let day = 1; day <= lastDay; day++) {
+    const date = new Date(jakartaCivilDateMs(year, month, day));
+    if (!isValidSchoolDay(date, schedules, holidays)) continue;
+    validDateKeys.push(toDateKey(date.getTime()));
+  }
+  return validDateKeys;
+}
+
+function startOfWeek(ms: number) {
+  const dateKey = toDateKey(ms);
+  const anchor = new Date(`${dateKey}T12:00:00+07:00`);
+  const day = anchor.getUTCDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  anchor.setUTCDate(anchor.getUTCDate() + diff);
+  return startOfDay(anchor.getTime());
+}
+
+function buildValidWeeklyDateKeys(
+  weekStartMs: number,
+  schedules: Awaited<ReturnType<typeof loadAttendanceRules>>["schedules"],
+  holidays: Awaited<ReturnType<typeof loadAttendanceRules>>["holidays"]
+) {
+  const validDateKeys: string[] = [];
+  for (let offset = 0; offset < 7; offset += 1) {
+    const dateMs = weekStartMs + offset * 24 * 60 * 60 * 1000;
+    const date = new Date(dateMs);
+    if (!isValidSchoolDay(date, schedules, holidays)) continue;
+    validDateKeys.push(toDateKey(dateMs));
+  }
+  return validDateKeys;
 }
 
 export async function GET(req: NextRequest) {
@@ -236,13 +304,10 @@ export async function GET(req: NextRequest) {
         loadAttendanceRange(teacher.schoolId, start, end),
         loadAttendanceRules(teacher.schoolId),
       ]);
-      const recap = buildMonthlyRecap(
+      const recap = buildRecapForDates(
         students,
         records,
-        month,
-        year,
-        rules.schedules,
-        rules.holidays
+        buildValidMonthlyDateKeys(year, month, rules.schedules, rules.holidays)
       );
 
       return NextResponse.json({
@@ -250,6 +315,36 @@ export async function GET(req: NextRequest) {
         mode: "monthly",
         month,
         year,
+        className: teacher.className,
+        students: students.map((s) => ({
+          studentId: s.id,
+          identityKey: attendanceIdentityKey(s.id, s.nisn),
+          monthlyKey: monthlyCanonicalStudentId(s),
+          name: s.name,
+          nisn: s.nisn,
+        })),
+        recap,
+      });
+    }
+
+    if (mode === "weekly") {
+      const weekStart = startOfWeek(parseDateParam(params.get("weekStart")));
+      const weekEnd = endOfDay(weekStart + 6 * 24 * 60 * 60 * 1000);
+      const [records, rules] = await Promise.all([
+        loadAttendanceRange(teacher.schoolId, weekStart, weekEnd),
+        loadAttendanceRules(teacher.schoolId),
+      ]);
+      const recap = buildRecapForDates(
+        students,
+        records,
+        buildValidWeeklyDateKeys(weekStart, rules.schedules, rules.holidays)
+      );
+
+      return NextResponse.json({
+        success: true,
+        mode: "weekly",
+        weekStart,
+        weekEnd,
         className: teacher.className,
         students: students.map((s) => ({
           studentId: s.id,
@@ -391,13 +486,20 @@ export async function POST(req: NextRequest) {
         date: storedDate,
         status,
         checkInTime: String(now),
-        checkInMethod: "MANUAL",
+        checkInMethod: "MANUAL_TEACHER",
         notes: existingRec?.notes || "",
         recordedBy: "TEACHER_MANUAL",
         nisn: student.nisn,
         username: student.username,
         studentName: student.name,
         className: student.className,
+        verificationStatus: "APPROVED",
+        verifiedBy: teacher.name || "Wali Kelas",
+        verifiedAt: now,
+        proposedBy: existingRec?.proposedBy || null,
+        proposedAt: existingRec?.proposedAt || null,
+        proposedStatus:
+          existingRec?.proposedStatus || (isPendingTeacherVerification(existingRec) ? status : null),
       };
 
       updates[`attendance/${attendanceId}`] = payload;

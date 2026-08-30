@@ -75,7 +75,10 @@ export function ApkTabs({
 }) {
   if (variant === "underline") {
     return (
-      <div className="mb-3 grid grid-cols-2 border-b border-black/20">
+      <div
+        className="mb-3 grid border-b border-black/20"
+        style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+      >
         {tabs.map((tab, index) => (
           <button
             key={tab}
@@ -95,7 +98,10 @@ export function ApkTabs({
   }
 
   return (
-    <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-black/15 p-1">
+    <div
+      className="mb-3 grid gap-1 rounded-xl bg-black/15 p-1"
+      style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+    >
       {tabs.map((tab, index) => (
         <button
           key={tab}
@@ -250,10 +256,12 @@ export function TableShell({
 export function TableRow({
   index,
   name,
+  subtitle,
   children,
 }: {
   index: number;
   name: string;
+  subtitle?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -262,7 +270,10 @@ export function TableRow({
         {index}
       </div>
       <div className="flex min-w-0 flex-1 items-center border-r border-white/40 px-2 py-1.5">
-        <span className="line-clamp-2 text-xs font-semibold leading-snug text-white">{name}</span>
+        <div className="min-w-0">
+          <div className="line-clamp-2 text-xs font-semibold leading-snug text-white">{name}</div>
+          {subtitle ? <div className="mt-1">{subtitle}</div> : null}
+        </div>
       </div>
       <div className="flex w-[148px] shrink-0">{children}</div>
     </div>
