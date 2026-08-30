@@ -44,6 +44,7 @@ export default function GasAttendanceReportPanel({ schoolId }: GasAttendanceRepo
       </div>
 
       <AttendanceRecapPanel 
+        schoolId={schoolId}
         classes={classes}
         students={students}
         attendances={attendances}
@@ -53,6 +54,7 @@ export default function GasAttendanceReportPanel({ schoolId }: GasAttendanceRepo
         setSelectedYear={setSelectedYear}
         schedules={schedules} 
         holidays={holidays} 
+        onRefresh={refresh}
       />
     </div>
   );

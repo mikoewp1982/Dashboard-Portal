@@ -1,5 +1,51 @@
 # Build Log GAS
 
+## 2026-08-30 12:26 - [BUILD] GAS Siswa 1.0.90-siswa (23087) + GAS Guru 1.0.70-guru (1062) - rekap mingguan + verifikasi admin web
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `feature` + `hardening` + `build` + `deploy-web`
+- **Flavor terdampak:** `siswa`, `guru`, `kepala` (compile cross-check karena file shared `src/main` ikut berubah)
+- **Versioning:**
+  - `siswa` `1.0.89-siswa (23086)` -> `1.0.90-siswa (23087)`
+  - `guru` `1.0.69-guru (1061)` -> `1.0.70-guru (1062)`
+- **Tujuan perubahan:** Menambahkan tab `Rekap Mingguan` pada menu `Presensi Siswa` untuk guru dan sekretaris kelas, sekaligus memberi jalur verifikasi cadangan di Web Admin agar `Admin Sekolah` bisa menyahkan usulan presensi siswa ketika wali kelas berhalangan.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/AttendanceRepository.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/AttendanceRepository.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt)
+  - [web/src/app/api/admin/attendance-verification/route.ts](file:///D:/Dashboard%20Portal/web/src/app/api/admin/attendance-verification/route.ts)
+  - [web/src/components/gas/attendance/AttendanceRecapPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceRecapPanel.tsx)
+  - [web/src/components/gas/attendance/AttendanceStatisticsPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceStatisticsPanel.tsx)
+  - [web/src/components/gas/attendance/GasAttendanceReportPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/GasAttendanceReportPanel.tsx)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - mobile presensi sekarang memiliki tab `Rekap Mingguan` di antara `Monitoring Harian` dan `Rekap Bulanan`
+  - rekap mingguan mengikuti kontrak yang sama dengan bulanan: status `PENDING_TEACHER` tidak dihitung final
+  - web admin kini bisa memverifikasi usulan `Sekretaris Kelas` dari `Riwayat Harian` bila wali kelas tidak bisa mengambil alih
+  - jejak audit pengusul tetap disimpan meskipun final verifier adalah admin sekolah
+- **Build yang dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` -> **BUILD SUCCESSFUL**
+  - `./gradlew :app:assembleGuruRelease` -> **BUILD SUCCESSFUL**
+  - `./gradlew :app:compileKepalaDebugKotlin` -> **BUILD SUCCESSFUL**
+  - `npx eslint src/app/api/admin/attendance-verification/route.ts src/components/gas/attendance/AttendanceRecapPanel.tsx src/components/gas/attendance/AttendanceStatisticsPanel.tsx src/components/gas/attendance/GasAttendanceReportPanel.tsx` -> **PASS**
+- **Regression checklist yang dicakup pada sesi build ini:**
+  - [x] Flavor yang dimaksud berhasil assemble release
+  - [x] Flavor lain (`kepala`) berhasil compile untuk cross-check perubahan shared
+  - [x] File web presensi yang disentuh lolos `eslint`
+  - [ ] Uji HP fisik navigasi `Rekap Mingguan` di akun guru dan siswa sekretaris
+  - [ ] Uji live end-to-end admin memverifikasi usulan sekretaris dari dashboard
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.90-siswa-23087.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.70-guru-1062.apk`
+- **Metadata final aktif lokal:**
+  - siswa: ukuran `21.511.014` byte, SHA256 `77AD148F7557F609226FB1CBD7C65440DEB3BC56D8CDD11DB7C09E89729DF8E5`
+  - guru: ukuran `21.511.012` byte, SHA256 `5C98AA6DDA272EEF4D9427CF06DD9615BC9C14D514608533827D6D30B904291E`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - **BELUM** disinkronkan ke `web/public/apk`
+- **Catatan:** sesi ini juga menyiapkan deploy web admin agar tombol verifikasi admin sekolah ikut live bersama perubahan attendance web terbaru.
+
 ## 2026-08-30 12:01 - [BUILD] GAS Siswa 1.0.89-siswa (23086) + GAS Guru 1.0.69-guru (1061) - guard verifikasi Sekretaris Kelas
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `feature` + `hardening` + `build`

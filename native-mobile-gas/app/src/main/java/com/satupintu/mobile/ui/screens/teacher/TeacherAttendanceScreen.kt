@@ -116,12 +116,14 @@ fun TeacherAttendanceScreen(
     val selectedDate by viewModel.selectedDate.collectAsState()
     val teacher by viewModel.teacher.collectAsState()
     val attendanceManagerLabel by viewModel.attendanceManagerLabel.collectAsState()
+    val selectedWeekStart by viewModel.selectedWeekStart.collectAsState()
     val selectedMonth by viewModel.selectedMonth.collectAsState()
     val selectedYear by viewModel.selectedYear.collectAsState()
+    val weeklyRecap by viewModel.weeklyRecap.collectAsState()
     val monthlyRecap by viewModel.monthlyRecap.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Monitoring Harian", "Rekap Bulanan")
+    val tabs = listOf("Monitoring Harian", "Rekap Mingguan", "Rekap Bulanan")
 
     LaunchedEffect(teacherNuptk, schoolId, isClassSecretaryMode, secretaryName, secretaryClass, secretaryAliases) {
         if (isClassSecretaryMode) {
@@ -236,8 +238,8 @@ fun TeacherAttendanceScreen(
                     }
                 }
 
-                if (selectedTabIndex == 0) {
-                    DailyMonitoringContent(
+                when (selectedTabIndex) {
+                    0 -> DailyMonitoringContent(
                         teacher = teacher,
                         dateFormatter = dateFormatter,
                         selectedDate = selectedDate,
@@ -253,8 +255,8 @@ fun TeacherAttendanceScreen(
                             attendanceList
                                 .filter { !isClassSecretaryMode || itemCanBeEditedBySecretary(it) }
                                 .forEach { item ->
-                                manualSelections[attendanceIdentityKey(item.student)] = "PRESENT"
-                            }
+                                    manualSelections[attendanceIdentityKey(item.student)] = "PRESENT"
+                                }
                         },
                         onStatusChange = { item, status ->
                             if (isClassSecretaryMode && !itemCanBeEditedBySecretary(item)) return@DailyMonitoringContent
@@ -284,8 +286,17 @@ fun TeacherAttendanceScreen(
                             showNoteDialog = true
                         }
                     )
-                } else {
-                    MonthlyRecapContent(
+
+                    1 -> WeeklyRecapContent(
+                        teacher = teacher,
+                        selectedWeekStart = selectedWeekStart,
+                        weeklyRecap = weeklyRecap,
+                        attendanceList = attendanceList,
+                        onPreviousWeek = { viewModel.moveSelectedWeek(-1) },
+                        onNextWeek = { viewModel.moveSelectedWeek(1) }
+                    )
+
+                    else -> MonthlyRecapContent(
                         teacher = teacher,
                         selectedMonth = selectedMonth,
                         selectedYear = selectedYear,
@@ -297,6 +308,62 @@ fun TeacherAttendanceScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun WeeklyRecapContent(
+    teacher: Teacher?,
+    selectedWeekStart: Long,
+    weeklyRecap: Map<String, Map<String, Int>>,
+    attendanceList: List<StudentAttendanceItem>,
+    onPreviousWeek: () -> Unit,
+    onNextWeek: () -> Unit
+) {
+    val weekLabel = remember(selectedWeekStart) { formatWeekRangeLabel(selectedWeekStart) }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        LenteraGlassCard(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Rentang Minggu",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = LenteraTextSecondary
+                )
+                Text(
+                    text = weekLabel,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = "Rekap mingguan membantu memantau tren presensi lebih cepat tanpa menunggu akhir bulan.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LenteraTextSecondary
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = onPreviousWeek,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, LenteraGlassBorder),
+                        shape = RoundedCornerShape(16.dp)
+                    ) { Text("Minggu Sebelumnya") }
+                    OutlinedButton(
+                        onClick = onNextWeek,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, LenteraGlassBorder),
+                        shape = RoundedCornerShape(16.dp)
+                    ) { Text("Minggu Berikutnya") }
+                }
+            }
+        }
+
+        AttendanceRecapTable(
+            attendanceList = attendanceList,
+            recap = weeklyRecap
+        )
     }
 }
 
@@ -349,18 +416,29 @@ fun MonthlyRecapContent(
             }
         }
 
-        LenteraGlassCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
-                AttendanceMonthlyHeader()
-                HorizontalDivider(color = ATTENDANCE_TABLE_DIVIDER_COLOR, thickness = 1.dp)
-                LazyColumn {
-                    itemsIndexed(attendanceList) { index, item ->
-                        val student = item.student
-                        val stats = monthlyRecap[attendanceIdentityKey(student)]
-                            ?: mapOf("PRESENT" to 0, "SICK" to 0, "PERMIT" to 0, "ABSENT" to 0)
-                        AttendanceMonthlyRow(index = index + 1, item = item, stats = stats)
-                        if (index != attendanceList.lastIndex) HorizontalDivider(thickness = 1.dp, color = ATTENDANCE_TABLE_DIVIDER_COLOR)
-                    }
+        AttendanceRecapTable(
+            attendanceList = attendanceList,
+            recap = monthlyRecap
+        )
+    }
+}
+
+@Composable
+private fun AttendanceRecapTable(
+    attendanceList: List<StudentAttendanceItem>,
+    recap: Map<String, Map<String, Int>>
+) {
+    LenteraGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            AttendanceMonthlyHeader()
+            HorizontalDivider(color = ATTENDANCE_TABLE_DIVIDER_COLOR, thickness = 1.dp)
+            LazyColumn {
+                itemsIndexed(attendanceList) { index, item ->
+                    val student = item.student
+                    val stats = recap[attendanceIdentityKey(student)]
+                        ?: mapOf("PRESENT" to 0, "SICK" to 0, "PERMIT" to 0, "ABSENT" to 0)
+                    AttendanceMonthlyRow(index = index + 1, item = item, stats = stats)
+                    if (index != attendanceList.lastIndex) HorizontalDivider(thickness = 1.dp, color = ATTENDANCE_TABLE_DIVIDER_COLOR)
                 }
             }
         }
@@ -633,6 +711,19 @@ private fun attendanceIdentityKey(student: com.satupintu.mobile.data.model.Stude
 
 private fun itemCanBeEditedBySecretary(item: StudentAttendanceItem): Boolean {
     return !item.isSelfSecretaryRow && item.isEditableBySecretary
+}
+
+private fun formatWeekRangeLabel(weekStart: Long): String {
+    val startCalendar = Calendar.getInstance().apply { timeInMillis = weekStart }
+    val endCalendar = Calendar.getInstance().apply {
+        timeInMillis = weekStart
+        add(Calendar.DAY_OF_MONTH, 6)
+    }
+    val sameMonth = startCalendar.get(Calendar.MONTH) == endCalendar.get(Calendar.MONTH) &&
+        startCalendar.get(Calendar.YEAR) == endCalendar.get(Calendar.YEAR)
+    val startFormat = SimpleDateFormat(if (sameMonth) "dd" else "dd MMM", Locale("id", "ID"))
+    val endFormat = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID"))
+    return "${startFormat.format(Date(startCalendar.timeInMillis))} - ${endFormat.format(Date(endCalendar.timeInMillis))}"
 }
 
 @Composable

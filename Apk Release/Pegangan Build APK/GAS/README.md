@@ -8,8 +8,8 @@ Folder ini adalah pegangan operasional untuk semua perubahan APK `GAS` pada proy
 - Root project name: `SatuPintuNativeMobile`
 - Application ID dasar: `com.satupintu.mobile`
 - Versi distribusi terkini (update 2026-08-30):
-  - `flavor siswa` → `versionName 1.0.89-siswa` / `versionCode 23086` (Final lokal terbaru untuk guard verifikasi `Sekretaris Kelas`; live unduhan web masih `1.0.82-siswa (23079)`)
-  - `flavor guru` → `versionName 1.0.69-guru` / `versionCode 1061` (Final terbaru yang sudah dicatat di folder Final)
+  - `flavor siswa` → `versionName 1.0.90-siswa` / `versionCode 23087` (Final lokal terbaru untuk `Rekap Mingguan` Presensi Siswa; live unduhan web masih `1.0.82-siswa (23079)`)
+  - `flavor guru` → `versionName 1.0.70-guru` / `versionCode 1062` (Final terbaru yang sudah dicatat di folder Final)
   - `flavor legacySiswa versionCode = 23003` (kompatibilitas; jangan turun di bawah ini)
   - Pastikan `native-mobile-gas/app/build.gradle.kts` selaras sebelum assemble
 
@@ -69,8 +69,8 @@ D:\Dashboard Portal\Apk Release\Final
 Jika user meminta folder lain, catat di [BUILD_LOG.md](./BUILD_LOG.md).
 
 Rilis final terbaru yang sudah dicatat saat ini:
-- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.89-siswa-23086.apk` (`1.0.89-siswa` / `versionCode 23086`, SHA256 `43A66518F381D9CFA99752C0977E604B5C183D163B4F3C2DCB8945480D4182DB`) — rebuild final lokal terbaru 2026-08-30 untuk mengubah alur `Sekretaris Kelas` menjadi **usulan -> verifikasi guru -> final**. Muatan fix: sekretaris tidak bisa mengabsenkan dirinya sendiri, data pending tidak dihitung final, dan jejak audit pengusul tetap tersimpan. **BELUM disinkronkan** ke `web/public/apk`; live unduhan web masih memakai build `1.0.82-siswa (23079)` hash `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`.
-- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` + `GAS-Guru-1.0.69-guru-1061.apk` (`1.0.69-guru` / `versionCode 1061`, SHA256 `7D91F1D13752871A6AC48F2878693CAE10ED6EF0F19AA93A919DA27048B4F127`). Muatan final terkini: presensi guru sekarang menjadi tahap verifikasi final untuk usulan sekretaris kelas dan badge audit di layar monitoring dibuat lebih jelas. Lihat bagian **PERBEDAAN UI GAS SISWA vs GAS GURU** di bawah ini — WAJIB BACA sebelum ubah UI Home.
+- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.90-siswa-23087.apk` (`1.0.90-siswa` / `versionCode 23087`, SHA256 `77AD148F7557F609226FB1CBD7C65440DEB3BC56D8CDD11DB7C09E89729DF8E5`) — rebuild final lokal terbaru 2026-08-30 untuk menambahkan **Rekap Mingguan** pada menu `Presensi Siswa` sambil mempertahankan guard `Sekretaris Kelas` sebagai jalur **usulan -> verifikasi -> final**. **BELUM disinkronkan** ke `web/public/apk`; live unduhan web masih memakai build `1.0.82-siswa (23079)` hash `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`.
+- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` + `GAS-Guru-1.0.70-guru-1062.apk` (`1.0.70-guru` / `versionCode 1062`, SHA256 `5C98AA6DDA272EEF4D9427CF06DD9615BC9C14D514608533827D6D30B904291E`). Muatan final terkini: tab **Rekap Mingguan** untuk monitoring kelas lebih cepat dan hardening verifikasi akhir untuk usulan sekretaris kelas tetap aktif. Lihat bagian **PERBEDAAN UI GAS SISWA vs GAS GURU** di bawah ini — WAJIB BACA sebelum ubah UI Home.
 
 ---
 
@@ -92,7 +92,7 @@ Rilis final terbaru yang sudah dicatat saat ini:
 | **Bottom Nav 3 tab (Beranda / Absen Float / Profil)** | ✅ **WAJIB ADA**. Termasuk **tombol hitam absen FLOAT TENGAH BESAR (offset -28dp). Ini ciri khas SISWA.** | ❌ **HARAM ADA — WAJIB NULL di `Scaffold.bottomBar = null`**. Guru **TIDAK PERLU shortcut absensi floating, karena guru tidak meng-absen diri lewat sini. |
 | **Akses Profil & Logout** | Klik icon Profil di **Bottom Nav kanan** | HANYA lewat **ICON BUTTON KECIL 28.dp di POJOK KANAN ATAS HEADER**: `Icons.Default.ArrowForward` → `onLogout()`. (Tidak usah icon orang / Person duplikat, karena kiri sudah ada avatar.) |
 | **Padding bawah dari Scaffold** | Bottom padding otomatis 56dp dari navbar | Tidak ada / 0. Kartu menu turun sampai area bawah dekat system navigation bar. |
-| **Contoh versi acuan benar** | GAS Siswa `1.0.89-siswa (23086)` | GAS Guru **`1.0.69-guru (1061)`** build final 2026-08-30 |
+| **Contoh versi acuan benar** | GAS Siswa `1.0.90-siswa (23087)` | GAS Guru **`1.0.70-guru (1062)`** build final 2026-08-30 |
 | **Lokasi composable di HomeScreen.kt** | `StudentFeatureCard` (TIDAK DIUBAH tanpa persetujuan user!) | `GuruMenuCard` + `isGuruFlavor` branch di Scaffold, LazyVerticalGrid, dan screenBackground. |
 
 ## LANGKAH KONTROL SETIAP MAU UBAH UI HOME

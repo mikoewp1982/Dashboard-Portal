@@ -101,6 +101,26 @@ class AttendanceRepository {
         }
     }
 
+    fun getAttendanceByRange(startMillis: Long, endMillis: Long, schoolId: String = ""): Flow<List<Attendance>> = callbackFlow {
+        val normalizedSchoolId = normalizeScope(schoolId)
+        val query = attendanceQuery(normalizedSchoolId, startMillis, endMillis)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val records = snapshot.children.mapNotNull(::parseAttendance).filter { attendance ->
+                    normalizedSchoolId.isBlank() || normalizeScope(attendance.schoolId) == normalizedSchoolId
+                }
+                trySend(records)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        query.addValueEventListener(listener)
+        awaitClose { query.removeEventListener(listener) }
+    }
+
     fun getAttendanceByDate(dateMillis: Long, schoolId: String = ""): Flow<List<Attendance>> = callbackFlow {
         val calendar = Calendar.getInstance()
         calendar.timeInMillis = dateMillis

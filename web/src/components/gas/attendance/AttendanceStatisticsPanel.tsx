@@ -415,7 +415,7 @@ export function AttendanceStatisticsPanel({
         <StatsMiniCard
           title="Usulan Sekretaris Pending"
           value={secretaryVerificationStats.pending}
-          description="Belum sah sebagai rekap final sampai diverifikasi wali kelas."
+          description="Belum sah sebagai rekap final sampai diverifikasi wali kelas atau admin sekolah."
           icon={ShieldAlert}
           accent="amber"
         />

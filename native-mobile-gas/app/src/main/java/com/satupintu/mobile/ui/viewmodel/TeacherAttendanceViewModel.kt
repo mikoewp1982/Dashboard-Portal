@@ -77,8 +77,13 @@ class TeacherAttendanceViewModel : ViewModel() {
     private val _selectedYear = MutableStateFlow(Calendar.getInstance().get(Calendar.YEAR))
     val selectedYear: StateFlow<Int> = _selectedYear.asStateFlow()
 
+    private val _selectedWeekStart = MutableStateFlow(startOfWeek(System.currentTimeMillis()))
+    val selectedWeekStart: StateFlow<Long> = _selectedWeekStart.asStateFlow()
+
     private val _monthlyRecap = MutableStateFlow<Map<String, Map<String, Int>>>(emptyMap())
     val monthlyRecap: StateFlow<Map<String, Map<String, Int>>> = _monthlyRecap.asStateFlow()
+    private val _weeklyRecap = MutableStateFlow<Map<String, Map<String, Int>>>(emptyMap())
+    val weeklyRecap: StateFlow<Map<String, Map<String, Int>>> = _weeklyRecap.asStateFlow()
     private val _schedules = MutableStateFlow<Map<Int, DayScheduleRule>>(emptyMap())
     private val _holidays = MutableStateFlow<List<HolidayRule>>(emptyList())
 
@@ -92,6 +97,7 @@ class TeacherAttendanceViewModel : ViewModel() {
     private var teacherJob: Job? = null
     private var dailyJob: Job? = null
     private var monthlyJob: Job? = null
+    private var weeklyJob: Job? = null
 
     fun setMonth(month: Int) {
         _selectedMonth.value = month
@@ -101,6 +107,18 @@ class TeacherAttendanceViewModel : ViewModel() {
     fun setYear(year: Int) {
         _selectedYear.value = year
         loadMonthlyRecap()
+    }
+
+    fun setSelectedWeek(dateMillis: Long) {
+        _selectedWeekStart.value = startOfWeek(dateMillis)
+        loadWeeklyRecap()
+    }
+
+    fun moveSelectedWeek(offset: Int) {
+        val calendar = Calendar.getInstance().apply { timeInMillis = _selectedWeekStart.value }
+        calendar.add(Calendar.DAY_OF_MONTH, offset * 7)
+        _selectedWeekStart.value = startOfDay(calendar.timeInMillis)
+        loadWeeklyRecap()
     }
 
     private fun loadMonthlyRecap() {
@@ -125,76 +143,56 @@ class TeacherAttendanceViewModel : ViewModel() {
                 calendar.set(Calendar.MONTH, month)
                 calendar.set(Calendar.DAY_OF_MONTH, 1)
                 val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
-                val recapMap = mutableMapOf<String, Map<String, Int>>()
-                val recordsByStudentAndDay = mutableMapOf<String, MutableMap<Int, Attendance>>()
-
-                records.forEach { attendance ->
-                    if (!matchesAttendanceScope(attendance, teacherSchoolScope)) return@forEach
-                    val dayCalendar = Calendar.getInstance().apply { timeInMillis = attendance.date }
-                    val dayOfMonth = dayCalendar.get(Calendar.DAY_OF_MONTH)
-                    attendanceIdentityCandidates(attendance)
-                        .forEach { identity ->
-                            val byDay = recordsByStudentAndDay.getOrPut(identity) { mutableMapOf() }
-                            val current = byDay[dayOfMonth]
-                            if (current == null || attendance.date > current.date) {
-                                byDay[dayOfMonth] = attendance
-                            }
+                val validDates = buildValidDateKeys(
+                    days = (1..daysInMonth).map { day ->
+                        Calendar.getInstance().apply {
+                            set(Calendar.YEAR, year)
+                            set(Calendar.MONTH, month)
+                            set(Calendar.DAY_OF_MONTH, day)
                         }
-                }
-                
-                classStudents.forEach { student ->
-                    val studentRecordsByDay = linkedMapOf<Int, Attendance>()
-                    studentIdentityCandidates(student).forEach { candidate ->
-                        recordsByStudentAndDay[candidate]?.forEach { (day, attendance) ->
-                            val current = studentRecordsByDay[day]
-                            if (current == null || attendance.date > current.date) {
-                                studentRecordsByDay[day] = attendance
-                            }
-                        }
-                    }
-                    var h = 0
-                    var s = 0
-                    var i = 0
-                    var a = 0
+                    },
+                    schedules = schedules,
+                    holidays = holidays
+                )
 
-                    // Iterasi setiap hari dalam bulan (sama dengan web)
-                    for (day in 1..daysInMonth) {
-                        calendar.set(Calendar.DAY_OF_MONTH, day)
-                        calendar.set(Calendar.HOUR_OF_DAY, 0)
-                        calendar.set(Calendar.MINUTE, 0)
-                        calendar.set(Calendar.SECOND, 0)
-                        calendar.set(Calendar.MILLISECOND, 0)
-
-                        if (!isValidSchoolDay(calendar, schedules, holidays)) continue
-
-                        // Cari record absen untuk hari ini
-                        val log = studentRecordsByDay[day]
-
-                        if (log != null && !isPendingTeacherVerification(log)) {
-                            when (log.status.uppercase(java.util.Locale.ROOT).trim()) {
-                                "PRESENT", "HADIR", "TEPAT WAKTU", "ON TIME", "LATE", "TERLAMBAT" -> h++
-                                "SICK", "SAKIT" -> s++
-                                "PERMIT", "IZIN", "LEAVE" -> i++
-                                "ABSENT", "ALPA", "ALPHA" -> a++
-                                else -> a++ // status tidak dikenal = Alpha (sama dengan TeacherRecapViewModel)
-                            }
-                        } else {
-                            // Tidak ada record = Alpha (sama dengan web)
-                            a++
-                        }
-                    }
-
-                    val stats = mapOf(
-                        "PRESENT" to h,
-                        "SICK" to s,
-                        "PERMIT" to i,
-                        "ABSENT" to a
-                    )
-                    recapMap[preferredStudentIdentity(student)] = stats
-                }
-                recapMap
+                buildRecapMap(classStudents, records, teacherSchoolScope, validDates)
             }.collect {
                 _monthlyRecap.value = it
+            }
+        }
+    }
+
+    private fun loadWeeklyRecap() {
+        weeklyJob?.cancel()
+        weeklyJob = viewModelScope.launch {
+            val weekStart = _selectedWeekStart.value
+            val weekEnd = endOfDay(weekStart + (6L * 24L * 60L * 60L * 1000L))
+
+            val teacherSchoolScope = resolvedTeacherSchoolScope()
+            val studentsFlow = studentRepository.getStudents(teacherSchoolScope)
+            val weeklyAttendanceFlow = attendanceRepository.getAttendanceByRange(weekStart, weekEnd, teacherSchoolScope)
+
+            combine(studentsFlow, weeklyAttendanceFlow, _schedules, _holidays) { students, records, schedules, holidays ->
+                val targetClass = _teacher.value?.homeroomClass ?: ""
+                val classStudents = students.filter {
+                    matchesHomeroomClass(it.className, targetClass) &&
+                        (teacherSchoolScope.isBlank() || normalizeScope(it.schoolId) == teacherSchoolScope)
+                }
+
+                val validDates = buildValidDateKeys(
+                    days = (0..6).map { offset ->
+                        Calendar.getInstance().apply {
+                            timeInMillis = weekStart
+                            add(Calendar.DAY_OF_MONTH, offset)
+                        }
+                    },
+                    schedules = schedules,
+                    holidays = holidays
+                )
+
+                buildRecapMap(classStudents, records, teacherSchoolScope, validDates)
+            }.collect {
+                _weeklyRecap.value = it
             }
         }
     }
@@ -213,6 +211,7 @@ class TeacherAttendanceViewModel : ViewModel() {
             _teacher.value = teacher
             attachRuleListeners(resolvedTeacherSchoolScope())
             loadDataForDate(_selectedDate.value)
+            setSelectedWeek(_selectedDate.value)
             loadMonthlyRecap()
         }
     }
@@ -236,6 +235,7 @@ class TeacherAttendanceViewModel : ViewModel() {
             )
             attachRuleListeners(resolvedTeacherSchoolScope())
             loadDataForDate(_selectedDate.value)
+            setSelectedWeek(_selectedDate.value)
             loadMonthlyRecap()
         }
     }
@@ -391,6 +391,11 @@ class TeacherAttendanceViewModel : ViewModel() {
 
     fun setDate(date: Long) {
         _selectedDate.value = date
+        val normalizedWeek = startOfWeek(date)
+        if (_selectedWeekStart.value != normalizedWeek) {
+            _selectedWeekStart.value = normalizedWeek
+            loadWeeklyRecap()
+        }
         _isLoading.value = true
     }
 
@@ -419,6 +424,7 @@ class TeacherAttendanceViewModel : ViewModel() {
                 loadDataForDate(_selectedDate.value)
             }
             if (success) {
+                loadWeeklyRecap()
                 loadMonthlyRecap()
             }
         }
@@ -438,6 +444,7 @@ class TeacherAttendanceViewModel : ViewModel() {
             val newRecord = buildAttendanceRecord(item = item, status = "PRESENT")
             attendanceRepository.saveAttendance(newRecord) { }
         }
+        loadWeeklyRecap()
         loadMonthlyRecap()
     }
 
@@ -461,6 +468,7 @@ class TeacherAttendanceViewModel : ViewModel() {
                  loadDataForDate(_selectedDate.value)
             }
             if (success) {
+                loadWeeklyRecap()
                 loadMonthlyRecap()
             }
         }
@@ -484,6 +492,7 @@ class TeacherAttendanceViewModel : ViewModel() {
             remaining -= 1
             if (remaining == 0) {
                 loadDataForDate(_selectedDate.value)
+                loadWeeklyRecap()
                 loadMonthlyRecap()
                 onComplete(allSuccess)
             }
@@ -529,7 +538,123 @@ class TeacherAttendanceViewModel : ViewModel() {
         teacherJob?.cancel()
         dailyJob?.cancel()
         monthlyJob?.cancel()
+        weeklyJob?.cancel()
         detachRuleListeners()
+    }
+
+    private fun buildValidDateKeys(
+        days: List<Calendar>,
+        schedules: Map<Int, DayScheduleRule>,
+        holidays: List<HolidayRule>
+    ): List<Long> {
+        return days.mapNotNull { day ->
+            day.set(Calendar.HOUR_OF_DAY, 0)
+            day.set(Calendar.MINUTE, 0)
+            day.set(Calendar.SECOND, 0)
+            day.set(Calendar.MILLISECOND, 0)
+            if (isValidSchoolDay(day, schedules, holidays)) {
+                day.timeInMillis
+            } else {
+                null
+            }
+        }
+    }
+
+    private fun buildRecapMap(
+        classStudents: List<Student>,
+        records: List<Attendance>,
+        scopeKey: String,
+        validDates: List<Long>
+    ): Map<String, Map<String, Int>> {
+        val recordsByStudentAndDay = mutableMapOf<String, MutableMap<Long, Attendance>>()
+
+        records.forEach { attendance ->
+            if (!matchesAttendanceScope(attendance, scopeKey)) return@forEach
+            val dayKey = startOfDay(attendance.date)
+            attendanceIdentityCandidates(attendance).forEach { identity ->
+                val byDay = recordsByStudentAndDay.getOrPut(identity) { mutableMapOf() }
+                val current = byDay[dayKey]
+                if (current == null || attendance.date > current.date) {
+                    byDay[dayKey] = attendance
+                }
+            }
+        }
+
+        val recapMap = mutableMapOf<String, Map<String, Int>>()
+        classStudents.forEach { student ->
+            val studentRecordsByDay = linkedMapOf<Long, Attendance>()
+            studentIdentityCandidates(student).forEach { candidate ->
+                recordsByStudentAndDay[candidate]?.forEach { (day, attendance) ->
+                    val current = studentRecordsByDay[day]
+                    if (current == null || attendance.date > current.date) {
+                        studentRecordsByDay[day] = attendance
+                    }
+                }
+            }
+
+            var h = 0
+            var s = 0
+            var i = 0
+            var a = 0
+
+            validDates.forEach { dayKey ->
+                val log = studentRecordsByDay[dayKey]
+                if (log != null && !isPendingTeacherVerification(log)) {
+                    when (log.status.uppercase(Locale.ROOT).trim()) {
+                        "PRESENT", "HADIR", "TEPAT WAKTU", "ON TIME", "LATE", "TERLAMBAT" -> h++
+                        "SICK", "SAKIT" -> s++
+                        "PERMIT", "IZIN", "LEAVE" -> i++
+                        "ABSENT", "ALPA", "ALPHA" -> a++
+                        else -> a++
+                    }
+                } else {
+                    a++
+                }
+            }
+
+            recapMap[preferredStudentIdentity(student)] = mapOf(
+                "PRESENT" to h,
+                "SICK" to s,
+                "PERMIT" to i,
+                "ABSENT" to a
+            )
+        }
+
+        return recapMap
+    }
+
+    private fun startOfDay(timeMillis: Long): Long {
+        return Calendar.getInstance().apply {
+            timeInMillis = timeMillis
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    private fun endOfDay(timeMillis: Long): Long {
+        return Calendar.getInstance().apply {
+            timeInMillis = timeMillis
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+            set(Calendar.MILLISECOND, 999)
+        }.timeInMillis
+    }
+
+    private fun startOfWeek(timeMillis: Long): Long {
+        return Calendar.getInstance().apply {
+            firstDayOfWeek = Calendar.MONDAY
+            timeInMillis = timeMillis
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            while (get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
+                add(Calendar.DAY_OF_MONTH, -1)
+            }
+        }.timeInMillis
     }
 
     private fun normalizeIdentity(value: String?): String {

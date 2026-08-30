@@ -3,6 +3,7 @@ import { Search, Printer, List, Calendar, BarChart3 } from "lucide-react";
 import { createStudentDateKey, getValidDatesInMonth, pickNewestLog, toDateKey } from "@/utils/presensiRules";
 import { AttendanceRecord, AttendanceSource } from "@/types/gas";
 import { AttendanceStatisticsPanel } from "./AttendanceStatisticsPanel";
+import { callAdminApi } from "@/lib/callAdminApi";
 
 const MONTHS = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -103,6 +104,7 @@ function hasSecretaryProposal(
 }
 
 interface Props {
+  schoolId: string;
   classes: any[];
   students: any[];
   attendances: AttendanceRecord[];
@@ -112,9 +114,11 @@ interface Props {
   setSelectedYear: (v: number) => void;
   schedules: any[];
   holidays: any[];
+  onRefresh: () => Promise<unknown>;
 }
 
 export function AttendanceRecapPanel({
+  schoolId,
   classes,
   students,
   attendances,
@@ -123,7 +127,8 @@ export function AttendanceRecapPanel({
   selectedYear,
   setSelectedYear,
   schedules,
-  holidays
+  holidays,
+  onRefresh
 }: Props) {
   const dropdownClassName =
     "px-3 py-2 rounded-md border border-slate-500/70 bg-slate-950/90 text-sm font-medium text-slate-50 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/60";
@@ -131,6 +136,9 @@ export function AttendanceRecapPanel({
   const [viewMode, setViewMode] = useState<"summary" | "daily" | "statistics">("summary");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [verifyingAttendanceId, setVerifyingAttendanceId] = useState<string | null>(null);
+  const [verificationMessage, setVerificationMessage] = useState<string>("");
+  const [verificationError, setVerificationError] = useState<string>("");
 
   const filteredStudents = useMemo(() => {
     let result = students || [];
@@ -374,6 +382,30 @@ export function AttendanceRecapPanel({
     window.print();
   };
 
+  const handleAdminVerify = async (attendanceId: string) => {
+    if (!attendanceId || !schoolId) return;
+    setVerifyingAttendanceId(attendanceId);
+    setVerificationMessage("");
+    setVerificationError("");
+
+    try {
+      const result = await callAdminApi("/api/admin/attendance-verification", "POST", {
+        schoolId,
+        attendanceId,
+      });
+      setVerificationMessage(
+        result?.message || "Usulan presensi berhasil diverifikasi oleh admin sekolah."
+      );
+      await onRefresh();
+    } catch (error) {
+      setVerificationError(
+        error instanceof Error ? error.message : "Gagal memverifikasi usulan presensi."
+      );
+    } finally {
+      setVerifyingAttendanceId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <style>{`
@@ -521,6 +553,18 @@ export function AttendanceRecapPanel({
         {" "}x <span className="font-semibold text-slate-100">{validDates.length} hari aktif</span>
       </div>
 
+      {(verificationMessage || verificationError) && (
+        <div
+          className={`rounded-lg border px-4 py-3 text-sm no-print ${
+            verificationError
+              ? "border-red-500/20 bg-red-500/10 text-red-200"
+              : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
+          }`}
+        >
+          {verificationError || verificationMessage}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6 no-print">
         {(
           [
@@ -551,7 +595,7 @@ export function AttendanceRecapPanel({
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
           <div className="text-xs font-semibold uppercase tracking-wide text-amber-200">Usulan Sekretaris Pending</div>
           <div className="mt-2 text-2xl font-bold text-white">{verificationStats.pendingSecretary}</div>
-          <p className="mt-1 text-sm text-amber-100/80">Belum dihitung final sampai diverifikasi wali kelas.</p>
+          <p className="mt-1 text-sm text-amber-100/80">Belum dihitung final sampai diverifikasi wali kelas atau admin sekolah.</p>
         </div>
         <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-4 py-3">
           <div className="text-xs font-semibold uppercase tracking-wide text-cyan-200">Usulan Sekretaris Disetujui</div>
@@ -637,6 +681,7 @@ export function AttendanceRecapPanel({
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Sumber Input</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Keterangan</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider no-print">Aksi</th>
               </tr>
             </thead>
             <tbody className="bg-slate-900/20 divide-y divide-slate-700">
@@ -676,7 +721,7 @@ export function AttendanceRecapPanel({
                             {isPendingTeacherVerification(log) ? (
                               <div className="mt-1">
                                 <span className="inline-flex rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] font-semibold text-amber-300">
-                                  Menunggu Verifikasi Guru
+                                  Menunggu Verifikasi Wali Kelas/Admin
                                 </span>
                               </div>
                             ) : null}
@@ -706,16 +751,32 @@ export function AttendanceRecapPanel({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                       {isPendingTeacherVerification(log)
-                        ? `${log.notes || "Usulan sekretaris kelas."} Menunggu verifikasi wali kelas sebelum dihitung final.`
+                        ? `${log.notes || "Usulan sekretaris kelas."} Menunggu verifikasi wali kelas atau admin sekolah sebelum dihitung final.`
                         : hasSecretaryProposal(log)
-                          ? `${log.notes || "Sudah diverifikasi wali kelas."} Jejak usulan sekretaris tetap tersimpan untuk audit.`
+                          ? `${log.notes || "Sudah diverifikasi petugas sekolah."} Jejak usulan sekretaris tetap tersimpan untuk audit.`
                           : (log.notes || (log.isSystemGenerated ? "Otomatis dari hari sekolah aktif tanpa log presensi." : "-"))}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300 no-print">
+                      {isPendingTeacherVerification(log) && log.id && !log.isSystemGenerated ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleAdminVerify(log.id)}
+                          disabled={verifyingAttendanceId === log.id}
+                          className="inline-flex items-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {verifyingAttendanceId === log.id ? "Memverifikasi..." : "Verifikasi Admin"}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-500">
+                          {hasSecretaryProposal(log) ? "Sudah final" : "-"}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-slate-500">
+                  <td colSpan={9} className="px-6 py-4 text-center text-sm text-slate-500">
                     Tidak ada data absensi yang ditemukan.
                   </td>
                 </tr>
