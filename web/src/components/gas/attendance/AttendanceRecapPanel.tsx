@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Search, Printer, List, Calendar, BarChart3 } from "lucide-react";
-import { createStudentDateKey, getValidDatesInMonth, pickNewestLog, toDateKey } from "@/utils/presensiRules";
+import { Search, Printer, List, Calendar, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
+import { buildHolidaySet, createStudentDateKey, getValidDatesInMonth, pickNewestLog, toDateKey } from "@/utils/presensiRules";
 import { AttendanceRecord, AttendanceSource } from "@/types/gas";
 import { AttendanceStatisticsPanel } from "./AttendanceStatisticsPanel";
 import { callAdminApi } from "@/lib/callAdminApi";
@@ -103,6 +103,56 @@ function hasSecretaryProposal(
   );
 }
 
+function startOfDayMs(value: number) {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+}
+
+function formatWeekRange(weekStart: number) {
+  const start = new Date(weekStart);
+  const end = new Date(weekStart + 6 * 24 * 60 * 60 * 1000);
+  const startLabel = start.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+  });
+  const endLabel = end.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: start.getMonth() === end.getMonth() ? undefined : "long",
+    year: start.getFullYear() === end.getFullYear() ? undefined : "numeric",
+  });
+  const yearLabel = end.toLocaleDateString("id-ID", { year: "numeric" });
+  return `${startLabel} - ${endLabel} ${yearLabel}`.trim();
+}
+
+function getValidDatesInRange(options: {
+  start: number;
+  end: number;
+  schedules: any[];
+  holidays: any[];
+  today?: Date;
+}) {
+  const { start, end, schedules, holidays, today = new Date() } = options;
+  const holidaySet = buildHolidaySet(holidays || []);
+  const defaultSchedules = [1, 2, 3, 4, 5];
+  const enabledDayIds = schedules && schedules.length > 0
+    ? new Set(schedules.filter((s) => s.isEnabled).map((s) => s.dayId))
+    : new Set(defaultSchedules);
+  const result: Date[] = [];
+  const limit = startOfDayMs(new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime());
+
+  for (let cursor = startOfDayMs(start); cursor <= end; cursor += 24 * 60 * 60 * 1000) {
+    const date = new Date(cursor);
+    if (date.getTime() > limit) continue;
+    if (date.getDay() === 0 && !enabledDayIds.has(0)) continue;
+    if (!enabledDayIds.has(date.getDay())) continue;
+    if (holidaySet.has(toDateKey(date))) continue;
+    result.push(date);
+  }
+
+  return result;
+}
+
 interface Props {
   schoolId: string;
   classes: any[];
@@ -112,6 +162,8 @@ interface Props {
   setSelectedMonth: (v: number) => void;
   selectedYear: number;
   setSelectedYear: (v: number) => void;
+  selectedWeekStart: number;
+  setSelectedWeekStart: (v: number | ((prev: number) => number)) => void;
   schedules: any[];
   holidays: any[];
   onRefresh: () => Promise<unknown>;
@@ -126,6 +178,8 @@ export function AttendanceRecapPanel({
   setSelectedMonth,
   selectedYear,
   setSelectedYear,
+  selectedWeekStart,
+  setSelectedWeekStart,
   schedules,
   holidays,
   onRefresh
@@ -133,7 +187,7 @@ export function AttendanceRecapPanel({
   const dropdownClassName =
     "px-3 py-2 rounded-md border border-slate-500/70 bg-slate-950/90 text-sm font-medium text-slate-50 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/60";
   
-  const [viewMode, setViewMode] = useState<"summary" | "daily" | "statistics">("summary");
+  const [viewMode, setViewMode] = useState<"summary" | "weekly" | "daily" | "statistics">("summary");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [verifyingAttendanceId, setVerifyingAttendanceId] = useState<string | null>(null);
@@ -164,6 +218,19 @@ export function AttendanceRecapPanel({
     return new Set(validDates.map((date) => toDateKey(date)));
   }, [validDates]);
 
+  const weeklyDates = useMemo(() => {
+    return getValidDatesInRange({
+      start: selectedWeekStart,
+      end: selectedWeekStart + 6 * 24 * 60 * 60 * 1000,
+      schedules,
+      holidays,
+    });
+  }, [holidays, schedules, selectedWeekStart]);
+
+  const weeklyDateSet = useMemo(() => {
+    return new Set(weeklyDates.map((date) => toDateKey(date)));
+  }, [weeklyDates]);
+
   const filteredLogMap = useMemo(() => {
     const grouped = new Map<string, any>();
 
@@ -185,6 +252,26 @@ export function AttendanceRecapPanel({
 
     return grouped;
   }, [attendances, selectedMonth, selectedYear, validDateSet]);
+
+  const weeklyLogMap = useMemo(() => {
+    const grouped = new Map<string, any>();
+
+    for (const log of attendances || []) {
+      const canonicalId = log.studentId;
+      if (!canonicalId) continue;
+
+      const logDate = new Date(log.date);
+      const dateKey = toDateKey(logDate);
+      if (!weeklyDateSet.has(dateKey)) continue;
+
+      grouped.set(
+        createStudentDateKey(canonicalId, dateKey),
+        pickNewestLog(grouped.get(createStudentDateKey(canonicalId, dateKey)), log)
+      );
+    }
+
+    return grouped;
+  }, [attendances, weeklyDateSet]);
 
   const recapRows = useMemo(() => {
     const rows: any[] = [];
@@ -254,6 +341,74 @@ export function AttendanceRecapPanel({
     return rows;
   }, [filteredLogMap, filteredStudents, validDates]);
 
+  const weeklyRecapRows = useMemo(() => {
+    const rows: any[] = [];
+    const sortedStudents = [...filteredStudents].sort((a, b) => {
+      return String(a.name || "").localeCompare(String(b.name || ""), "id-ID");
+    });
+    const sortedDates = [...weeklyDates].sort((a, b) => b.getTime() - a.getTime());
+
+    for (const date of sortedDates) {
+      const dateKey = toDateKey(date);
+
+      for (const student of sortedStudents) {
+        const canonicalId = student.id;
+        if (!canonicalId) continue;
+
+        const existingLog = weeklyLogMap.get(createStudentDateKey(canonicalId, dateKey));
+
+        if (existingLog) {
+          rows.push({
+            id: String(existingLog.id || `${canonicalId}-${dateKey}`),
+            rowKey: `${canonicalId}-${dateKey}`,
+            date: new Date(existingLog.date).getTime(),
+            dateKey,
+            studentId: canonicalId,
+            studentName: existingLog.studentName || student.name || "Tidak Dikenal",
+            studentClass: existingLog.className || student.class || "-",
+            studentNisn: student.nisn || "-",
+            status: String(existingLog.status || "ALPHA"),
+            notes: String(existingLog.note || ""),
+            source: existingLog.source || "MANUAL",
+            sourceLabel: String(existingLog.sourceLabel || ""),
+            recordedBy: String(existingLog.recordedBy || ""),
+            verificationStatus: String(existingLog.verificationStatus || "APPROVED"),
+            verifiedBy: String(existingLog.verifiedBy || ""),
+            proposedBy: String(existingLog.proposedBy || ""),
+            isSystemGenerated: false,
+          });
+          continue;
+        }
+
+        rows.push({
+          id: `missing-${canonicalId}-${dateKey}`,
+          rowKey: `${canonicalId}-${dateKey}`,
+          date: date.getTime(),
+          dateKey,
+          studentId: canonicalId,
+          studentName: student.name || "Tidak Dikenal",
+          studentClass: student.class || student.className || "-",
+          studentNisn: student.nisn || "-",
+          status: "ALPHA",
+          notes: "Otomatis dari hari sekolah aktif tanpa log presensi.",
+          source: "SYSTEM",
+          sourceLabel: "Sistem",
+          recordedBy: "System (Attendance)",
+          verificationStatus: "APPROVED",
+          verifiedBy: "System (Attendance)",
+          proposedBy: "",
+          isSystemGenerated: true,
+        });
+      }
+    }
+
+    return rows;
+  }, [filteredStudents, weeklyDates, weeklyLogMap]);
+
+  const activeRecapRows = useMemo(() => {
+    return viewMode === "weekly" ? weeklyRecapRows : recapRows;
+  }, [recapRows, viewMode, weeklyRecapRows]);
+
   const sourceStats = useMemo(() => {
     const totals: Record<AttendanceSource, number> = {
       SELF: 0,
@@ -264,7 +419,7 @@ export function AttendanceRecapPanel({
       MANUAL: 0,
     };
 
-    for (const row of recapRows) {
+    for (const row of activeRecapRows) {
       const source = row.source as AttendanceSource;
       if (totals[source] !== undefined) {
         totals[source] += 1;
@@ -274,13 +429,13 @@ export function AttendanceRecapPanel({
     }
 
     return totals;
-  }, [recapRows]);
+  }, [activeRecapRows]);
 
   const verificationStats = useMemo(() => {
     let pendingSecretary = 0;
     let approvedFromSecretary = 0;
 
-    for (const row of recapRows) {
+    for (const row of activeRecapRows) {
       if (!hasSecretaryProposal(row)) continue;
       if (isPendingTeacherVerification(row)) {
         pendingSecretary += 1;
@@ -290,7 +445,7 @@ export function AttendanceRecapPanel({
     }
 
     return { pendingSecretary, approvedFromSecretary };
-  }, [recapRows]);
+  }, [activeRecapRows]);
 
   const monthlySummaryRows = useMemo(() => {
     return filteredStudents
@@ -344,7 +499,59 @@ export function AttendanceRecapPanel({
       .sort((a, b) => String(a.student.name || "").localeCompare(String(b.student.name || ""), "id-ID"));
   }, [filteredLogMap, filteredStudents, validDates]);
 
-  const stats = useMemo(() => {
+  const weeklySummaryRows = useMemo(() => {
+    return filteredStudents
+      .map((student) => {
+        const canonicalId = student.id;
+        let hadir = 0;
+        let sakit = 0;
+        let izin = 0;
+        let alpha = 0;
+        let effectiveDays = 0;
+
+        if (!canonicalId) {
+          return { student, hadir, sakit, izin, alpha, percentage: "0" };
+        }
+
+        for (const date of weeklyDates) {
+          const dateKey = toDateKey(date);
+          const log = weeklyLogMap.get(createStudentDateKey(canonicalId, dateKey));
+
+          effectiveDays += 1;
+
+          if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
+            alpha += 1;
+            continue;
+          }
+          if (log.status === "PRESENT" || log.status === "LATE") {
+            hadir += 1;
+            continue;
+          }
+          if (log.status === "SAKIT") {
+            sakit += 1;
+            continue;
+          }
+          if (log.status === "IZIN") {
+            izin += 1;
+            continue;
+          }
+
+          alpha += 1;
+        }
+
+        return {
+          student,
+          hadir,
+          sakit,
+          izin,
+          alpha,
+          percentage: effectiveDays > 0 ? String(Math.round((hadir / effectiveDays) * 100)) : "0",
+        };
+      })
+      .sort((a, b) => String(a.student.name || "").localeCompare(String(b.student.name || ""), "id-ID"));
+  }, [filteredStudents, weeklyDates, weeklyLogMap]);
+
+  const monthlyStats = useMemo(() => {
     const totals = {
       present: 0,
       late: 0,
@@ -377,6 +584,44 @@ export function AttendanceRecapPanel({
     
     return totals;
   }, [filteredLogMap, filteredStudents, validDates]);
+
+  const weeklyStats = useMemo(() => {
+    const totals = {
+      present: 0,
+      late: 0,
+      sick: 0,
+      permit: 0,
+      absent: 0,
+      validDays: weeklyDates.length,
+    };
+
+    for (const student of filteredStudents) {
+      const canonicalId = student.id;
+      if (!canonicalId) continue;
+
+      for (const date of weeklyDates) {
+        const dateKey = toDateKey(date);
+        const log = weeklyLogMap.get(createStudentDateKey(canonicalId, dateKey));
+
+        if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
+          totals.absent += 1;
+          continue;
+        }
+        if (log.status === "PRESENT") { totals.present += 1; continue; }
+        if (log.status === "LATE") { totals.late += 1; continue; }
+        if (log.status === "SAKIT") { totals.sick += 1; continue; }
+        if (log.status === "IZIN") { totals.permit += 1; continue; }
+
+        totals.absent += 1;
+      }
+    }
+
+    return totals;
+  }, [filteredStudents, weeklyDates, weeklyLogMap]);
+
+  const activeStats = viewMode === "weekly" ? weeklyStats : monthlyStats;
+  const activeValidDates = viewMode === "weekly" ? weeklyDates : validDates;
+  const activeSummaryRows = viewMode === "weekly" ? weeklySummaryRows : monthlySummaryRows;
 
   const handlePrint = () => {
     window.print();
@@ -429,12 +674,12 @@ export function AttendanceRecapPanel({
       {/* Stats Cards — rekap only */}
       {viewMode !== "statistics" && (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 no-print">
-        <StatItem label="Hadir" value={stats.present} color="bg-green-900/30 text-green-400 border border-green-700/30" />
-        <StatItem label="Terlambat" value={stats.late} color="bg-yellow-900/30 text-yellow-400 border border-yellow-700/30" />
-        <StatItem label="Sakit" value={stats.sick} color="bg-blue-900/30 text-blue-400 border border-blue-700/30" />
-        <StatItem label="Izin" value={stats.permit} color="bg-purple-900/30 text-purple-400 border border-purple-700/30" />
-        <StatItem label="Tidak Hadir" value={stats.absent} color="bg-red-900/30 text-red-400 border border-red-700/30" />
-        <StatItem label="Hari Sekolah Aktif" value={stats.validDays} color="bg-slate-800/30 text-slate-200 border border-slate-700/30" />
+        <StatItem label="Hadir" value={activeStats.present} color="bg-green-900/30 text-green-400 border border-green-700/30" />
+        <StatItem label="Terlambat" value={activeStats.late} color="bg-yellow-900/30 text-yellow-400 border border-yellow-700/30" />
+        <StatItem label="Sakit" value={activeStats.sick} color="bg-blue-900/30 text-blue-400 border border-blue-700/30" />
+        <StatItem label="Izin" value={activeStats.permit} color="bg-purple-900/30 text-purple-400 border border-purple-700/30" />
+        <StatItem label="Tidak Hadir" value={activeStats.absent} color="bg-red-900/30 text-red-400 border border-red-700/30" />
+        <StatItem label="Hari Sekolah Aktif" value={activeStats.validDays} color="bg-slate-800/30 text-slate-200 border border-slate-700/30" />
       </div>
       )}
 
@@ -453,25 +698,29 @@ export function AttendanceRecapPanel({
               ))}
             </select>
 
-            <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                className={dropdownClassName}
-            >
-              {MONTHS.map((month, index) => (
-                <option key={index + 1} value={index + 1}>{month}</option>
-              ))}
-            </select>
-            
-             <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className={dropdownClassName}
-            >
-              {Array.from({ length: 2040 - 2024 + 1 }, (_, i) => 2024 + i).map((year) => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
+            {viewMode !== "weekly" ? (
+              <>
+                <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                    className={dropdownClassName}
+                >
+                  {MONTHS.map((month, index) => (
+                    <option key={index + 1} value={index + 1}>{month}</option>
+                  ))}
+                </select>
+
+                 <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className={dropdownClassName}
+                >
+                  {Array.from({ length: 2040 - 2024 + 1 }, (_, i) => 2024 + i).map((year) => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </>
+            ) : null}
 
             <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -495,6 +744,36 @@ export function AttendanceRecapPanel({
       </div>
       )}
 
+      {viewMode === "weekly" && (
+        <div className="flex flex-col gap-3 rounded-lg border border-slate-700/60 bg-slate-900/40 px-4 py-4 text-slate-200 no-print md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Periode Mingguan</div>
+            <div className="mt-1 text-lg font-bold text-white">{formatWeekRange(selectedWeekStart)}</div>
+            <p className="mt-1 text-sm text-slate-400">
+              Rekap mingguan admin mengikuti rule final yang sama: usulan sekretaris pending belum dihitung final.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedWeekStart((prev) => prev - 7 * 24 * 60 * 60 * 1000)}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-950/60 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Minggu Sebelumnya
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedWeekStart((prev) => prev + 7 * 24 * 60 * 60 * 1000)}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-950/60 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+            >
+              Minggu Berikutnya
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex w-fit flex-wrap space-x-1 rounded-lg bg-slate-800/30 p-1 no-print border border-slate-700/60">
         <button
           onClick={() => setViewMode("summary")}
@@ -506,6 +785,17 @@ export function AttendanceRecapPanel({
         >
           <List className="h-4 w-4" />
           Rekap Bulanan
+        </button>
+        <button
+          onClick={() => setViewMode("weekly")}
+          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+            viewMode === "weekly"
+              ? "bg-slate-800/80 text-blue-300 shadow"
+              : "text-slate-400 hover:text-slate-300"
+          }`}
+        >
+          <Calendar className="h-4 w-4" />
+          Rekap Mingguan
         </button>
         <button
           onClick={() => setViewMode("daily")}
@@ -548,9 +838,9 @@ export function AttendanceRecapPanel({
       ) : (
       <>
       <div className="rounded-lg border border-slate-700/60 bg-slate-950/40 px-4 py-3 text-sm text-slate-300 no-print">
-        Rekap menampilkan seluruh siswa terfilter pada setiap hari sekolah aktif.
+        {viewMode === "weekly" ? "Rekap mingguan menampilkan seluruh siswa terfilter pada hari sekolah aktif di minggu terpilih." : "Rekap menampilkan seluruh siswa terfilter pada setiap hari sekolah aktif."}
         {" "}Untuk filter saat ini: <span className="font-semibold text-slate-100">{filteredStudents.length} siswa</span>
-        {" "}x <span className="font-semibold text-slate-100">{validDates.length} hari aktif</span>
+        {" "}x <span className="font-semibold text-slate-100">{activeValidDates.length} hari aktif</span>
       </div>
 
       {(verificationMessage || verificationError) && (
@@ -614,13 +904,13 @@ export function AttendanceRecapPanel({
             </h2>
             <div className="mt-2 flex justify-center gap-8 font-medium text-black text-sm">
               <p>Kelas: {selectedClassName || "Semua Kelas"}</p>
-              <p>Periode: {MONTHS[selectedMonth - 1]} {selectedYear}</p>
+              <p>Periode: {viewMode === "weekly" ? formatWeekRange(selectedWeekStart) : `${MONTHS[selectedMonth - 1]} ${selectedYear}`}</p>
             </div>
           </div>
           <div className="mt-4 border-b-[3px] border-black"></div>
         </div>
 
-        {viewMode === "summary" ? (
+        {viewMode !== "daily" ? (
           <div className="rounded-lg overflow-hidden border border-slate-700/60 bg-slate-900/50 print:border-none print:rounded-none">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-700">
@@ -638,8 +928,8 @@ export function AttendanceRecapPanel({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700 bg-slate-900/20">
-                  {monthlySummaryRows.length > 0 ? (
-                    monthlySummaryRows.map((item, index) => {
+                  {activeSummaryRows.length > 0 ? (
+                    activeSummaryRows.map((item, index) => {
                       const genderStr = String(item.student.gender || item.student.jenisKelamin || "").toLowerCase();
                       const lp = genderStr.startsWith('p') ? 'P' : (genderStr.startsWith('l') ? 'L' : '-');
                       return (

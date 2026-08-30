@@ -141,7 +141,13 @@ function resolveCanonicalStudentId(
   return candidates[0] || "";
 }
 
-export function useGasAttendance(schoolId: string | undefined, selectedMonth: number, selectedYear: number) {
+export function useGasAttendance(
+  schoolId: string | undefined,
+  selectedMonth: number,
+  selectedYear: number,
+  rangeStart?: number,
+  rangeEnd?: number
+) {
   const [students, setStudents] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
@@ -197,6 +203,14 @@ export function useGasAttendance(schoolId: string | undefined, selectedMonth: nu
     const normalizedSchoolId = normalizeSchoolId(schoolId);
     const startOfMonth = new Date(selectedYear, selectedMonth - 1, 1).getTime();
     const endOfMonth = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999).getTime();
+    const effectiveRangeStart =
+      typeof rangeStart === "number" && Number.isFinite(rangeStart)
+        ? rangeStart
+        : startOfMonth;
+    const effectiveRangeEnd =
+      typeof rangeEnd === "number" && Number.isFinite(rangeEnd)
+        ? rangeEnd
+        : endOfMonth;
 
     try {
       // Baca dari RTDB yang sama dengan APK GAS (bukan Firestore legacy).
@@ -216,7 +230,7 @@ export function useGasAttendance(schoolId: string | undefined, selectedMonth: nu
         const parsedDate = parseAttendanceDate(record.date);
         if (!parsedDate) continue;
         const millis = parsedDate.getTime();
-        if (millis < startOfMonth || millis > endOfMonth) continue;
+        if (millis < effectiveRangeStart || millis > effectiveRangeEnd) continue;
 
         const canonicalStudentId = resolveCanonicalStudentId(record, roster);
         if (!canonicalStudentId) continue;
@@ -267,7 +281,7 @@ export function useGasAttendance(schoolId: string | undefined, selectedMonth: nu
     } finally {
       setLoading(false);
     }
-  }, [schoolId, selectedMonth, selectedYear]);
+  }, [schoolId, selectedMonth, selectedYear, rangeEnd, rangeStart]);
 
   useEffect(() => {
     void fetchReferences();

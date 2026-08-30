@@ -14,9 +14,28 @@ interface GasAttendanceReportPanelProps {
 export default function GasAttendanceReportPanel({ schoolId }: GasAttendanceReportPanelProps) {
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedWeekStart, setSelectedWeekStart] = useState<number>(() => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    date.setDate(date.getDate() + diff);
+    return date.getTime();
+  });
 
   const { schedules, holidays } = useGasSettings(schoolId);
-  const { classes, students, attendances, loading, refresh } = useGasAttendance(schoolId, selectedMonth, selectedYear);
+  const monthRangeStart = new Date(selectedYear, selectedMonth - 1, 1).getTime();
+  const monthRangeEnd = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999).getTime();
+  const weekRangeStart = selectedWeekStart;
+  const weekRangeEnd = selectedWeekStart + 6 * 24 * 60 * 60 * 1000 + (24 * 60 * 60 * 1000 - 1);
+
+  const { classes, students, attendances, loading, refresh } = useGasAttendance(
+    schoolId,
+    selectedMonth,
+    selectedYear,
+    Math.min(monthRangeStart, weekRangeStart),
+    Math.max(monthRangeEnd, weekRangeEnd)
+  );
 
   return (
     <div className="space-y-6 flex-1 overflow-y-auto p-6">
@@ -52,6 +71,8 @@ export default function GasAttendanceReportPanel({ schoolId }: GasAttendanceRepo
         setSelectedMonth={setSelectedMonth}
         selectedYear={selectedYear}
         setSelectedYear={setSelectedYear}
+        selectedWeekStart={selectedWeekStart}
+        setSelectedWeekStart={setSelectedWeekStart}
         schedules={schedules} 
         holidays={holidays} 
         onRefresh={refresh}
