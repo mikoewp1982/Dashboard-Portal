@@ -310,7 +310,7 @@ export function GuruPresensiInteractive() {
             {saving ? "Menyimpan..." : "Simpan Presensi Manual"}
           </ApkActionButton>
           <p className="text-[11px] text-white/75">
-            Centang ulang status yang sama untuk membatalkan pilihan manual. Jika baris masih pending dari sekretaris, tekan status yang sama lalu simpan untuk menyetujui usulan tersebut.
+            Centang ulang status yang sama untuk membatalkan pilihan manual. Data legacy sekretaris yang masih pending tetap bisa Anda finalkan dari sini.
           </p>
 
           {loading ? (
@@ -334,7 +334,7 @@ export function GuruPresensiInteractive() {
                       item.isPendingTeacherVerification ? (
                         <div className="flex flex-wrap gap-1">
                           <span className="rounded-full border border-amber-300/40 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-100">
-                            Menunggu verifikasi guru
+                            Pending legacy sekretaris
                           </span>
                           {item.proposedBy ? (
                             <span className="rounded-full border border-cyan-300/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] text-cyan-100">
@@ -345,7 +345,7 @@ export function GuruPresensiInteractive() {
                       ) : item.hasSecretaryProposal ? (
                         <div className="flex flex-wrap gap-1">
                           <span className="rounded-full border border-emerald-300/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-100">
-                            Final dari usulan sekretaris
+                            Final dari data legacy sekretaris
                           </span>
                           {item.verifiedBy ? (
                             <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] text-white/80">
@@ -392,7 +392,7 @@ export function GuruPresensiInteractive() {
                 </ApkActionButton>
               </div>
               <p className="text-[11px] text-white/75">
-                Rekap mingguan mengikuti kontrak APK: usulan sekretaris yang masih pending belum dihitung final.
+                Input wali kelas dan sekretaris kini langsung dihitung final. Data legacy yang masih pending tetap dikecualikan sampai difinalkan.
               </p>
             </div>
           </ApkGlassCard>

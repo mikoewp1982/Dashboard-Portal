@@ -1,5 +1,5 @@
-﻿{
-    "updatedAt":  "2026-08-28T14:02:22",
+{
+    "updatedAt":  "2026-08-30T06:43:41",
     "files":  {
                   "EduLock-1.3.11-37.apk":  {
                                                 "lastModified":  "2026-08-15T09:01:50",
@@ -20,23 +20,23 @@
                                                      "sizeBytes":  3929282
                                                  },
                   "GAS-Siswa-release.apk":  {
-                                                "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",
-                                                "lastModified":  "2026-08-28T13:25:29",
+                                                "lastModified":  "2026-08-30T06:36:32",
                                                 "packageName":  "com.satupintu.mobile.siswa",
-                                                "sizeMB":  20.5,
-                                                "sha256":  "C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C",
-                                                "versionName":  "1.0.82-siswa",
-                                                "versionCode":  23079,
-                                                "sizeBytes":  21494650
+                                                "sizeMB":  20.51,
+                                                "sha256":  "135DB6B26D57C2E4F4508EFE1D37E2F266E388C9EB8FC4DFFA3B4A7FB1872063",
+                                                "versionName":  "1.0.91-siswa",
+                                                "versionCode":  23088,
+                                                "sizeBytes":  21511026,
+                                                "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63"
                                             },
-                  "GAS-Siswa-1.0.80-siswa-23077.apk":  {
-                                                           "lastModified":  "2026-08-16T21:54:52",
+                  "GAS-Siswa-1.0.91-siswa-23088.apk":  {
+                                                           "lastModified":  "2026-08-30T06:36:32",
                                                            "packageName":  "com.satupintu.mobile.siswa",
-                                                           "sizeMB":  20.27,
-                                                           "sha256":  "CB5CF41398A815AB43678A0DC3CEE52CDF83593A69980F590DDDC5FB2F3EDB98",
-                                                           "versionName":  "1.0.80-siswa",
-                                                           "versionCode":  23077,
-                                                           "sizeBytes":  21259613,
+                                                           "sizeMB":  20.51,
+                                                           "sha256":  "135DB6B26D57C2E4F4508EFE1D37E2F266E388C9EB8FC4DFFA3B4A7FB1872063",
+                                                           "versionName":  "1.0.91-siswa",
+                                                           "versionCode":  23088,
+                                                           "sizeBytes":  21511026,
                                                            "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63"
                                                        }
               }

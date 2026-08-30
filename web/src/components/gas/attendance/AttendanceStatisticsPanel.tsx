@@ -284,9 +284,9 @@ export function AttendanceStatisticsPanel({
     return totals;
   }, [filteredLogs, filteredStudents, validDates]);
 
-  const secretaryVerificationStats = useMemo(() => {
-    let pending = 0;
-    let approved = 0;
+  const secretaryActivityStats = useMemo(() => {
+    let pendingLegacy = 0;
+    let finalRecorded = 0;
 
     for (const student of filteredStudents) {
       const id = String(student.id || "");
@@ -295,17 +295,18 @@ export function AttendanceStatisticsPanel({
       for (const date of validDates) {
         const dateKey = toDateKey(date);
         const log = filteredLogs.get(createStudentDateKey(id, dateKey));
-        if (!hasSecretaryProposal(log)) continue;
+        const secretarySource = String(log?.source || "").trim().toUpperCase() === "CLASS_SECRETARY";
+        if (!secretarySource && !hasSecretaryProposal(log)) continue;
 
         if (isPendingTeacherVerification(log)) {
-          pending += 1;
+          pendingLegacy += 1;
         } else {
-          approved += 1;
+          finalRecorded += 1;
         }
       }
     }
 
-    return { pending, approved };
+    return { pendingLegacy, finalRecorded };
   }, [filteredLogs, filteredStudents, validDates]);
 
   const insightItems = useMemo(() => {
@@ -413,18 +414,18 @@ export function AttendanceStatisticsPanel({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <StatsMiniCard
-          title="Usulan Sekretaris Pending"
-          value={secretaryVerificationStats.pending}
-          description="Belum sah sebagai rekap final sampai diverifikasi wali kelas atau admin sekolah."
-          icon={ShieldAlert}
-          accent="amber"
-        />
-        <StatsMiniCard
-          title="Usulan Sekretaris Disetujui"
-          value={secretaryVerificationStats.approved}
-          description="Sudah final, namun jejak pengusul sekretaris tetap tersimpan."
+          title="Rekap Final Sekretaris"
+          value={secretaryActivityStats.finalRecorded}
+          description="Sudah tercatat final, baik dari rule baru maupun data legacy yang sudah difinalkan."
           icon={UserCheck}
           accent="cyan"
+        />
+        <StatsMiniCard
+          title="Pending Legacy Sekretaris"
+          value={secretaryActivityStats.pendingLegacy}
+          description="Sisa data lama yang masih mengikuti rule verifikasi bertahap."
+          icon={ShieldAlert}
+          accent="amber"
         />
       </div>
 

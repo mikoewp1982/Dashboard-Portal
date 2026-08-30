@@ -733,10 +733,12 @@ class TeacherAttendanceViewModel : ViewModel() {
         if (!isSecretaryMode()) return true
         if (isCurrentSecretaryStudent(student)) return false
         if (record == null) return true
-        if (!isPendingTeacherVerification(record)) return false
-
-        val proposalOwner = normalizeIdentity(record.proposedBy).ifBlank { normalizeIdentity(record.recordedBy) }
-        return proposalOwner.isBlank() || proposalOwner == currentRecordedBy()
+        val currentActor = normalizeIdentity(currentRecordedBy())
+        return listOf(
+            normalizeIdentity(record.recordedBy),
+            normalizeIdentity(record.proposedBy),
+            normalizeIdentity(record.verifiedBy)
+        ).any { owner -> owner.isNotBlank() && owner == currentActor }
     }
 
     private fun canEditAttendanceItem(item: StudentAttendanceItem): Boolean {
@@ -766,12 +768,12 @@ class TeacherAttendanceViewModel : ViewModel() {
                 notes = notesOverride,
                 proofDocument = existing?.proofDocument,
                 recordedBy = actor,
-                verificationStatus = "PENDING_TEACHER",
-                verifiedBy = null,
-                verifiedAt = null,
-                proposedBy = actor,
-                proposedAt = now,
-                proposedStatus = normalizedStatus,
+                verificationStatus = "APPROVED",
+                verifiedBy = actor,
+                verifiedAt = now,
+                proposedBy = null,
+                proposedAt = null,
+                proposedStatus = null,
                 latitude = existing?.latitude,
                 longitude = existing?.longitude,
                 locationAccuracyMeters = existing?.locationAccuracyMeters,

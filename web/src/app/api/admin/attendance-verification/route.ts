@@ -60,14 +60,14 @@ export async function POST(req: NextRequest) {
 
     if (verificationStatus !== "PENDING_TEACHER") {
       return NextResponse.json(
-        { success: false, message: "Data ini sudah final atau tidak sedang menunggu verifikasi." },
+        { success: false, message: "Data ini sudah final atau tidak termasuk data legacy yang menunggu finalisasi." },
         { status: 400 }
       );
     }
 
     if (!proposedBy.toLowerCase().includes("sekretaris kelas")) {
       return NextResponse.json(
-        { success: false, message: "Hanya usulan Sekretaris Kelas yang bisa diverifikasi dari panel ini." },
+        { success: false, message: "Hanya data legacy Sekretaris Kelas yang bisa difinalkan dari panel ini." },
         { status: 400 }
       );
     }
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Usulan presensi berhasil diverifikasi oleh admin sekolah.",
+      message: "Data presensi sekretaris lama berhasil difinalkan oleh admin sekolah.",
       data: {
         attendanceId,
         verificationStatus: "APPROVED",

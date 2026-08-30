@@ -639,12 +639,12 @@ export function AttendanceRecapPanel({
         attendanceId,
       });
       setVerificationMessage(
-        result?.message || "Usulan presensi berhasil diverifikasi oleh admin sekolah."
+        result?.message || "Data presensi sekretaris lama berhasil difinalkan oleh admin sekolah."
       );
       await onRefresh();
     } catch (error) {
       setVerificationError(
-        error instanceof Error ? error.message : "Gagal memverifikasi usulan presensi."
+        error instanceof Error ? error.message : "Gagal memfinalkan data presensi sekretaris lama."
       );
     } finally {
       setVerifyingAttendanceId(null);
@@ -750,7 +750,7 @@ export function AttendanceRecapPanel({
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Periode Mingguan</div>
             <div className="mt-1 text-lg font-bold text-white">{formatWeekRange(selectedWeekStart)}</div>
             <p className="mt-1 text-sm text-slate-400">
-              Rekap mingguan admin mengikuti rule final yang sama: usulan sekretaris pending belum dihitung final.
+              Input wali kelas dan sekretaris kini langsung masuk rekap final. Data pending lama tetap perlu difinalkan lebih dulu.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -1011,14 +1011,14 @@ export function AttendanceRecapPanel({
                             {isPendingTeacherVerification(log) ? (
                               <div className="mt-1">
                                 <span className="inline-flex rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] font-semibold text-amber-300">
-                                  Menunggu Verifikasi Wali Kelas/Admin
+                                  Pending Lama: Butuh Finalisasi
                                 </span>
                               </div>
                             ) : null}
                             {!isPendingTeacherVerification(log) && proposalExists ? (
                               <div className="mt-1">
                                 <span className="inline-flex rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 text-[11px] font-semibold text-cyan-300">
-                                  Disetujui dari Usulan Sekretaris
+                                  Final dari Data Legacy Sekretaris
                                 </span>
                               </div>
                             ) : null}
@@ -1041,9 +1041,9 @@ export function AttendanceRecapPanel({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                       {isPendingTeacherVerification(log)
-                        ? `${log.notes || "Usulan sekretaris kelas."} Menunggu verifikasi wali kelas atau admin sekolah sebelum dihitung final.`
+                        ? `${log.notes || "Data lama sekretaris kelas."} Masih mengikuti rule sebelumnya dan perlu difinalkan wali kelas atau admin sekolah.`
                         : hasSecretaryProposal(log)
-                          ? `${log.notes || "Sudah diverifikasi petugas sekolah."} Jejak usulan sekretaris tetap tersimpan untuk audit.`
+                          ? `${log.notes || "Sudah difinalkan petugas sekolah."} Jejak usulan lama sekretaris tetap tersimpan untuk audit.`
                           : (log.notes || (log.isSystemGenerated ? "Otomatis dari hari sekolah aktif tanpa log presensi." : "-"))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300 no-print">
@@ -1054,7 +1054,7 @@ export function AttendanceRecapPanel({
                           disabled={verifyingAttendanceId === log.id}
                           className="inline-flex items-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {verifyingAttendanceId === log.id ? "Memverifikasi..." : "Verifikasi Admin"}
+                          {verifyingAttendanceId === log.id ? "Memfinalkan..." : "Finalkan Legacy"}
                         </button>
                       ) : (
                         <span className="text-xs text-slate-500">

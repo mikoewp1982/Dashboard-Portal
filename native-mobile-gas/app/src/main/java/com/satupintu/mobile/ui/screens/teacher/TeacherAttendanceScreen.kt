@@ -491,7 +491,7 @@ fun DailyMonitoringContent(
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.16f)),
             shape = RoundedCornerShape(16.dp)
-        ) { Text(if (isClassSecretaryMode) "Usulkan Semua Hadir" else "Tandai Semua Hadir", color = Color.White, fontWeight = FontWeight.Bold) }
+        ) { Text("Tandai Semua Hadir", color = Color.White, fontWeight = FontWeight.Bold) }
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -501,14 +501,14 @@ fun DailyMonitoringContent(
             enabled = manualSelections.isNotEmpty() && !isSubmitting,
             colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.16f)),
             shape = RoundedCornerShape(16.dp)
-        ) { Text(if (isSubmitting) "Menyimpan..." else if (isClassSecretaryMode) "Kirim Usulan ke Guru" else "Verifikasi & Simpan Presensi", color = Color.White, fontWeight = FontWeight.Bold) }
+        ) { Text(if (isSubmitting) "Menyimpan..." else if (isClassSecretaryMode) "Simpan Presensi Kelas" else "Verifikasi & Simpan Presensi", color = Color.White, fontWeight = FontWeight.Bold) }
 
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = if (isClassSecretaryMode) {
-                "Sekretaris hanya mengirim usulan. Rekap final baru dihitung setelah wali kelas memverifikasi."
+                "Input sekretaris langsung tercatat sebagai data final. Jejak petugas tetap tersimpan untuk audit, dan akun sendiri tetap terkunci."
             } else {
-                "Centang ulang status yang sama untuk membatalkan pilihan manual. Usulan sekretaris belum menjadi nilai final sebelum Anda verifikasi."
+                "Centang ulang status yang sama untuk membatalkan pilihan manual. Data lama sekretaris yang masih pending tetap bisa Anda finalkan dari sini."
             },
             style = MaterialTheme.typography.labelSmall,
             color = LenteraTextSecondary
@@ -525,9 +525,9 @@ fun DailyMonitoringContent(
             ) {
                 Text(
                     text = if (isClassSecretaryMode) {
-                        "$pendingCount usulan presensi sedang menunggu verifikasi wali kelas."
+                        "$pendingCount data lama masih memakai rule pending dan perlu difinalkan wali kelas."
                     } else {
-                        "$pendingCount usulan sekretaris kelas sedang menunggu verifikasi Anda."
+                        "$pendingCount data lama sekretaris kelas masih menunggu finalisasi Anda."
                     },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     color = Color.White,
@@ -634,19 +634,19 @@ private fun AttendanceRowMeta(item: StudentAttendanceItem, attendanceManagerLabe
             item.isSelfSecretaryRow ->
                 add("Akun sendiri terkunci" to Color(0xFFEF4444).copy(alpha = 0.18f))
             item.isPendingTeacherVerification && attendanceManagerLabel == "Sekretaris Kelas" ->
-                add("Usulan menunggu verifikasi guru" to Color(0xFFF59E0B).copy(alpha = 0.18f))
+                add("Data lama menunggu verifikasi guru" to Color(0xFFF59E0B).copy(alpha = 0.18f))
             item.isPendingTeacherVerification ->
-                add("Usulan sekretaris menunggu verifikasi" to Color(0xFFF59E0B).copy(alpha = 0.18f))
+                add("Data lama sekretaris menunggu verifikasi" to Color(0xFFF59E0B).copy(alpha = 0.18f))
             attendanceManagerLabel == "Sekretaris Kelas" && !item.isEditableBySecretary ->
-                add("Sudah final, hanya guru yang bisa ubah" to Color.White.copy(alpha = 0.10f))
+                add("Sudah dicatat petugas lain" to Color.White.copy(alpha = 0.10f))
         }
 
         val proposedBy = item.attendance?.proposedBy.orEmpty().trim()
         if (proposedBy.isNotBlank()) {
             val proposalLabel = if (item.isPendingTeacherVerification) {
-                "Pengusul: $proposedBy"
+                "Pengusul lama: $proposedBy"
             } else {
-                "Usulan awal: $proposedBy"
+                "Riwayat usulan: $proposedBy"
             }
             add(proposalLabel to Color(0xFF06B6D4).copy(alpha = 0.16f))
         }
