@@ -79,7 +79,16 @@ export function StudentsTable({ rows, loading, onEdit, onDelete, onResetGasDevic
                     <td className="px-6 py-4 font-medium text-white">{row.name || "-"}</td>
                     <td className="px-6 py-4 text-slate-300">{row.gender || "-"}</td>
                     <td className="px-6 py-4 text-slate-300">{row.religion || "-"}</td>
-                    <td className="px-6 py-4 text-slate-300">{row.class || "-"}</td>
+                    <td className="px-6 py-4 text-slate-300">
+                      <div className="flex flex-col gap-1">
+                        <span>{row.class || "-"}</span>
+                        {row.position ? (
+                          <span className="inline-flex w-fit items-center rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-semibold text-cyan-200">
+                            {row.position}
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
                         <span className={`inline-flex w-fit items-center rounded-md border px-2 py-1 text-[11px] font-semibold ${getActivityBadgeClass(row.activityStatus)}`}>

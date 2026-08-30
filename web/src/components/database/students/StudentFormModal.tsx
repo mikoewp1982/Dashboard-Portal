@@ -112,6 +112,24 @@ export function StudentFormModal({
             <div className="mt-2 text-xs text-slate-400">Kelas hanya bisa dipilih dari daftar Kelas Paralel.</div>
           </div>
 
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-300">JABATAN OPSIONAL</label>
+            <select
+              value={formData.position}
+              onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
+              className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-2.5 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Tidak ada jabatan khusus</option>
+              <option value="Ketua Kelas">Ketua Kelas</option>
+              <option value="Sekretaris Kelas">Sekretaris Kelas</option>
+              <option value="Bendahara Kelas">Bendahara Kelas</option>
+            </select>
+            <div className="mt-2 text-xs text-slate-400">
+              Pilih <span className="font-semibold text-slate-200">Sekretaris Kelas</span> jika siswa perlu mendapat akses menu
+              <span className="font-semibold text-slate-200"> Presensi Siswa</span> di APK GAS Siswa.
+            </div>
+          </div>
+
           <div className="mt-6 flex items-center justify-end gap-3 border-t border-white/10 pt-4">
             <button
               type="button"
