@@ -56,17 +56,19 @@ export async function POST(req: NextRequest) {
       };
 
       schedules.forEach((s: any) => {
+        const entryTime = normalizeTimeValue(s.entryTime, "07:00");
+        const exitTime = normalizeTimeValue(s.exitTime, "13:30");
         formatted[String(s.dayId + 1)] = {
-          startTime: s.entryTime,
-          endTime: s.exitTime,
+          startTime: entryTime,
+          endTime: exitTime,
           isHoliday: !s.isEnabled
         };
         const legacyKey = dayMapping[s.dayId];
         if (legacyKey) {
           legacyFormatted[legacyKey] = {
             enabled: s.isEnabled,
-            start: s.entryTime,
-            end: s.exitTime
+            start: entryTime,
+            end: exitTime
           };
         }
       });

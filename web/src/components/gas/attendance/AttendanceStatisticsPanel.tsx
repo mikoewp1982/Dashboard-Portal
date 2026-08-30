@@ -26,27 +26,6 @@ const SOURCE_META: Record<AttendanceSource, { label: string; accent: string }> =
   MANUAL: { label: "Input Manual", accent: "bg-amber-500/10 text-amber-300 border-amber-500/20" },
 };
 
-function isPendingTeacherVerification(log: Pick<AttendanceRecord, "verificationStatus"> | null | undefined) {
-  return String(log?.verificationStatus || "").trim().toUpperCase() === "PENDING_TEACHER";
-}
-
-function hasSecretaryProposal(
-  log:
-    | Pick<AttendanceRecord, "proposedBy" | "proposedStatus" | "source" | "verificationStatus">
-    | null
-    | undefined
-) {
-  const proposedBy = String(log?.proposedBy || "").trim().toLowerCase();
-  const proposedStatus = String(log?.proposedStatus || "").trim();
-  const source = String(log?.source || "").trim().toUpperCase();
-
-  return (
-    proposedBy.includes("sekretaris kelas") ||
-    proposedStatus.length > 0 ||
-    (source === "CLASS_SECRETARY" && isPendingTeacherVerification(log))
-  );
-}
-
 interface Props {
   classes: any[];
   students: any[];
@@ -135,7 +114,7 @@ export function AttendanceStatisticsPanel({
         const log = filteredLogs.get(createStudentDateKey(canonicalId, dateKey));
         totals.totalValidSlots += 1;
 
-        if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
+        if (!log || log.status === "ALPHA") {
           totals.absent += 1;
           totals.effectiveObligation += 1;
           if (className) classMap.get(className).alpha += 1;
@@ -208,7 +187,7 @@ export function AttendanceStatisticsPanel({
         const dateKey = toDateKey(date);
         const log = filteredLogs.get(createStudentDateKey(id, dateKey));
 
-        if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
+        if (!log || log.status === "ALPHA") {
           tally.absent += 1;
           continue;
         }
@@ -282,31 +261,6 @@ export function AttendanceStatisticsPanel({
     }
 
     return totals;
-  }, [filteredLogs, filteredStudents, validDates]);
-
-  const secretaryActivityStats = useMemo(() => {
-    let pendingLegacy = 0;
-    let finalRecorded = 0;
-
-    for (const student of filteredStudents) {
-      const id = String(student.id || "");
-      if (!id) continue;
-
-      for (const date of validDates) {
-        const dateKey = toDateKey(date);
-        const log = filteredLogs.get(createStudentDateKey(id, dateKey));
-        const secretarySource = String(log?.source || "").trim().toUpperCase() === "CLASS_SECRETARY";
-        if (!secretarySource && !hasSecretaryProposal(log)) continue;
-
-        if (isPendingTeacherVerification(log)) {
-          pendingLegacy += 1;
-        } else {
-          finalRecorded += 1;
-        }
-      }
-    }
-
-    return { pendingLegacy, finalRecorded };
   }, [filteredLogs, filteredStudents, validDates]);
 
   const insightItems = useMemo(() => {
@@ -408,23 +362,6 @@ export function AttendanceStatisticsPanel({
           student={topStudentsByStatus.late}
           unitLabel="hari"
           icon={Clock}
-          accent="amber"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <StatsMiniCard
-          title="Rekap Final Sekretaris"
-          value={secretaryActivityStats.finalRecorded}
-          description="Sudah tercatat final, baik dari rule baru maupun data legacy yang sudah difinalkan."
-          icon={UserCheck}
-          accent="cyan"
-        />
-        <StatsMiniCard
-          title="Pending Legacy Sekretaris"
-          value={secretaryActivityStats.pendingLegacy}
-          description="Sisa data lama yang masih mengikuti rule verifikasi bertahap."
-          icon={ShieldAlert}
           accent="amber"
         />
       </div>

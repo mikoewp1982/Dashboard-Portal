@@ -70,9 +70,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
         if (mounted) {
           setUser(portalUser);
-          // #region debug-point D:auth-user-resolved
-          fetch("http://127.0.0.1:7777/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: "admin-kick-gate", runId: "pre-fix", hypothesisId: "D", location: "AuthProvider.tsx:setUser", msg: "[DEBUG] auth user resolved", data: { role, schoolId, pathname: typeof window !== "undefined" ? window.location.pathname : null }, ts: Date.now() }) }).catch(() => {});
-          // #endregion
         }
       } catch (err) {
         console.error("Auth error:", err);
@@ -108,9 +105,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     let attached = false;
     const schoolRef = ref(rtdb, `schools/${user.schoolId}`);
-    // #region debug-point A:tenant-listener-attach
-    fetch("http://127.0.0.1:7777/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: "admin-kick-gate", runId: "pre-fix", hypothesisId: "A", location: "AuthProvider.tsx:tenantEffect", msg: "[DEBUG] attaching tenant listener", data: { role: user.role, schoolId: user.schoolId, pathname: typeof window !== "undefined" ? window.location.pathname : null }, ts: Date.now() }) }).catch(() => {});
-    // #endregion
     const unsubscribe = onValue(schoolRef, (snapshot) => {
       let needSignOut = false;
       let reason = "";
@@ -119,9 +113,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         const data = snapshot.val() || {};
         const inactive = data.isActive === false || data.isActive === null || data.isActive === undefined;
         const adminAccessBlocked = data.adminAccessActive === false || data.adminAccessActive === null || data.adminAccessActive === undefined;
-        // #region debug-point B:tenant-snapshot
-        fetch("http://127.0.0.1:7777/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: "admin-kick-gate", runId: "pre-fix", hypothesisId: "B", location: "AuthProvider.tsx:onValue", msg: "[DEBUG] tenant snapshot received", data: { schoolId: user.schoolId, inactive, adminAccessBlocked, rawIsActive: data.isActive ?? null, rawAdminAccessActive: data.adminAccessActive ?? null, pathname: typeof window !== "undefined" ? window.location.pathname : null }, ts: Date.now() }) }).catch(() => {});
-        // #endregion
         if (inactive) {
           needSignOut = true;
           reason = data.isActive === false
@@ -139,9 +130,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
 
       if (needSignOut) {
-        // #region debug-point C:tenant-signout-branch
-        fetch("http://127.0.0.1:7777/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: "admin-kick-gate", runId: "pre-fix", hypothesisId: "C", location: "AuthProvider.tsx:signOutBranch", msg: "[DEBUG] tenant signOut branch hit", data: { schoolId: user.schoolId, reason, pathname: typeof window !== "undefined" ? window.location.pathname : null }, ts: Date.now() }) }).catch(() => {});
-        // #endregion
         console.warn("[AuthProvider] Tenant gate failed:", reason);
         logoutState.setMessage(reason);
         signOut(auth).catch(console.error);
@@ -181,9 +169,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const needsAuth = pathname.startsWith('/dashboard') || pathname.startsWith('/super-admin');
     const isGuruPortal = pathname.startsWith('/guru');
     const passwordChangeBlocked = user?.role === 'admin' && user.mustChangePassword === true;
-    // #region debug-point E:redirect-guard
-    fetch("http://127.0.0.1:7777/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: "admin-kick-gate", runId: "pre-fix", hypothesisId: "E", location: "AuthProvider.tsx:redirectEffect", msg: "[DEBUG] redirect guard evaluated", data: { pathname, hasUser: !!user, role: user?.role ?? null, needsAuth, tenantGateChecked, loading }, ts: Date.now() }) }).catch(() => {});
-    // #endregion
 
     if (!user && needsAuth) {
       router.push('/login');

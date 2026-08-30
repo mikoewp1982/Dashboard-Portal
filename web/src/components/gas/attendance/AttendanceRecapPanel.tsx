@@ -3,7 +3,6 @@ import { Search, Printer, List, Calendar, BarChart3, ChevronLeft, ChevronRight }
 import { buildHolidaySet, createStudentDateKey, getValidDatesInMonth, pickNewestLog, toDateKey } from "@/utils/presensiRules";
 import { AttendanceRecord, AttendanceSource } from "@/types/gas";
 import { AttendanceStatisticsPanel } from "./AttendanceStatisticsPanel";
-import { callAdminApi } from "@/lib/callAdminApi";
 
 const MONTHS = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -82,27 +81,6 @@ function getSourceMeta(source?: AttendanceSource, fallbackLabel?: string) {
   };
 }
 
-function isPendingTeacherVerification(log: Pick<AttendanceRecord, "verificationStatus"> | null | undefined) {
-  return String(log?.verificationStatus || "").trim().toUpperCase() === "PENDING_TEACHER";
-}
-
-function hasSecretaryProposal(
-  log:
-    | Pick<AttendanceRecord, "proposedBy" | "proposedStatus" | "source" | "verificationStatus">
-    | null
-    | undefined
-) {
-  const proposedBy = String(log?.proposedBy || "").trim().toLowerCase();
-  const proposedStatus = String(log?.proposedStatus || "").trim();
-  const source = String(log?.source || "").trim().toUpperCase();
-
-  return (
-    proposedBy.includes("sekretaris kelas") ||
-    proposedStatus.length > 0 ||
-    (source === "CLASS_SECRETARY" && isPendingTeacherVerification(log))
-  );
-}
-
 function startOfDayMs(value: number) {
   const date = new Date(value);
   date.setHours(0, 0, 0, 0);
@@ -170,7 +148,6 @@ interface Props {
 }
 
 export function AttendanceRecapPanel({
-  schoolId,
   classes,
   students,
   attendances,
@@ -182,7 +159,6 @@ export function AttendanceRecapPanel({
   setSelectedWeekStart,
   schedules,
   holidays,
-  onRefresh
 }: Props) {
   const dropdownClassName =
     "px-3 py-2 rounded-md border border-slate-500/70 bg-slate-950/90 text-sm font-medium text-slate-50 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/60";
@@ -190,9 +166,6 @@ export function AttendanceRecapPanel({
   const [viewMode, setViewMode] = useState<"summary" | "weekly" | "daily" | "statistics">("summary");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [verifyingAttendanceId, setVerifyingAttendanceId] = useState<string | null>(null);
-  const [verificationMessage, setVerificationMessage] = useState<string>("");
-  const [verificationError, setVerificationError] = useState<string>("");
 
   const filteredStudents = useMemo(() => {
     let result = students || [];
@@ -431,22 +404,6 @@ export function AttendanceRecapPanel({
     return totals;
   }, [activeRecapRows]);
 
-  const verificationStats = useMemo(() => {
-    let pendingSecretary = 0;
-    let approvedFromSecretary = 0;
-
-    for (const row of activeRecapRows) {
-      if (!hasSecretaryProposal(row)) continue;
-      if (isPendingTeacherVerification(row)) {
-        pendingSecretary += 1;
-      } else {
-        approvedFromSecretary += 1;
-      }
-    }
-
-    return { pendingSecretary, approvedFromSecretary };
-  }, [activeRecapRows]);
-
   const monthlySummaryRows = useMemo(() => {
     return filteredStudents
       .map((student) => {
@@ -467,7 +424,7 @@ export function AttendanceRecapPanel({
 
           effectiveDays += 1;
 
-          if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
+          if (!log || log.status === "ALPHA") {
             alpha += 1;
             continue;
           }
@@ -519,7 +476,7 @@ export function AttendanceRecapPanel({
 
           effectiveDays += 1;
 
-          if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
+          if (!log || log.status === "ALPHA") {
             alpha += 1;
             continue;
           }
@@ -569,7 +526,7 @@ export function AttendanceRecapPanel({
         const dateKey = toDateKey(date);
         const log = filteredLogMap.get(createStudentDateKey(canonicalId, dateKey));
 
-        if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
+        if (!log || log.status === "ALPHA") {
           totals.absent += 1;
           continue;
         }
@@ -603,7 +560,7 @@ export function AttendanceRecapPanel({
         const dateKey = toDateKey(date);
         const log = weeklyLogMap.get(createStudentDateKey(canonicalId, dateKey));
 
-        if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
+        if (!log || log.status === "ALPHA") {
           totals.absent += 1;
           continue;
         }
@@ -625,30 +582,6 @@ export function AttendanceRecapPanel({
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleAdminVerify = async (attendanceId: string) => {
-    if (!attendanceId || !schoolId) return;
-    setVerifyingAttendanceId(attendanceId);
-    setVerificationMessage("");
-    setVerificationError("");
-
-    try {
-      const result = await callAdminApi("/api/admin/attendance-verification", "POST", {
-        schoolId,
-        attendanceId,
-      });
-      setVerificationMessage(
-        result?.message || "Data presensi sekretaris lama berhasil difinalkan oleh admin sekolah."
-      );
-      await onRefresh();
-    } catch (error) {
-      setVerificationError(
-        error instanceof Error ? error.message : "Gagal memfinalkan data presensi sekretaris lama."
-      );
-    } finally {
-      setVerifyingAttendanceId(null);
-    }
   };
 
   return (
@@ -750,7 +683,7 @@ export function AttendanceRecapPanel({
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Periode Mingguan</div>
             <div className="mt-1 text-lg font-bold text-white">{formatWeekRange(selectedWeekStart)}</div>
             <p className="mt-1 text-sm text-slate-400">
-              Input wali kelas dan sekretaris kini langsung masuk rekap final. Data pending lama tetap perlu difinalkan lebih dulu.
+              Input wali kelas dan sekretaris langsung masuk rekap final.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -843,18 +776,6 @@ export function AttendanceRecapPanel({
         {" "}x <span className="font-semibold text-slate-100">{activeValidDates.length} hari aktif</span>
       </div>
 
-      {(verificationMessage || verificationError) && (
-        <div
-          className={`rounded-lg border px-4 py-3 text-sm no-print ${
-            verificationError
-              ? "border-red-500/20 bg-red-500/10 text-red-200"
-              : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
-          }`}
-        >
-          {verificationError || verificationMessage}
-        </div>
-      )}
-
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6 no-print">
         {(
           [
@@ -879,19 +800,6 @@ export function AttendanceRecapPanel({
             </div>
           );
         })}
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 no-print">
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-amber-200">Usulan Sekretaris Pending</div>
-          <div className="mt-2 text-2xl font-bold text-white">{verificationStats.pendingSecretary}</div>
-          <p className="mt-1 text-sm text-amber-100/80">Belum dihitung final sampai diverifikasi wali kelas atau admin sekolah.</p>
-        </div>
-        <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-4 py-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-cyan-200">Usulan Sekretaris Disetujui</div>
-          <div className="mt-2 text-2xl font-bold text-white">{verificationStats.approvedFromSecretary}</div>
-          <p className="mt-1 text-sm text-cyan-100/80">Sudah final, tetapi jejak pengusul sekretaris tetap disimpan.</p>
-        </div>
       </div>
 
       {/* Table */}
@@ -1002,37 +910,17 @@ export function AttendanceRecapPanel({
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
                       {(() => {
                         const sourceMeta = getSourceMeta(log.source, log.sourceLabel);
-                        const proposalExists = hasSecretaryProposal(log);
                         return (
                           <>
                             <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${sourceMeta.className}`}>
                               {sourceMeta.label}
                             </span>
-                            {isPendingTeacherVerification(log) ? (
-                              <div className="mt-1">
-                                <span className="inline-flex rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] font-semibold text-amber-300">
-                                  Pending Lama: Butuh Finalisasi
-                                </span>
-                              </div>
-                            ) : null}
-                            {!isPendingTeacherVerification(log) && proposalExists ? (
-                              <div className="mt-1">
-                                <span className="inline-flex rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 text-[11px] font-semibold text-cyan-300">
-                                  Final dari Data Legacy Sekretaris
-                                </span>
-                              </div>
-                            ) : null}
                             <div className="mt-1 text-xs text-slate-500">
                               {log.recordedBy || (log.isSystemGenerated ? "System (Attendance)" : "-")}
                             </div>
-                            {proposalExists && log.proposedBy ? (
-                              <div className="mt-1 text-xs text-cyan-200/80">
-                                Pengusul: {log.proposedBy}
-                              </div>
-                            ) : null}
-                            {!isPendingTeacherVerification(log) && log.verifiedBy ? (
+                            {log.verifiedBy && log.verifiedBy !== log.recordedBy ? (
                               <div className="mt-1 text-xs text-slate-400">
-                                Final: {log.verifiedBy}
+                                Diverifikasi: {log.verifiedBy}
                               </div>
                             ) : null}
                           </>
@@ -1040,27 +928,10 @@ export function AttendanceRecapPanel({
                       })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                      {isPendingTeacherVerification(log)
-                        ? `${log.notes || "Data lama sekretaris kelas."} Masih mengikuti rule sebelumnya dan perlu difinalkan wali kelas atau admin sekolah.`
-                        : hasSecretaryProposal(log)
-                          ? `${log.notes || "Sudah difinalkan petugas sekolah."} Jejak usulan lama sekretaris tetap tersimpan untuk audit.`
-                          : (log.notes || (log.isSystemGenerated ? "Otomatis dari hari sekolah aktif tanpa log presensi." : "-"))}
+                      {log.notes || (log.isSystemGenerated ? "Otomatis dari hari sekolah aktif tanpa log presensi." : "-")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300 no-print">
-                      {isPendingTeacherVerification(log) && log.id && !log.isSystemGenerated ? (
-                        <button
-                          type="button"
-                          onClick={() => void handleAdminVerify(log.id)}
-                          disabled={verifyingAttendanceId === log.id}
-                          className="inline-flex items-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {verifyingAttendanceId === log.id ? "Memfinalkan..." : "Finalkan Legacy"}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-slate-500">
-                          {hasSecretaryProposal(log) ? "Sudah final" : "-"}
-                        </span>
-                      )}
+                      <span className="text-xs text-slate-500">-</span>
                     </td>
                   </tr>
                 ))

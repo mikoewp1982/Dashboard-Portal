@@ -115,24 +115,9 @@ function normalizeVerificationStatus(value: unknown) {
   return String(value || "APPROVED").trim().toUpperCase() || "APPROVED";
 }
 
-function isPendingTeacherVerification(record: AttendanceRecord | undefined) {
-  return normalizeVerificationStatus(record?.verificationStatus) === "PENDING_TEACHER";
-}
-
-function hasSecretaryProposal(record: AttendanceRecord | undefined) {
-  return String(record?.proposedBy || "")
-    .trim()
-    .toLowerCase()
-    .includes("sekretaris");
-}
-
 function resolveEffectiveAttendanceStatus(record: AttendanceRecord | undefined) {
   if (!record) return "UNMARKED";
-  return normalizeAttendanceStatus(
-    isPendingTeacherVerification(record) && record.proposedStatus
-      ? record.proposedStatus
-      : record.status
-  );
+  return normalizeAttendanceStatus(record.status);
 }
 
 function buildDailyItems(students: GuruStudent[], records: AttendanceRecord[]) {
@@ -176,8 +161,8 @@ function buildDailyItems(students: GuruStudent[], records: AttendanceRecord[]) {
       proposedStatus: record?.proposedStatus || "",
       verifiedBy: record?.verifiedBy || "",
       verifiedAt: record?.verifiedAt || 0,
-      isPendingTeacherVerification: isPendingTeacherVerification(record),
-      hasSecretaryProposal: hasSecretaryProposal(record),
+      isPendingTeacherVerification: false,
+      hasSecretaryProposal: false,
     };
   });
 }
@@ -225,9 +210,7 @@ function buildRecapForDates(
 
     for (const dateKey of validDateKeys) {
       const dayLog = dayMap.get(dateKey);
-      const status = isPendingTeacherVerification(dayLog)
-        ? "ABSENT"
-        : normalizeAttendanceMonthStatus(dayLog?.status);
+      const status = normalizeAttendanceMonthStatus(dayLog?.status);
       if (status === "PRESENT" || status === "LATE") presentCount += 1;
       else if (status === "SICK") sickCount += 1;
       else if (status === "PERMIT") permitCount += 1;
@@ -496,10 +479,9 @@ export async function POST(req: NextRequest) {
         verificationStatus: "APPROVED",
         verifiedBy: teacher.name || "Wali Kelas",
         verifiedAt: now,
-        proposedBy: existingRec?.proposedBy || null,
-        proposedAt: existingRec?.proposedAt || null,
-        proposedStatus:
-          existingRec?.proposedStatus || (isPendingTeacherVerification(existingRec) ? status : null),
+        proposedBy: null,
+        proposedAt: null,
+        proposedStatus: null,
       };
 
       updates[`attendance/${attendanceId}`] = payload;

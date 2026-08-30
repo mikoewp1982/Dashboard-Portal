@@ -167,9 +167,7 @@ export function GuruPresensiInteractive() {
   const effectiveStats = useMemo(() => {
     const counts = { PRESENT: 0, SICK: 0, PERMIT: 0, ABSENT: 0 };
     items.forEach((item) => {
-      const effective =
-        manualSelections[item.identityKey] ||
-        (item.isPendingTeacherVerification ? "ABSENT" : item.status);
+      const effective = manualSelections[item.identityKey] || item.status;
       if (effective === "PRESENT") counts.PRESENT += 1;
       else if (effective === "SICK") counts.SICK += 1;
       else if (effective === "PERMIT") counts.PERMIT += 1;
@@ -188,10 +186,7 @@ export function GuruPresensiInteractive() {
     const current = manualSelections[key] || item.status;
     setManualSelections((prev) => {
       const next = { ...prev };
-      if (item.isPendingTeacherVerification && current === status) {
-        if (next[key] === status) delete next[key];
-        else next[key] = status;
-      } else if (current === status && base === status) {
+      if (current === status && base === status) {
         next[key] = "UNMARKED";
       } else if (current === status) {
         delete next[key];
@@ -310,7 +305,7 @@ export function GuruPresensiInteractive() {
             {saving ? "Menyimpan..." : "Simpan Presensi Manual"}
           </ApkActionButton>
           <p className="text-[11px] text-white/75">
-            Centang ulang status yang sama untuk membatalkan pilihan manual. Data legacy sekretaris yang masih pending tetap bisa Anda finalkan dari sini.
+            Centang ulang status yang sama untuk membatalkan pilihan manual.
           </p>
 
           {loading ? (
@@ -331,31 +326,9 @@ export function GuruPresensiInteractive() {
                     index={index + 1}
                     name={item.name}
                     subtitle={
-                      item.isPendingTeacherVerification ? (
-                        <div className="flex flex-wrap gap-1">
-                          <span className="rounded-full border border-amber-300/40 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-100">
-                            Pending legacy sekretaris
-                          </span>
-                          {item.proposedBy ? (
-                            <span className="rounded-full border border-cyan-300/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] text-cyan-100">
-                              {item.proposedBy}
-                            </span>
-                          ) : null}
-                        </div>
-                      ) : item.hasSecretaryProposal ? (
-                        <div className="flex flex-wrap gap-1">
-                          <span className="rounded-full border border-emerald-300/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-100">
-                            Final dari data legacy sekretaris
-                          </span>
-                          {item.verifiedBy ? (
-                            <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] text-white/80">
-                              Final: {item.verifiedBy}
-                            </span>
-                          ) : null}
-                        </div>
-                      ) : item.verifiedBy ? (
+                      item.verifiedBy ? (
                         <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] text-white/80">
-                          Final: {item.verifiedBy}
+                          Dicatat oleh: {item.verifiedBy}
                         </span>
                       ) : undefined
                     }
@@ -392,7 +365,7 @@ export function GuruPresensiInteractive() {
                 </ApkActionButton>
               </div>
               <p className="text-[11px] text-white/75">
-                Input wali kelas dan sekretaris kini langsung dihitung final. Data legacy yang masih pending tetap dikecualikan sampai difinalkan.
+                Input wali kelas dan sekretaris langsung dihitung sebagai data final.
               </p>
             </div>
           </ApkGlassCard>
