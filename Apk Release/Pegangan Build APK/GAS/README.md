@@ -7,9 +7,9 @@ Folder ini adalah pegangan operasional untuk semua perubahan APK `GAS` pada proy
 - Gradle module: `:app`
 - Root project name: `SatuPintuNativeMobile`
 - Application ID dasar: `com.satupintu.mobile`
-- Versi distribusi terkini (update 2026-08-28 malam):
-  - `flavor siswa` → `versionName 1.0.83-siswa` / `versionCode 23080` (Final lokal terbaru untuk uji cepat gate EduLock; live unduhan web masih `1.0.82-siswa (23079)`)
-  - `flavor guru` → `versionName 1.0.61-guru` / `versionCode 1053` (Final terbaru yang sudah dicatat di folder Final)
+- Versi distribusi terkini (update 2026-08-30):
+  - `flavor siswa` → `versionName 1.0.89-siswa` / `versionCode 23086` (Final lokal terbaru untuk guard verifikasi `Sekretaris Kelas`; live unduhan web masih `1.0.82-siswa (23079)`)
+  - `flavor guru` → `versionName 1.0.69-guru` / `versionCode 1061` (Final terbaru yang sudah dicatat di folder Final)
   - `flavor legacySiswa versionCode = 23003` (kompatibilitas; jangan turun di bawah ini)
   - Pastikan `native-mobile-gas/app/build.gradle.kts` selaras sebelum assemble
 
@@ -69,8 +69,8 @@ D:\Dashboard Portal\Apk Release\Final
 Jika user meminta folder lain, catat di [BUILD_LOG.md](./BUILD_LOG.md).
 
 Rilis final terbaru yang sudah dicatat saat ini:
-- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.83-siswa-23080.apk` (`1.0.83-siswa` / `versionCode 23080`, SHA256 `2A405CBA2DCA6551385614584B098A9AD81E26F8B7B8F2105B7BD98586E13F4A`) — rebuild final lokal terbaru 2026-08-28 malam untuk **uji cepat gate EduLock**. Muatan fix: gate login siswa kini melakukan **cek lokal EduLock lebih dulu** (setup, aksesibilitas, device admin, proteksi aktif) sebelum menunggu fetch jadwal sekolah / telemetry remote, sehingga kasus aksesibilitas EduLock belum aktif tidak lagi lama tertahan di overlay `Memeriksa Proteksi EduLock`. **BELUM disinkronkan** ke `web/public/apk`; live unduhan web masih memakai build `1.0.82-siswa (23079)` hash `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`.
-- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` + `GAS-Guru-1.0.61-guru-1053.apk` (`1.0.61-guru` / `versionCode 1053`, SHA256 `9393A11DE46D22D99378E32ABA506BB620B55A268E94B55118C15453D6CB5376`). Muatan final terkini: hitungan **TS / Tidak Sholat** di `Presensi Sholat` dan `Rekapitulasi` guru sudah sinkron dengan web admin + APK siswa memakai **hari efektif Dzuhur** (`attendance/schedules`, `attendance/holidays`, dan `prayer_v2/types/DZUHUR/activeDays`), UI Home guru tetap 2 kolom khas guru tetapi kartu menu dipendekkan/diringankan agar di layar terasa lebih kecil, badge merah notifikasi digeser sedikit ke dalam agar tidak mepet pinggir kanan atas, dan portal web guru `/guru/kaih` kini menyamai pola **Penilaian 7 KAIH** APK guru (preset cepat `Nilai 25 / Nilai 20 / Reset` langsung di halaman + dialog edit per siswa dengan 4 field angka). Lihat bagian **PERBEDAAN UI GAS SISWA vs GAS GURU** di bawah ini — WAJIB BACA sebelum ubah UI Home.
+- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.89-siswa-23086.apk` (`1.0.89-siswa` / `versionCode 23086`, SHA256 `43A66518F381D9CFA99752C0977E604B5C183D163B4F3C2DCB8945480D4182DB`) — rebuild final lokal terbaru 2026-08-30 untuk mengubah alur `Sekretaris Kelas` menjadi **usulan -> verifikasi guru -> final**. Muatan fix: sekretaris tidak bisa mengabsenkan dirinya sendiri, data pending tidak dihitung final, dan jejak audit pengusul tetap tersimpan. **BELUM disinkronkan** ke `web/public/apk`; live unduhan web masih memakai build `1.0.82-siswa (23079)` hash `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`.
+- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` + `GAS-Guru-1.0.69-guru-1061.apk` (`1.0.69-guru` / `versionCode 1061`, SHA256 `7D91F1D13752871A6AC48F2878693CAE10ED6EF0F19AA93A919DA27048B4F127`). Muatan final terkini: presensi guru sekarang menjadi tahap verifikasi final untuk usulan sekretaris kelas dan badge audit di layar monitoring dibuat lebih jelas. Lihat bagian **PERBEDAAN UI GAS SISWA vs GAS GURU** di bawah ini — WAJIB BACA sebelum ubah UI Home.
 
 ---
 
@@ -92,7 +92,7 @@ Rilis final terbaru yang sudah dicatat saat ini:
 | **Bottom Nav 3 tab (Beranda / Absen Float / Profil)** | ✅ **WAJIB ADA**. Termasuk **tombol hitam absen FLOAT TENGAH BESAR (offset -28dp). Ini ciri khas SISWA.** | ❌ **HARAM ADA — WAJIB NULL di `Scaffold.bottomBar = null`**. Guru **TIDAK PERLU shortcut absensi floating, karena guru tidak meng-absen diri lewat sini. |
 | **Akses Profil & Logout** | Klik icon Profil di **Bottom Nav kanan** | HANYA lewat **ICON BUTTON KECIL 28.dp di POJOK KANAN ATAS HEADER**: `Icons.Default.ArrowForward` → `onLogout()`. (Tidak usah icon orang / Person duplikat, karena kiri sudah ada avatar.) |
 | **Padding bawah dari Scaffold** | Bottom padding otomatis 56dp dari navbar | Tidak ada / 0. Kartu menu turun sampai area bawah dekat system navigation bar. |
-| **Contoh versi acuan benar** | GAS Siswa `1.0.82-siswa (23079)` | GAS Guru **`1.0.61-guru (1053)`** build final 2026-08-28 malam |
+| **Contoh versi acuan benar** | GAS Siswa `1.0.89-siswa (23086)` | GAS Guru **`1.0.69-guru (1061)`** build final 2026-08-30 |
 | **Lokasi composable di HomeScreen.kt** | `StudentFeatureCard` (TIDAK DIUBAH tanpa persetujuan user!) | `GuruMenuCard` + `isGuruFlavor` branch di Scaffold, LazyVerticalGrid, dan screenBackground. |
 
 ## LANGKAH KONTROL SETIAP MAU UBAH UI HOME

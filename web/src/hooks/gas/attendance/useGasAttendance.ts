@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from "react";
 import { rtdb } from "@/lib/firebase/client";
 import { ref as rtdbRef, get } from "firebase/database";
@@ -249,6 +248,12 @@ export function useGasAttendance(schoolId: string | undefined, selectedMonth: nu
           checkOutTime: record.checkOutTime ?? null,
           checkInMethod: normalizeIdentity(record.checkInMethod) || null,
           recordedBy: normalizeIdentity(record.recordedBy) || null,
+          verificationStatus: normalizeIdentity(record.verificationStatus) || "APPROVED",
+          verifiedBy: normalizeIdentity(record.verifiedBy) || null,
+          verifiedAt: typeof record.verifiedAt === "number" ? record.verifiedAt : Number(record.verifiedAt || 0) || null,
+          proposedBy: normalizeIdentity(record.proposedBy) || null,
+          proposedAt: typeof record.proposedAt === "number" ? record.proposedAt : Number(record.proposedAt || 0) || null,
+          proposedStatus: normalizeIdentity(record.proposedStatus) || null,
           mockLocationFlag: Boolean(record.isMockLocation),
           createdAt: typeof record.date === "number" ? record.date : millis,
           updatedAt: typeof record.date === "number" ? record.date : millis,

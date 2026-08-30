@@ -1,5 +1,281 @@
 # Build Log GAS
 
+## 2026-08-30 12:01 - [BUILD] GAS Siswa 1.0.89-siswa (23086) + GAS Guru 1.0.69-guru (1061) - guard verifikasi Sekretaris Kelas
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `feature` + `hardening` + `build`
+- **Flavor terdampak:** `siswa`, `guru`, `kepala` (compile cross-check karena file shared `src/main` ikut berubah)
+- **Versioning:**
+  - `siswa` `1.0.88-siswa (23085)` -> `1.0.89-siswa (23086)`
+  - `guru` `1.0.68-guru (1060)` -> `1.0.69-guru (1061)`
+- **Tujuan perubahan:** Menyempurnakan model kolaborasi presensi agar `Sekretaris Kelas` hanya bisa mengirim **usulan** dan hasil final tetap harus diverifikasi wali kelas/guru. Rekap web dan mobile juga dibedakan tegas antara data `pending verifikasi guru` vs data `final`.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/model/Attendance.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/model/Attendance.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/AttendanceRepository.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/data/repository/AttendanceRepository.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/GasAppNavGraph.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/GasAppNavGraph.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt)
+  - [web/src/components/gas/attendance/AttendanceRecapPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceRecapPanel.tsx)
+  - [web/src/components/gas/attendance/AttendanceStatisticsPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/gas/attendance/AttendanceStatisticsPanel.tsx)
+  - [web/src/hooks/gas/attendance/useGasAttendance.ts](file:///D:/Dashboard%20Portal/web/src/hooks/gas/attendance/useGasAttendance.ts)
+  - [web/src/types/gas.ts](file:///D:/Dashboard%20Portal/web/src/types/gas.ts)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - sekretaris kelas tidak bisa lagi mengesahkan absensi final; simpan dari jalur sekretaris selalu masuk sebagai `PENDING_TEACHER`
+  - sekretaris tidak bisa mengabsenkan akun dirinya sendiri dan tidak bisa mengubah baris yang sudah final
+  - guru tetap menjadi verifikator final dan jejak pengusul sekretaris disimpan untuk audit
+  - rekap bulanan/statistik mobile dan web tidak lagi menghitung usulan sekretaris yang masih pending sebagai nilai final
+  - web admin menampilkan badge audit `Menunggu Verifikasi Guru` dan `Disetujui dari Usulan Sekretaris`
+- **Build yang dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` -> **BUILD SUCCESSFUL**
+  - `./gradlew :app:assembleGuruRelease` -> **BUILD SUCCESSFUL**
+  - `./gradlew :app:compileKepalaDebugKotlin` -> **BUILD SUCCESSFUL**
+- **Regression checklist yang dicakup pada sesi build ini:**
+  - [x] Flavor yang dimaksud berhasil assemble release
+  - [x] Flavor lain (`kepala`) berhasil compile untuk cross-check perubahan shared
+  - [x] File web presensi yang disentuh lolos `eslint`
+  - [ ] Uji HP fisik alur end-to-end sekretaris mengusulkan -> guru memverifikasi
+  - [ ] Uji visual langsung di perangkat siswa/guru untuk badge audit baru
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.89-siswa-23086.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.69-guru-1061.apk`
+- **Metadata final aktif lokal:**
+  - siswa: ukuran `21.511.020` byte, SHA256 `43A66518F381D9CFA99752C0977E604B5C183D163B4F3C2DCB8945480D4182DB`
+  - guru: ukuran `21.511.018` byte, SHA256 `7D91F1D13752871A6AC48F2878693CAE10ED6EF0F19AA93A919DA27048B4F127`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - **BELUM** disinkronkan ke `web/public/apk`
+- **Belum diuji:**
+  - skenario produksi nyata saat sekretaris mengirim usulan lalu guru memverifikasi di hari yang sama
+  - dampak visual pada kelas besar dengan banyak badge pending/final
+- **Catatan:** perubahan ini sekaligus didorong ke web admin agar rekap live membedakan data pending dan final dengan kontrak yang sama seperti APK.
+
+## 2026-08-30 11:01 - [BUILD] GAS Siswa 1.0.88-siswa (23085) - Sekretaris Kelas membuka menu Presensi Siswa
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `feature` + `build`
+- **Flavor terdampak:** `siswa` (fitur utama), `guru` (cross-check build karena file shared `src/main` ikut berubah)
+- **Versioning:** `1.0.87-siswa (23084)` -> `1.0.88-siswa (23085)`
+- **Tujuan perubahan:** Menambahkan akses kolaborasi absensi manual untuk siswa yang ditandai sebagai `Sekretaris Kelas`, sehingga akun siswa tersebut otomatis mendapat menu `Presensi Siswa` dan bisa membantu guru mengisi absensi manual untuk teman sekelas yang tidak membawa HP.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/GasAppNavGraph.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/GasAppNavGraph.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/TeacherAttendanceViewModel.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/teacher/TeacherAttendanceScreen.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/util/SecurityUtils.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/util/SecurityUtils.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - Home siswa kini membaca status `Sekretaris Kelas` dari data siswa realtime dan menampilkan menu baru `Presensi Siswa` hanya untuk siswa yang berhak
+  - route `secretary_attendance` ditambahkan dengan guard akses khusus siswa sekretaris
+  - screen presensi guru direuse dalam mode `Sekretaris Kelas` dengan konteks kelas siswa sendiri
+  - simpan presensi manual dari jalur ini kini ditandai sebagai input `MANUAL_CLASS_SECRETARY`
+- **Build yang direncanakan/dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` -> **BUILD SUCCESSFUL**
+  - `./gradlew :app:assembleGuruRelease` -> **BUILD SUCCESSFUL**
+- **Regression checklist yang dicakup pada sesi build ini:**
+  - [x] Flavor yang dimaksud berhasil assemble release
+  - [x] Flavor lain (`guru`) tidak ikut rusak karena perubahan di `src/main`
+  - [ ] Verifikasi visual langsung di HP siswa untuk menu `Presensi Siswa`
+  - [ ] Login siswa sekretaris diuji end-to-end dengan data sekolah nyata
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.88-siswa-23085.apk`
+- **Metadata final aktif lokal:**
+  - ukuran file `21.511.017` byte
+  - SHA256 `D4C3BDEE17534ECEBBAD73B6291575F6E6772197DB8941477B8669219F7FE796`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - **BELUM** disinkronkan ke `web/public/apk`
+  - script `web/scripts/Ship-Apk-Baru.ps1` **tidak tersedia di disk** saat sesi ini, sehingga copy dilakukan manual dengan verifikasi SHA sumber = alias final = arsip final
+- **Belum diuji:**
+  - perilaku menu `Presensi Siswa` pada akun siswa yang benar-benar berjabatan `Sekretaris Kelas`
+  - pembatasan kelas di data produksi sekolah
+
+## 2026-08-29 19:16 - [BUILD] GAS Siswa 1.0.87-siswa (23084) - label Absensi dinaikkan lagi agar terlihat
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix UI` + `build`
+- **Flavor terdampak:** `siswa`
+- **Versioning:** `1.0.86-siswa (23083)` -> `1.0.87-siswa (23084)`
+- **Tujuan perubahan:** Menindaklanjuti review user bahwa lengkung label `Absensi` masih kurang naik dan belum terlihat jelas; posisi grup tombol serta label dinaikkan lagi sambil menjaga bentuk lengkung tetap rapat ke frame tombol.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - seluruh grup tombol `Absensi` di bottom bar dinaikkan lagi beberapa dp
+  - label lengkung diposisikan lebih tinggi dan ruang vertikal area label ditambah agar tetap muncul di atas tombol
+  - radius vertikal lengkung dinaikkan tipis supaya tulisan tetap mengikuti frame tetapi lebih terlihat
+- **Build yang direncanakan/dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` -> **BUILD SUCCESSFUL**
+  - `./gradlew :app:assembleGuruRelease` -> **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.87-siswa-23084.apk`
+- **Metadata final aktif lokal:**
+  - SHA256 `47E6A031C6D5B3F7B922003F0C3A9B2CD0922E8B7118C570CFACF67881813963`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - **BELUM** disinkronkan ke `web/public/apk`
+- **Belum diuji:**
+  - verifikasi visual langsung di HP siswa untuk memastikan tulisan sekarang sudah muncul jelas
+
+## 2026-08-29 19:06 - [BUILD] GAS Siswa 1.0.86-siswa (23083) - lengkung label Absensi dirapatkan mengikuti frame tombol
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix UI` + `build`
+- **Flavor terdampak:** `siswa`
+- **Versioning:** `1.0.85-siswa (23082)` -> `1.0.86-siswa (23083)`
+- **Tujuan perubahan:** Menindaklanjuti review user bahwa label `Absensi` pada tombol floating Home masih terlalu melebar ke atas; tulisan dirapatkan dan diturunkan agar benar-benar melingkar mengikuti frame tombol dan terlihat lebih cantik.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - radius lengkung label `Absensi` diperkecil agar huruf lebih rapat mengikuti setengah lingkaran tombol
+  - posisi grup tombol tengah diturunkan sedikit supaya tulisan tidak terlalu terangkat ke atas
+  - ukuran area label, font, dan rotasi huruf diseimbangkan ulang agar hasilnya lebih menyatu dengan frame tombol
+- **Build yang direncanakan/dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` -> **BUILD SUCCESSFUL**
+  - `./gradlew :app:assembleGuruRelease` -> **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.86-siswa-23083.apk`
+- **Metadata final aktif lokal:**
+  - SHA256 `B7E03A1095E57F2A3A3082ED3B2772190D93D114B01E7B4CD66A7787620C0CA7`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - **BELUM** disinkronkan ke `web/public/apk`
+- **Belum diuji:**
+  - verifikasi visual langsung di HP siswa untuk memastikan lengkung baru sudah pas pada layar perangkat user
+
+## 2026-08-29 18:56 - [BUILD] GAS Siswa 1.0.85-siswa (23082) - label Absensi Home dinaikkan melengkung di atas ikon
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix UI` + `build`
+- **Flavor terdampak:** `siswa`
+- **Versioning:** `1.0.84-siswa (23081)` -> `1.0.85-siswa (23082)`
+- **Tujuan perubahan:** Memperbaiki label `Absensi` pada tombol floating tengah Home GAS Siswa yang terlalu turun hingga tampak kepotong di perangkat user, dengan memindahkan tulisan ke atas ikon dan menyusunnya mengikuti lengkung atas agar lebih estetik serta tetap mudah terbaca.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - label `Absensi` pada tombol bottom nav tengah tidak lagi diletakkan di bawah tombol
+  - dibuat komponen label melengkung di atas ikon agar teks tidak turun ke area bawah layar/system nav
+  - ikon floating tetap mempertahankan aksi cepat ke route `attendance`
+- **Build yang direncanakan/dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` -> **BUILD SUCCESSFUL**
+  - `./gradlew :app:assembleGuruRelease` -> **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.85-siswa-23082.apk`
+- **Metadata final aktif lokal:**
+  - SHA256 `F1B97FECF456F53A4B1021987B413CFD8EADED9D6CCEE36C98387D067C782DC6`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - **BELUM** disinkronkan ke `web/public/apk`
+- **Belum diuji:**
+  - verifikasi visual langsung di HP siswa untuk memastikan lengkung label sudah pas di semua density layar
+
+## 2026-08-29 10:45 - [BUILD] GAS Guru 1.0.68-guru (1060) — badge notifikasi digeser masuk
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix UI` + `build`
+- **Flavor terdampak:** `guru`
+- **Versioning:** `1.0.67-guru (1059)` → `1.0.68-guru (1060)`
+- **Tujuan perubahan:** Menggeser badge merah pada menu `Notifikasi` agar tidak terlalu keluar dari sudut kartu dan tampil lebih masuk ke dalam area bingkai.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - offset badge `GuruMenuCard` digeser ke kiri dan sedikit ke bawah agar lebih masuk ke dalam sudut kartu
+- **Build yang direncanakan/dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` → **BUILD SUCCESSFUL**
+  - `./gradlew :app:assembleGuruRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.68-guru-1060.apk`
+- **Metadata final aktif lokal:**
+  - SHA256 `8EFFBC73A3ECB109DEA28D9B46FFDEC688231621D09393DFAF1BF811D7EEE4BB`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+
+
+## 2026-08-29 10:35 - [BUILD] GAS Guru 1.0.67-guru (1059) — bingkai kartu Home dipotong sekitar 30%
+- **Pelaksana:** Assistant
+- **Flavor terdampak:** `guru`
+- **Versioning:** `1.0.66-guru (1058)` → `1.0.67-guru (1059)`
+- **Tujuan perubahan:** Menindaklanjuti review user bahwa bingkai kartu Home guru masih terlalu besar; tinggi bingkai/panel kartu dipangkas lagi sekitar 30% dari iterasi sebelumnya, sementara ikon menu tetap dipertahankan.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - tinggi panel bingkai/ikon `GuruMenuCard` dipotong tegas agar kartu lebih pendek
+  - padding vertikal kartu dan jarak ke pill label ikut diringkas agar proporsi benar-benar turun
+  - ikon menu tetap besar; fokus perubahan hanya pada bingkai kartu
+- **Build yang direncanakan/dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` → **BUILD SUCCESSFUL**
+  - `./gradlew :app:assembleGuruRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.67-guru-1059.apk`
+- **Metadata final aktif lokal:**
+  - SHA256 `39E5ED2EBDDB3ABFF29F9A980CC311FBA4897AD87A0103E8EB28590A7681904A`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - guru tidak disinkronkan ke `web/public/apk`
+- **Belum diuji:**
+  - verifikasi visual langsung di HP guru untuk memastikan reduksi 30% sudah sesuai
+
+
+## 2026-08-29 10:35 - [BUILD] GAS Guru 1.0.66-guru (1058) — kecilkan bingkai kartu Home, ikon tetap besar
+- **Pelaksana:** Assistant
+- **Flavor terdampak:** `guru`
+- **Versioning:** `1.0.65-guru (1057)` → `1.0.66-guru (1058)`
+- **Tujuan perubahan:** Menyesuaikan ulang Home GAS Guru sesuai koreksi user: yang diperkecil adalah kotak/bingkai kartu menu, bukan ikon menu.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - `GuruMenuCard` dipendekkan lagi pada bingkai luar dan panel kotak ikon
+  - ukuran ikon menu guru dikembalikan lebih besar agar fokus visual tetap kuat
+  - target perubahan hanya pada proporsi kotak/bingkai, bukan mengecilkan aset ikon
+- **Build yang direncanakan/dijalankan:**
+  - `./gradlew :app:assembleGuruRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.66-guru-1058.apk`
+- **Metadata final aktif lokal:**
+  - SHA256 `8CBF0899ECF1BD45FFA424678644D0D92D8003AD06D1C78D964423C2D0BF2628`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - guru tidak disinkronkan ke `web/public/apk`
+- **Belum diuji:**
+  - verifikasi visual langsung di HP guru untuk memastikan proporsi bingkai sudah sesuai
+
+
+## 2026-08-29 10:20 - [BUILD] GAS Guru 1.0.65-guru (1057) — kartu menu Home diperkecil lagi
+- **Pelaksana:** Assistant
+- **Flavor terdampak:** `guru`
+- **Versioning:** `1.0.64-guru (1056)` → `1.0.65-guru (1057)`
+- **Tujuan perubahan:** Mengecilkan lagi kartu menu Home GAS Guru sedikit secara proporsional agar tampilan lebih ringkas di layar HP, sambil tetap menjaga identitas UI guru 2 kolom glassmorphism.
+- **File utama perilaku yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)
+  - [native-mobile-gas/app/build.gradle.kts](file:///D:/Dashboard%20Portal/native-mobile-gas/app/build.gradle.kts)
+- **Perubahan inti:**
+  - spacing grid guru dirapatkan lagi agar susunan kartu terasa lebih padat
+  - radius, padding, tinggi panel ikon, dan pill label pada `GuruMenuCard` diperkecil agar kartu tidak tampak terlalu tinggi
+  - ukuran ikon kartu guru diturunkan sedikit supaya proporsional dengan panel baru yang lebih ringkas
+- **Build yang direncanakan/dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` → **BUILD SUCCESSFUL**
+  - `./gradlew :app:assembleGuruRelease` → **BUILD SUCCESSFUL**
+- **Output Final yang ditimpa:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.65-guru-1057.apk`
+- **Metadata final aktif lokal:**
+  - SHA256 `8E83567F5259DA2E1029B78C0D0AB5695A9D21CB307DA8AC5DAF4066337174FA`
+- **Status distribusi:**
+  - **SUDAH** ditimpa ke folder `Final` untuk uji user saat ini
+  - guru tidak disinkronkan ke `web/public/apk`
+- **Belum diuji:**
+  - verifikasi visual langsung di HP guru untuk memastikan ukuran baru sudah pas
+- **Catatan:**
+  - build siswa ikut dijalankan sebagai cross-check karena `HomeScreen.kt` berada di `src/main`
+
 ## 2026-08-29 09:57 - [DEPLOY LIVE] Web guru parity presensi siswa + Dhuha/Jum'at dengan APK
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `fix` + `deploy-web`

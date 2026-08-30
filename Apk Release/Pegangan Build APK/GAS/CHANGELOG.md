@@ -26,6 +26,18 @@ Tambahkan nama pelaksana jika perlu:
 ## [Unreleased]
 
 ### Siswa
+- Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.89-siswa (23086)` untuk membawa guard verifikasi `Sekretaris Kelas`; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
+- Fixed: **Siswa (Presensi Siswa)** sekretaris kelas sekarang hanya bisa mengirim **usulan presensi** dan tidak lagi menetapkan hasil final secara langsung.
+- Fixed: **Siswa (Presensi Siswa)** akun sekretaris sekarang tidak bisa mengabsenkan dirinya sendiri dan tidak bisa mengubah baris yang sudah final oleh guru.
+- Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.88-siswa (23085)` untuk membuka akses `Presensi Siswa` khusus `Sekretaris Kelas`; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
+- Added: **Siswa (Home/Akses Kelas)** akun siswa yang ditandai sebagai `Sekretaris Kelas` kini otomatis mendapat menu `Presensi Siswa`.
+- Fixed: **Siswa (Presensi Siswa)** jalur kolaborasi absensi manual kini bisa dipakai sekretaris kelas untuk mengelola absensi teman sekelasnya sendiri, tanpa membuka akses ke kelas lain.
+- Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.87-siswa (23084)` untuk menaikkan lagi posisi label tombol `Absensi` di Home agar lebih terlihat; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
+- Fixed: **Siswa (Home)** lengkung label `Absensi` di tombol floating tengah sekarang dinaikkan lagi bersama grup tombolnya sehingga tulisan lebih terlihat, sambil tetap mengikuti frame lingkaran tombol.
+- Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.86-siswa (23083)` untuk merapikan ulang lengkung label tombol `Absensi` di Home; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
+- Fixed: **Siswa (Home)** lengkung label `Absensi` di tombol floating tengah kini dirapatkan dan diturunkan sedikit agar benar-benar mengikuti frame lingkaran tombol, tidak lagi melebar terlalu tinggi ke atas.
+- Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.85-siswa (23082)` untuk perapihan label tombol `Absensi` di Home; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
+- Fixed: **Siswa (Home)** label `Absensi` pada tombol floating tengah sekarang naik ke atas ikon dan dibentuk melengkung mengikuti setengah lingkaran atas, sehingga tidak lagi terlalu turun atau kepotong di bawah layar.
 - Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.84-siswa (23081)` untuk perbaikan logika `Virtual Pet`; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
 - Fixed: **Siswa (Virtual Pet)** evaluasi empat kartu harian (`E-Perpus`, `7 KAIH`, `Kehadiran`, `Ibadah`) kini dieksekusi berdasarkan **rekap hari sebelumnya**, sehingga pet tidak lagi bisa langsung mati di pagi hari sebelum siswa sempat beraktivitas pada hari baru.
 - Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.83-siswa (23080)` untuk uji cepat patch gate EduLock; live unduhan web masih bertahan di `1.0.82-siswa (23079)` sampai sinkronisasi public APK dilakukan.
@@ -34,6 +46,17 @@ Tambahkan nama pelaksana jika perlu:
 - Fixed: **Siswa (Gate EduLock)** sekarang dibangun dengan konsep baru bahwa hard block kepatuhan EduLock hanya aktif saat **hari efektif + jam sekolah aktif**, dengan **grace period** saat proteksi drop sesaat di tengah sesi.
 
 ### Guru
+- Changed: Build distribusi GAS Guru saat ini menjadi `1.0.69-guru (1061)` dengan file final aktif `GAS-Guru-release.apk`.
+- Fixed: **Guru (Presensi Siswa)** verifikasi guru sekarang menjadi tahap final yang sah untuk usulan sekretaris kelas, dan data `pending verifikasi guru` tidak lagi ikut terbaca sebagai hasil final.
+- Fixed: **Guru (Presensi Siswa)** layar monitoring sekarang menampilkan jejak audit yang lebih jelas untuk `pengusul sekretaris`, status `pending`, dan `final verifier`.
+- Changed: Build distribusi GAS Guru saat ini menjadi `1.0.68-guru (1060)` dengan file final aktif `GAS-Guru-release.apk`.
+- Fixed: **Guru (Home)** badge merah pada menu `Notifikasi` digeser lebih masuk ke dalam sudut kartu agar tidak terlihat terlalu keluar dari bingkai.
+- Changed: Build distribusi GAS Guru saat ini menjadi `1.0.67-guru (1059)` dengan file final aktif `GAS-Guru-release.apk`.
+- Changed: **Guru (Home)** bingkai kartu menu dipangkas lagi sekitar 30% dari iterasi sebelumnya; tinggi panel kartu, padding vertikal, dan jarak ke pill label dipersingkat, sementara ikon menu tetap besar.
+- Changed: Build distribusi GAS Guru saat ini menjadi `1.0.66-guru (1058)` dengan file final aktif `GAS-Guru-release.apk`.
+- Changed: **Guru (Home)** proporsi kartu menu disetel ulang sesuai koreksi user; yang diperkecil adalah kotak/bingkai kartu dan panel ikon, sedangkan ikon menu tetap besar agar tidak tampak ikut menyusut.
+- Changed: Build distribusi GAS Guru saat ini menjadi `1.0.65-guru (1057)` dengan file final aktif `GAS-Guru-release.apk`.
+- Changed: **Guru (Home)** kartu menu diperkecil lagi secara proporsional; spacing grid, tinggi panel ikon, ukuran ikon, dan pill label diringkas agar layar terasa memuat menu lebih banyak tanpa mengubah identitas UI guru 2 kolom.
 - Changed: Build distribusi GAS Guru saat ini menjadi `1.0.64-guru (1056)` dengan file final aktif `GAS-Guru-release.apk`.
 - Fixed: **Guru (Presensi Siswa)** input manual guru sekarang tetap sinkron ke `Rekap Bulanan` setelah `Simpan Presensi Manual`, tidak hanya terlihat di `Monitoring Harian`.
 - Fixed: **Guru (Presensi Dhuha & Jum'at)** pilihan status di tabel kini meninggalkan jejak visual yang lebih tegas (warna status + ikon centang) agar guru langsung tahu siswa sudah dicentang.
@@ -45,6 +68,8 @@ Tambahkan nama pelaksana jika perlu:
 - Fixed: **Guru (Home)** badge merah notifikasi di kartu menu digeser sedikit masuk agar tidak mepet ke sudut kanan atas dan lebih jelas terlihat.
 
 ### Web Admin / PWA
+- Fixed: **Web Admin / Rekap Kehadiran** riwayat harian dan statistik sekarang membedakan jelas usulan sekretaris yang masih `pending verifikasi guru` vs data yang sudah final, serta mempertahankan jejak audit pengusul setelah guru menyetujui.
+- Changed: **Web Admin / Rekap Kehadiran** panel statistik kini menampilkan jumlah `Usulan Sekretaris Pending` dan `Usulan Sekretaris Disetujui` agar kolaborasi sekretaris-guru bisa dipantau lebih mudah.
 - Fixed: **Portal Guru `/guru/presensi`** kini me-refresh `Rekap Bulanan` setelah guru menekan `Simpan Presensi Manual` bila periode bulan/tahunnya sama, sehingga parity-nya mengikuti perilaku terbaru APK GAS Guru.
 - Fixed: **Portal Guru `/guru/sholat-dhuha-jumat`** kini memakai `status efektif` (manual atau tersimpan) untuk highlight tabel, sehingga tidak ada lagi dua status aktif bersamaan saat guru memilih status manual yang berbeda dari data lama.
 - Changed: **Portal Guru `/guru/presensi`** dan `/guru/sholat-dhuha-jumat` sekarang memakai indikator sel aktif yang lebih tegas (warna status, inset border, ikon centang, label kecil) agar jejak pilihan guru lebih jelas seperti di APK.

@@ -40,7 +40,7 @@ private val ATTENDANCE_TABLE_BORDER_WIDTH = 1.dp
 private val ATTENDANCE_TABLE_HEADER_COLOR = Color(0xFF1565C0)
 private val ATTENDANCE_TABLE_ROW_COLOR = Color.White
 private val ATTENDANCE_TABLE_ROW_ALT_COLOR = Color(0xFFF6F8FA)
-private val ATTENDANCE_TABLE_ROW_HEIGHT = 48.dp
+private val ATTENDANCE_TABLE_ROW_HEIGHT = 64.dp
 private val ATTENDANCE_TABLE_DIVIDER_COLOR = Color.White.copy(alpha = 0.24f)
 
 private val LenteraPageBrush = Brush.verticalGradient(
@@ -105,12 +105,17 @@ fun TeacherAttendanceScreen(
     teacherNuptk: String,
     schoolId: String,
     onBack: () -> Unit,
+    isClassSecretaryMode: Boolean = false,
+    secretaryName: String = "",
+    secretaryClass: String = "",
+    secretaryAliases: Set<String> = emptySet(),
     viewModel: TeacherAttendanceViewModel = viewModel()
 ) {
     val attendanceList by viewModel.attendanceList.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     val teacher by viewModel.teacher.collectAsState()
+    val attendanceManagerLabel by viewModel.attendanceManagerLabel.collectAsState()
     val selectedMonth by viewModel.selectedMonth.collectAsState()
     val selectedYear by viewModel.selectedYear.collectAsState()
     val monthlyRecap by viewModel.monthlyRecap.collectAsState()
@@ -118,8 +123,12 @@ fun TeacherAttendanceScreen(
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Monitoring Harian", "Rekap Bulanan")
 
-    LaunchedEffect(teacherNuptk) {
-        if (teacherNuptk.isNotEmpty()) viewModel.setTeacherNuptk(teacherNuptk, schoolId)
+    LaunchedEffect(teacherNuptk, schoolId, isClassSecretaryMode, secretaryName, secretaryClass, secretaryAliases) {
+        if (isClassSecretaryMode) {
+            viewModel.setClassSecretaryContext(secretaryName, secretaryClass, schoolId, secretaryAliases)
+        } else if (teacherNuptk.isNotEmpty()) {
+            viewModel.setTeacherNuptk(teacherNuptk, schoolId)
+        }
     }
     val context = LocalContext.current
     val calendar = Calendar.getInstance().apply { timeInMillis = selectedDate }
@@ -142,7 +151,7 @@ fun TeacherAttendanceScreen(
     var isSubmittingManual by remember { mutableStateOf(false) }
 
     LaunchedEffect(attendanceList, selectedDate) {
-        val validIds = attendanceList.map { attendanceIdentityKey(it.student.id, it.student.nisn) }.toSet()
+        val validIds = attendanceList.map { attendanceIdentityKey(it.student) }.toSet()
         val invalidIds = manualSelections.keys.filter { it !in validIds }
         invalidIds.forEach { manualSelections.remove(it) }
     }
@@ -204,7 +213,7 @@ fun TeacherAttendanceScreen(
         topBar = {
             LenteraTopBar(
                 title = "Rekapitulasi Kehadiran",
-                subtitle = "Wali Kelas ${teacher?.homeroomClass ?: "..."}",
+                subtitle = "$attendanceManagerLabel ${teacher?.homeroomClass ?: "..."}",
                 onBack = onBack
             )
         }
@@ -235,19 +244,26 @@ fun TeacherAttendanceScreen(
                         onDateClick = { datePickerDialog.show() },
                         attendanceStats = effectiveStats,
                         attendanceList = attendanceList,
+                        attendanceManagerLabel = attendanceManagerLabel,
                         isLoading = isLoading,
                         manualSelections = manualSelections.toMap(),
                         isSubmitting = isSubmittingManual,
+                        isClassSecretaryMode = isClassSecretaryMode,
                         onMarkAllPresent = {
-                            attendanceList.forEach { item ->
-                                manualSelections[attendanceIdentityKey(item.student.id, item.student.nisn)] = "PRESENT"
+                            attendanceList
+                                .filter { !isClassSecretaryMode || itemCanBeEditedBySecretary(it) }
+                                .forEach { item ->
+                                manualSelections[attendanceIdentityKey(item.student)] = "PRESENT"
                             }
                         },
                         onStatusChange = { item, status ->
+                            if (isClassSecretaryMode && !itemCanBeEditedBySecretary(item)) return@DailyMonitoringContent
                             val baseStatus = normalizeAttendanceStatus(item.status)
-                            val studentKey = attendanceIdentityKey(item.student.id, item.student.nisn)
+                            val studentKey = attendanceIdentityKey(item.student)
                             val currentEffectiveStatus = normalizeAttendanceStatus(manualSelections[studentKey] ?: item.status)
                             when {
+                                !isClassSecretaryMode && item.isPendingTeacherVerification && currentEffectiveStatus == status ->
+                                    if (manualSelections.containsKey(studentKey)) manualSelections.remove(studentKey) else manualSelections[studentKey] = status
                                 currentEffectiveStatus == status && baseStatus == status -> manualSelections[studentKey] = "UNMARKED"
                                 currentEffectiveStatus == status -> manualSelections.remove(studentKey)
                                 else -> manualSelections[studentKey] = status
@@ -340,7 +356,7 @@ fun MonthlyRecapContent(
                 LazyColumn {
                     itemsIndexed(attendanceList) { index, item ->
                         val student = item.student
-                        val stats = monthlyRecap[attendanceIdentityKey(student.id, student.nisn)]
+                        val stats = monthlyRecap[attendanceIdentityKey(student)]
                             ?: mapOf("PRESENT" to 0, "SICK" to 0, "PERMIT" to 0, "ABSENT" to 0)
                         AttendanceMonthlyRow(index = index + 1, item = item, stats = stats)
                         if (index != attendanceList.lastIndex) HorizontalDivider(thickness = 1.dp, color = ATTENDANCE_TABLE_DIVIDER_COLOR)
@@ -359,9 +375,11 @@ fun DailyMonitoringContent(
     onDateClick: () -> Unit,
     attendanceStats: Map<String, Int>,
     attendanceList: List<StudentAttendanceItem>,
+    attendanceManagerLabel: String,
     manualSelections: Map<String, String>,
     isLoading: Boolean,
     isSubmitting: Boolean,
+    isClassSecretaryMode: Boolean,
     onMarkAllPresent: () -> Unit,
     onStatusChange: (StudentAttendanceItem, String) -> Unit,
     onSubmitManual: () -> Unit,
@@ -395,7 +413,7 @@ fun DailyMonitoringContent(
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.16f)),
             shape = RoundedCornerShape(16.dp)
-        ) { Text("Tandai Semua Hadir", color = Color.White, fontWeight = FontWeight.Bold) }
+        ) { Text(if (isClassSecretaryMode) "Usulkan Semua Hadir" else "Tandai Semua Hadir", color = Color.White, fontWeight = FontWeight.Bold) }
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -405,10 +423,40 @@ fun DailyMonitoringContent(
             enabled = manualSelections.isNotEmpty() && !isSubmitting,
             colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.16f)),
             shape = RoundedCornerShape(16.dp)
-        ) { Text(if (isSubmitting) "Menyimpan..." else "Simpan Presensi Manual", color = Color.White, fontWeight = FontWeight.Bold) }
+        ) { Text(if (isSubmitting) "Menyimpan..." else if (isClassSecretaryMode) "Kirim Usulan ke Guru" else "Verifikasi & Simpan Presensi", color = Color.White, fontWeight = FontWeight.Bold) }
 
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Centang ulang status yang sama untuk membatalkan pilihan manual.", style = MaterialTheme.typography.labelSmall, color = LenteraTextSecondary)
+        Text(
+            text = if (isClassSecretaryMode) {
+                "Sekretaris hanya mengirim usulan. Rekap final baru dihitung setelah wali kelas memverifikasi."
+            } else {
+                "Centang ulang status yang sama untuk membatalkan pilihan manual. Usulan sekretaris belum menjadi nilai final sebelum Anda verifikasi."
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = LenteraTextSecondary
+        )
+
+        val pendingCount = attendanceList.count { it.isPendingTeacherVerification }
+        if (pendingCount > 0) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFB300).copy(alpha = 0.18f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFD54F).copy(alpha = 0.45f)),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = if (isClassSecretaryMode) {
+                        "$pendingCount usulan presensi sedang menunggu verifikasi wali kelas."
+                    } else {
+                        "$pendingCount usulan sekretaris kelas sedang menunggu verifikasi Anda."
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -427,8 +475,9 @@ fun DailyMonitoringContent(
                                 AttendanceTableRow(
                                     index = index + 1,
                                     item = item,
+                                    attendanceManagerLabel = attendanceManagerLabel,
                                     effectiveStatus = normalizeAttendanceStatus(
-                                        manualSelections[attendanceIdentityKey(item.student.id, item.student.nisn)] ?: item.status
+                                        manualSelections[attendanceIdentityKey(item.student)] ?: item.status
                                     ),
                                     onStatusChange = { status -> onStatusChange(item, status) }
                                 )
@@ -462,35 +511,104 @@ fun AttendanceDailyHeader() {
 }
 
 @Composable
-fun AttendanceTableRow(index: Int, item: StudentAttendanceItem, effectiveStatus: String, onStatusChange: (String) -> Unit) {
+fun AttendanceTableRow(
+    index: Int,
+    item: StudentAttendanceItem,
+    attendanceManagerLabel: String,
+    effectiveStatus: String,
+    onStatusChange: (String) -> Unit
+) {
+    val isInteractionEnabled = !attendanceManagerLabel.equals("Sekretaris Kelas", ignoreCase = true) || itemCanBeEditedBySecretary(item)
     Row(modifier = Modifier.fillMaxWidth().height(ATTENDANCE_TABLE_ROW_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
         AttendanceTextCell(text = index.toString(), modifier = Modifier.width(ATTENDANCE_TABLE_NO_WIDTH).fillMaxHeight(), textAlign = TextAlign.Center, withRightBorder = true)
         Column(modifier = Modifier.weight(1f).fillMaxHeight().padding(horizontal = 12.dp, vertical = 3.dp), verticalArrangement = Arrangement.Center) {
-            Text(text = item.student.name, style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.sp), fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(text = item.student.nisn, style = MaterialTheme.typography.labelSmall.copy(lineHeight = 12.sp), color = LenteraTextSecondary, maxLines = 1)
+            Text(text = item.student.name, style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.sp), fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            AttendanceRowMeta(item = item, attendanceManagerLabel = attendanceManagerLabel)
         }
         AttendanceColumnDivider(modifier = Modifier.fillMaxHeight())
         Row(modifier = Modifier.width(ATTENDANCE_TABLE_STATUS_WIDTH).fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
-            CompactAttendanceOption(isSelected = effectiveStatus == "PRESENT", color = Color(0xFF4CAF50), onClick = { onStatusChange("PRESENT") }, withRightBorder = true)
-            CompactAttendanceOption(isSelected = effectiveStatus == "SICK", color = Color(0xFF2196F3), onClick = { onStatusChange("SICK") }, withRightBorder = true)
-            CompactAttendanceOption(isSelected = effectiveStatus == "PERMIT", color = Color(0xFFFF9800), onClick = { onStatusChange("PERMIT") }, withRightBorder = true)
-            CompactAttendanceOption(isSelected = effectiveStatus == "ABSENT", color = Color(0xFFF44336), onClick = { onStatusChange("ABSENT") }, withRightBorder = false)
+            CompactAttendanceOption(isSelected = effectiveStatus == "PRESENT", color = Color(0xFF4CAF50), enabled = isInteractionEnabled, onClick = { onStatusChange("PRESENT") }, withRightBorder = true)
+            CompactAttendanceOption(isSelected = effectiveStatus == "SICK", color = Color(0xFF2196F3), enabled = isInteractionEnabled, onClick = { onStatusChange("SICK") }, withRightBorder = true)
+            CompactAttendanceOption(isSelected = effectiveStatus == "PERMIT", color = Color(0xFFFF9800), enabled = isInteractionEnabled, onClick = { onStatusChange("PERMIT") }, withRightBorder = true)
+            CompactAttendanceOption(isSelected = effectiveStatus == "ABSENT", color = Color(0xFFF44336), enabled = isInteractionEnabled, onClick = { onStatusChange("ABSENT") }, withRightBorder = false)
         }
     }
 }
 
 @Composable
-fun RowScope.CompactAttendanceOption(isSelected: Boolean, color: Color, onClick: () -> Unit, withRightBorder: Boolean = true) {
-    Box(modifier = Modifier.weight(1f).fillMaxHeight().clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        if (isSelected) Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+fun RowScope.CompactAttendanceOption(isSelected: Boolean, color: Color, enabled: Boolean, onClick: () -> Unit, withRightBorder: Boolean = true) {
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxHeight()
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        if (isSelected) Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = if (enabled) color else color.copy(alpha = 0.45f), modifier = Modifier.size(20.dp))
         if (withRightBorder) AttendanceColumnDivider(modifier = Modifier.align(Alignment.CenterEnd))
+    }
+}
+
+@Composable
+private fun AttendanceRowMeta(item: StudentAttendanceItem, attendanceManagerLabel: String) {
+    val badges = buildList {
+        when {
+            item.isSelfSecretaryRow ->
+                add("Akun sendiri terkunci" to Color(0xFFEF4444).copy(alpha = 0.18f))
+            item.isPendingTeacherVerification && attendanceManagerLabel == "Sekretaris Kelas" ->
+                add("Usulan menunggu verifikasi guru" to Color(0xFFF59E0B).copy(alpha = 0.18f))
+            item.isPendingTeacherVerification ->
+                add("Usulan sekretaris menunggu verifikasi" to Color(0xFFF59E0B).copy(alpha = 0.18f))
+            attendanceManagerLabel == "Sekretaris Kelas" && !item.isEditableBySecretary ->
+                add("Sudah final, hanya guru yang bisa ubah" to Color.White.copy(alpha = 0.10f))
+        }
+
+        val proposedBy = item.attendance?.proposedBy.orEmpty().trim()
+        if (proposedBy.isNotBlank()) {
+            val proposalLabel = if (item.isPendingTeacherVerification) {
+                "Pengusul: $proposedBy"
+            } else {
+                "Usulan awal: $proposedBy"
+            }
+            add(proposalLabel to Color(0xFF06B6D4).copy(alpha = 0.16f))
+        }
+
+        val verifiedBy = item.attendance?.verifiedBy.orEmpty().trim()
+        if (!item.isPendingTeacherVerification && verifiedBy.isNotBlank()) {
+            add("Final: $verifiedBy" to Color.White.copy(alpha = 0.10f))
+        } else if (item.attendance?.recordedBy?.isNullOrBlank() == false && proposedBy.isBlank()) {
+            add(item.attendance.recordedBy.orEmpty() to Color.White.copy(alpha = 0.10f))
+        }
+    }
+
+    if (badges.isEmpty()) return
+
+    Column(
+        modifier = Modifier.padding(top = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        badges.take(2).forEach { (label, background) ->
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.88f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .background(background, RoundedCornerShape(999.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+            )
+        }
     }
 }
 
 private fun countEffectiveAttendanceStatuses(items: List<StudentAttendanceItem>, manualSelections: Map<String, String>, status: String): Int {
     return items.count { item ->
+        if (item.isPendingTeacherVerification && !manualSelections.containsKey(attendanceIdentityKey(item.student))) {
+            return@count false
+        }
         val effectiveStatus = normalizeAttendanceStatus(
-            manualSelections[attendanceIdentityKey(item.student.id, item.student.nisn)] ?: item.status
+            manualSelections[attendanceIdentityKey(item.student)] ?: item.status
         )
         when (status) {
             "PRESENT" -> effectiveStatus == "PRESENT"
@@ -506,11 +624,15 @@ private fun normalizeAttendanceStatus(value: String): String {
     }
 }
 
-private fun attendanceIdentityKey(studentId: String?, studentNisn: String?): String {
-    return listOf(studentId, studentNisn)
-        .map { it?.trim().orEmpty() }
+private fun attendanceIdentityKey(student: com.satupintu.mobile.data.model.Student): String {
+    return listOf(student.recordId, student.nisn, student.id, student.username)
+        .map { it.trim() }
         .firstOrNull { it.isNotBlank() }
         .orEmpty()
+}
+
+private fun itemCanBeEditedBySecretary(item: StudentAttendanceItem): Boolean {
+    return !item.isSelfSecretaryRow && item.isEditableBySecretary
 }
 
 @Composable
@@ -537,8 +659,7 @@ fun AttendanceMonthlyRow(index: Int, item: StudentAttendanceItem, stats: Map<Str
     Row(modifier = Modifier.fillMaxWidth().height(ATTENDANCE_TABLE_ROW_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
         AttendanceTextCell(text = index.toString(), modifier = Modifier.width(ATTENDANCE_TABLE_NO_WIDTH).fillMaxHeight(), textAlign = TextAlign.Center, withRightBorder = true)
         Column(modifier = Modifier.weight(1f).fillMaxHeight().padding(horizontal = 12.dp, vertical = 3.dp), verticalArrangement = Arrangement.Center) {
-            Text(text = item.student.name, style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.sp), fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(text = item.student.nisn, style = MaterialTheme.typography.labelSmall.copy(lineHeight = 12.sp), color = LenteraTextSecondary, maxLines = 1)
+            Text(text = item.student.name, style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.sp), fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         AttendanceColumnDivider(modifier = Modifier.fillMaxHeight())
         Row(modifier = Modifier.width(ATTENDANCE_TABLE_STATUS_WIDTH).fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {

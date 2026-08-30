@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { useState, useMemo } from "react";
-import { exportToExcel } from "@/utils/export";
-import { Search, Download, Printer, List, Calendar, BarChart3 } from "lucide-react";
+import { Search, Printer, List, Calendar, BarChart3 } from "lucide-react";
 import { createStudentDateKey, getValidDatesInMonth, pickNewestLog, toDateKey } from "@/utils/presensiRules";
 import { AttendanceRecord, AttendanceSource } from "@/types/gas";
 import { AttendanceStatisticsPanel } from "./AttendanceStatisticsPanel";
@@ -81,6 +79,27 @@ function getSourceMeta(source?: AttendanceSource, fallbackLabel?: string) {
     label: fallbackLabel || meta.label,
     className: meta.className,
   };
+}
+
+function isPendingTeacherVerification(log: Pick<AttendanceRecord, "verificationStatus"> | null | undefined) {
+  return String(log?.verificationStatus || "").trim().toUpperCase() === "PENDING_TEACHER";
+}
+
+function hasSecretaryProposal(
+  log:
+    | Pick<AttendanceRecord, "proposedBy" | "proposedStatus" | "source" | "verificationStatus">
+    | null
+    | undefined
+) {
+  const proposedBy = String(log?.proposedBy || "").trim().toLowerCase();
+  const proposedStatus = String(log?.proposedStatus || "").trim();
+  const source = String(log?.source || "").trim().toUpperCase();
+
+  return (
+    proposedBy.includes("sekretaris kelas") ||
+    proposedStatus.length > 0 ||
+    (source === "CLASS_SECRETARY" && isPendingTeacherVerification(log))
+  );
 }
 
 interface Props {
@@ -192,6 +211,9 @@ export function AttendanceRecapPanel({
             source: existingLog.source || "MANUAL",
             sourceLabel: String(existingLog.sourceLabel || ""),
             recordedBy: String(existingLog.recordedBy || ""),
+            verificationStatus: String(existingLog.verificationStatus || "APPROVED"),
+            verifiedBy: String(existingLog.verifiedBy || ""),
+            proposedBy: String(existingLog.proposedBy || ""),
             isSystemGenerated: false,
           });
           continue;
@@ -213,6 +235,9 @@ export function AttendanceRecapPanel({
           source: "SYSTEM",
           sourceLabel: "Sistem",
           recordedBy: "System (Attendance)",
+          verificationStatus: "APPROVED",
+          verifiedBy: "System (Attendance)",
+          proposedBy: "",
           isSystemGenerated: true,
         });
       }
@@ -243,6 +268,22 @@ export function AttendanceRecapPanel({
     return totals;
   }, [recapRows]);
 
+  const verificationStats = useMemo(() => {
+    let pendingSecretary = 0;
+    let approvedFromSecretary = 0;
+
+    for (const row of recapRows) {
+      if (!hasSecretaryProposal(row)) continue;
+      if (isPendingTeacherVerification(row)) {
+        pendingSecretary += 1;
+      } else {
+        approvedFromSecretary += 1;
+      }
+    }
+
+    return { pendingSecretary, approvedFromSecretary };
+  }, [recapRows]);
+
   const monthlySummaryRows = useMemo(() => {
     return filteredStudents
       .map((student) => {
@@ -263,7 +304,7 @@ export function AttendanceRecapPanel({
 
           effectiveDays += 1;
 
-          if (!log || log.status === "ALPHA") {
+          if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
             alpha += 1;
             continue;
           }
@@ -313,7 +354,7 @@ export function AttendanceRecapPanel({
         const dateKey = toDateKey(date);
         const log = filteredLogMap.get(createStudentDateKey(canonicalId, dateKey));
 
-        if (!log || log.status === "ALPHA") {
+        if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
           totals.absent += 1;
           continue;
         }
@@ -506,6 +547,19 @@ export function AttendanceRecapPanel({
         })}
       </div>
 
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 no-print">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-amber-200">Usulan Sekretaris Pending</div>
+          <div className="mt-2 text-2xl font-bold text-white">{verificationStats.pendingSecretary}</div>
+          <p className="mt-1 text-sm text-amber-100/80">Belum dihitung final sampai diverifikasi wali kelas.</p>
+        </div>
+        <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-4 py-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-cyan-200">Usulan Sekretaris Disetujui</div>
+          <div className="mt-2 text-2xl font-bold text-white">{verificationStats.approvedFromSecretary}</div>
+          <p className="mt-1 text-sm text-cyan-100/80">Sudah final, tetapi jejak pengusul sekretaris tetap disimpan.</p>
+        </div>
+      </div>
+
       {/* Table */}
       <div id="print-area">
         <div className="mb-6 hidden print:block text-black">
@@ -613,20 +667,49 @@ export function AttendanceRecapPanel({
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
                       {(() => {
                         const sourceMeta = getSourceMeta(log.source, log.sourceLabel);
+                        const proposalExists = hasSecretaryProposal(log);
                         return (
                           <>
                             <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${sourceMeta.className}`}>
                               {sourceMeta.label}
                             </span>
+                            {isPendingTeacherVerification(log) ? (
+                              <div className="mt-1">
+                                <span className="inline-flex rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] font-semibold text-amber-300">
+                                  Menunggu Verifikasi Guru
+                                </span>
+                              </div>
+                            ) : null}
+                            {!isPendingTeacherVerification(log) && proposalExists ? (
+                              <div className="mt-1">
+                                <span className="inline-flex rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 text-[11px] font-semibold text-cyan-300">
+                                  Disetujui dari Usulan Sekretaris
+                                </span>
+                              </div>
+                            ) : null}
                             <div className="mt-1 text-xs text-slate-500">
                               {log.recordedBy || (log.isSystemGenerated ? "System (Attendance)" : "-")}
                             </div>
+                            {proposalExists && log.proposedBy ? (
+                              <div className="mt-1 text-xs text-cyan-200/80">
+                                Pengusul: {log.proposedBy}
+                              </div>
+                            ) : null}
+                            {!isPendingTeacherVerification(log) && log.verifiedBy ? (
+                              <div className="mt-1 text-xs text-slate-400">
+                                Final: {log.verifiedBy}
+                              </div>
+                            ) : null}
                           </>
                         );
                       })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                      {log.notes || (log.isSystemGenerated ? "Otomatis dari hari sekolah aktif tanpa log presensi." : '-')}
+                      {isPendingTeacherVerification(log)
+                        ? `${log.notes || "Usulan sekretaris kelas."} Menunggu verifikasi wali kelas sebelum dihitung final.`
+                        : hasSecretaryProposal(log)
+                          ? `${log.notes || "Sudah diverifikasi wali kelas."} Jejak usulan sekretaris tetap tersimpan untuk audit.`
+                          : (log.notes || (log.isSystemGenerated ? "Otomatis dari hari sekolah aktif tanpa log presensi." : "-"))}
                     </td>
                   </tr>
                 ))

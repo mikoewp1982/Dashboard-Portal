@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { useMemo } from "react";
 import { Activity, CalendarDays, Clock, ShieldAlert, UserCheck, UserMinus, UserRound, UserX } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { compareClassNames, createStudentDateKey, getValidDatesInMonth, normalizeClassName, pickNewestLog, toDateKey } from "@/utils/presensiRules";
+import { compareClassNames, createStudentDateKey, getValidDatesInMonth, pickNewestLog, toDateKey } from "@/utils/presensiRules";
 import { AttendanceRecord, AttendanceSource } from "@/types/gas";
 
 const MONTHS = [
@@ -26,6 +25,27 @@ const SOURCE_META: Record<AttendanceSource, { label: string; accent: string }> =
   SYSTEM: { label: "Sistem", accent: "bg-slate-500/10 text-slate-300 border-slate-500/20" },
   MANUAL: { label: "Input Manual", accent: "bg-amber-500/10 text-amber-300 border-amber-500/20" },
 };
+
+function isPendingTeacherVerification(log: Pick<AttendanceRecord, "verificationStatus"> | null | undefined) {
+  return String(log?.verificationStatus || "").trim().toUpperCase() === "PENDING_TEACHER";
+}
+
+function hasSecretaryProposal(
+  log:
+    | Pick<AttendanceRecord, "proposedBy" | "proposedStatus" | "source" | "verificationStatus">
+    | null
+    | undefined
+) {
+  const proposedBy = String(log?.proposedBy || "").trim().toLowerCase();
+  const proposedStatus = String(log?.proposedStatus || "").trim();
+  const source = String(log?.source || "").trim().toUpperCase();
+
+  return (
+    proposedBy.includes("sekretaris kelas") ||
+    proposedStatus.length > 0 ||
+    (source === "CLASS_SECRETARY" && isPendingTeacherVerification(log))
+  );
+}
 
 interface Props {
   classes: any[];
@@ -115,7 +135,7 @@ export function AttendanceStatisticsPanel({
         const log = filteredLogs.get(createStudentDateKey(canonicalId, dateKey));
         totals.totalValidSlots += 1;
 
-        if (!log || log.status === "ALPHA") {
+        if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
           totals.absent += 1;
           totals.effectiveObligation += 1;
           if (className) classMap.get(className).alpha += 1;
@@ -188,7 +208,7 @@ export function AttendanceStatisticsPanel({
         const dateKey = toDateKey(date);
         const log = filteredLogs.get(createStudentDateKey(id, dateKey));
 
-        if (!log || log.status === "ALPHA") {
+        if (!log || log.status === "ALPHA" || isPendingTeacherVerification(log)) {
           tally.absent += 1;
           continue;
         }
@@ -262,6 +282,30 @@ export function AttendanceStatisticsPanel({
     }
 
     return totals;
+  }, [filteredLogs, filteredStudents, validDates]);
+
+  const secretaryVerificationStats = useMemo(() => {
+    let pending = 0;
+    let approved = 0;
+
+    for (const student of filteredStudents) {
+      const id = String(student.id || "");
+      if (!id) continue;
+
+      for (const date of validDates) {
+        const dateKey = toDateKey(date);
+        const log = filteredLogs.get(createStudentDateKey(id, dateKey));
+        if (!hasSecretaryProposal(log)) continue;
+
+        if (isPendingTeacherVerification(log)) {
+          pending += 1;
+        } else {
+          approved += 1;
+        }
+      }
+    }
+
+    return { pending, approved };
   }, [filteredLogs, filteredStudents, validDates]);
 
   const insightItems = useMemo(() => {
@@ -367,6 +411,23 @@ export function AttendanceStatisticsPanel({
         />
       </div>
 
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <StatsMiniCard
+          title="Usulan Sekretaris Pending"
+          value={secretaryVerificationStats.pending}
+          description="Belum sah sebagai rekap final sampai diverifikasi wali kelas."
+          icon={ShieldAlert}
+          accent="amber"
+        />
+        <StatsMiniCard
+          title="Usulan Sekretaris Disetujui"
+          value={secretaryVerificationStats.approved}
+          description="Sudah final, namun jejak pengusul sekretaris tetap tersimpan."
+          icon={UserCheck}
+          accent="cyan"
+        />
+      </div>
+
       <div className="rounded-lg bg-slate-900/50 p-6 shadow-sm border border-slate-700/60">
         <div className="mb-4">
           <h3 className="text-lg font-semibold text-slate-100">Komposisi Sumber Input</h3>
@@ -398,7 +459,7 @@ export function AttendanceStatisticsPanel({
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={65} outerRadius={110} paddingAngle={4}>
-                  {pieData.map((entry, index) => (
+                  {pieData.map((entry) => (
                     <Cell key={entry.name} fill={entry.color} stroke={entry.color} />
                   ))}
                 </Pie>
@@ -502,13 +563,14 @@ function StatsMiniCard({
   value: string | number;
   description: string;
   icon: typeof UserCheck;
-  accent: "green" | "red" | "cyan" | "blue";
+  accent: "green" | "red" | "cyan" | "blue" | "amber";
 }) {
   const accentMap = {
     green: "bg-green-500/10 text-green-300 border-green-500/20",
     red: "bg-red-500/10 text-red-300 border-red-500/20",
     cyan: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
     blue: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+    amber: "bg-amber-500/10 text-amber-300 border-amber-500/20",
   }[accent];
 
   return (

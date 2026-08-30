@@ -22,6 +22,12 @@ export interface AttendanceRecord {
   checkOutTime?: string | number | null;
   checkInMethod?: string | null;
   recordedBy?: string | null;
+  verificationStatus?: string | null;
+  verifiedBy?: string | null;
+  verifiedAt?: number | null;
+  proposedBy?: string | null;
+  proposedAt?: number | null;
+  proposedStatus?: string | null;
   distanceMeters?: number;
   mockLocationFlag?: boolean;
   serverTimestamp?: string;

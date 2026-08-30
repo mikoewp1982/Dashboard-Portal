@@ -1,4 +1,4 @@
-﻿package com.satupintu.mobile.data.model
+package com.satupintu.mobile.data.model
 
 data class Attendance(
     val id: String = "",
@@ -12,6 +12,12 @@ data class Attendance(
     val notes: String? = null,
     val proofDocument: String? = null,
     val recordedBy: String? = null,
+    val verificationStatus: String = "APPROVED",
+    val verifiedBy: String? = null,
+    val verifiedAt: Long? = null,
+    val proposedBy: String? = null,
+    val proposedAt: Long? = null,
+    val proposedStatus: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
     val locationAccuracyMeters: Float? = null,
@@ -22,7 +28,8 @@ data class Attendance(
     val nisn: String = "",
     val username: String = "",
     val studentName: String = "",
-    val className: String = ""
+    val className: String = "",
+    val isEarlyCheckout: Boolean = false
 )
 
 enum class AttendanceStatus {

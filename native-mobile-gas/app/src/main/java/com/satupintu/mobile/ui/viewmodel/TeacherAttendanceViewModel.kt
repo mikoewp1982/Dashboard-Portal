@@ -33,7 +33,11 @@ data class StudentAttendanceItem(
     val student: Student,
     val status: String, // PRESENT, SICK, PERMIT, ALPHA, or UNMARKED
     val notes: String? = null,
-    val attendanceId: String? = null // Added to track existing record ID
+    val attendanceId: String? = null,
+    val attendance: Attendance? = null,
+    val isPendingTeacherVerification: Boolean = false,
+    val isEditableBySecretary: Boolean = true,
+    val isSelfSecretaryRow: Boolean = false
 )
 
 class TeacherAttendanceViewModel : ViewModel() {
@@ -43,6 +47,8 @@ class TeacherAttendanceViewModel : ViewModel() {
 
     private val _teacher = MutableStateFlow<Teacher?>(null)
     val teacher: StateFlow<Teacher?> = _teacher.asStateFlow()
+    private val _attendanceManagerLabel = MutableStateFlow("Wali Kelas")
+    val attendanceManagerLabel: StateFlow<String> = _attendanceManagerLabel.asStateFlow()
 
     private val _attendanceList = MutableStateFlow<List<StudentAttendanceItem>>(emptyList())
     val attendanceList: StateFlow<List<StudentAttendanceItem>> = _attendanceList.asStateFlow()
@@ -81,6 +87,8 @@ class TeacherAttendanceViewModel : ViewModel() {
     private var legacyHolidayListener: ValueEventListener? = null
     private var scopedHolidayListener: ValueEventListener? = null
     private var currentScopeKey: String = ""
+    private var requestedSchoolScope: String = ""
+    private var classSecretaryAliases: Set<String> = emptySet()
     private var teacherJob: Job? = null
     private var dailyJob: Job? = null
     private var monthlyJob: Job? = null
@@ -101,7 +109,7 @@ class TeacherAttendanceViewModel : ViewModel() {
             val month = _selectedMonth.value
             val year = _selectedYear.value
             
-            val teacherSchoolScope = normalizeScope(_teacher.value?.schoolId)
+            val teacherSchoolScope = resolvedTeacherSchoolScope()
             val studentsFlow = studentRepository.getStudents(teacherSchoolScope)
             val monthlyAttendanceFlow = attendanceRepository.getAttendanceByMonth(month, year, teacherSchoolScope)
 
@@ -117,8 +125,6 @@ class TeacherAttendanceViewModel : ViewModel() {
                 calendar.set(Calendar.MONTH, month)
                 calendar.set(Calendar.DAY_OF_MONTH, 1)
                 val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
-                val today = Calendar.getInstance()
-
                 val recapMap = mutableMapOf<String, Map<String, Int>>()
                 val recordsByStudentAndDay = mutableMapOf<String, MutableMap<Int, Attendance>>()
 
@@ -164,12 +170,13 @@ class TeacherAttendanceViewModel : ViewModel() {
                         // Cari record absen untuk hari ini
                         val log = studentRecordsByDay[day]
 
-                        if (log != null) {
-                            when (log.status) {
-                                "PRESENT", "LATE" -> h++ // LATE dihitung sebagai Hadir (sama dengan web)
-                                "SICK" -> s++
-                                "PERMIT" -> i++
-                                "ABSENT" -> a++
+                        if (log != null && !isPendingTeacherVerification(log)) {
+                            when (log.status.uppercase(java.util.Locale.ROOT).trim()) {
+                                "PRESENT", "HADIR", "TEPAT WAKTU", "ON TIME", "LATE", "TERLAMBAT" -> h++
+                                "SICK", "SAKIT" -> s++
+                                "PERMIT", "IZIN", "LEAVE" -> i++
+                                "ABSENT", "ALPA", "ALPHA" -> a++
+                                else -> a++ // status tidak dikenal = Alpha (sama dengan TeacherRecapViewModel)
                             }
                         } else {
                             // Tidak ada record = Alpha (sama dengan web)
@@ -195,13 +202,39 @@ class TeacherAttendanceViewModel : ViewModel() {
     fun setTeacherNuptk(nuptk: String, schoolId: String) {
         teacherJob?.cancel()
         teacherJob = viewModelScope.launch {
+            _attendanceManagerLabel.value = "Wali Kelas"
+            requestedSchoolScope = normalizeScope(schoolId)
+            classSecretaryAliases = emptySet()
             val teacher = try {
                 teacherRepository.resolveTeacher(nuptk.trim(), schoolId)
             } catch (e: Exception) {
                 null
             }
             _teacher.value = teacher
-            attachRuleListeners(normalizeScope(teacher?.schoolId))
+            attachRuleListeners(resolvedTeacherSchoolScope())
+            loadDataForDate(_selectedDate.value)
+            loadMonthlyRecap()
+        }
+    }
+
+    fun setClassSecretaryContext(
+        secretaryName: String,
+        className: String,
+        schoolId: String,
+        secretaryAliases: Set<String>
+    ) {
+        teacherJob?.cancel()
+        teacherJob = viewModelScope.launch {
+            _attendanceManagerLabel.value = "Sekretaris Kelas"
+            requestedSchoolScope = normalizeScope(schoolId)
+            classSecretaryAliases = secretaryAliases.map { normalizeIdentity(it) }.filter { it.isNotBlank() }.toSet()
+            _teacher.value = Teacher(
+                id = secretaryName.trim().ifBlank { className.trim() },
+                name = secretaryName.trim().ifBlank { "Sekretaris Kelas" },
+                homeroomClass = className.trim(),
+                schoolId = schoolId.trim()
+            )
+            attachRuleListeners(resolvedTeacherSchoolScope())
             loadDataForDate(_selectedDate.value)
             loadMonthlyRecap()
         }
@@ -309,7 +342,7 @@ class TeacherAttendanceViewModel : ViewModel() {
     private fun loadDataForDate(date: Long) {
         dailyJob?.cancel()
         dailyJob = viewModelScope.launch {
-            val teacherSchoolScope = normalizeScope(_teacher.value?.schoolId)
+            val teacherSchoolScope = resolvedTeacherSchoolScope()
             val studentsFlow = studentRepository.getStudents(teacherSchoolScope)
             val attendanceFlow = attendanceRepository.getAttendanceByDate(date, teacherSchoolScope)
 
@@ -336,11 +369,17 @@ class TeacherAttendanceViewModel : ViewModel() {
                     val record = studentIdentityCandidates(student)
                         .mapNotNull { attendanceByIdentity[it] }
                         .maxByOrNull { it.date }
+                    val isSelfSecretaryRow = isCurrentSecretaryStudent(student)
+                    val editableBySecretary = canSecretaryEdit(student, record)
                     StudentAttendanceItem(
                         student = student,
                         status = record?.status ?: "UNMARKED",
                         notes = record?.notes,
-                        attendanceId = record?.id
+                        attendanceId = record?.id,
+                        attendance = record,
+                        isPendingTeacherVerification = record?.let(::isPendingTeacherVerification) == true,
+                        isEditableBySecretary = editableBySecretary,
+                        isSelfSecretaryRow = isSelfSecretaryRow
                     )
                 }
             }.collect { items ->
@@ -357,6 +396,7 @@ class TeacherAttendanceViewModel : ViewModel() {
 
     fun updateNote(studentId: String, note: String) {
         val currentItem = _attendanceList.value.find { preferredStudentIdentity(it.student) == studentId } ?: return
+        if (isSecretaryMode() && !currentItem.isEditableBySecretary) return
         
         // Optimistic update
         val updatedList = _attendanceList.value.map {
@@ -365,19 +405,10 @@ class TeacherAttendanceViewModel : ViewModel() {
         _attendanceList.value = updatedList
         
         // Save to repo
-        val resolvedStudentId = preferredStudentIdentity(currentItem.student)
-        val newRecord = Attendance(
-            id = currentItem.attendanceId ?: "", 
-            studentId = resolvedStudentId,
-            schoolId = currentItem.student.schoolId,
-            date = _selectedDate.value,
-            status = currentItem.status, // Keep existing status
-            checkInTime = System.currentTimeMillis().toString(),
-            notes = note,
-            nisn = currentItem.student.nisn,
-            username = currentItem.student.username,
-            studentName = currentItem.student.name,
-            className = currentItem.student.className
+        val newRecord = buildAttendanceRecord(
+            item = currentItem,
+            status = currentItem.status,
+            notesOverride = note
         )
         attendanceRepository.saveAttendance(newRecord) { success ->
             // If new record created, we might want to reload to get the new ID, 
@@ -387,52 +418,34 @@ class TeacherAttendanceViewModel : ViewModel() {
                 // Force reload to get the new ID if it was a new record
                 loadDataForDate(_selectedDate.value)
             }
+            if (success) {
+                loadMonthlyRecap()
+            }
         }
     }
 
     fun markAllPresent() {
-        val currentList = _attendanceList.value
-        val updatedList = currentList.map { it.copy(status = "PRESENT") }
+        val currentList = _attendanceList.value.filter { canEditAttendanceItem(it) }
+        val updatedList = _attendanceList.value.map { item ->
+            if (canEditAttendanceItem(item)) item.copy(status = "PRESENT") else item
+        }
         _attendanceList.value = updatedList // Optimistic update
 
         // Save all to repo
         // Note: In a real app, you might want to batch this or use a specific API endpoint
         // For Firebase RTDB, we can just loop and save for now (or construct a multi-path update)
         currentList.forEach { item ->
-            val newRecord = Attendance(
-                id = "",
-                studentId = preferredStudentIdentity(item.student),
-                schoolId = item.student.schoolId,
-                date = _selectedDate.value,
-                status = "PRESENT",
-                checkInTime = System.currentTimeMillis().toString(),
-                notes = item.notes,
-                nisn = item.student.nisn,
-                username = item.student.username,
-                studentName = item.student.name,
-                className = item.student.className
-            )
+            val newRecord = buildAttendanceRecord(item = item, status = "PRESENT")
             attendanceRepository.saveAttendance(newRecord) { }
         }
+        loadMonthlyRecap()
     }
 
     fun updateAttendance(studentId: String, status: String) {
         val currentItem = _attendanceList.value.find { preferredStudentIdentity(it.student) == studentId } ?: return
-        val resolvedStudentId = preferredStudentIdentity(currentItem.student)
+        if (!canEditAttendanceItem(currentItem)) return
         
-        val newRecord = Attendance(
-            id = currentItem.attendanceId ?: "",
-            studentId = resolvedStudentId,
-            schoolId = currentItem.student.schoolId,
-            date = _selectedDate.value,
-            status = status,
-            checkInTime = System.currentTimeMillis().toString(),
-            notes = currentItem.notes,
-            nisn = currentItem.student.nisn,
-            username = currentItem.student.username,
-            studentName = currentItem.student.name,
-            className = currentItem.student.className
-        )
+        val newRecord = buildAttendanceRecord(item = currentItem, status = status)
         
         // Optimistic update
         val updatedList = _attendanceList.value.map {
@@ -446,6 +459,9 @@ class TeacherAttendanceViewModel : ViewModel() {
             } else if (currentItem.attendanceId.isNullOrEmpty()) {
                  // Force reload to get the new ID if it was a new record
                  loadDataForDate(_selectedDate.value)
+            }
+            if (success) {
+                loadMonthlyRecap()
             }
         }
     }
@@ -468,6 +484,7 @@ class TeacherAttendanceViewModel : ViewModel() {
             remaining -= 1
             if (remaining == 0) {
                 loadDataForDate(_selectedDate.value)
+                loadMonthlyRecap()
                 onComplete(allSuccess)
             }
         }
@@ -478,32 +495,28 @@ class TeacherAttendanceViewModel : ViewModel() {
                 finishOne(false)
                 return@forEach
             }
+            if (!canEditAttendanceItem(currentItem)) {
+                finishOne(false)
+                return@forEach
+            }
 
             if (status == "UNMARKED") {
                 val attendanceId = currentItem.attendanceId
                 if (attendanceId.isNullOrBlank()) {
                     finishOne(true)
                 } else {
-                    attendanceRepository.deleteAttendance(attendanceId, currentItem.student.schoolId) { success ->
+                    if (isSecretaryMode() && !currentItem.isPendingTeacherVerification) {
+                        finishOne(false)
+                        return@forEach
+                    }
+                    attendanceRepository.deleteAttendance(attendanceId, resolvedStudentSchoolScope(currentItem.student)) { success ->
                         finishOne(success)
                     }
                 }
                 return@forEach
             }
 
-            val newRecord = Attendance(
-                id = currentItem.attendanceId ?: "",
-                studentId = preferredStudentIdentity(currentItem.student),
-                schoolId = currentItem.student.schoolId,
-                date = _selectedDate.value,
-                status = status,
-                checkInTime = System.currentTimeMillis().toString(),
-                notes = currentItem.notes,
-                nisn = currentItem.student.nisn,
-                username = currentItem.student.username,
-                studentName = currentItem.student.name,
-                className = currentItem.student.className
-            )
+            val newRecord = buildAttendanceRecord(item = currentItem, status = status)
 
             attendanceRepository.saveAttendance(newRecord) { success ->
                 finishOne(success)
@@ -562,6 +575,135 @@ class TeacherAttendanceViewModel : ViewModel() {
 
     private fun preferredStudentIdentity(student: Student): String {
         return studentIdentityCandidates(student).firstOrNull().orEmpty()
+    }
+
+    private fun resolvedTeacherSchoolScope(): String {
+        return listOf(
+            normalizeScope(_teacher.value?.schoolId),
+            requestedSchoolScope
+        ).firstOrNull { it.isNotBlank() }.orEmpty()
+    }
+
+    private fun resolvedStudentSchoolScope(student: Student): String {
+        return listOf(
+            normalizeScope(student.schoolId),
+            resolvedTeacherSchoolScope()
+        ).firstOrNull { it.isNotBlank() }.orEmpty()
+    }
+
+    private fun isSecretaryMode(): Boolean {
+        return _attendanceManagerLabel.value == "Sekretaris Kelas"
+    }
+
+    private fun isPendingTeacherVerification(attendance: Attendance): Boolean {
+        return attendance.verificationStatus.trim().uppercase(Locale.ROOT) == "PENDING_TEACHER"
+    }
+
+    private fun isCurrentSecretaryStudent(student: Student): Boolean {
+        if (classSecretaryAliases.isEmpty()) return false
+        return studentIdentityCandidates(student).any { classSecretaryAliases.contains(normalizeIdentity(it)) }
+    }
+
+    private fun canSecretaryEdit(student: Student, record: Attendance?): Boolean {
+        if (!isSecretaryMode()) return true
+        if (isCurrentSecretaryStudent(student)) return false
+        if (record == null) return true
+        if (!isPendingTeacherVerification(record)) return false
+
+        val proposalOwner = normalizeIdentity(record.proposedBy).ifBlank { normalizeIdentity(record.recordedBy) }
+        return proposalOwner.isBlank() || proposalOwner == currentRecordedBy()
+    }
+
+    private fun canEditAttendanceItem(item: StudentAttendanceItem): Boolean {
+        return if (isSecretaryMode()) item.isEditableBySecretary else true
+    }
+
+    private fun buildAttendanceRecord(
+        item: StudentAttendanceItem,
+        status: String,
+        notesOverride: String? = item.notes
+    ): Attendance {
+        val existing = item.attendance
+        val now = System.currentTimeMillis()
+        val normalizedStatus = status.trim().uppercase(Locale.ROOT)
+        val actor = currentRecordedBy()
+
+        return if (isSecretaryMode()) {
+            Attendance(
+                id = item.attendanceId ?: existing?.id.orEmpty(),
+                studentId = preferredStudentIdentity(item.student),
+                schoolId = resolvedStudentSchoolScope(item.student),
+                date = _selectedDate.value,
+                status = normalizedStatus,
+                checkInTime = now.toString(),
+                checkOutTime = existing?.checkOutTime,
+                checkInMethod = "MANUAL_CLASS_SECRETARY",
+                notes = notesOverride,
+                proofDocument = existing?.proofDocument,
+                recordedBy = actor,
+                verificationStatus = "PENDING_TEACHER",
+                verifiedBy = null,
+                verifiedAt = null,
+                proposedBy = actor,
+                proposedAt = now,
+                proposedStatus = normalizedStatus,
+                latitude = existing?.latitude,
+                longitude = existing?.longitude,
+                locationAccuracyMeters = existing?.locationAccuracyMeters,
+                locationProvider = existing?.locationProvider,
+                isMockLocation = existing?.isMockLocation ?: false,
+                deviceTimeTrusted = existing?.deviceTimeTrusted ?: true,
+                nisn = item.student.nisn,
+                username = item.student.username,
+                studentName = item.student.name,
+                className = item.student.className,
+                isEarlyCheckout = existing?.isEarlyCheckout ?: false
+            )
+        } else {
+            Attendance(
+                id = item.attendanceId ?: existing?.id.orEmpty(),
+                studentId = preferredStudentIdentity(item.student),
+                schoolId = resolvedStudentSchoolScope(item.student),
+                date = _selectedDate.value,
+                status = normalizedStatus,
+                checkInTime = now.toString(),
+                checkOutTime = existing?.checkOutTime,
+                checkInMethod = "MANUAL_TEACHER",
+                notes = notesOverride,
+                proofDocument = existing?.proofDocument,
+                recordedBy = actor,
+                verificationStatus = "APPROVED",
+                verifiedBy = actor,
+                verifiedAt = now,
+                proposedBy = existing?.proposedBy,
+                proposedAt = existing?.proposedAt,
+                proposedStatus = existing?.proposedStatus,
+                latitude = existing?.latitude,
+                longitude = existing?.longitude,
+                locationAccuracyMeters = existing?.locationAccuracyMeters,
+                locationProvider = existing?.locationProvider,
+                isMockLocation = existing?.isMockLocation ?: false,
+                deviceTimeTrusted = existing?.deviceTimeTrusted ?: true,
+                nisn = item.student.nisn,
+                username = item.student.username,
+                studentName = item.student.name,
+                className = item.student.className,
+                isEarlyCheckout = existing?.isEarlyCheckout ?: false
+            )
+        }
+    }
+
+    private fun currentCheckInMethod(): String {
+        return if (_attendanceManagerLabel.value == "Sekretaris Kelas") {
+            "MANUAL_CLASS_SECRETARY"
+        } else {
+            "MANUAL_TEACHER"
+        }
+    }
+
+    private fun currentRecordedBy(): String {
+        val actorName = _teacher.value?.name?.trim().orEmpty().ifBlank { _attendanceManagerLabel.value }
+        return "${_attendanceManagerLabel.value}: $actorName"
     }
 
     private fun matchesStudent(attendance: Attendance, student: Student): Boolean {

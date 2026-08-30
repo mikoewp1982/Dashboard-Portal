@@ -29,8 +29,12 @@ import com.satupintu.mobile.ui.screens.student.PrayerScreen
 import com.satupintu.mobile.ui.screens.student.PrayerDhuhaJumatScreen
 import com.satupintu.mobile.ui.screens.student.ENGLISH_DICTIONARY_ROUTE
 import com.satupintu.mobile.ui.screens.student.JAVANESE_DICTIONARY_ROUTE
+import com.satupintu.mobile.ui.screens.student.KBBI_DICTIONARY_ROUTE
+import com.satupintu.mobile.ui.screens.student.RELIGIOUS_BOOK_ROUTE
 import com.satupintu.mobile.ui.screens.student.StudentEnglishDictionaryScreen
 import com.satupintu.mobile.ui.screens.student.StudentJavaneseDictionaryScreen
+import com.satupintu.mobile.ui.screens.student.StudentKbbiScreen
+import com.satupintu.mobile.ui.screens.student.StudentReligiousBookScreen
 import com.satupintu.mobile.ui.screens.student.StudentToolsScreen
 import com.satupintu.mobile.ui.screens.student.TOOLS_ROUTE
 import com.satupintu.mobile.ui.screens.principal.PRINCIPAL_ATTENDANCE_ROUTE
@@ -326,6 +330,20 @@ fun NavGraphBuilder.gasAppNavGraph(
             )
         }
     }
+    composable(KBBI_DICTIONARY_ROUTE) {
+        guardedRoute(KBBI_DICTIONARY_ROUTE) {
+            StudentKbbiScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
+    composable(RELIGIOUS_BOOK_ROUTE) {
+        guardedRoute(RELIGIOUS_BOOK_ROUTE) {
+            StudentReligiousBookScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
     
     composable(
         route = "pdf_viewer/{url}/{title}",
@@ -529,6 +547,28 @@ fun NavGraphBuilder.gasAppNavGraph(
                 teacherNuptk = credential,
                 schoolId = schoolId,
                 onBack = { navController.popBackStack() }
+            )
+        }
+    }
+    composable("secretary_attendance") {
+        guardedRoute("secretary_attendance") {
+            val context = LocalContext.current
+            val prefs = SecurePreferences.getSessionPrefs(context)
+            val schoolId = SecurityUtils.getStoredSchoolId(prefs)
+            val secretaryAliases = SecurityUtils.getStoredStudentAliases(prefs)
+            val studentClass = prefs.getString("user_student_class", "").orEmpty().trim()
+            val studentName = prefs.getString("user_student_name", "").orEmpty()
+                .ifBlank { prefs.getString("user_display_name", "").orEmpty() }
+                .trim()
+
+            TeacherAttendanceScreen(
+                teacherNuptk = "",
+                schoolId = schoolId,
+                onBack = { navController.popBackStack() },
+                isClassSecretaryMode = true,
+                secretaryName = studentName,
+                secretaryClass = studentClass,
+                secretaryAliases = secretaryAliases
             )
         }
     }
