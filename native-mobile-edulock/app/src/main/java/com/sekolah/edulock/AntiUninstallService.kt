@@ -132,7 +132,14 @@ class AntiUninstallService : AccessibilityService() {
         } catch (_: Exception) {
             null
         }
-        kickIfDangerous(root, root?.packageName?.toString().orEmpty(), source)
+        val packageName = root?.packageName?.toString().orEmpty()
+        
+        val looksProtected = isProtectedSystemPackage(packageName)
+        if (!looksProtected && !shouldInspectAnyway(packageName, packageName)) {
+            return
+        }
+        
+        kickIfDangerous(root, packageName, source)
     }
 
     private fun kickIfDangerous(
