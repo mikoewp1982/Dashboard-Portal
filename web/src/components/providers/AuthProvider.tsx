@@ -168,10 +168,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     const needsAuth = pathname.startsWith('/dashboard') || pathname.startsWith('/super-admin');
     const isGuruPortal = pathname.startsWith('/guru');
+    const isSiswaPortal = pathname.startsWith('/siswa');
     const passwordChangeBlocked = user?.role === 'admin' && user.mustChangePassword === true;
 
-    if (!user && needsAuth) {
-      router.push('/login');
+    if (!user && (needsAuth || isGuruPortal || (isSiswaPortal && pathname !== '/siswa/login'))) {
+      if (isGuruPortal) {
+        // Biarkan portal guru yang handle redirect-nya jika perlu, atau arahkan ke /login
+      } else if (isSiswaPortal) {
+        router.push('/siswa/login');
+      } else {
+        router.push('/login');
+      }
       return;
     }
 
@@ -180,14 +187,21 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    if (user?.role === 'teacher' && needsAuth) {
+    if (user?.role === 'teacher' && (needsAuth || isSiswaPortal)) {
       router.push('/guru');
       return;
     }
+    
+    if (user?.role === 'student' && (needsAuth || isGuruPortal)) {
+      router.push('/siswa');
+      return;
+    }
 
-    if (user && !passwordChangeBlocked && (pathname === '/login' || pathname === '/')) {
+    if (user && !passwordChangeBlocked && (pathname === '/login' || pathname === '/siswa/login' || pathname === '/')) {
       if (user.role === 'teacher') {
         router.push('/guru');
+      } else if (user.role === 'student') {
+        router.push('/siswa');
       } else if (user.role === 'super_admin') {
         router.push('/super-admin/dashboard');
       } else {
@@ -198,6 +212,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     if (user && user.role !== 'teacher' && isGuruPortal && pathname !== '/guru') {
       // biarkan halaman install/info; sub-route guru untuk sesi guru saja digate di layout
+    }
+    
+    if (user && user.role !== 'student' && isSiswaPortal && pathname !== '/siswa') {
+      // biarkan jika ada halaman publik di /siswa
     }
   }, [user, loading, pathname, router, tenantGateChecked]);
 
