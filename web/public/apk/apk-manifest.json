@@ -1,4 +1,4 @@
-{
+﻿{
     "updatedAt":  "2026-08-31T09:12:00",
     "files":  {
                   "GAS-Siswa-1.0.92-siswa-23089.apk":  {
@@ -10,7 +10,7 @@
                                                            "versionCode":  23089,
                                                            "sizeBytes":  21511024,
                                                            "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",
-                                                           "releaseNotes":  "Patch perbaikan false-block GPS di IFP Smart TV / Android TV. Perangkat TV yang tidak memiliki modul GPS hardware sekarang di-skip dari pengecekan wajib GPS dan izin ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION, sehingga dialog 'GPS Wajib Aktif' tidak lagi muncul terus menerus dan memblokir akses aplikasi. Nomor versi tetap sama (1.0.92-siswa / 23089), hanya hash APK yang berbeda karena patch kode di HomeScreen.kt."
+                                                           "releaseNotes":  "Patch perbaikan false-block GPS di IFP Smart TV / Android TV. Perangkat TV yang tidak memiliki modul GPS hardware sekarang di-skip dari pengecekan wajib GPS dan izin ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION, sehingga dialog \u0027GPS Wajib Aktif\u0027 tidak lagi muncul terus menerus dan memblokir akses aplikasi. Nomor versi tetap sama (1.0.92-siswa / 23089), hanya hash APK yang berbeda karena patch kode di HomeScreen.kt."
                                                        },
                   "EduLock-1.3.11-37.apk":  {
                                                 "lastModified":  "2026-08-15T09:01:50",
@@ -22,14 +22,14 @@
                                                 "sizeBytes":  3790306
                                             },
                   "EduLock-1.3.22-48.apk":  {
-                                                  "lastModified":  "2026-08-30T15:06:45",
-                                                  "packageName":  "com.sekolah.edulock",
-                                                  "sizeMB":  3.75,
-                                                  "sha256":  "F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34",
-                                                  "versionName":  "1.3.22",
-                                                  "versionCode":  48,
-                                                  "sizeBytes":  3932182
-                                              },
+                                                "lastModified":  "2026-08-30T15:06:45",
+                                                "packageName":  "com.sekolah.edulock",
+                                                "sizeMB":  3.75,
+                                                "sha256":  "F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34",
+                                                "versionName":  "1.3.22",
+                                                "versionCode":  48,
+                                                "sizeBytes":  3932182
+                                            },
                   "EduLock-studentRelease.apk":  {
                                                      "lastModified":  "2026-08-30T15:06:43",
                                                      "packageName":  "com.sekolah.edulock",
@@ -39,16 +39,23 @@
                                                      "versionCode":  48,
                                                      "sizeBytes":  3932182
                                                  },
+                  "GAS-Siswa-1.0.93-siswa-23090.apk":  {
+                                                           "versionCode":  23090,
+                                                           "sizeMB":  20.51,
+                                                           "lastModified":  "2026-08-31T21:37:39",
+                                                           "sha256":  "9C7ECDBB921F39DF67C03994BE4E1195AA0A6D0993D21E0400DEFE499EF0DB71",
+                                                           "sizeBytes":  21511022,
+                                                           "versionName":  "1.0.93-siswa",
+                                                           "packageName":  "com.satupintu.mobile.siswa"
+                                                       },
                   "GAS-Siswa-release.apk":  {
-                                                "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",
-                                                "lastModified":  "2026-08-31T09:05:28",
-                                                "packageName":  "com.satupintu.mobile.siswa",
+                                                "versionCode":  23090,
                                                 "sizeMB":  20.51,
-                                                "sha256":  "F0258FEEFB064AE203BDA6E11142480CA8086D18C6915623531E4DAA04BC8F16",
-                                                "versionName":  "1.0.92-siswa",
-                                                "versionCode":  23089,
-                                                "sizeBytes":  21511024,
-                                                "releaseNotes":  "Patch perbaikan false-block GPS di IFP Smart TV / Android TV."
+                                                "lastModified":  "2026-08-31T21:37:39",
+                                                "sha256":  "9C7ECDBB921F39DF67C03994BE4E1195AA0A6D0993D21E0400DEFE499EF0DB71",
+                                                "sizeBytes":  21511022,
+                                                "versionName":  "1.0.93-siswa",
+                                                "packageName":  "com.satupintu.mobile.siswa"
                                             }
               }
 }

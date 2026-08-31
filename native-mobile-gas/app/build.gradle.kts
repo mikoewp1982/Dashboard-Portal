@@ -38,8 +38,8 @@ android {
         create("siswa") {
             dimension = "audience"
             minSdk = 23
-            versionCode = 23088
-            versionName = "1.0.91"
+            versionCode = 23090
+            versionName = "1.0.93"
             resValue("string", "app_name", "GAS Siswa")
             applicationIdSuffix = ".siswa"
             versionNameSuffix = "-siswa"
@@ -47,8 +47,8 @@ android {
         create("guru") {
             dimension = "audience"
             minSdk = 23
-            versionCode = 1063
-            versionName = "1.0.71"
+            versionCode = 1064
+            versionName = "1.0.72"
             resValue("string", "app_name", "GAS Guru")
             applicationIdSuffix = ".guru"
             versionNameSuffix = "-guru"

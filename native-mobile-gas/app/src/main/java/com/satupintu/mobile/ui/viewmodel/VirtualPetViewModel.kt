@@ -375,18 +375,24 @@ class VirtualPetViewModel : ViewModel() {
             
             // On holidays, hunger doesn't drop naturally, but reading still gives intelligence
             val calculatedHunger = if (stats.isAttendanceEffectiveDay) {
-                100 - saturationPct
+                if (stats.readingDuration == 0L) syncedPet.hunger else 100 - saturationPct
             } else {
                 syncedPet.hunger
             }
             
-            val calculatedEnergy = ((stats.habitsCount / 7f) * 100).coerceAtMost(100f).toInt()
+            val calculatedEnergy = if (stats.habitsCount == 0) {
+                syncedPet.energy
+            } else {
+                ((stats.habitsCount / 7f) * 100).coerceAtMost(100f).toInt()
+            }
 
             val statusStr = stats.attendanceData["status"] as? String
             val checkOutTime = stats.attendanceData["checkOutTime"] as? String ?: ""
             var happinessScore = 100
 
-            if (statusStr != null) {
+            if (statusStr.isNullOrBlank()) {
+                happinessScore = syncedPet.happiness
+            } else if (statusStr != null) {
                 val isLate = statusStr.equals("TERLAMBAT", ignoreCase = true) || statusStr.equals("LATE", ignoreCase = true)
                 val isAbsent = statusStr.equals("ABSENT", ignoreCase = true) || statusStr.equals("ALPA", ignoreCase = true)
                 val isPermit =
@@ -444,7 +450,8 @@ class VirtualPetViewModel : ViewModel() {
                 !stats.prayerInfo.isEffectiveDay -> 100
                 prayerStatus == "PRAY" -> 100
                 prayerStatus == "PERMIT" || prayerStatus == "HALANGAN" -> 100
-                prayerStatus == "NOT_PRAY" || prayerStatus.isNullOrBlank() -> 20
+                prayerStatus == "NOT_PRAY" -> 20
+                prayerStatus.isNullOrBlank() -> syncedPet.health.coerceIn(0, 100)
                 else -> syncedPet.health.coerceIn(0, 100)
             }
 
@@ -718,11 +725,40 @@ class VirtualPetViewModel : ViewModel() {
         lastQuestResetGuardKey = guardKey
 
         questResetJob = viewModelScope.launch {
+            // Evaluasi penalti hari sebelumnya sebelum quest dihapus
+            var penaltyEnergy = pet.energy
+            var penaltyHunger = pet.hunger
+            var penaltyHealth = pet.health
+            var penaltyHappiness = pet.happiness
+
+            quests.forEach { quest ->
+                if (quest.title == "Praktik 3 Kebiasaan" && !quest.isPaused && quest.progress < 3) {
+                    penaltyEnergy = 0
+                }
+                if (quest.title == "Membaca Buku" && !quest.isPaused && quest.progress < 1) {
+                    penaltyHunger = 100
+                }
+                if (quest.title == "Presensi Sholat Hari Ini" && !quest.isPaused && quest.progress == 0) {
+                    penaltyHealth = 20
+                }
+                if (quest.title == "Absensi Sekolah Hari Ini" && !quest.isPaused && quest.progress == 0) {
+                    penaltyHappiness = 0
+                }
+            }
+
+            val penalizedPet = pet.copy(
+                energy = penaltyEnergy,
+                hunger = penaltyHunger,
+                health = penaltyHealth,
+                happiness = penaltyHappiness,
+                lastQuestReset = System.currentTimeMillis()
+            )
+            repository.updateVirtualPet(penalizedPet)
+
             // Hanya reset quest harian — biarkan Bonus Literasi Bulanan tetap hidup.
             repository.deletePetQuests(pet.id, onlyTypes = setOf("DAILY"))
             createDailyQuests(pet.id, stats)
             ensureMonthlyLiteracyQuest(pet, quests)
-            repository.updateVirtualPet(pet.copy(lastQuestReset = System.currentTimeMillis()))
         }
     }
 
@@ -847,12 +883,13 @@ class VirtualPetViewModel : ViewModel() {
         healthScore: Int
     ): List<StudentCriteriaCard> {
         val readingMinutes = (stats.readingDuration / 60000L).toInt()
+        val isAttendanceHoliday = !stats.isAttendanceEffectiveDay
         val literacyProgress = ((stats.readingDuration / (30f * 60f * 1000f)) * 100f).toInt().coerceIn(0, 100)
-        val literacyAchieved = stats.readingDuration >= 30 * 60 * 1000
+        val literacyAchieved = isAttendanceHoliday || stats.readingDuration >= 30 * 60 * 1000
 
         val attendanceStatus = (stats.attendanceData["status"] as? String).orEmpty().trim().uppercase()
         val disciplineFree = stats.disciplinePenalty <= 0
-        val attendanceAchieved = attendanceStatus in setOf("PRESENT", "HADIR", "TEPAT WAKTU", "ON TIME", "LATE", "TERLAMBAT") && disciplineFree && happinessScore >= 75
+        val attendanceAchieved = isAttendanceHoliday || (attendanceStatus in setOf("PRESENT", "HADIR", "TEPAT WAKTU", "ON TIME", "LATE", "TERLAMBAT") && disciplineFree && happinessScore >= 75)
 
         val habitsTarget = 3
         val habitsProgress = ((stats.habitsCount / habitsTarget.toFloat()) * 100f).toInt().coerceIn(0, 100)
@@ -868,10 +905,11 @@ class VirtualPetViewModel : ViewModel() {
                 title = "Literasi Aktif",
                 subtitle = "Baca buku di E-Perpus minimal 30 menit",
                 progress = literacyProgress,
-                status = if (literacyAchieved) {
-                    "Tercapai: $readingMinutes menit membaca hari ini"
-                } else {
-                    "$readingMinutes/30 menit membaca hari ini"
+                status = when {
+                    isAttendanceHoliday && literacyAchieved -> "Hari libur • Bonus +10 Kecerdasan aktif"
+                    isAttendanceHoliday -> "Hari libur • Bonus +10 Kecerdasan jika baca 30 menit"
+                    literacyAchieved -> "Tercapai: $readingMinutes menit membaca hari ini"
+                    else -> "$readingMinutes/30 menit membaca hari ini"
                 },
                 isAchieved = literacyAchieved
             ),
@@ -881,6 +919,7 @@ class VirtualPetViewModel : ViewModel() {
                 subtitle = "Hadir tertib tanpa pelanggaran hari ini",
                 progress = happinessScore.coerceIn(0, 100),
                 status = when {
+                    isAttendanceHoliday -> "Hari ini libur sekolah"
                     attendanceAchieved -> "Hadir tertib, skor disiplin $happinessScore%"
                     attendanceStatus.isBlank() -> "Belum ada data absensi hari ini"
                     stats.disciplinePenalty > 0 -> "Ada penalti pelanggaran ${stats.disciplinePenalty}%"
@@ -922,6 +961,7 @@ class VirtualPetViewModel : ViewModel() {
         religion: String,
         happinessScore: Int
     ): List<StudentActionCard> {
+        val isAttendanceHoliday = !stats.isAttendanceEffectiveDay
         val readingMinutes = (stats.readingDuration / 60000L).toInt().coerceAtLeast(0)
         val readingProgress = ((stats.readingDuration / (30f * 60f * 1000f)) * 100f).toInt().coerceIn(0, 100)
 
@@ -956,8 +996,12 @@ class VirtualPetViewModel : ViewModel() {
                 key = "attendance",
                 title = "Kehadiran",
                 subtitle = "Absensi sekolah harian",
-                progress = happinessScore.coerceIn(0, 100), // matches original
-                status = "Absensi: $attendanceLabel • $disciplineHint"
+                progress = if (isAttendanceHoliday) 100 else if (attendanceStatus in setOf("PRESENT", "HADIR", "TEPAT WAKTU", "ON TIME", "LATE", "TERLAMBAT", "IZIN", "SAKIT", "PERMIT", "SICK")) 100 else 0,
+                status = if (isAttendanceHoliday) {
+                    "Hari ini libur sekolah"
+                } else {
+                    "Absensi: $attendanceLabel • $disciplineHint"
+                }
             ),
             StudentActionCard(
                 key = "prayer",
@@ -978,7 +1022,15 @@ class VirtualPetViewModel : ViewModel() {
                 title = "E-Perpus",
                 subtitle = "Baca buku untuk kenyang",
                 progress = readingProgress,
-                status = "$readingMinutes/30 menit membaca hari ini"
+                status = if (isAttendanceHoliday) {
+                    if (readingMinutes >= 30) {
+                        "Hari libur • Bonus +10 Kecerdasan aktif"
+                    } else {
+                        "Hari libur • Bonus +10 Kecerdasan jika baca 30 menit"
+                    }
+                } else {
+                    "$readingMinutes/30 menit membaca hari ini"
+                }
             )
         )
     }
