@@ -1,6 +1,45 @@
 # Build Log GAS
 
-## 2026-08-31 09:05 - Perbaikan gate GPS untuk perangkat IFP Smart TV / Android TV
+## 2026-08-31 22:30 - GAS Siswa v1.0.96 (23093) & PWA Siswa Full Feature Parity
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `feature` + `bugfix` + `build-release` + `pwa-parity`
+- **Tujuan perubahan:**
+  1. Menghidupkan seluruh 10 fitur PWA Siswa di web portal (`/siswa/*`) agar 100% identik dengan APK Android GAS Siswa (Absensi, Sholat Dzuhur deadline 15:00, Dhuha & Jum'at, Lentera Digital + Reader + Live Timer 30m, 7 KAIH weekly checklist, Sahabat Belajar Virtual Pet 6 vitals, Kedisiplinan, Layanan Aduan Bullying/BK, Notifikasi, dan Tools Belajar dengan 4 alat: Inggris, Jawa & Hanacaraka, Pembiasaan Religius, KBBI).
+  2. Memperbaiki logika penalti kebahagiaan Virtual Pet agar menyinkronkan status batas jam operasional pulang sekolah (`hasWindowEnded`). Jika jam sekolah sudah berakhir dan siswa belum absen, status otomatis dianggap Alpa (0% kebahagiaan) dan tidak dapat absen malam hari.
+- **Flavor terdampak:** `siswa` (Android APK) + `web` (PWA Next.js)
+- **Versioning:**
+  - `siswa`: `1.0.96-siswa (23093)` (bumped from 1.0.92-siswa 23089)
+- **File utama yang diubah:**
+  - `native-mobile-gas/app/build.gradle.kts`
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/VirtualPetViewModel.kt`
+  - `web/src/lib/siswa/hanacaraka.ts`
+  - `web/src/lib/siswa/studentDataService.ts`
+  - `web/src/app/siswa/page.tsx`
+  - `web/src/app/siswa/lentera/page.tsx`
+  - `web/src/app/siswa/7kaih/page.tsx`
+  - `web/src/app/siswa/pet/page.tsx`
+  - `web/src/app/siswa/sholat/page.tsx`
+  - `web/src/app/siswa/sholat-dhuha-jumat/page.tsx`
+  - `web/src/app/siswa/kedisiplinan/page.tsx`
+  - `web/src/app/siswa/aduan/page.tsx`
+  - `web/src/app/siswa/notifikasi/page.tsx`
+  - `web/src/app/siswa/tools/page.tsx`
+  - `web/src/app/siswa/tools/inggris/page.tsx`
+  - `web/src/app/siswa/tools/jawa/page.tsx`
+  - `web/src/app/siswa/tools/religius/page.tsx`
+  - `web/src/app/siswa/tools/kbbi/page.tsx`
+- **Build yang dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease` → BUILD SUCCESS
+  - `npm run build` (Next.js 15.5.23) → BUILD SUCCESS (74/74 routes)
+- **Output APK:**
+  - `native-mobile-gas/app/build/outputs/apk/siswa/release/app-siswa-release.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.96-siswa-23093.apk`
+  - `D:\Dashboard Portal\web\public\apk\GAS-Siswa-1.0.96-siswa-23093.apk`
+  - `D:\Dashboard Portal\web\public\apk\GAS-Siswa-release.apk`
+- **Manifest web diselaraskan:** `apk-manifest.json` & `fallback-install.json` diperbarui ke `1.0.96` (23093).
+- **Hasil web build & deploy:** Sukses 100%, commit `f62a7ba5` dan `59879662` telah di-push ke GitHub `origin/main`.
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `bugfix` + `build-release` (patch versi sama)
 - **Tujuan perubahan:** Menghilangkan false-block di perangkat IFP Smart TV dan Android TV, di mana hardware GPS memang TIDAK TERSEDIA secara fisik. Sebelumnya HomeScreen selalu memaksa `LocationManager.isLocationEnabled()` yang selalu bernilai false di TV, sehingga dialog "GPS Wajib Aktif" muncul terus dan aplikasi tidak bisa dibuka meskipun EduLock sehat.

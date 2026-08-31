@@ -6,7 +6,59 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-30 14:53 (GAS Siswa 1.0.92 + GAS Guru 1.0.72 + commit 81bdb467 cleanup rule final langsung sekretaris + APK EduLock 1.3.22 live)
+Update terakhir: 2026-08-31 23:05 (PWA Siswa 100% Feature Parity dengan APK + APK GAS Siswa v1.0.96-23093 sinkron cutoff jam pulang sekolah)
+
+## ✅ [PWA SISWA & APK GAS] Full Feature Parity PWA Siswa & Realtime Dismissal Cutoff (2026-08-31 23:05)
+
+- [x] **PWA Siswa Web App (`/siswa/*`) Full Feature Parity 100%**:
+  - [x] **Home Menu (10 Kartu)**: Absensi, Presensi Sholat, Presensi Dhuha & Jum'at, Lentera Digital, 7 KAIH, Sahabat Belajar (Pet), Kedisiplinan, Layanan Aduan, Notifikasi, Tools Belajar.
+  - [x] **Tools Belajar (`/siswa/tools`)**: Menu persis screenshot APK dengan 4 sub-alat aktif:
+    - [x] *Kamus Bahasa Inggris* (`/siswa/tools/inggris`): Definisi, grammar, audio Text-to-Speech.
+    - [x] *Kamus Bahasa Jawa* (`/siswa/tools/jawa`): Terjemahan Jawa-Indonesia & Generator Aksara Jawa Hanacaraka.
+    - [x] *Buku Pembiasaan Religius* (`/siswa/tools/religius`): Surah Yasin, Ar-Rahman, Al-Waqi'ah, Al-Mulk, Istighotsah, Asmaul Husna, Doa Harian + font resizer.
+    - [x] *KBBI* (`/siswa/tools/kbbi`): Kamus Besar Bahasa Indonesia online.
+  - [x] **Presensi Sholat Dzuhur (`/siswa/sholat`)**: Batas waktu 15:00 WIB, tombol Sholat/Izin/Halangan, sync ke bar Kesehatan Pet.
+  - [x] **Presensi Dhuha & Jum'at (`/siswa/sholat-dhuha-jumat`)**: Tab ganda ibadah Dhuha & Sholat Jum'at.
+  - [x] **7 KAIH (`/siswa/7kaih`)**: Layout persis screenshot APK (Dropdown Tahun/Bulan, Pill Mg 1-5, Tabel 7 hari Sen-Min, hanya hari aktif bisa dicentang, tombol Simpan Laporan Hari Ini). Sync ke bar Energi Pet.
+  - [x] **Lentera Digital (`/siswa/lentera`)**: Layout persis screenshot APK (Statistik Saya, Tantangan Bulan Ini, Menu Cepat Katalog & Buku Saya, Bottom Nav 5 tab, In-App Reader + Live Reading Timer 30 menit). Sync ke bar Kenyang Pet.
+  - [x] **Sahabat Belajar / Virtual Pet (`/siswa/pet`)**: Layout persis screenshot APK (Level/XP bar, 6 bar Vitals: Kenyang, Bahagia, Energi, Sehat, Cerdas, Sosial; stage pet animasi kucing tertidur dengan badge SEKARAT; 3 Tab: Tugas Harian 4 kartu 2x2 grid, Pencapaian, Peringkat).
+  - [x] **Kedisiplinan (`/siswa/kedisiplinan`)**: Skor kepatuhan (100 - sanksi) & riwayat pelanggaran tata tertib.
+  - [x] **Layanan Aduan (`/siswa/aduan`)**: Form pengaduan bullying/BK aman terenkripsi (opsi anonim) & riwayat tindak lanjut.
+  - [x] **Notifikasi (`/siswa/notifikasi`)**: Feed pengumuman resmi dan broadcast sistem.
+- [x] **APK GAS Siswa v1.0.96 (23093)**:
+  - [x] Bump `versionCode = 23093`, `versionName = "1.0.96"`.
+  - [x] Integrasi `hasWindowEnded` dari Firebase RTDB `attendanceData` ke `VirtualPetViewModel.kt` untuk penalti Alpa dan Check-Out otomatis setelah jam pulang sekolah sekolah berakhir.
+  - [x] Build release signed `:app:assembleSiswaRelease` sukses.
+  - [x] Ship ke `Apk Release/Final` dan `web/public/apk` + update `apk-manifest.json` dan `fallback-install.json`.
+- [x] **Build & Deploy Web**:
+  - [x] Next.js `npm run build` sukses 100% (74 static/dynamic routes).
+  - [x] Git push ke `origin/main` commit `f62a7ba5` dan `59879662`.
+
+## ✅ [DEPLOY WEB] Sinkron source halaman unduh EduLock + GAS (2026-08-30 20:32)
+
+- [x] **EduLock `/edulock/install` dirapikan** ke file versioned `EduLock-1.3.22-48.apk` dan versi `1.3.22 / 48`.
+- [x] **File publik versioned EduLock** `web/public/apk/EduLock-1.3.22-48.apk` sudah ikut di-push.
+- [x] **Build web** setelah patch EduLock sukses.
+- [x] **Push source tutorial EduLock** ke `origin/main`: commit `329ea6c6`.
+- [x] **GAS `/gas/install` dirapikan** agar fallback/metadata source konsisten ke `GAS-Siswa-1.0.92-siswa-23089.apk`.
+- [x] **Build web** setelah patch GAS sukses.
+- [x] **Push source GAS install** ke `origin/main`: commit `aef94fb1`.
+- [x] **Konfirmasi user**: hasil unduh live GAS siswa sudah terbaca sebagai versi terbaru `1.0.92-siswa (23089)`.
+- [ ] **Cek live EduLock**: route `/edulock/install` dan alias `/e` sudah benar-benar menampilkan file versioned `EduLock-1.3.22-48.apk` setelah rollout App Hosting selesai.
+- [ ] **Cek live GAS (konsistensi metadata)**: setelah rollout App Hosting stabil, halaman `/gas/install` tidak lagi menyisakan fallback angka lama di source/HTML live.
+
+## ✅ [SHIP APK] GAS Siswa `1.0.92-siswa (23089)` — patch lock harian 7KAIH (2026-08-30 16:03, Final lokal)
+
+- [x] **Build release APK siswa**: `:app:assembleSiswaRelease` sukses.
+- [x] **Ship GAS Siswa ke Final**: `GAS-Siswa-release.apk` dan `GAS-Siswa-1.0.92-siswa-23089.apk` diganti dengan build terbaru.
+- [x] **Hash final lokal terbaru**: `A936F12FACAE586CC2A13934BF066254262685FA10EA708819E81BF9F334A77A`.
+- [x] **Patch 7KAIH harian**:
+  - [x] Minggu yang memuat hari ini tidak lagi terkunci penuh hanya karena status submit minggu.
+  - [x] Siswa tetap hanya bisa mencentang kolom hari ini.
+  - [x] Tombol aksi di minggu aktif sekarang berlabel `Simpan Laporan Hari Ini`.
+- [ ] **Cek di HP**: setelah siswa mengirim laporan hari ini, kolom hari ini terkunci/final dan tidak bisa diubah lagi.
+- [ ] **Cek di HP**: hari kemarin tetap tidak bisa diedit dan hari besok belum bisa dicentang sebelum tanggalnya tiba.
+- [ ] **Cek sinkronisasi publik**: jika patch ini ingin dibagikan via `/gas/install`, file `web/public/apk` dan `apk-manifest.json` harus di-ship ulang karena hash publik masih build lama `D16CDD254843B121D850E3ED772A5A2E287A8DF7457321875B3DA515958A7F12`.
 
 ## ✅ [SHIP APK + DEPLOY WEB] GAS Siswa `1.0.92-siswa (23089)` + GAS Guru `1.0.72-guru (1064)` — cleanup rule final langsung sekretaris + APK EduLock live (2026-08-30 14:53)
 
