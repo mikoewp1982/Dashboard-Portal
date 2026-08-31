@@ -1,5 +1,114 @@
 # Build Log GAS
 
+## 2026-08-31 09:05 - Perbaikan gate GPS untuk perangkat IFP Smart TV / Android TV
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `bugfix` + `build-release` (patch versi sama)
+- **Tujuan perubahan:** Menghilangkan false-block di perangkat IFP Smart TV dan Android TV, di mana hardware GPS memang TIDAK TERSEDIA secara fisik. Sebelumnya HomeScreen selalu memaksa `LocationManager.isLocationEnabled()` yang selalu bernilai false di TV, sehingga dialog "GPS Wajib Aktif" muncul terus dan aplikasi tidak bisa dibuka meskipun EduLock sehat.
+- **Flavor terdampak:** `siswa` (src/main; smoke compile `guru` + `kepala` juga lolos)
+- **Versioning:**
+  - `siswa` TETAP `1.0.92-siswa (23089)` — nomor versi sengaja dipertahankan untuk patch
+- **File utama yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/HomeScreen.kt)
+- **Detail perbaikan kode:**
+  - Menambahkan `isTvDevice()`: deteksi Android TV via `FEATURE_TELEVISION` / `FEATURE_LEANBACK` / `FEATURE_LEANBACK_ONLY`
+  - Menambahkan `hasLocationHardware()`: deteksi modul lokasi via `FEATURE_LOCATION` / `FEATURE_LOCATION_GPS` / `FEATURE_LOCATION_NETWORK`
+  - `checkGps()` sekarang early-return untuk perangkat TV atau tanpa hardware lokasi
+  - `checkAndRequestPermissions()` dan callback `permissionLauncher` skip izin `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION` untuk TV
+  - Teks dialog `AlertDialog` izin menjadi dinamis (TV hanya diminta Notifikasi, tanpa Lokasi)
+- **Build yang dijalankan:**
+  - `./gradlew :app:compileSiswaDebugKotlin` → BUILD SUCCESS
+  - `./gradlew :app:compileGuruDebugKotlin :app:compileKepalaDebugKotlin` → BUILD SUCCESS
+  - `./gradlew :app:assembleSiswaRelease` → BUILD SUCCESS
+- **Hasil build:** sukses
+- **Output APK:**
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.92-siswa-23089.apk`
+- **File EduLock di folder Final TIDAK diubah sama sekali** — khususnya `EduLock-1.3.22-48.apk` tetap dipertahankan.
+- **SHA256 final siswa (patch versi sama):** `F0258FEEFB064AE203BDA6E11142480CA8086D18C6915623531E4DAA04BC8F16`
+- **Regression check yang dijalankan:**
+  - Compile debug release siswa
+  - Compile smoke guru & kepala
+  - Assemble release siswa signed
+  - Verifikasi file Final: GAS-Siswa 20.51 MB, hash berubah sesuai patch (versi tetap 23089)
+- **Belum diuji:**
+  - Instalasi langsung di perangkat IFP Smart TV fisik
+  - Smoke test fitur 7KAIH & Virtual Pet di perangkat TV setelah patch
+- **Catatan:** Ini patch dengan nomor versi SAMA (`1.0.92-siswa-23089`), hanya hash APK yang berubah. Untuk distribusi ke user (web `/gas/install`) perlu keputusan user apakah akan sync publikasi dengan versi hash terbaru ini atau tetap mempertahankan hash build sebelumnya.
+
+## 2026-08-30 20:32 - Perapian metadata web `/gas/install` ke GAS Siswa 1.0.92
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `deploy-web`
+- **Tujuan perubahan:** Menghilangkan inkonsistensi source halaman unduh GAS siswa setelah user mengonfirmasi hasil unduh live sudah versi terbaru. Fallback halaman install dan manifest source dirapikan agar tidak lagi menyimpan angka versi lama.
+- **Flavor terdampak:** `siswa` (jalur web install / metadata publik)
+- **Versioning:**
+  - `siswa` tetap `1.0.92-siswa (23089)`
+- **File utama yang diubah:**
+  - [web/src/app/gas/install/page.tsx](file:///D:/Dashboard%20Portal/web/src/app/gas/install/page.tsx)
+  - [web/src/data/apk-manifest.json](file:///D:/Dashboard%20Portal/web/src/data/apk-manifest.json)
+- **Build yang dijalankan:**
+  - `npm run build` pada folder `web`
+- **Hasil build:** sukses
+- **Output APK:** tidak ada build APK baru; memakai APK publik yang sudah ada
+- **Disalin ke:** tidak ada salinan file Final/APK baru
+- **Commit deploy:** `aef94fb1` — `fix(web): align GAS install metadata to 1.0.92`
+- **Regression check yang dijalankan:**
+  - prerender lokal `/gas/install` memuat `GAS-Siswa-1.0.92-siswa-23089.apk`
+  - teks versi lokal menampilkan `1.0.92-siswa / 23089`
+- **Catatan:** Perubahan ini merapikan source web, bukan menyamakan hash APK publik dengan file Final lokal terbaru. APK publik web masih build `14:53` dengan SHA `D16CDD254843B121D850E3ED772A5A2E287A8DF7457321875B3DA515958A7F12`, sedangkan Final lokal terbaru siswa tetap SHA `A936F12FACAE586CC2A13934BF066254262685FA10EA708819E81BF9F334A77A`.
+
+## 2026-08-30 20:15 - Penyesuaian lock harian 7KAIH siswa
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `bugfix` + `build-release`
+- **Tujuan perubahan:** Mengubah alur `7KAIH` siswa agar lock tidak lagi bersifat mingguan. Sekarang minggu yang memuat hari ini tetap bisa diisi, dan aksi simpan hanya memfinalkan laporan hari berjalan tanpa ikut mengunci akses edit hari ini karena status submit minggu lama.
+- **Flavor terdampak:** `siswa`
+- **Versioning:**
+  - `siswa` tetap `1.0.92-siswa (23089)`
+- **File utama yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/SevenHabitsViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/SevenHabitsViewModel.kt)
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/SevenHabitsScreen.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/SevenHabitsScreen.kt)
+- **Build yang dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease`
+- **Hasil build:** sukses
+- **Output APK:**
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.92-siswa-23089.apk`
+- **SHA256 final siswa:** `A936F12FACAE586CC2A13934BF066254262685FA10EA708819E81BF9F334A77A`
+- **Catatan:** Build ini menggantikan file final lokal siswa versi sama `1.0.92-siswa (23089)` dengan isi APK yang lebih baru. Jika APK ini nanti ingin dipublikasikan ke jalur web, sinkronisasi file publik wajib dijalankan ulang meskipun nomor versinya tidak berubah.
+
+## 2026-08-30 15:49 - Penyempurnaan Virtual Pet siswa untuk hari libur dan 7KAIH wajib harian
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `bugfix` + `build-release`
+- **Tujuan perubahan:** Menyelaraskan Virtual Pet GAS Siswa dengan aturan terbaru: 7KAIH tetap wajib setiap hari bagi siswa, sementara kartu libur untuk absensi dan E-Perpus dibuat lebih jelas dan reward bonus literasi saat libur tidak lagi menampilkan pesan yang keliru.
+- **Flavor terdampak:** `siswa` (`src/main`, smoke compile juga untuk `guru`)
+- **Versioning:**
+  - `siswa` tetap `1.0.92-siswa (23089)`
+  - `guru` tetap `1.0.72-guru (1064)` untuk smoke compile
+- **File utama yang diubah:**
+  - [native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/VirtualPetViewModel.kt](file:///D:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/VirtualPetViewModel.kt)
+- **Build yang dijalankan:**
+  - `./gradlew :app:assembleSiswaRelease :app:assembleGuruRelease`
+- **Hasil build:** sukses
+- **Output APK:**
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\siswa\release\app-siswa-release.apk`
+  - `D:\Dashboard Portal\native-mobile-gas\app\build\outputs\apk\guru\release\app-guru-release.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-1.0.92-siswa-23089.apk`
+- **SHA256 final siswa:** `C25AE8B68A9EFFAC2E37156C950E4A3311E7AF88F7208D31ECE36E4387A4D47F`
+- **Regression check yang dijalankan:**
+  - audit kode alur `7KAIH -> energy pet`
+  - verifikasi quest harian Virtual Pet yang memakai status `isPaused`
+  - compile release `siswa`
+  - compile release `guru`
+- **Belum diuji:**
+  - simulasi UI langsung di perangkat pada hari Minggu/libur admin
+  - klaim bonus literasi libur pada perangkat fisik
+- **Catatan:** 7KAIH sengaja tetap aktif tanpa status libur; yang diubah adalah perhitungan `energy` pet agar tidak lagi mengikuti `attendance effective day`, sinkronisasi `isPaused` quest libur, serta narasi kartu `Kehadiran` dan `E-Perpus` agar sesuai kondisi hari libur.
+
 ## 2026-08-30 14:53 - [BUILD + SHIP + DEPLOY WEB] Bersih total rule usulan sekretaris + rilis APK terbaru
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `build-release` + `ship-apk` + `deploy-web` + `attendance-cleanup`

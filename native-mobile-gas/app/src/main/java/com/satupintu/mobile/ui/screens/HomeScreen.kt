@@ -22,11 +22,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.withStyle
@@ -58,6 +60,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.layout.ContentScale
 import com.satupintu.mobile.R
 import com.satupintu.mobile.BuildConfig
+import kotlin.math.cos
+import kotlin.math.roundToInt
+import kotlin.math.sin
 
 /** Shared home-menu icon box so guru/siswa tiles stay visually consistent. */
 private val HomeMenuIconMaxSize = 72.dp
@@ -85,24 +90,48 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     var showPermissionDialog by remember { mutableStateOf(false) }
     var showGpsDialog by remember { mutableStateOf(false) }
 
+    fun isTvDevice(): Boolean {
+        val pm = context.packageManager
+        return pm.hasSystemFeature(PackageManager.FEATURE_TELEVISION) ||
+                pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
+                pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK_ONLY)
+    }
+
+    fun hasLocationHardware(): Boolean {
+        val pm = context.packageManager
+        return pm.hasSystemFeature(PackageManager.FEATURE_LOCATION) ||
+                pm.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS) ||
+                pm.hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK)
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
-        // If any required permission is denied, show dialog again
-        val allGranted = result.values.all { it }
+        val skipLocationPermission = isTvDevice() || !hasLocationHardware()
+        val permissionKeysToCheck = result.keys.filter { key ->
+            if (skipLocationPermission) {
+                key != Manifest.permission.ACCESS_FINE_LOCATION &&
+                key != Manifest.permission.ACCESS_COARSE_LOCATION
+            } else true
+        }
+        val allGranted = permissionKeysToCheck.all { result[it] == true }
         if (!allGranted) {
             showPermissionDialog = true
         }
     }
 
     fun checkAndRequestPermissions() {
-        val permissions = mutableListOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
+        val skipLocationPermission = isTvDevice() || !hasLocationHardware()
+        val permissions = mutableListOf<String>()
+        if (!skipLocationPermission) {
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+            permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         }
+
+        if (permissions.isEmpty()) return
 
         val missingPermissions = permissions.filter {
             ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
@@ -114,6 +143,9 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     }
 
     fun checkGps() {
+        if (isTvDevice() || !hasLocationHardware()) {
+            return
+        }
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val isLocationEnabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             locationManager.isLocationEnabled
@@ -132,21 +164,31 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     }
 
     if (showPermissionDialog) {
+        val skipLoc = isTvDevice() || !hasLocationHardware()
         AlertDialog(
             onDismissRequest = { /* Mandatory: do not dismiss */ },
             title = { Text("Izin Diperlukan (Wajib)") },
-            text = { Text("Agar Anda menerima notifikasi penting dari sekolah dan fitur Absensi berjalan lancar, mohon izinkan Notifikasi dan Lokasi.") },
+            text = {
+                if (skipLoc) {
+                    Text("Agar Anda menerima notifikasi penting dari sekolah, mohon izinkan Notifikasi.")
+                } else {
+                    Text("Agar Anda menerima notifikasi penting dari sekolah dan fitur Absensi berjalan lancar, mohon izinkan Notifikasi dan Lokasi.")
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
                     showPermissionDialog = false
-                    val permissions = mutableListOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+                    val perms = mutableListOf<String>()
+                    if (!skipLoc) {
+                        perms.add(Manifest.permission.ACCESS_FINE_LOCATION)
+                        perms.add(Manifest.permission.ACCESS_COARSE_LOCATION)
                     }
-                    permissionLauncher.launch(permissions.toTypedArray())
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        perms.add(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                    if (perms.isNotEmpty()) {
+                        permissionLauncher.launch(perms.toTypedArray())
+                    }
                 }) {
                     Text("Izinkan Sekarang")
                 }
@@ -186,6 +228,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     var userSchoolName by remember { mutableStateOf("") }
     var announcementText by remember { mutableStateOf("Memuat pengumuman...") }
     var isOsis by remember { mutableStateOf(false) }
+    var isClassSecretary by remember { mutableStateOf(false) }
     
     var todayCheckIn by remember { mutableStateOf("--:--") }
     var todayCheckOut by remember { mutableStateOf("--:--") }
@@ -395,6 +438,87 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
             }
         }
 
+        fun checkClassSecretaryMembership(identityHint: String) {
+            val aliases = (SecurityUtils.getStoredStudentAliases(prefs) + setOf(identityHint.trim()))
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .toSet()
+            if (aliases.isEmpty()) {
+                isClassSecretary = false
+                prefs.edit().putBoolean("user_is_class_secretary", false).apply()
+                return
+            }
+
+            fun updateClassSecretaryMembership(active: Boolean) {
+                isClassSecretary = active
+                prefs.edit().putBoolean("user_is_class_secretary", active).apply()
+            }
+
+            fun parseActive(snapshot: DataSnapshot): Boolean {
+                val status = snapshot.child("status").getValue(String::class.java)?.trim()?.lowercase().orEmpty()
+                if (status == "nonaktif" || status == "inactive" || status == "false" || status == "0") {
+                    return false
+                }
+
+                val position = readString(snapshot, "position", "jabatan").lowercase()
+                val secretaryKeywords = listOf("sekretaris kelas", "sekretaris_kelas", "class secretary")
+                return secretaryKeywords.any { keyword -> position.contains(keyword) }
+            }
+
+            fun findMatchingStudent(snapshot: DataSnapshot): DataSnapshot? {
+                if (!snapshot.exists()) return null
+
+                val isSingleStudentNode = snapshot.hasChild("nisn") ||
+                    snapshot.hasChild("username") ||
+                    snapshot.hasChild("position") ||
+                    snapshot.hasChild("class") ||
+                    snapshot.hasChild("kelas")
+
+                val candidates = if (isSingleStudentNode) listOf(snapshot) else snapshot.children.toList()
+                return candidates.firstOrNull { node ->
+                    val identityCandidates = linkedSetOf(
+                        node.key.orEmpty(),
+                        node.child("nisn").getValue(String::class.java).orEmpty(),
+                        node.child("username").getValue(String::class.java).orEmpty(),
+                        node.child("id").getValue(String::class.java).orEmpty()
+                    ).map { it.trim() }.filter { it.isNotBlank() }
+
+                    identityCandidates.any { candidate ->
+                        aliases.any { alias -> candidate.equals(alias, ignoreCase = true) }
+                    }
+                }
+            }
+
+            fun processRealtimeSnapshot(snapshot: DataSnapshot) {
+                val studentNode = findMatchingStudent(snapshot)
+                updateClassSecretaryMembership(studentNode?.let { parseActive(it) } == true)
+            }
+
+            if (sessionSchoolId.isNotBlank()) {
+                db.getReference("gas/schools/$sessionSchoolId/students")
+                    .addValueEventListener(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            processRealtimeSnapshot(snapshot)
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            updateClassSecretaryMembership(false)
+                        }
+                    })
+            } else {
+                db.getReference("master_students")
+                    .addValueEventListener(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            processRealtimeSnapshot(snapshot)
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            updateClassSecretaryMembership(false)
+                        }
+                    })
+            }
+        }
+
         fun loadTeacherAnnouncement() {
             val candidates = setOf(
                 SecurityUtils.getStoredTeacherKey(prefs),
@@ -415,6 +539,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                         userUsername = readString(snapshot, "username")
                         userRole = "Siswa"
                         checkOsisMembership(credential)
+                        checkClassSecretaryMembership(credential)
                         loadStudentAnnouncement(userClass)
                     }
 
@@ -441,6 +566,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                                                         userRole = "Siswa"
                                                         userClass = prefs.getString("user_student_class", "") ?: "-"
                                                         checkOsisMembership(credential)
+                                                        checkClassSecretaryMembership(credential)
                                                         loadStudentAnnouncement(userClass)
                                                     }
                                                 }
@@ -449,6 +575,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                                                     userRole = "Siswa"
                                                     userClass = prefs.getString("user_student_class", "") ?: "-"
                                                     checkOsisMembership(credential)
+                                                    checkClassSecretaryMembership(credential)
                                                     loadStudentAnnouncement(userClass)
                                                 }
                                             })
@@ -539,6 +666,8 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                             readString(snapshot, "schoolName", "school_name")
                         ).ifBlank { userSchoolName }
                         isOsis = false
+                        isClassSecretary = false
+                        prefs.edit().putBoolean("user_is_class_secretary", false).apply()
                         loadTeacherAnnouncement()
                     }
 
@@ -570,6 +699,8 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                                                                     } else {
                                                                         userName = auth.currentUser?.email ?: "User"
                                                                         isOsis = false
+                                                                        isClassSecretary = false
+                                                                        prefs.edit().putBoolean("user_is_class_secretary", false).apply()
                                                                     }
                                                                 }
 
@@ -630,6 +761,8 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
             } else {
                 userName = auth.currentUser?.email ?: "Tamu"
                 isOsis = false
+                isClassSecretary = false
+                prefs.edit().putBoolean("user_is_class_secretary", false).apply()
             }
         }
 
@@ -655,6 +788,8 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                             ).ifBlank { userSchoolName }
                             announcementText = "Selamat bekerja, tegakkan kedisiplinan!"
                             isOsis = false
+                            isClassSecretary = false
+                            prefs.edit().putBoolean("user_is_class_secretary", false).apply()
                             return
                         }
                     }
@@ -790,27 +925,37 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     val accentRed = Color(0xFFB42318)
     val accentOrange = Color(0xFFC2410C)
 
-    val baseStudentFeatures = listOf(
-        StudentFeatureItem(title = "Absensi", iconRes = R.drawable.ic_menu_absensi, route = "attendance", color = accentBlue),
-        StudentFeatureItem(title = "Presensi Sholat", iconRes = R.drawable.ic_menu_presensi_sholat, route = "prayer", color = accentTeal),
-        StudentFeatureItem(title = "Presensi Dhuha & Jum'at", iconRes = R.drawable.ic_menu_presensi_sholat, route = "prayer_dhuha_jumat", color = accentTeal),
-        StudentFeatureItem(title = "Lentera Digital", iconRes = R.drawable.ic_menu_lentera_digital, route = "library", color = accentTeal),
-        StudentFeatureItem(title = "7 KAIH", iconRes = R.drawable.ic_menu_kaih7, route = "seven_habits", color = accentIndigo),
-        StudentFeatureItem(title = "Virtual Pet", iconRes = R.drawable.ic_menu_virtual_pet, route = "virtual_pet", color = accentGold),
-        StudentFeatureItem(title = "Kedisiplinan", iconRes = R.drawable.ic_menu_kedisiplinan, route = "discipline", color = accentViolet),
-        StudentFeatureItem(title = "Layanan Aduan", iconRes = R.drawable.ic_menu_layanan_aduan, route = "halo_spentgapa", color = accentRed),
-        StudentFeatureItem(title = "Notifikasi", iconRes = R.drawable.ic_menu_notifikasi, route = "notifications", color = accentOrange),
-        StudentFeatureItem(title = "Tools", iconVector = Icons.Default.BuildCircle, route = "tools", color = accentGold)
-    )
-    val studentFeatures = if (isOsis) {
-        baseStudentFeatures + StudentFeatureItem(
-            title = "Catat Pelanggaran",
-            iconRes = R.drawable.ic_menu_kedisiplinan,
-            route = "osis_discipline",
-            color = accentRed
-        )
-    } else {
-        baseStudentFeatures
+    val studentFeatures = buildList {
+        add(StudentFeatureItem(title = "Absensi", iconRes = R.drawable.ic_menu_absensi, route = "attendance", color = accentBlue))
+        if (isClassSecretary) {
+            add(
+                StudentFeatureItem(
+                    title = "Presensi Siswa",
+                    iconRes = R.drawable.ic_menu_absensi,
+                    route = "secretary_attendance",
+                    color = accentTeal
+                )
+            )
+        }
+        add(StudentFeatureItem(title = "Presensi Sholat", iconRes = R.drawable.ic_menu_presensi_sholat, route = "prayer", color = accentTeal))
+        add(StudentFeatureItem(title = "Presensi Dhuha & Jum'at", iconRes = R.drawable.ic_menu_presensi_sholat, route = "prayer_dhuha_jumat", color = accentTeal))
+        add(StudentFeatureItem(title = "Lentera Digital", iconRes = R.drawable.ic_menu_lentera_digital, route = "library", color = accentTeal))
+        add(StudentFeatureItem(title = "7 KAIH", iconRes = R.drawable.ic_menu_kaih7, route = "seven_habits", color = accentIndigo))
+        add(StudentFeatureItem(title = "Virtual Pet", iconRes = R.drawable.ic_menu_virtual_pet, route = "virtual_pet", color = accentGold))
+        add(StudentFeatureItem(title = "Kedisiplinan", iconRes = R.drawable.ic_menu_kedisiplinan, route = "discipline", color = accentViolet))
+        add(StudentFeatureItem(title = "Layanan Aduan", iconRes = R.drawable.ic_menu_layanan_aduan, route = "halo_spentgapa", color = accentRed))
+        add(StudentFeatureItem(title = "Notifikasi", iconRes = R.drawable.ic_menu_notifikasi, route = "notifications", color = accentOrange))
+        add(StudentFeatureItem(title = "Tools", iconVector = Icons.Default.BuildCircle, route = "tools", color = accentGold))
+        if (isOsis) {
+            add(
+                StudentFeatureItem(
+                    title = "Catat Pelanggaran",
+                    iconRes = R.drawable.ic_menu_kedisiplinan,
+                    route = "osis_discipline",
+                    color = accentRed
+                )
+            )
+        }
     }
 
     val teacherFeatures = listOf(
@@ -847,57 +992,97 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
     val resolvedSchoolLabel = remember(userSchoolName) {
         userSchoolName.trim().ifBlank { "SMPN 3 Pacet" }
     }
-    val screenBackground = androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E3A8A)))
+    val isGuruFlavor = remember { BuildConfig.FLAVOR == "guru" }
+    val screenBackground = remember(isGuruFlavor) {
+        if (isGuruFlavor) {
+            androidx.compose.ui.graphics.Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFF0E7490),
+                    Color(0xFF0284C7),
+                    Color(0xFF1D4ED8),
+                    Color(0xFF1E3A8A),
+                    Color(0xFF172554)
+                )
+            )
+        } else {
+            androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF1E3A8A)))
+        }
+    }
+    val navBarContainerColor = remember(isGuruFlavor) {
+        if (isGuruFlavor) Color(0xFF172554).copy(alpha = 0.95f) else Color(0xFF0F172A)
+    }
+    val appVersionLabel = remember {
+        val flavorLabel = when (BuildConfig.FLAVOR) {
+            "guru" -> "Guru"
+            "kepala" -> "Kepala Sekolah"
+            else -> "Siswa"
+        }
+        "APK GAS $flavorLabel — v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+    }
+    val showHomeVersionLabel = remember { BuildConfig.FLAVOR == "guru" }
 
     Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {
-            NavigationBar(
-                containerColor = Color(0xFF0F172A),
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Beranda", tint = Color.White) },
-                    label = { Text("Beranda", color = Color.White) },
-                    selected = true,
-                    onClick = { /* Stay on Home */ },
-                    colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                        indicatorColor = colorScheme.primary.copy(alpha = 0.5f)
-                    )
-                )
-                NavigationBarItem(
-                    icon = {
-                        Box(
-                            modifier = Modifier
-                                .offset(y = (-28).dp)
-                                .requiredSize(76.dp)
-                                .background(colorScheme.primary, CircleShape)
-                                .border(5.dp, Color(0xFF0F172A), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painterResource(id = R.drawable.ic_menu_absensi), 
-                                contentDescription = "Absen", 
-                                modifier = Modifier.size(38.dp),
-                                tint = colorScheme.onPrimary
+            if (!isGuruFlavor) {
+                Box {
+                    NavigationBar(
+                        modifier = Modifier.height(88.dp),
+                        containerColor = navBarContainerColor,
+                        tonalElevation = 8.dp
+                    ) {
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Home, contentDescription = "Beranda", tint = Color.White) },
+                            label = { Text("Beranda", color = Color.White) },
+                            selected = true,
+                            onClick = { /* Stay on Home */ },
+                            colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                                indicatorColor = colorScheme.primary.copy(alpha = 0.5f)
                             )
+                        )
+                        Spacer(modifier = Modifier.weight(1f, fill = true))
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Person, contentDescription = "Profil", tint = Color.White) },
+                            label = { Text("Profil", color = Color.White) },
+                            selected = false,
+                            onClick = { onNavigate("profile") }
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .offset(y = (-30).dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier.size(width = 98.dp, height = 88.dp),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            ArcFloatingAttendanceLabel(
+                                text = "Absensi",
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .offset(y = 2.dp)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .requiredSize(72.dp)
+                                    .background(colorScheme.primary, CircleShape)
+                                    .border(3.dp, Color(0xFF0F172A), CircleShape)
+                                    .clickable { onNavigate("attendance") },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_home_logo_absensi),
+                                    contentDescription = "Absensi",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.size(44.dp)
+                                )
+                            }
                         }
-                    },
-                    label = { 
-                        Text("Absensi", color = Color.White, modifier = Modifier.offset(y = (-14).dp)) 
-                    },
-                    selected = false,
-                    onClick = { onNavigate("attendance") },
-                    colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                        indicatorColor = Color.Transparent
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Profil", tint = Color.White) },
-                    label = { Text("Profil", color = Color.White) },
-                    selected = false,
-                    onClick = { onNavigate("profile") }
-                )
+                    }
+                }
             }
         }
     ) { paddingValues ->
@@ -987,13 +1172,29 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                             val roleText = when (userRole) {
                                 "Guru" -> "Guru $resolvedSchoolLabel"
                                 "Staff" -> "Staff $resolvedSchoolLabel"
-                                else -> "Siswa $resolvedSchoolLabel"
+                                "Siswa" -> "Siswa $resolvedSchoolLabel"
+                                else -> if (isGuruFlavor) {
+                                    "Guru $resolvedSchoolLabel"
+                                } else {
+                                    "Siswa $resolvedSchoolLabel"
+                                }
                             }
                             Text(
                                 text = roleText,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.7f)
                             )
+                        }
+
+                        if (isGuruFlavor) {
+                            androidx.compose.material3.IconButton(onClick = { onLogout() }) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowForward,
+                                    contentDescription = "Tutup Aplikasi",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
                         }
 
                     }
@@ -1006,7 +1207,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                         .padding(horizontal = 16.dp)
                 ) {
                     // Kartu Status Kehadiran
-                    if (userRole == "Siswa" || userRole.isEmpty()) {
+                    if (!isGuruFlavor && (userRole == "Siswa" || userRole.isEmpty())) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
@@ -1195,32 +1396,96 @@ fun HomeScreen(onNavigate: (String) -> Unit, onLogout: () -> Unit) {
                     }
 
                     Text(
-                        text = "MENU UTAMA",
-                        style = MaterialTheme.typography.labelLarge,
+                        text = if (isGuruFlavor) "Menu Guru" else "MENU UTAMA",
+                        style = if (isGuruFlavor) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.labelLarge,
                         color = Color.White.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(bottom = 12.dp),
+                        modifier = Modifier.padding(bottom = if (isGuruFlavor) 16.dp else 12.dp),
                         fontWeight = FontWeight.Bold
                     )
 
+                    val currentFeatures = when (userRole) {
+                        "Guru" -> teacherFeatures
+                        "Staff" -> staffFeatures
+                        else -> if (isGuruFlavor) teacherFeatures else studentFeatures
+                    }
+                    val gridColumns = if (isGuruFlavor) 2 else 4
+                    val gridHorizontalSpacing = if (isGuruFlavor) 12.dp else 12.dp
+                    val gridVerticalSpacing = if (isGuruFlavor) 12.dp else 16.dp
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(4), // 4 columns
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        columns = GridCells.Fixed(gridColumns),
+                        horizontalArrangement = Arrangement.spacedBy(gridHorizontalSpacing),
+                        verticalArrangement = Arrangement.spacedBy(gridVerticalSpacing),
                         modifier = Modifier.weight(1f)
                     ) {
-                        val currentFeatures = when (userRole) {
-                            "Guru" -> teacherFeatures
-                            "Staff" -> staffFeatures
-                            else -> studentFeatures
-                        }
                         items(currentFeatures) { feature ->
-                            StudentFeatureCard(feature) { route ->
-                                onNavigate(route)
+                            if (isGuruFlavor) {
+                                GuruMenuCard(feature) { route -> onNavigate(route) }
+                            } else {
+                                StudentFeatureCard(feature) { route -> onNavigate(route) }
                             }
                         }
                     }
+
+                    if (showHomeVersionLabel) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = appVersionLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.65f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ArcFloatingAttendanceLabel(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    val displayText = remember(text) { text.uppercase() }
+    BoxWithConstraints(
+        modifier = modifier.size(width = 84.dp, height = 28.dp)
+    ) {
+        val radiusPx = maxWidth.value * 0.4f
+        val startAngle = 220f
+        val endAngle = 320f
+        val stepAngle = if (displayText.length > 1) {
+            (endAngle - startAngle) / (displayText.length - 1)
+        } else {
+            0f
+        }
+
+        displayText.forEachIndexed { index, letter ->
+            val angleDeg = startAngle + (stepAngle * index)
+            val angleRad = Math.toRadians(angleDeg.toDouble())
+            val xOffsetDp = radiusPx * cos(angleRad).toFloat()
+            val yOffsetDp = (radiusPx * 0.38f) * sin(angleRad).toFloat()
+
+            Text(
+                text = letter.toString(),
+                color = Color.White.copy(alpha = 0.96f),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.sp
+                ),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset {
+                        IntOffset(
+                            x = xOffsetDp.dp.roundToPx(),
+                            y = yOffsetDp.dp.roundToPx()
+                        )
+                    }
+                    .rotate((angleDeg - 270f) * 0.28f)
+            )
         }
     }
 }
@@ -1302,5 +1567,106 @@ fun StudentFeatureCard(
             maxLines = 2,
             lineHeight = androidx.compose.ui.unit.TextUnit(14f, androidx.compose.ui.unit.TextUnitType.Sp)
         )
+    }
+}
+
+@Composable
+fun GuruMenuCard(
+    feature: StudentFeatureItem,
+    onClick: (String) -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val outerShape = RoundedCornerShape(18.dp)
+    val innerIconShape = RoundedCornerShape(13.dp)
+    val pillShape = RoundedCornerShape(18.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(outerShape)
+            .clickable { onClick(feature.route) }
+            .background(
+                color = Color(0xFF93C5FD).copy(alpha = 0.30f),
+                shape = outerShape
+            )
+            .border(
+                width = 1.2.dp,
+                color = Color.White.copy(alpha = 0.50f),
+                shape = outerShape
+            )
+            .padding(horizontal = 5.dp, vertical = 5.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1.68f)
+                .background(
+                    color = Color.White.copy(alpha = 0.12f),
+                    shape = innerIconShape
+                )
+                .border(
+                    width = 0.8.dp,
+                    color = Color.White.copy(alpha = 0.32f),
+                    shape = innerIconShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (feature.badgeCount > 0) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = (-4).dp, y = 4.dp),
+                    shape = CircleShape,
+                    color = colorScheme.error
+                ) {
+                    Text(
+                        text = if (feature.badgeCount > 99) "99+" else feature.badgeCount.toString(),
+                        color = colorScheme.onError,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            if (feature.iconRes != null) {
+                Image(
+                    painter = painterResource(id = feature.iconRes),
+                    contentDescription = feature.title,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(60.dp)
+                )
+            } else if (feature.iconVector != null) {
+                Icon(
+                    imageVector = feature.iconVector,
+                    contentDescription = feature.title,
+                    tint = Color.White,
+                    modifier = Modifier.size(60.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = Color(0xFFDBEAFE).copy(alpha = 0.42f),
+                    shape = pillShape
+                )
+                .padding(vertical = 4.dp, horizontal = 6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = feature.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
     }
 }

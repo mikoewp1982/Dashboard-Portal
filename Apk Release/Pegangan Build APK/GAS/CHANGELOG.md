@@ -26,6 +26,15 @@ Tambahkan nama pelaksana jika perlu:
 ## [Unreleased]
 
 ### Siswa
+- Fixed: **Gate GPS di HomeScreen** sekarang melewati (skip) pengecekan hardware GPS dan izin `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` untuk perangkat Android TV / IFP Smart TV yang secara fisik tidak memiliki modul GPS, sehingga dialog "GPS Wajib Aktif" tidak lagi false-block akses aplikasi. Deteksi TV menggunakan `FEATURE_TELEVISION`, `FEATURE_LEANBACK`, atau `FEATURE_LEANBACK_ONLY`; fallback deteksi via `FEATURE_LOCATION` bila hardware lokasi memang tidak tersedia.
+- Changed: Dialog izin pada Home sekarang dinamis. Untuk perangkat tanpa modul lokasi, hanya diminta izin Notifikasi (tidak lagi menampilkan narasi "izin Lokasi" yang mustahil diberikan di TV).
+- Fixed: `7KAIH` siswa tidak lagi terkunci penuh per minggu. Minggu yang memuat hari ini tetap bisa diisi, sehingga kolom hari berjalan seperti `Minggu` tetap aktif sesuai aturan tugas harian.
+- Changed: Tombol aksi `7KAIH` siswa sekarang menampilkan narasi `Simpan Laporan Hari Ini` saat berada di minggu aktif, agar alurnya lebih jelas sebagai finalisasi harian.
+- Fixed: `Virtual Pet` sekarang menghitung `energy` dari 7KAIH sebagai kewajiban harian siswa, sehingga progres kebiasaan tetap memengaruhi energi pet meskipun hari itu bukan hari efektif absensi sekolah.
+- Fixed: Quest harian `Absensi Sekolah Hari Ini`, `Presensi Sholat Hari Ini`, dan `Membaca Buku` pada `Virtual Pet` sekarang ikut menyinkronkan status `isPaused` secara konsisten, sehingga badge libur dan perilaku quest lebih selaras dengan rule hari efektif terbaru.
+- Changed: Kartu `Kehadiran` pada `Virtual Pet` sekarang menampilkan status `Hari ini libur sekolah` saat hari libur, tidak lagi jatuh ke narasi seolah data absensi belum masuk.
+- Changed: Kartu `Literasi Aktif` dan action card `E-Perpus` pada `Virtual Pet` sekarang menampilkan narasi bonus libur yang lebih jelas saat siswa membaca di hari libur.
+- Fixed: Pesan auto reward quest `Membaca Buku` pada hari libur sekarang menyebut bonus yang benar, yaitu `+10 Kecerdasan`, bukan pesan umum koin/XP.
 - Changed: Build final lokal GAS Siswa sekarang menjadi `1.0.92-siswa (23089)` dan jalur unduhan web publik LIVE commit `81bdb467` sudah menunjuk versi ini melalui `apk-manifest.json`.
 - Changed: **Siswa (Presensi Siswa)** rule operasional sekretaris kini di-**cleanup total**: logika `PENDING_TEACHER` dan jalur usulan/verifikasi bertahap tidak lagi dipakai untuk data baru; seluruh input `Wali Kelas` dan `Sekretaris Kelas` langsung menjadi final; audit trail `proposedBy` / `proposedStatus` tidak lagi di-set pada record baru (field legacy tetap dibaca untuk data lama).
 - Added: **Siswa (Presensi Siswa)** hasil build `1.0.92` mencakup parity UI dengan web admin/portal guru: label badge audit sekarang menampilkan "Dicatat oleh: <verifier>" alih-alih narasi "Final dari usulan sekretaris".
