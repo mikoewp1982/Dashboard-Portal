@@ -1,5 +1,5 @@
-﻿{
-    "updatedAt":  "2026-08-31T09:12:00",
+{
+    "updatedAt":  "2026-08-31T22:34:06",
     "files":  {
                   "GAS-Siswa-1.0.92-siswa-23089.apk":  {
                                                            "lastModified":  "2026-08-31T09:05:28",
@@ -67,13 +67,22 @@
                                                            "packageName":  "com.satupintu.mobile.siswa"
                                                        },
                   "GAS-Siswa-release.apk":  {
-                                                "versionCode":  23092,
+                                                "sha256":  "35039aa99575573fb7295a0b8c1ce25676c318ed80f341c8466e7ef49b2e048a",
                                                 "sizeMB":  20.51,
-                                                "lastModified":  "2026-08-31T22:10:19",
-                                                "sha256":  "CCC6F1F73A1FD1C478077B69265F844EA54DE3B1408B2EAA81D52C3303A94DA2",
-                                                "sizeBytes":  21511017,
-                                                "versionName":  "1.0.95-siswa",
-                                                "packageName":  "com.satupintu.mobile.siswa"
-                                            }
+                                                "versionName":  "1.0.96-siswa",
+                                                "lastModified":  "2026-08-31T22:34:06",
+                                                "versionCode":  23093,
+                                                "packageName":  "com.satupintu.mobile.siswa",
+                                                "sizeBytes":  21511011
+                                            },
+                  "GAS-Siswa-1.0.96-siswa-23093.apk":  {
+                                                           "sha256":  "35039aa99575573fb7295a0b8c1ce25676c318ed80f341c8466e7ef49b2e048a",
+                                                           "sizeMB":  20.51,
+                                                           "versionName":  "1.0.96-siswa",
+                                                           "lastModified":  "2026-08-31T22:34:06",
+                                                           "versionCode":  23093,
+                                                           "packageName":  "com.satupintu.mobile.siswa",
+                                                           "sizeBytes":  21511011
+                                                       }
               }
 }

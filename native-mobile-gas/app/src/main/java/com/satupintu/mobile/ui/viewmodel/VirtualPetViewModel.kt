@@ -384,6 +384,7 @@ class VirtualPetViewModel : ViewModel() {
 
             val statusStr = stats.attendanceData["status"] as? String
             val checkOutTime = stats.attendanceData["checkOutTime"] as? String ?: ""
+            val hasWindowEnded = stats.attendanceData["hasWindowEnded"] as? Boolean == true
             var happinessScore = 100
 
             if (statusStr != null) {
@@ -405,7 +406,6 @@ class VirtualPetViewModel : ViewModel() {
                     }
 
                     val calendar = Calendar.getInstance()
-                    val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
                     val isFriday = calendar.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
                     val dismissalHour = if (isFriday) 11 else 14
 
@@ -426,11 +426,13 @@ class VirtualPetViewModel : ViewModel() {
                         if (checkOutHour < dismissalHour) {
                             happinessScore -= 25
                         }
-                    } else if (currentHour >= dismissalHour) {
+                    } else if (hasWindowEnded) {
                         happinessScore -= 25
                         _uiState.update { it.copy(message = "Jangan lupa Check-Out sebelum pulang! Kebahagiaan berkurang.") }
                     }
                 }
+            } else if (stats.isAttendanceEffectiveDay && hasWindowEnded) {
+                happinessScore = 0
             }
 
             val attendanceBaseline = happinessScore.coerceIn(0, 100)
