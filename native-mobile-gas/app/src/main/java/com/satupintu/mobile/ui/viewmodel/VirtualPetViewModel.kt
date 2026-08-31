@@ -375,24 +375,18 @@ class VirtualPetViewModel : ViewModel() {
             
             // On holidays, hunger doesn't drop naturally, but reading still gives intelligence
             val calculatedHunger = if (stats.isAttendanceEffectiveDay) {
-                if (stats.readingDuration == 0L) syncedPet.hunger else 100 - saturationPct
+                100 - saturationPct
             } else {
                 syncedPet.hunger
             }
             
-            val calculatedEnergy = if (stats.habitsCount == 0) {
-                syncedPet.energy
-            } else {
-                ((stats.habitsCount / 7f) * 100).coerceAtMost(100f).toInt()
-            }
+            val calculatedEnergy = ((stats.habitsCount / 7f) * 100).coerceAtMost(100f).toInt()
 
             val statusStr = stats.attendanceData["status"] as? String
             val checkOutTime = stats.attendanceData["checkOutTime"] as? String ?: ""
             var happinessScore = 100
 
-            if (statusStr.isNullOrBlank()) {
-                happinessScore = syncedPet.happiness
-            } else if (statusStr != null) {
+            if (statusStr != null) {
                 val isLate = statusStr.equals("TERLAMBAT", ignoreCase = true) || statusStr.equals("LATE", ignoreCase = true)
                 val isAbsent = statusStr.equals("ABSENT", ignoreCase = true) || statusStr.equals("ALPA", ignoreCase = true)
                 val isPermit =
@@ -450,8 +444,7 @@ class VirtualPetViewModel : ViewModel() {
                 !stats.prayerInfo.isEffectiveDay -> 100
                 prayerStatus == "PRAY" -> 100
                 prayerStatus == "PERMIT" || prayerStatus == "HALANGAN" -> 100
-                prayerStatus == "NOT_PRAY" -> 20
-                prayerStatus.isNullOrBlank() -> syncedPet.health.coerceIn(0, 100)
+                prayerStatus == "NOT_PRAY" || prayerStatus.isNullOrBlank() -> 20
                 else -> syncedPet.health.coerceIn(0, 100)
             }
 
@@ -479,7 +472,16 @@ class VirtualPetViewModel : ViewModel() {
             // Do NOT sticky-lock status=DEAD when vitals have recovered.
             // Otherwise a previously dead pet that is already SAKIT/SEHAT in UI
             // keeps forcing DEAD into Firebase and re-triggers lock/notifications.
+            // Grace period: jangan vonis DEAD jika hari ini belum ada aktivitas sama sekali.
+            // Penalti sesungguhnya baru dijatuhkan oleh checkDailyReset() di pergantian hari.
+            val todayHasNoActivity = statusStr.isNullOrBlank()
+                && prayerStatus.isNullOrBlank()
+                && stats.habitsCount == 0
+                && stats.readingDuration == 0L
+            val graceProtected = todayHasNoActivity && syncedPet.status != "DEAD"
+
             val newStatus = when {
+                graceProtected -> syncedPet.status  // Tahan status kemarin, jangan vonis mati
                 !reviveGraceActive && (newHealth <= 0 || lowestVital <= 0) -> "DEAD"
                 lowestVital < 30 || newHealth < 30 || newHappiness < 30 -> "SICK"
                 lowestVital < 60 || newHappiness < 50 -> "SAD"

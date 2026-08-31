@@ -48,13 +48,22 @@
                                                            "versionName":  "1.0.93-siswa",
                                                            "packageName":  "com.satupintu.mobile.siswa"
                                                        },
+                  "GAS-Siswa-1.0.94-siswa-23091.apk":  {
+                                                           "versionCode":  23091,
+                                                           "sizeMB":  20.51,
+                                                           "lastModified":  "2026-08-31T21:55:58",
+                                                           "sha256":  "4F931B09D9A45374FA7B4697FF7537219BB75A5F4643734A295C85DB478D707F",
+                                                           "sizeBytes":  21511022,
+                                                           "versionName":  "1.0.94-siswa",
+                                                           "packageName":  "com.satupintu.mobile.siswa"
+                                                       },
                   "GAS-Siswa-release.apk":  {
-                                                "versionCode":  23090,
+                                                "versionCode":  23091,
                                                 "sizeMB":  20.51,
-                                                "lastModified":  "2026-08-31T21:37:39",
-                                                "sha256":  "9C7ECDBB921F39DF67C03994BE4E1195AA0A6D0993D21E0400DEFE499EF0DB71",
+                                                "lastModified":  "2026-08-31T21:55:58",
+                                                "sha256":  "4F931B09D9A45374FA7B4697FF7537219BB75A5F4643734A295C85DB478D707F",
                                                 "sizeBytes":  21511022,
-                                                "versionName":  "1.0.93-siswa",
+                                                "versionName":  "1.0.94-siswa",
                                                 "packageName":  "com.satupintu.mobile.siswa"
                                             }
               }
