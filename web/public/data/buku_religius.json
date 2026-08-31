@@ -1,0 +1,2471 @@
+{
+  "surahs": [
+    {
+      "number": 55,
+      "name": "Ar-Rahman",
+      "translation": "Maha Pengasih",
+      "numberOfVerses": 78,
+      "verses": [
+        {
+          "number": 1,
+          "arab": "اَلرَّحْمٰنُۙ  ",
+          "latin": "Ar-raḥmān(u).",
+          "translation": "(Allah) Yang Maha Pengasih,"
+        },
+        {
+          "number": 2,
+          "arab": "عَلَّمَ الْقُرْاٰنَۗ ",
+          "latin": "‘Allamal-qur'ān(a).",
+          "translation": "telah mengajarkan Al-Qur’an."
+        },
+        {
+          "number": 3,
+          "arab": "خَلَقَ الْاِنْسَانَۙ ",
+          "latin": "Khalaqal-insān(a).",
+          "translation": "Dia menciptakan manusia."
+        },
+        {
+          "number": 4,
+          "arab": "عَلَّمَهُ الْبَيَانَ ",
+          "latin": "‘Allamahul-bayān(a).",
+          "translation": "Dia mengajarinya pandai menjelaskan."
+        },
+        {
+          "number": 5,
+          "arab": "اَلشَّمْسُ وَالْقَمَرُ بِحُسْبَانٍۙ ",
+          "latin": "Asy-syamsu wal-qamaru biḥusbān(in).",
+          "translation": "Matahari dan bulan (beredar) sesuai dengan perhitungan."
+        },
+        {
+          "number": 6,
+          "arab": "وَّالنَّجْمُ وَالشَّجَرُ يَسْجُدَانِ ",
+          "latin": "Wan-najmu wasy-syajaru yasjudān(i).",
+          "translation": "Tetumbuhan dan pepohonan tunduk (kepada-Nya)."
+        },
+        {
+          "number": 7,
+          "arab": "وَالسَّمَاۤءَ رَفَعَهَا وَوَضَعَ الْمِيْزَانَۙ  ",
+          "latin": "Was-samā'a rafa‘ahā wa waḍa‘al-mīzān(a).",
+          "translation": "Langit telah Dia tinggikan dan Dia telah menciptakan timbangan (keadilan dan keseimbangan)"
+        },
+        {
+          "number": 8,
+          "arab": "اَلَّا تَطْغَوْا فِى الْمِيْزَانِ ",
+          "latin": "Allā taṭgau fil-mīzān(i).",
+          "translation": "agar kamu tidak melampaui batas dalam timbangan itu."
+        },
+        {
+          "number": 9,
+          "arab": "وَاَقِيْمُوا الْوَزْنَ بِالْقِسْطِ وَلَا تُخْسِرُوا الْمِيْزَانَ ",
+          "latin": "Wa aqīmul-wazna  bil-qisṭi wa lā tukhsirul-mīzān(a).",
+          "translation": "Tegakkanlah timbangan itu dengan adil dan janganlah kamu mengurangi timbangan itu."
+        },
+        {
+          "number": 10,
+          "arab": "وَالْاَرْضَ وَضَعَهَا لِلْاَنَامِۙ  ",
+          "latin": "Wal-arḍa waḍa‘ahā lil-anām(i). ",
+          "translation": "Bumi telah Dia bentangkan untuk makhluk(-Nya)."
+        },
+        {
+          "number": 11,
+          "arab": "فِيْهَا فَاكِهَةٌ وَّالنَّخْلُ ذَاتُ الْاَكْمَامِۖ  ",
+          "latin": "Fīhā fākihatuw wan-nakhlu żātul-akmām(i).",
+          "translation": "Padanya terdapat buah-buahan dan pohon kurma yang mempunyai kelopak mayang,"
+        },
+        {
+          "number": 12,
+          "arab": "وَالْحَبُّ ذُو الْعَصْفِ وَالرَّيْحَانُۚ  ",
+          "latin": "Wal-ḥabbu żul-‘aṣfi war-raiḥān(u).",
+          "translation": "biji-bijian yang berkulit, dan bunga-bunga yang harum baunya."
+        },
+        {
+          "number": 13,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 14,
+          "arab": "خَلَقَ الْاِنْسَانَ مِنْ صَلْصَالٍ كَالْفَخَّارِ ",
+          "latin": "Khalaqal-insāna min ṣalṣālin kal-fakhkhār(i).",
+          "translation": "Dia telah menciptakan manusia dari tanah kering seperti tembikar."
+        },
+        {
+          "number": 15,
+          "arab": "وَخَلَقَ الْجَاۤنَّ مِنْ مَّارِجٍ مِّنْ نَّارٍۚ  ",
+          "latin": "Wa khalaqal-jānna mim mārijim min nār(in).",
+          "translation": "Dia juga telah menciptakan jin dari nyala api tanpa asap."
+        },
+        {
+          "number": 16,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 17,
+          "arab": "رَبُّ الْمَشْرِقَيْنِ وَرَبُّ الْمَغْرِبَيْنِۚ ",
+          "latin": "Rabbul-masyriqaini wa rabbul-magribain(i).",
+          "translation": "(Dialah) Tuhan kedua tempat terbit (matahari pada musim panas dan musim dingin) dan Tuhan kedua tempat terbenam (matahari pada kedua musim itu)."
+        },
+        {
+          "number": 18,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": ".Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 19,
+          "arab": "مَرَجَ الْبَحْرَيْنِ يَلْتَقِيٰنِۙ",
+          "latin": "Marajal-baḥraini yaltaqiyān(i).",
+          "translation": "Dia membiarkan dua laut (tawar dan asin) bertemu."
+        },
+        {
+          "number": 20,
+          "arab": "بَيْنَهُمَا بَرْزَخٌ لَّا يَبْغِيٰنِۚ",
+          "latin": "Bainahumā barzakhul lā yabgiyān(i).",
+          "translation": "Di antara keduanya ada pembatas yang tidak dilampaui oleh masing-masing."
+        },
+        {
+          "number": 21,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 22,
+          "arab": "يَخْرُجُ مِنْهُمَا اللُّؤْلُؤُ وَالْمَرْجَانُۚ",
+          "latin": "Yakhruju minhumal-lu'lu'u wal-marjān(u).",
+          "translation": "Dari keduanya keluar mutiara dan marjan."
+        },
+        {
+          "number": 23,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 24,
+          "arab": "وَلَهُ الْجَوَارِ الْمُنْشَاٰتُ فِى الْبَحْرِ كَالْاَعْلَامِۚ  ",
+          "latin": "Wa lahul-jawāril-munsya'ātu fil-baḥri kal-a‘lām(i).",
+          "translation": "Milik-Nyalah (bahtera) buatan manusia yang berlayar di laut laksana gunung-gunung."
+        },
+        {
+          "number": 25,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ࣖ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 26,
+          "arab": "كُلُّ مَنْ عَلَيْهَا فَانٍۖ  ",
+          "latin": "Kullu man ‘alaihā fān(in).",
+          "translation": "Semua yang ada di atasnya (bumi) itu akan binasa."
+        },
+        {
+          "number": 27,
+          "arab": "وَّيَبْقٰى وَجْهُ رَبِّكَ ذُو الْجَلٰلِ وَالْاِكْرَامِۚ  ",
+          "latin": "Wa yabqā wajhu rabbika żul-jalāli wal-ikrām(i).",
+          "translation": "(Akan tetapi,) wajah (zat) Tuhanmu yang memiliki kebesaran dan kemuliaan tetap kekal."
+        },
+        {
+          "number": 28,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 29,
+          "arab": "يَسْـَٔلُهٗ مَنْ فِى السَّمٰوٰتِ وَالْاَرْضِۗ  كُلَّ يَوْمٍ هُوَ فِيْ شَأْنٍۚ",
+          "latin": "Yas'aluhū man fis-samāwāti wal-arḍ(i), kulla yaumin huwa fī sya'n(in).",
+          "translation": "Siapa yang ada di langit dan bumi selalu meminta kepada-Nya. Setiap hari Dia menangani urusan."
+        },
+        {
+          "number": 30,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 31,
+          "arab": "سَنَفْرُغُ لَكُمْ اَيُّهَ الثَّقَلٰنِۚ  ",
+          "latin": "Sanafrugu lakum ayyuhaṡ-ṡaqalān(i).",
+          "translation": "Kami akan mencurahkan perhatian kepadamu, wahai manusia dan jin."
+        },
+        {
+          "number": 32,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 33,
+          "arab": "يٰمَعْشَرَ الْجِنِّ وَالْاِنْسِ اِنِ اسْتَطَعْتُمْ اَنْ تَنْفُذُوْا مِنْ اَقْطَارِ السَّمٰوٰتِ وَالْاَرْضِ فَانْفُذُوْاۗ  لَا تَنْفُذُوْنَ اِلَّا بِسُلْطٰنٍۚ ",
+          "latin": "Yā ma‘syaral-jinni wal-insi inistaṭa‘tum an tanfużū min aqṭāris-samāwāti wal-arḍi fanfużū, lā tanfużūna illā bisulṭān(in).",
+          "translation": "Wahai segenap jin dan manusia, jika kamu sanggup menembus (melintasi) penjuru langit dan bumi, tembuslah. Kamu tidak akan mampu menembusnya, kecuali dengan kekuatan (dari Allah)."
+        },
+        {
+          "number": 34,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 35,
+          "arab": "يُرْسَلُ عَلَيْكُمَا شُوَاظٌ مِّنْ نَّارٍۙ وَّنُحَاسٌ فَلَا تَنْتَصِرَانِۚ ",
+          "latin": "Yursalu ‘alaikumā syuwāẓum min nār(in), wa nuḥāsun falā tantaṣirān(i).",
+          "translation": "Kepadamu, (wahai jin dan manusia,) disemburkan nyala api dan (ditumpahkan) cairan tembaga panas sehingga kamu tidak dapat menyelamatkan diri."
+        },
+        {
+          "number": 36,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 37,
+          "arab": "فَاِذَا انْشَقَّتِ السَّمَاۤءُ فَكَانَتْ وَرْدَةً كَالدِّهَانِۚ ",
+          "latin": "Fa iżansyaqqatis-samā'u fa kānat wardatan kad-dihān(i).",
+          "translation": "Maka, apabila langit terbelah, lalu (warnanya) menjadi merah mawar seperti (kilauan) minyak, (terjadilah kengerian yang hebat)."
+        },
+        {
+          "number": 38,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 39,
+          "arab": "فَيَوْمَئِذٍ لَّا يُسْـَٔلُ عَنْ ذَنْۢبِهٖٓ اِنْسٌ وَّلَا جَاۤنٌّۚ  ",
+          "latin": "Fa yauma'iżil lā yus'alu ‘an żambihī insuw wa lā jānn(un).",
+          "translation": "Maka, pada hari itu manusia dan jin tidak ditanya tentang dosanya"
+        },
+        {
+          "number": 40,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ  ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 41,
+          "arab": "يُعْرَفُ الْمُجْرِمُوْنَ بِسِيْمٰهُمْ فَيُؤْخَذُ بِالنَّوَاصِيْ وَالْاَقْدَامِۚ  ",
+          "latin": "Yu‘raful-mujrimūna bisīmāhum fa yu'khażu bin-nawāṣī wal-aqdām(i).",
+          "translation": "Para pendosa dikenali dengan tanda-tandanya, lalu direnggut ubun-ubun dan kakinya."
+        },
+        {
+          "number": 42,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 43,
+          "arab": "هٰذِهٖ جَهَنَّمُ الَّتِيْ يُكَذِّبُ بِهَا الْمُجْرِمُوْنَۘ ",
+          "latin": "Hāżihī jahannamul-latī yukażżibu bihal-mujrimūn(a).",
+          "translation": "Inilah (neraka) Jahanam yang didustakan oleh para pendosa."
+        },
+        {
+          "number": 44,
+          "arab": "يَطُوْفُوْنَ بَيْنَهَا وَبَيْنَ حَمِيْمٍ اٰنٍۚ  ",
+          "latin": "Yaṭūfūna bainahā wa baina ḥamīmin ān(in).",
+          "translation": "Mereka bolak-balik di antaranya (api neraka) dan air mendidih yang sangat panas."
+        },
+        {
+          "number": 45,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ࣖ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 46,
+          "arab": "وَلِمَنْ خَافَ مَقَامَ رَبِّهٖ جَنَّتٰنِۚ",
+          "latin": "Wa liman khāfa maqāma rabbihī jannatān(i).",
+          "translation": "Bagi siapa yang takut pada keagungan Tuhannya disediakan dua surga."
+        },
+        {
+          "number": 47,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِۙ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 48,
+          "arab": "ذَوَاتَآ اَفْنَانٍۚ ",
+          "latin": "Żawātā afnān(in).",
+          "translation": "Kedua surga itu mempunyai (pepohonan) yang bercabang-cabang."
+        },
+        {
+          "number": 49,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fabi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 50,
+          "arab": "فِيْهِمَا عَيْنٰنِ تَجْرِيٰنِۚ ",
+          "latin": "Fīhimā ‘aināni tajriyān(i).",
+          "translation": "Di dalam kedua (surga) itu terdapat dua mata air yang memancar."
+        },
+        {
+          "number": 51,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 52,
+          "arab": "فِيْهِمَا مِنْ كُلِّ فَاكِهَةٍ زَوْجٰنِۚ ",
+          "latin": "Fīhimā min kulli fākihatin zaujān(i).",
+          "translation": "Di dalam kedua (surga) itu terdapat aneka buah-buahan yang berpasang-pasangan."
+        },
+        {
+          "number": 53,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِۚ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 54,
+          "arab": "مُتَّكِـِٕيْنَ عَلٰى فُرُشٍۢ بَطَاۤىِٕنُهَا مِنْ اِسْتَبْرَقٍۗ وَجَنَا الْجَنَّتَيْنِ دَانٍۚ ",
+          "latin": "Muttaki'īna ‘alā furusyim baṭā'inuhā min istabraq(in), wa janal-jannataini  dān(in).",
+          "translation": "Mereka berbaring di atas permadani yang bagian dalamnya (terbuat) dari sutera tebal. Buah-buahan di kedua surga itu (dapat) dipetik dari dekat."
+        },
+        {
+          "number": 55,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 56,
+          "arab": "فِيْهِنَّ قٰصِرٰتُ الطَّرْفِۙ لَمْ يَطْمِثْهُنَّ اِنْسٌ قَبْلَهُمْ وَلَا جَاۤنٌّۚ  ",
+          "latin": "Fīhinna qāṣirātuṭ-ṭarf(i), lam yaṭmiṡhunna insun qablahum wa lā jānn(un).",
+          "translation": "Di dalamnya ada (bidadari) yang membatasi pandangan (hanya untuk pasangannya) yang tidak pernah disentuh oleh manusia sebelum mereka dan tidak (pula) oleh jin."
+        },
+        {
+          "number": 57,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِۚ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 58,
+          "arab": "كَاَنَّهُنَّ الْيَاقُوْتُ وَالْمَرْجَانُۚ ",
+          "latin": "Ka'annahunnal-yāqūtu wal-marjān(u).",
+          "translation": "Seakan-akan mereka itu permata yakut dan marjan."
+        },
+        {
+          "number": 59,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 60,
+          "arab": "هَلْ جَزَاۤءُ الْاِحْسَانِ اِلَّا الْاِحْسَانُۚ ",
+          "latin": "Hal jazā'ul-iḥsāni illal-iḥsān(u).",
+          "translation": "Adakah balasan kebaikan selain kebaikan (pula)?"
+        },
+        {
+          "number": 61,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 62,
+          "arab": "وَمِنْ دُوْنِهِمَا جَنَّتٰنِۚ ",
+          "latin": "Wa min dūnihimā jannatān(i).",
+          "translation": "Selain dari kedua (surga) itu ada dua surga (lagi)."
+        },
+        {
+          "number": 63,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِۙ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 64,
+          "arab": "مُدْهَاۤمَّتٰنِۚ  ",
+          "latin": "Mudhāmmatān(i).",
+          "translation": "Kedua surga itu (terlihat warnanya) hijau tua."
+        },
+        {
+          "number": 65,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 66,
+          "arab": "فِيْهِمَا عَيْنٰنِ نَضَّاخَتٰنِۚ ",
+          "latin": "Fīhimā ‘aināni naḍḍākhatān(i).",
+          "translation": "Di dalam keduanya ada dua mata air yang memancar tanpa henti."
+        },
+        {
+          "number": 67,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِۚ  ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 68,
+          "arab": "فِيْهِمَا فَاكِهَةٌ وَّنَخْلٌ وَّرُمَّانٌۚ  ",
+          "latin": "Fīhimā fākihatuw wa nakhluw wa rummān(un).",
+          "translation": "Di dalam keduanya ada buah-buahan (antara lain) kurma dan delima."
+        },
+        {
+          "number": 69,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِۚ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 70,
+          "arab": "فِيْهِنَّ خَيْرٰتٌ حِسَانٌۚ  ",
+          "latin": "Fīhinna khairātun ḥisān(un).",
+          "translation": "Di dalamnya ada (bidadari) yang mulia (akhlaknya) lagi jelita."
+        },
+        {
+          "number": 71,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِۚ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 72,
+          "arab": "حُوْرٌ مَّقْصُوْرٰتٌ فِى الْخِيَامِۚ  ",
+          "latin": "Ḥūrum maqṣūrātun fil-khiyām(i).",
+          "translation": "Bidadari-bidadari yang dipingit dalam kemah-kemah."
+        },
+        {
+          "number": 73,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِۚ  ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 74,
+          "arab": "لَمْ يَطْمِثْهُنَّ اِنْسٌ قَبْلَهُمْ وَلَا جَاۤنٌّۚ  ",
+          "latin": "Lam yaṭmiṡhunna insun qablahum wa lā jānn(un).",
+          "translation": "Mereka tidak pernah disentuh oleh manusia sebelum mereka dan tidak (pula) oleh jin."
+        },
+        {
+          "number": 75,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِۚ  ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 76,
+          "arab": "مُتَّكِـِٕيْنَ عَلٰى رَفْرَفٍ خُضْرٍ وَّعَبْقَرِيٍّ حِسَانٍۚ  ",
+          "latin": "Muttaki'īna ‘alā rafrafin khuḍriw wa ‘abqariyyin ḥisān(in).",
+          "translation": "Mereka bertelekan pada bantal-bantal yang hijau dan permadani-permadani yang indah."
+        },
+        {
+          "number": 77,
+          "arab": "فَبِاَيِّ اٰلَاۤءِ رَبِّكُمَا تُكَذِّبٰنِۚ ",
+          "latin": "Fa bi'ayyi ālā'i rabbikumā tukażżibān(i).",
+          "translation": "Maka, nikmat Tuhanmu manakah yang kamu dustakan (wahai jin dan manusia)?"
+        },
+        {
+          "number": 78,
+          "arab": "تَبٰرَكَ اسْمُ رَبِّكَ ذِى الْجَلٰلِ وَالْاِكْرَامِ ࣖ ",
+          "latin": "Tabārakasmu rabbika żil-jalāli wal-ikrām(i).",
+          "translation": "Maha Berkah nama Tuhanmu Pemilik keagungan dan kemuliaan."
+        }
+      ]
+    },
+    {
+      "number": 56,
+      "name": "Al-Waqi'ah",
+      "translation": "Hari Kiamat",
+      "numberOfVerses": 96,
+      "verses": [
+        {
+          "number": 1,
+          "arab": "اِذَا وَقَعَتِ الْوَاقِعَةُۙ ",
+          "latin": "Iżā waqa‘atil-wāqi‘ah(tu).",
+          "translation": "Apabila terjadi hari Kiamat (yang pasti terjadi),"
+        },
+        {
+          "number": 2,
+          "arab": "لَيْسَ لِوَقْعَتِهَا كَاذِبَةٌ  ۘ ",
+          "latin": "Laisa liwaq‘atihā kāżibah(tun).",
+          "translation": "tidak ada seorang pun yang (dapat) mendustakan terjadinya."
+        },
+        {
+          "number": 3,
+          "arab": "خَافِضَةٌ رَّافِعَةٌ ",
+          "latin": "Khāfiḍatur rāfi‘ah(tun).",
+          "translation": "(Kejadian itu) merendahkan (satu golongan) dan meninggikan (golongan yang lain)."
+        },
+        {
+          "number": 4,
+          "arab": "اِذَا رُجَّتِ الْاَرْضُ رَجًّاۙ ",
+          "latin": "Iżā rujjatil-arḍu rajjā(n).",
+          "translation": "Apabila bumi diguncangkan sedahsyat-dahsyatnya"
+        },
+        {
+          "number": 5,
+          "arab": "وَّبُسَّتِ الْجِبَالُ بَسًّاۙ  ",
+          "latin": "Wa bussatil-jibālu bassā(n).",
+          "translation": "dan gunung-gunung dihancurkan sehancur-hancurnya,"
+        },
+        {
+          "number": 6,
+          "arab": "فَكَانَتْ هَبَاۤءً مُّنْۢبَثًّاۙ ",
+          "latin": "Fa kānat habā'am mumbaṡṡā(n).",
+          "translation": "jadilah ia debu yang beterbangan."
+        },
+        {
+          "number": 7,
+          "arab": "وَّكُنْتُمْ اَزْوَاجًا ثَلٰثَةً ۗ",
+          "latin": "Wa kuntum azwājan ṡalāṡah(tan).",
+          "translation": "Kamu menjadi tiga golongan,"
+        },
+        {
+          "number": 8,
+          "arab": "فَاَصْحٰبُ الْمَيْمَنَةِ ەۙ مَآ اَصْحٰبُ الْمَيْمَنَةِ ۗ",
+          "latin": "Fa aṣḥābul-maimanah(ti), mā aṣḥābul-maimanah(ti).",
+          "translation": "yaitu golongan kanan, alangkah mulianya golongan kanan itu"
+        },
+        {
+          "number": 9,
+          "arab": "وَاَصْحٰبُ الْمَشْـَٔمَةِ ەۙ مَآ اَصْحٰبُ الْمَشْـَٔمَةِ ۗ",
+          "latin": "Wa aṣḥābul-masy'amah(ti), mā aṣḥābul-masy'amah(ti).",
+          "translation": "dan golongan kiri, alangkah sengsaranya golongan kiri itu."
+        },
+        {
+          "number": 10,
+          "arab": "وَالسّٰبِقُوْنَ السّٰبِقُوْنَۙ  ",
+          "latin": "Was-sābiqūnas-sābiqūn(a).",
+          "translation": "Selain itu, (golongan ketiga adalah) orang-orang yang paling dahulu (beriman). Merekalah yang paling dahulu (masuk surga)."
+        },
+        {
+          "number": 11,
+          "arab": "اُولٰۤىِٕكَ الْمُقَرَّبُوْنَۚ ",
+          "latin": "Ulā'ikal-muqarrabūn(a).",
+          "translation": "Mereka itulah orang-orang yang didekatkan (kepada Allah)."
+        },
+        {
+          "number": 12,
+          "arab": "فِيْ جَنّٰتِ النَّعِيْمِ ",
+          "latin": "Fī jannātin-na‘īm(i).",
+          "translation": "(Mereka) berada dalam surga (yang penuh) kenikmatan."
+        },
+        {
+          "number": 13,
+          "arab": "ثُلَّةٌ مِّنَ الْاَوَّلِيْنَۙ  ",
+          "latin": "Ṡullatum minal-awwalīn(a).",
+          "translation": "(Mereka adalah) segolongan besar dari orang-orang yang terdahulu"
+        },
+        {
+          "number": 14,
+          "arab": "وَقَلِيْلٌ مِّنَ الْاٰخِرِيْنَۗ  ",
+          "latin": "Wa qalīlum minal-ākhirīn(a).",
+          "translation": "dan sedikit dari orang-orang yang (datang) kemudian."
+        },
+        {
+          "number": 15,
+          "arab": "عَلٰى سُرُرٍ مَّوْضُوْنَةٍۙ  ",
+          "latin": "‘Alā sururim mauḍūnah(tin).",
+          "translation": "(Mereka berada) di atas dipan-dipan yang bertatahkan emas dan permata"
+        },
+        {
+          "number": 16,
+          "arab": "مُّتَّكِـِٕيْنَ عَلَيْهَا مُتَقٰبِلِيْنَ",
+          "latin": "Muttaki'īna ‘alaihā mutaqābilīn(a).",
+          "translation": "seraya bersandar di atasnya saling berhadapan."
+        },
+        {
+          "number": 17,
+          "arab": "يَطُوْفُ عَلَيْهِمْ وِلْدَانٌ مُّخَلَّدُوْنَۙ  ",
+          "latin": "Yaṭūfu ‘alaihim wildānum mukhalladūn(a).",
+          "translation": "Mereka dikelilingi oleh anak-anak yang selalu muda"
+        },
+        {
+          "number": 18,
+          "arab": "بِاَكْوَابٍ وَّاَبَارِيْقَۙ وَكَأْسٍ مِّنْ مَّعِيْنٍۙ  ",
+          "latin": "Bi'akwābiw wa abārīq(a), wa ka'sim mim ma‘īn(in).",
+          "translation": "dengan (membawa) gelas, kendi, dan seloki (berisi minuman yang diambil) dari sumber yang mengalir."
+        },
+        {
+          "number": 19,
+          "arab": "لَّا يُصَدَّعُوْنَ عَنْهَا وَلَا يُنْزِفُوْنَۙ  ",
+          "latin": "Lā yuṣadda‘ūna ‘anhā wa lā yunzifūn(a).",
+          "translation": "Mereka tidak pening karenanya dan tidak pula mabuk."
+        },
+        {
+          "number": 20,
+          "arab": "وَفَاكِهَةٍ مِّمَّا يَتَخَيَّرُوْنَۙ  ",
+          "latin": "Wa fākihatim mimmā yatakhayyarūn(a).",
+          "translation": "(Mereka menyuguhkan pula) buah-buahan yang mereka pilih"
+        },
+        {
+          "number": 21,
+          "arab": "وَلَحْمِ طَيْرٍ مِّمَّا يَشْتَهُوْنَۗ  ",
+          "latin": "Wa laḥmi ṭairim mimmā yasytahūn(a).",
+          "translation": "dan daging burung yang mereka sukai."
+        },
+        {
+          "number": 22,
+          "arab": "وَحُوْرٌ عِيْنٌۙ  ",
+          "latin": "Wa ḥūrun ‘īn(un).",
+          "translation": "Ada bidadari yang bermata indah"
+        },
+        {
+          "number": 23,
+          "arab": "كَاَمْثَالِ اللُّؤْلُؤِ الْمَكْنُوْنِۚ  ",
+          "latin": "Ka'amṡālil-lu'lu'il-maknūn(i).",
+          "translation": "laksana mutiara yang tersimpan dengan baik"
+        },
+        {
+          "number": 24,
+          "arab": "جَزَاۤءًۢ بِمَا كَانُوْا يَعْمَلُوْنَ",
+          "latin": "Jazā'am bimā kānū ya‘malūn(a).",
+          "translation": "sebagai balasan atas apa yang selama ini mereka kerjakan."
+        },
+        {
+          "number": 25,
+          "arab": "لَا يَسْمَعُوْنَ فِيْهَا لَغْوًا وَّلَا تَأْثِيْمًاۙ  ",
+          "latin": "Lā yasma‘ūna fīhā lagwaw wa lā ta'ṡīmā(n).",
+          "translation": "Di sana mereka tidak mendengar percakapan yang sia-sia dan tidak (pula) percakapan yang menimbulkan dosa,"
+        },
+        {
+          "number": 26,
+          "arab": "اِلَّا قِيْلًا سَلٰمًا سَلٰمًا ",
+          "latin": "Illā qīlan salāman salāmā(n).",
+          "translation": "kecuali (yang mereka dengar hanyalah) ucapan, “Salam… salam.”"
+        },
+        {
+          "number": 27,
+          "arab": "وَاَصْحٰبُ الْيَمِيْنِ ەۙ مَآ اَصْحٰبُ الْيَمِيْنِۗ",
+          "latin": "Wa aṣḥābul-yamīn(i), mā aṣḥābul-yamīn(i).",
+          "translation": "Golongan kanan, alangkah mulianya golongan kanan itu."
+        },
+        {
+          "number": 28,
+          "arab": "فِيْ سِدْرٍ مَّخْضُوْدٍۙ  ",
+          "latin": "Fī sidrim makhḍūd(in).",
+          "translation": "(Mereka) berada di antara pohon bidara yang tidak berduri,"
+        },
+        {
+          "number": 29,
+          "arab": "وَّطَلْحٍ مَّنْضُوْدٍۙ  ",
+          "latin": "Wa ṭalḥim manḍūd(in).",
+          "translation": "pohon pisang yang (buahnya) bersusun-susun,"
+        },
+        {
+          "number": 30,
+          "arab": "وَّظِلٍّ مَّمْدُوْدٍۙ  ",
+          "latin": "Wa ẓillim mamdūd(in).",
+          "translation": "naungan yang terbentang luas,"
+        },
+        {
+          "number": 31,
+          "arab": "وَّمَاۤءٍ مَّسْكُوْبٍۙ  ",
+          "latin": "Wa mā'im maskūb(in).",
+          "translation": "air yang tercurah,"
+        },
+        {
+          "number": 32,
+          "arab": "وَّفَاكِهَةٍ كَثِيْرَةٍۙ  ",
+          "latin": "Wa fākihatin kaṡīrah(tin).",
+          "translation": "buah-buahan yang banyak"
+        },
+        {
+          "number": 33,
+          "arab": "لَّا مَقْطُوْعَةٍ وَّلَا مَمْنُوْعَةٍۙ  ",
+          "latin": "Lā maqṭū‘atiw wa lā mamnū‘ah(tin).",
+          "translation": "yang tidak berhenti berbuah dan tidak terlarang memetiknya,"
+        },
+        {
+          "number": 34,
+          "arab": "وَّفُرُشٍ مَّرْفُوْعَةٍۗ  ",
+          "latin": "Wa furusyim marfū‘ah(tin).",
+          "translation": "dan kasur-kasur yang tebal lagi empuk."
+        },
+        {
+          "number": 35,
+          "arab": "اِنَّآ اَنْشَأْنٰهُنَّ اِنْشَاۤءًۙ  ",
+          "latin": "Innā ansya'nāhunna insyā'ā(n).",
+          "translation": "Sesungguhnya Kami menciptakan mereka (bidadari itu) secara langsung,"
+        },
+        {
+          "number": 36,
+          "arab": "فَجَعَلْنٰهُنَّ اَبْكَارًاۙ  ",
+          "latin": "Faja‘alnāhunna abkārā(n).",
+          "translation": "lalu Kami jadikan mereka perawan-perawan"
+        },
+        {
+          "number": 37,
+          "arab": "عُرُبًا اَتْرَابًاۙ  ",
+          "latin": "‘Uruban atrābā(n).",
+          "translation": "yang penuh cinta (lagi) sebaya umurnya,"
+        },
+        {
+          "number": 38,
+          "arab": "لِّاَصْحٰبِ الْيَمِيْنِۗ  ",
+          "latin": "Li'aṣḥābil-yamīn(i).",
+          "translation": "(diperuntukkan)bagi golongan kanan,"
+        },
+        {
+          "number": 39,
+          "arab": "ثُلَّةٌ مِّنَ الْاَوَّلِيْنَۙ  ",
+          "latin": "Ṡullatum minal-awwalīn(a).",
+          "translation": "(yaitu) segolongan besar dari orang-orang yang terdahulu"
+        },
+        {
+          "number": 40,
+          "arab": "وَثُلَّةٌ مِّنَ الْاٰخِرِيْنَۗ  ࣖ",
+          "latin": "Wa ṡullatum minal-ākhirīn(a).",
+          "translation": "dan segolongan besar (pula) dari orang-orang yang kemudian."
+        },
+        {
+          "number": 41,
+          "arab": "وَاَصْحٰبُ الشِّمَالِ ەۙ مَآ اَصْحٰبُ الشِّمَالِۗ",
+          "latin": "Wa aṣḥābusy-syimāl(i), mā aṣḥābusy-syimāl(i).",
+          "translation": "Golongan kiri, alangkah sengsaranya golongan kiri itu."
+        },
+        {
+          "number": 42,
+          "arab": "فِيْ سَمُوْمٍ وَّحَمِيْمٍۙ  ",
+          "latin": "Fī samūmiw wa ḥamīm(in).",
+          "translation": "(Mereka berada) dalam siksaan angin yang sangat panas, air yang mendidih,"
+        },
+        {
+          "number": 43,
+          "arab": "وَّظِلٍّ مِّنْ يَّحْمُوْمٍۙ  ",
+          "latin": "Wa ẓillim miy yaḥmūm(in).",
+          "translation": "dan naungan asap hitam"
+        },
+        {
+          "number": 44,
+          "arab": "لَّا بَارِدٍ وَّلَا كَرِيْمٍ ",
+          "latin": "Lā bāridiw wa lā karīm(in).",
+          "translation": "yang tidak sejuk dan tidak menyenangkan."
+        },
+        {
+          "number": 45,
+          "arab": "اِنَّهُمْ كَانُوْا قَبْلَ ذٰلِكَ مُتْرَفِيْنَۚ ",
+          "latin": "Innahum kānū qabla żālika mutrafīn(a).",
+          "translation": "Sesungguhnya mereka sebelum ituhidup bermewah-mewah."
+        },
+        {
+          "number": 46,
+          "arab": "وَكَانُوْا يُصِرُّوْنَ عَلَى الْحِنْثِ الْعَظِيْمِۚ  ",
+          "latin": "Wa kānū yuṣirrūna ‘alal-ḥinṡil-‘aẓīm(i).",
+          "translation": "Mereka terus-menerus mengerjakan dosa yang besar."
+        },
+        {
+          "number": 47,
+          "arab": "وَكَانُوْا يَقُوْلُوْنَ ەۙ اَىِٕذَا مِتْنَا وَكُنَّا تُرَابًا وَّعِظَامًا ءَاِنَّا لَمَبْعُوْثُوْنَۙ",
+          "latin": "Wa kānū yaqūlūn(a), a'iżā mitnā  wa kunnā turābaw wa ‘iẓāman a'innā lamab‘ūṡūn(a). ",
+          "translation": "Mereka berkata, “Apabila kami telahmati menjadi tanah dan tulang-belulang,apakah kami benar-benar akan dibangkitkan (kembali)?"
+        },
+        {
+          "number": 48,
+          "arab": "اَوَاٰبَاۤؤُنَا الْاَوَّلُوْنَ ",
+          "latin": "Awa'ābā'unal-awwalūn(a).",
+          "translation": "Apakah nenek moyang kami yang terdahulu (akan dibangkitkan pula)?”"
+        },
+        {
+          "number": 49,
+          "arab": "قُلْ اِنَّ الْاَوَّلِيْنَ وَالْاٰخِرِيْنَۙ ",
+          "latin": "Qul innal-awwalīna wal-ākhirīn(a).",
+          "translation": "Katakanlah (Nabi Muhammad), “Sesungguhnya orang-orang yang terdahulu dan yang kemudian"
+        },
+        {
+          "number": 50,
+          "arab": "لَمَجْمُوْعُوْنَۙ اِلٰى مِيْقَاتِ يَوْمٍ مَّعْلُوْمٍ ",
+          "latin": "Lamajmū‘ūn(a), ilā mīqāti yaumim ma‘lūm(in).",
+          "translation": "benar-benar akan dikumpulkan pada waktu tertentu, yaitu hari yang sudah diketahui."
+        },
+        {
+          "number": 51,
+          "arab": "ثُمَّ اِنَّكُمْ اَيُّهَا الضَّاۤ لُّوْنَ الْمُكَذِّبُوْنَۙ  ",
+          "latin": "Ṡumma innakum ayyuhaḍ-ḍāllūnal-mukażżibūn(a).",
+          "translation": "Kemudian, sesungguhnya kamu, wahai orang-orang sesat lagi pendusta,"
+        },
+        {
+          "number": 52,
+          "arab": "لَاٰكِلُوْنَ مِنْ شَجَرٍ مِّنْ زَقُّوْمٍۙ  ",
+          "latin": "La'ākilūna min syajarim min zaqqūm(in).",
+          "translation": "pasti akan memakan pohon zaqum."
+        },
+        {
+          "number": 53,
+          "arab": "فَمَالِـُٔوْنَ مِنْهَا الْبُطُوْنَۚ  ",
+          "latin": "Fa māli'ūna minhal-buṭūn(a).",
+          "translation": "Lalu, kamu akan memenuhi perut-perutmu dengannya."
+        },
+        {
+          "number": 54,
+          "arab": "فَشٰرِبُوْنَ عَلَيْهِ مِنَ الْحَمِيْمِۚ  ",
+          "latin": "Fasyāribūna ‘alaihi minal-ḥamīm(i).",
+          "translation": "Setelah itu, untuk penawarnya (zaqum) kamu akan meminum air yang sangat panas."
+        },
+        {
+          "number": 55,
+          "arab": "فَشٰرِبُوْنَ شُرْبَ الْهِيْمِۗ  ",
+          "latin": "Fa syāribūna syurbal-hīm(i).",
+          "translation": "Maka, kamu minum bagaikan unta yang sangat haus."
+        },
+        {
+          "number": 56,
+          "arab": "هٰذَا نُزُلُهُمْ يَوْمَ الدِّيْنِۗ  ",
+          "latin": "Hāżā nuzuluhum yaumad-dīn(i).",
+          "translation": "Inilah hidangan (untuk) mereka pada hari Pembalasan.”"
+        },
+        {
+          "number": 57,
+          "arab": "نَحْنُ خَلَقْنٰكُمْ فَلَوْلَا تُصَدِّقُوْنَ ",
+          "latin": "Naḥnu khalaqnākum falau lā tuṣaddiqūn(a).",
+          "translation": "Kami telah menciptakanmu. Mengapa kamu tidak membenarkan (hari Kebangkitan)?"
+        },
+        {
+          "number": 58,
+          "arab": "اَفَرَءَيْتُمْ مَّا تُمْنُوْنَۗ  ",
+          "latin": "Afa ra'aitum mā tumnūn(a).",
+          "translation": "Apakah kamu memperhatikan apa yang kamu pancarkan (sperma)?"
+        },
+        {
+          "number": 59,
+          "arab": "ءَاَنْتُمْ تَخْلُقُوْنَهٗٓ اَمْ نَحْنُ الْخٰلِقُوْنَ ",
+          "latin": "A'antum takhluqūnahū am naḥnul-khāliqūn(a).",
+          "translation": "Apakah kamu yang menciptakannya atau Kami Penciptanya?"
+        },
+        {
+          "number": 60,
+          "arab": "نَحْنُ قَدَّرْنَا بَيْنَكُمُ الْمَوْتَ وَمَا نَحْنُ بِمَسْبُوْقِيْنَۙ  ",
+          "latin": "Naḥnu qaddarnā bainakumul-mauta wa mā naḥnu bimasbūqīn(a).",
+          "translation": "Kami telah menentukan kematian di antara kamu dan Kami tidak lemah"
+        },
+        {
+          "number": 61,
+          "arab": "عَلٰٓى اَنْ نُّبَدِّلَ اَمْثَالَكُمْ وَنُنْشِئَكُمْ فِيْ مَا لَا تَعْلَمُوْنَ",
+          "latin": "‘Alā an nubaddila amṡālakum wa nunsyi'akum fī mā lā ta‘lamūn(a).",
+          "translation": "untuk mengubah bentukmu (di hari Kiamat) dan menciptakanmu kelak dalam keadaan yang tidak kamu ketahui."
+        },
+        {
+          "number": 62,
+          "arab": "وَلَقَدْ عَلِمْتُمُ النَّشْاَةَ الْاُوْلٰى فَلَوْلَا تَذَكَّرُوْنَ ",
+          "latin": "Wa laqad ‘alimtumun-nasy'atal-ūlā falau lā tażakkarūn(a).",
+          "translation": "Sungguh, kamu benar-benar telah mengetahui penciptaan yang pertama. Mengapa kamu tidak mengambil pelajaran?"
+        },
+        {
+          "number": 63,
+          "arab": "اَفَرَءَيْتُمْ مَّا تَحْرُثُوْنَۗ  ",
+          "latin": "Afara'aitum mā taḥruṡūn(a).",
+          "translation": "Apakah kamu memperhatikan benih yang kamu tanam?"
+        },
+        {
+          "number": 64,
+          "arab": "ءَاَنْتُمْ تَزْرَعُوْنَهٗٓ اَمْ نَحْنُ الزّٰرِعُوْنَ ",
+          "latin": "A'antum tazra‘ūnahū am naḥnuz-zāri‘ūn(a).",
+          "translation": "Apakah kamu yang menumbuhkannya atau Kami yang menumbuhkan?"
+        },
+        {
+          "number": 65,
+          "arab": "لَوْ نَشَاۤءُ لَجَعَلْنٰهُ حُطَامًا فَظَلْتُمْ تَفَكَّهُوْنَۙ  ",
+          "latin": "Lau nasyā'u laja‘alnāhu ḥuṭāman fa ẓaltum tafakkahūn(a).",
+          "translation": "Seandainya Kami berkehendak, Kami benar-benar menjadikannya hancur sehingga kamu menjadi heran tercengang,"
+        },
+        {
+          "number": 66,
+          "arab": "اِنَّا لَمُغْرَمُوْنَۙ  ",
+          "latin": "Innā lamugramūn(a).",
+          "translation": "(sambil berkata,) “Sesungguhnya kami benar-benar menderita kerugian."
+        },
+        {
+          "number": 67,
+          "arab": "بَلْ نَحْنُ مَحْرُوْمُوْنَ ",
+          "latin": "Bal naḥnu maḥrūmūn(a).",
+          "translation": "Bahkan, kami tidak mendapat hasil apa pun.”"
+        },
+        {
+          "number": 68,
+          "arab": "اَفَرَءَيْتُمُ الْمَاۤءَ الَّذِيْ تَشْرَبُوْنَۗ  ",
+          "latin": "Afa ra'aitumul-mā'al-lażī tasyrabūn(a).",
+          "translation": "Apakah kamu memperhatikan air yang kamu minum?"
+        },
+        {
+          "number": 69,
+          "arab": "ءَاَنْتُمْ اَنْزَلْتُمُوْهُ مِنَ الْمُزْنِ اَمْ نَحْنُ الْمُنْزِلُوْنَ ",
+          "latin": "A'antum anzaltumūhu minal-muzni am naḥnul-munzilūn(a).",
+          "translation": "Apakah kamu yang menurunkannya dari awan atau Kami yang menurunkan?"
+        },
+        {
+          "number": 70,
+          "arab": "لَوْ نَشَاۤءُ جَعَلْنٰهُ اُجَاجًا فَلَوْلَا تَشْكُرُوْنَ ",
+          "latin": "Lau nasyā'u ja‘alnāhu ujājan falau lā tasykurūn(a).",
+          "translation": "Seandainya Kami berkehendak, Kami menjadikannya asin. Mengapa kamu tidak bersyukur?"
+        },
+        {
+          "number": 71,
+          "arab": "اَفَرَءَيْتُمُ النَّارَ الَّتِيْ تُوْرُوْنَۗ  ",
+          "latin": "Afa ra'aitumun-nāral-latī tūrūn(a).",
+          "translation": "Apakah kamu memperhatikan api yang kamu nyalakan?"
+        },
+        {
+          "number": 72,
+          "arab": "ءَاَنْتُمْ اَنْشَأْتُمْ شَجَرَتَهَآ اَمْ نَحْنُ الْمُنْشِـُٔوْنَ ",
+          "latin": "A'antum ansya'tum syajaratahā am naḥnul-munsyi'ūn(a).",
+          "translation": "Apakah kamu yang menumbuhkan kayunya atau Kami yang menumbuhkan?"
+        },
+        {
+          "number": 73,
+          "arab": "نَحْنُ جَعَلْنٰهَا تَذْكِرَةً وَّمَتَاعًا لِّلْمُقْوِيْنَۚ ",
+          "latin": "Naḥnu ja‘alnāhā tażkirataw wa matā‘al lil-muqwīn(a).",
+          "translation": "Kami menjadikannya (api itu) sebagai peringatan dan manfaat bagi para musafir."
+        },
+        {
+          "number": 74,
+          "arab": "فَسَبِّحْ بِاسْمِ رَبِّكَ الْعَظِيْمِ ࣖ ",
+          "latin": "Fa sabbiḥ bismi rabbikal-‘aẓīm(i).",
+          "translation": "Maka, bertasbihlah dengan (menyebut) nama Tuhanmu Yang Maha Agung."
+        },
+        {
+          "number": 75,
+          "arab": "۞ فَلَآ اُقْسِمُ بِمَوٰقِعِ النُّجُوْمِ ",
+          "latin": "Falā uqsimu bimawāqi‘in-nujūm(i).",
+          "translation": "Aku bersumpah demi tempat beredarnya bintang-bintang."
+        },
+        {
+          "number": 76,
+          "arab": "وَاِنَّهٗ لَقَسَمٌ لَّوْ تَعْلَمُوْنَ عَظِيْمٌۙ  ",
+          "latin": "Wa innahū laqasamul lau ta‘lamūna ‘aẓīm(un).",
+          "translation": "Sesungguhnya itu benar-benar sumpah yang sangat besar seandainya kamu mengetahui."
+        },
+        {
+          "number": 77,
+          "arab": "اِنَّهٗ لَقُرْاٰنٌ كَرِيْمٌۙ  ",
+          "latin": "Innahū laqur'ānun karīm(un).",
+          "translation": "Sesungguhnya ia benar-benar Al-Qur’an yang sangat mulia,"
+        },
+        {
+          "number": 78,
+          "arab": "فِيْ كِتٰبٍ مَّكْنُوْنٍۙ ",
+          "latin": "Fī kitābim maknūn(in).",
+          "translation": "dalam Kitab yang terpelihara."
+        },
+        {
+          "number": 79,
+          "arab": "لَّا يَمَسُّهٗٓ اِلَّا الْمُطَهَّرُوْنَۗ  ",
+          "latin": "Lā yamassuhū illal-muṭahharūn(a).",
+          "translation": "Tidak ada yang menyentuhnya, kecuali para hamba (Allah) yang disucikan."
+        },
+        {
+          "number": 80,
+          "arab": "تَنْزِيْلٌ مِّنْ رَّبِّ الْعٰلَمِيْنَ ",
+          "latin": "Tanzīlum mir rabbil-‘ālamīn(a).",
+          "translation": "(Al-Qur’an) diturunkan dari Tuhan seluruh alam."
+        },
+        {
+          "number": 81,
+          "arab": "اَفَبِهٰذَا الْحَدِيْثِ اَنْتُمْ مُّدْهِنُوْنَۙ ",
+          "latin": "Afa biḥāżal-ḥadīṡi  antum mudhinūn(a).",
+          "translation": "Apakah kamu menganggap remeh berita ini (Al-Qur’an)"
+        },
+        {
+          "number": 82,
+          "arab": "وَتَجْعَلُوْنَ رِزْقَكُمْ اَنَّكُمْ تُكَذِّبُوْنَ ",
+          "latin": "Wa taj‘alūna rizqakum annakum tukażżibūn(a).",
+          "translation": "dan kamu menjadikan rezeki yang kamu terima (dari Allah) justru untuk mendustakan (Al-Qur’an)?"
+        },
+        {
+          "number": 83,
+          "arab": "فَلَوْلَآ اِذَا بَلَغَتِ الْحُلْقُوْمَۙ  ",
+          "latin": "Falau lā iżā balagatil-ḥulqūm(a).",
+          "translation": "Kalau begitu, mengapa (kamu) tidak (menahan nyawa) ketika telah sampai di kerongkongan,"
+        },
+        {
+          "number": 84,
+          "arab": "وَاَنْتُمْ حِيْنَىِٕذٍ تَنْظُرُوْنَۙ  ",
+          "latin": "Wa antum ḥīna'iżin tanẓurūn(a).",
+          "translation": "padahal kamu ketika itu melihat (orang yang sedang sekarat)?"
+        },
+        {
+          "number": 85,
+          "arab": "وَنَحْنُ اَقْرَبُ اِلَيْهِ مِنْكُمْ وَلٰكِنْ لَّا تُبْصِرُوْنَ ",
+          "latin": "Wa naḥnu aqrabu ilaihi minkum wa lākil lā tubṣirūn(a).",
+          "translation": "Kami lebih dekat kepadanya (orang yang sedang sekarat) daripada kamu, tetapi kamu tidak melihat."
+        },
+        {
+          "number": 86,
+          "arab": "فَلَوْلَآ اِنْ كُنْتُمْ غَيْرَ مَدِيْنِيْنَۙ  ",
+          "latin": "Falau lā in kuntum gaira madīnīn(a).",
+          "translation": "Maka, mengapa jika kamu tidak diberi balasan,"
+        },
+        {
+          "number": 87,
+          "arab": "تَرْجِعُوْنَهَآ اِنْ كُنْتُمْ صٰدِقِيْنَ",
+          "latin": "Tarji‘ūnahā in kuntum ṣādiqīn(a).",
+          "translation": "kamu tidak mengembalikannya (nyawa itu) jika kamu orang-orang yang benar?"
+        },
+        {
+          "number": 88,
+          "arab": "فَاَمَّآ اِنْ كَانَ مِنَ الْمُقَرَّبِيْنَۙ  ",
+          "latin": "Fa ammā in kāna minal-muqarrabīn(a).",
+          "translation": "Jika dia (orang yang mati) itu termasuk yang didekatkan (kepada Allah),"
+        },
+        {
+          "number": 89,
+          "arab": "فَرَوْحٌ وَّرَيْحَانٌ ەۙ وَّجَنَّتُ نَعِيْمٍ",
+          "latin": "Fa rauḥuw wa raiḥān(un), wa jannatu na‘īm(in).",
+          "translation": "dia memperoleh ketenteraman, rezeki, dan surga (yang penuh) kenikmatan."
+        },
+        {
+          "number": 90,
+          "arab": "وَاَمَّآ اِنْ كَانَ مِنْ اَصْحٰبِ الْيَمِيْنِۙ  ",
+          "latin": "Wa ammā in kāna min aṣḥābil-yamīn(i).",
+          "translation": "Jika dia (termasuk) golongan kanan,"
+        },
+        {
+          "number": 91,
+          "arab": "فَسَلٰمٌ لَّكَ مِنْ اَصْحٰبِ الْيَمِيْنِۗ  ",
+          "latin": "Fa salāmul laka min aṣḥābil-yamīn(i).",
+          "translation": "“Salam bagimu” dari (sahabatmu,) golongan kanan."
+        },
+        {
+          "number": 92,
+          "arab": "وَاَمَّآ اِنْ كَانَ مِنَ الْمُكَذِّبِيْنَ الضَّاۤلِّيْنَۙ  ",
+          "latin": "Wa ammā in kāna minal-mukażżibīnaḍ-ḍāllīn(a).",
+          "translation": "Jika dia termasuk golongan para pendusta lagi sesat,"
+        },
+        {
+          "number": 93,
+          "arab": "فَنُزُلٌ مِّنْ حَمِيْمٍۙ  ",
+          "latin": "Fa nuzulum min ḥamīm(in). ",
+          "translation": "jamuannya berupa air mendidih"
+        },
+        {
+          "number": 94,
+          "arab": "وَّتَصْلِيَةُ جَحِيْمٍ ",
+          "latin": "Wa taṣliyatu jaḥīm(in).",
+          "translation": "dan dibakar oleh (neraka) Jahim."
+        },
+        {
+          "number": 95,
+          "arab": "اِنَّ هٰذَا لَهُوَ حَقُّ الْيَقِيْنِۚ  ",
+          "latin": "Inna hāżā lahuwal-ḥaqqul-yaqīn(i).",
+          "translation": "Sesungguhnya ini benar-benar merupakan hakulyakin."
+        },
+        {
+          "number": 96,
+          "arab": "فَسَبِّحْ بِاسْمِ رَبِّكَ الْعَظِيْمِ ࣖ ",
+          "latin": "Fa sabbiḥ bismi rabbikal-‘aẓīm(i).",
+          "translation": "Maka, bertasbihlah dengan (menyebut) nama Tuhanmu Yang Maha Agung."
+        }
+      ]
+    },
+    {
+      "number": 36,
+      "name": "Yasin",
+      "translation": "Yasin",
+      "numberOfVerses": 83,
+      "verses": [
+        {
+          "number": 1,
+          "arab": "يٰسۤ ۚ",
+          "latin": "Yā sīn.",
+          "translation": "Yā Sīn."
+        },
+        {
+          "number": 2,
+          "arab": "وَالْقُرْاٰنِ الْحَكِيْمِۙ ",
+          "latin": "Wal-qur'ānil-ḥakīm(i).",
+          "translation": "Demi Al-Qur’an yang penuh hikmah,"
+        },
+        {
+          "number": 3,
+          "arab": "اِنَّكَ لَمِنَ الْمُرْسَلِيْنَۙ ",
+          "latin": "Innaka laminal-mursalīn(a).",
+          "translation": "sesungguhnya engkau (Nabi Muhammad) benar-benar salah seorang dari rasul-rasul"
+        },
+        {
+          "number": 4,
+          "arab": "عَلٰى صِرَاطٍ مُّسْتَقِيْمٍۗ ",
+          "latin": "‘Alā ṣirāṭim mustaqīm(in).",
+          "translation": "(yang berada) di atas jalan yang lurus,"
+        },
+        {
+          "number": 5,
+          "arab": "تَنْزِيْلَ الْعَزِيْزِ الرَّحِيْمِۙ ",
+          "latin": "Tanzīlal-‘azīzir-raḥīm(i).",
+          "translation": "(sebagai wahyu) yang diturunkan oleh (Allah) Yang Maha Perkasa lagi Maha Penyayang,"
+        },
+        {
+          "number": 6,
+          "arab": "لِتُنْذِرَ قَوْمًا مَّآ اُنْذِرَ اٰبَاۤؤُهُمْ فَهُمْ غٰفِلُوْنَ ",
+          "latin": "Litunżira qaumam mā unżira ābā'uhum fahum gāfilūn(a).",
+          "translation": "agar engkau (Nabi Muhammad) memberi peringatan kepada suatu kaum yang nenek moyang mereka belum pernah diberi peringatan, sehingga mereka lalai."
+        },
+        {
+          "number": 7,
+          "arab": "لَقَدْ حَقَّ الْقَوْلُ عَلٰٓى اَكْثَرِهِمْ فَهُمْ لَا يُؤْمِنُوْنَ ",
+          "latin": "Laqad ḥaqqal-qaulu ‘alā akṡarihim fahum lā yu'minūn(a).",
+          "translation": "Sungguh, benar-benar berlaku perkataan (ketetapan takdir) terhadap kebanyakan mereka, maka mereka tidak akan beriman."
+        },
+        {
+          "number": 8,
+          "arab": "اِنَّا جَعَلْنَا فِيْٓ اَعْنَاقِهِمْ اَغْلٰلًا فَهِيَ اِلَى الْاَذْقَانِ فَهُمْ مُّقْمَحُوْنَ ",
+          "latin": "Innā ja‘alnā fī a‘nāqihim aglālan fa hiya ilal-ażqāni fahum muqmaḥūn(a).",
+          "translation": "Sesungguhnya Kami telah memasang belenggu di leher mereka, lalu (tangan mereka yang terbelenggu diangkat) ke dagu, karena itu mereka tertengadah."
+        },
+        {
+          "number": 9,
+          "arab": "وَجَعَلْنَا مِنْۢ بَيْنِ اَيْدِيْهِمْ سَدًّا وَّمِنْ خَلْفِهِمْ سَدًّا فَاَغْشَيْنٰهُمْ فَهُمْ لَا يُبْصِرُوْنَ ",
+          "latin": "Wa ja‘alnā mim baini aidīhim saddaw wa min khalfihim saddan fa agsyaināhum fahum lā yubṣirūn(a).",
+          "translation": "Kami memasang penghalang di hadapan mereka dan di belakang mereka, sehingga Kami menutupi (pandangan) mereka. Mereka pun tidak dapat melihat."
+        },
+        {
+          "number": 10,
+          "arab": "وَسَوَاۤءٌ عَلَيْهِمْ ءَاَنْذَرْتَهُمْ اَمْ لَمْ تُنْذِرْهُمْ لَا يُؤْمِنُوْنَ ",
+          "latin": "Wa sawā'un ‘alaihim a'anżartahum am lam tunżirhum lā yu'minūn(a).",
+          "translation": "Sama saja bagi mereka, apakah engkau (Nabi Muhammad) memberi peringatan kepada mereka atau tidak. Mereka (tetap) tidak akan beriman."
+        },
+        {
+          "number": 11,
+          "arab": "اِنَّمَا تُنْذِرُ مَنِ اتَّبَعَ الذِّكْرَ وَخَشِيَ الرَّحْمٰنَ بِالْغَيْبِۚ فَبَشِّرْهُ بِمَغْفِرَةٍ وَّاَجْرٍ كَرِيْمٍ ",
+          "latin": "Innamā tunżiru manittaba‘aż-żikra  wa khasyiyar-raḥmāna bil-gaib(i), fa basysyirhu bimagfiratiw wa ajrin karīm(in).",
+          "translation": "Sesungguhnya engkau (Nabi Muhammad) hanya (bisa) memberi peringatan kepada orang-orang yang mau mengikutinya dan yang takut kepada Tuhan Yang Maha Pengasih tanpa melihat-Nya. Berilah mereka kabar gembira dengan ampunan dan pahala yang mulia."
+        },
+        {
+          "number": 12,
+          "arab": "اِنَّا نَحْنُ نُحْيِ الْمَوْتٰى وَنَكْتُبُ مَا قَدَّمُوْا وَاٰثَارَهُمْۗ وَكُلَّ شَيْءٍ اَحْصَيْنٰهُ فِيْٓ اِمَامٍ مُّبِيْنٍ ࣖ",
+          "latin": "Innā naḥnu nuḥyil-mautā wa naktubu mā qaddamū wa āṡārahum, wa kulla syai'in aḥṣaināhu fī imāmim mubīn(in).",
+          "translation": "Sesungguhnya Kamilah yang menghidupkan orang-orang yang mati dan Kami (pulalah) yang mencatat apa yang telah mereka kerjakan dan bekas-bekas yang mereka (tinggalkan). Segala sesuatu Kami kumpulkan dalam kitab induk yang nyata (Lauhulmahfuz)."
+        },
+        {
+          "number": 13,
+          "arab": "وَاضْرِبْ لَهُمْ مَّثَلًا اَصْحٰبَ الْقَرْيَةِۘ اِذْ جَاۤءَهَا الْمُرْسَلُوْنَۚ ",
+          "latin": "Waḍrib lahum maṡalan aṣḥābal-qaryah(ti), iż jā'ahal-mursalūn(a).",
+          "translation": "Buatlah suatu perumpamaan bagi mereka (kaum kafir Makkah), yaitu penduduk suatu negeri, ketika para utusan datang kepada mereka,"
+        },
+        {
+          "number": 14,
+          "arab": "اِذْ اَرْسَلْنَآ اِلَيْهِمُ اثْنَيْنِ فَكَذَّبُوْهُمَا فَعَزَّزْنَا بِثَالِثٍ فَقَالُوْٓا اِنَّآ اِلَيْكُمْ مُّرْسَلُوْنَ ",
+          "latin": "Iż arsalnā ilaihimuṡnaini fa każżabūhumā fa ‘azzaznā biṡāliṡin faqālū innā ilaikum mursalūn(a).",
+          "translation": "(yaitu) ketika Kami mengutus kepada mereka dua orang utusan, lalu mereka mendustakan keduanya. Kemudian Kami menguatkan dengan (utusan) yang ketiga. Maka, ketiga (utusan itu) berkata, “Sesungguhnya kami adalah orang-orang yang diutus kepadamu.”"
+        },
+        {
+          "number": 15,
+          "arab": "قَالُوْا مَآ اَنْتُمْ اِلَّا بَشَرٌ مِّثْلُنَاۙ وَمَآ اَنْزَلَ الرَّحْمٰنُ مِنْ شَيْءٍۙ اِنْ اَنْتُمْ اِلَّا تَكْذِبُوْنَ ",
+          "latin": "Qālū mā antum illā basyarum miṡlunā, wa mā anzalar-raḥmānu min syai'(in), in antum illā takżibūn(a).",
+          "translation": "Mereka (penduduk negeri) menjawab, “Kamu tidak lain hanyalah manusia seperti kami. (Allah) Yang Maha Pengasih tidak (pernah) menurunkan sesuatu apa pun. Kamu hanyalah berdusta.”"
+        },
+        {
+          "number": 16,
+          "arab": "قَالُوْا رَبُّنَا يَعْلَمُ اِنَّآ اِلَيْكُمْ لَمُرْسَلُوْنَ ",
+          "latin": "Qālū rabbunā ya‘lamu innā ilaikum lamursalūn(a).",
+          "translation": "Mereka (para rasul) berkata, “Tuhan kami mengetahui bahwa sesungguhnya kami benar-benar para utusan(-Nya) kepadamu."
+        },
+        {
+          "number": 17,
+          "arab": "وَمَا عَلَيْنَآ اِلَّا الْبَلٰغُ الْمُبِيْنُ ",
+          "latin": "Wa mā ‘alainā illal-balāgul-mubīn(u).",
+          "translation": "Adapun kewajiban kami hanyalah menyampaikan (perintah Allah) yang jelas.”"
+        },
+        {
+          "number": 18,
+          "arab": "قَالُوْٓا اِنَّا تَطَيَّرْنَا بِكُمْۚ  لَىِٕنْ لَّمْ تَنْتَهُوْا لَنَرْجُمَنَّكُمْ وَلَيَمَسَّنَّكُمْ مِّنَّا عَذَابٌ اَلِيْمٌ ",
+          "latin": "Qālū innā taṭayyarnā bikum, la'il lam tantahū lanarjumannakum wa layamassannakum minnā ‘ażābun alīm(un).",
+          "translation": "Mereka (penduduk negeri) menjawab, “Sesungguhnya kami bernasib malang karenamu. Sungguh, jika kamu tidak berhenti (menyeru kami), niscaya kami merajam kamu dan kamu pasti akan merasakan siksaan yang pedih dari kami.”"
+        },
+        {
+          "number": 19,
+          "arab": "قَالُوْا طَاۤىِٕرُكُمْ مَّعَكُمْۗ اَىِٕنْ ذُكِّرْتُمْۗ بَلْ اَنْتُمْ قَوْمٌ مُّسْرِفُوْنَ ",
+          "latin": "Qālū ṭā'irukum ma‘akum, a'in żukkirtum, bal antum qaumum musrifūn(a).",
+          "translation": "Mereka (para rasul) berkata, “Kemalangan kamu itu (akibat perbuatan) kamu sendiri. Apakah karena kamu diberi peringatan, (lalu kamu menjadi malang)? Sebenarnya kamu adalah kaum yang melampaui batas.”"
+        },
+        {
+          "number": 20,
+          "arab": "وَجَاۤءَ مِنْ اَقْصَا الْمَدِيْنَةِ رَجُلٌ يَّسْعٰى قَالَ يٰقَوْمِ اتَّبِعُوا الْمُرْسَلِيْنَۙ  ",
+          "latin": "Wa jā'a min aqṣal-madīnati rajuluy yas‘ā qāla yā qaumittabi‘ul-mursalīn(a).",
+          "translation": "Datanglah dengan bergegas dari ujung kota, seorang laki-laki. Dia berkata, “Wahai kaumku, ikutilah para rasul itu!"
+        },
+        {
+          "number": 21,
+          "arab": "اتَّبِعُوْا مَنْ لَّا يَسْـَٔلُكُمْ اَجْرًا وَّهُمْ مُّهْتَدُوْنَ  ۔",
+          "latin": "Ittabi‘ū mal lā yas'alukum ajraw wa hum muhtadūn(a).",
+          "translation": "Ikutilah orang yang tidak meminta imbalan (dalam berdakwah) kepadamu. Mereka adalah orang-orang yang mendapat petunjuk."
+        },
+        {
+          "number": 22,
+          "arab": "وَمَا لِيَ لَآ اَعْبُدُ الَّذِيْ فَطَرَنِيْ وَاِلَيْهِ تُرْجَعُوْنَ ",
+          "latin": "Wa mā liya lā a‘budul-lażī faṭaranī wa ilaihi turja‘ūn(a).",
+          "translation": "Apa (alasanku) untuk tidak menyembah (Allah) yang telah menciptakanku dan hanya kepada-Nyalah kamu akan dikembalikan?"
+        },
+        {
+          "number": 23,
+          "arab": "ءَاَتَّخِذُ مِنْ دُوْنِهٖٓ اٰلِهَةً اِنْ يُّرِدْنِ الرَّحْمٰنُ بِضُرٍّ لَّا تُغْنِ عَنِّيْ شَفَاعَتُهُمْ شَيْـًٔا وَّلَا يُنْقِذُوْنِۚ ",
+          "latin": "A'attakhiżu min dūnihī ālihatan iy yuridnir-raḥmānu biḍurril lā tugni ‘annī syafā‘atuhum syai'aw wa lā yunqiżūn(i).",
+          "translation": "Mengapa aku (harus) mengambil sembahan-sembahan selain-Nya? Jika (Allah) Yang Maha Pengasih menghendaki bencana terhadapku, pasti pertolongan mereka tidak berguna sama sekali bagi diriku dan mereka (juga) tidak dapat menyelamatkanku."
+        },
+        {
+          "number": 24,
+          "arab": "اِنِّيْٓ اِذًا لَّفِيْ ضَلٰلٍ مُّبِيْنٍ ",
+          "latin": "Innī iżal lafī ḍalālim mubīn(in).",
+          "translation": "Sesungguhnya aku (jika berbuat) begitu, pasti berada dalam kesesatan yang nyata."
+        },
+        {
+          "number": 25,
+          "arab": "اِنِّيْٓ اٰمَنْتُ بِرَبِّكُمْ فَاسْمَعُوْنِۗ  ",
+          "latin": "Innī  āmantu birabbikum fasma‘ūn(i).",
+          "translation": "Sesungguhnya aku telah beriman kepada Tuhanmu. Maka, dengarkanlah (pengakuan)-ku.”"
+        },
+        {
+          "number": 26,
+          "arab": "قِيْلَ ادْخُلِ الْجَنَّةَ ۗقَالَ يٰلَيْتَ قَوْمِيْ يَعْلَمُوْنَۙ",
+          "latin": "Qīladkhulil-jannah(ta), qāla yā laita qaumī ya‘lamūn(a).",
+          "translation": "Dikatakan (kepadanya), “Masuklah ke surga.” Dia (laki-laki itu) berkata, “Aduhai, sekiranya kaumku mengetahui"
+        },
+        {
+          "number": 27,
+          "arab": "بِمَا غَفَرَ لِيْ رَبِّيْ وَجَعَلَنِيْ مِنَ الْمُكْرَمِيْنَ",
+          "latin": "Bimā gafaralī rabbī wa ja‘alanī minal-mukramīn(a).",
+          "translation": "(bagaimana) Tuhanku mengampuniku dan menjadikanku termasuk orang-orang yang dimuliakan.”"
+        },
+        {
+          "number": 28,
+          "arab": "۞ وَمَآ اَنْزَلْنَا عَلٰى قَوْمِهٖ مِنْۢ بَعْدِهٖ مِنْ جُنْدٍ مِّنَ السَّمَاۤءِ وَمَا كُنَّا مُنْزِلِيْنَ  ",
+          "latin": "Wa mā anzalnā ‘alā qaumihī mim ba‘dihī min jundim minas-samā'i wa mā kunnā munzilīn(a).",
+          "translation": "Setelah dia (dibunuh), Kami tidak menurunkan satu pasukan pun dari langit kepada kaumnya dan Kami tidak perlu menurunkannya."
+        },
+        {
+          "number": 29,
+          "arab": "اِنْ كَانَتْ اِلَّا صَيْحَةً وَّاحِدَةً فَاِذَا هُمْ خٰمِدُوْنَ ",
+          "latin": "In kānat illā ṣaiḥataw wāḥidatan fa'iżā hum khāmidūn(a).",
+          "translation": "(Azab mereka) itu cukup dengan satu teriakan saja. Maka, seketika itu mereka mati."
+        },
+        {
+          "number": 30,
+          "arab": "يٰحَسْرَةً عَلَى الْعِبَادِۚ مَا يَأْتِيْهِمْ مِّنْ رَّسُوْلٍ اِلَّا كَانُوْا بِهٖ يَسْتَهْزِءُوْنَ ",
+          "latin": "Yā ḥasratan ‘alal-‘ibād(i), mā ya'tīhim mir rasūlin illā kānū bihī yastahzi'ūn(a).",
+          "translation": "Alangkah besar penyesalan diri para hamba itu. Setiap datang seorang rasul kepada mereka, mereka selalu memperolok-olokkannya."
+        },
+        {
+          "number": 31,
+          "arab": "اَلَمْ يَرَوْا كَمْ اَهْلَكْنَا قَبْلَهُمْ مِّنَ الْقُرُوْنِ اَنَّهُمْ اِلَيْهِمْ لَا يَرْجِعُوْنَ ",
+          "latin": "Alam yarau kam ahlaknā qablahum minal-qurūni annahum ilaihim lā yarji‘ūn(a).",
+          "translation": "Tidakkah mereka mengetahui berapa banyak umat sebelum mereka yang telah Kami binasakan? Mereka (setelah binasa) tidak ada yang kembali kepada mereka (di dunia)."
+        },
+        {
+          "number": 32,
+          "arab": "وَاِنْ كُلٌّ لَّمَّا جَمِيْعٌ لَّدَيْنَا مُحْضَرُوْنَ ࣖ",
+          "latin": "Wa in kullul lammā jamī‘ul ladainā muḥḍarūn(a).",
+          "translation": "Tidak ada satu (umat) pun, kecuali semuanya akan dihadirkan kepada Kami (untuk dihisab)."
+        },
+        {
+          "number": 33,
+          "arab": "وَاٰيَةٌ لَّهُمُ الْاَرْضُ الْمَيْتَةُ ۖاَحْيَيْنٰهَا وَاَخْرَجْنَا مِنْهَا حَبًّا فَمِنْهُ يَأْكُلُوْنَ",
+          "latin": "Wa āyatul lahumul-arḍul-maitah(tu), aḥyaināhā wa akhrajnā minhā ḥabban faminhu ya'kulūn(a).",
+          "translation": "Suatu tanda (kekuasaan-Nya) bagi mereka adalah bumi yang mati (tandus lalu) Kami menghidupkannya dan mengeluarkan darinya biji-bijian kemudian dari (biji-bijian) itu mereka makan."
+        },
+        {
+          "number": 34,
+          "arab": "وَجَعَلْنَا فِيْهَا جَنّٰتٍ مِّنْ نَّخِيْلٍ وَّاَعْنَابٍ وَّفَجَّرْنَا فِيْهَا مِنَ الْعُيُوْنِۙ",
+          "latin": "Wa ja‘alnā fīhā jannātim min nakhīliw wa a‘nābiw wa fajjarnā fīhā minal-‘uyūn(i).",
+          "translation": "Kami (juga) menjadikan padanya (bumi) kebun-kebun kurma dan anggur serta Kami memancarkan padanya beberapa mata air"
+        },
+        {
+          "number": 35,
+          "arab": "لِيَأْكُلُوْا مِنْ ثَمَرِهٖۙ وَمَا عَمِلَتْهُ اَيْدِيْهِمْ ۗ اَفَلَا يَشْكُرُوْنَ ",
+          "latin": "Liya'kulū min ṡamarihī wa mā ‘amilathu aidīhim, afalā yasykurūn(a).",
+          "translation": "agar mereka dapat makan dari buahnya, dan dari hasil usaha tangan mereka. Mengapa mereka tidak bersyukur?"
+        },
+        {
+          "number": 36,
+          "arab": "سُبْحٰنَ الَّذِيْ خَلَقَ الْاَزْوَاجَ كُلَّهَا مِمَّا تُنْۢبِتُ الْاَرْضُ وَمِنْ اَنْفُسِهِمْ وَمِمَّا لَا يَعْلَمُوْنَ",
+          "latin": "Subḥānal-lażī khalaqal-azwāja kullahā mimmā tumbitul-arḍu wa min anfusihim wa mimmā lā ya‘lamūn(a).",
+          "translation": "Maha Suci (Allah) yang telah menciptakan semuanya berpasang-pasangan, baik dari apa yang ditumbuhkan oleh bumi dan dari diri mereka sendiri maupun dari apa yang tidak mereka ketahui."
+        },
+        {
+          "number": 37,
+          "arab": "وَاٰيَةٌ لَّهُمُ الَّيْلُ ۖنَسْلَخُ مِنْهُ النَّهَارَ فَاِذَا هُمْ مُّظْلِمُوْنَۙ",
+          "latin": "Wa āyatul lahumul-lailu naslakhu minhun-nahāra fa'iżā hum muẓlimūn(a).",
+          "translation": "Suatu tanda juga (atas kekuasaan Allah) bagi mereka adalah malam. Kami pisahkan siang dari (malam) itu. Maka, seketika itu mereka (berada dalam) kegelapan."
+        },
+        {
+          "number": 38,
+          "arab": "وَالشَّمْسُ تَجْرِيْ لِمُسْتَقَرٍّ لَّهَا ۗذٰلِكَ تَقْدِيْرُ الْعَزِيْزِ الْعَلِيْمِۗ ",
+          "latin": "Wasy-syamsu tajrī limustaqarril lahā, żālika taqdīrul-‘azīzil-‘alīm(i).",
+          "translation": "(Suatu tanda juga atas kekuasaan Allah bagi mereka adalah) matahari yang berjalan di tempat peredarannya. Demikianlah ketetapan (Allah) Yang Maha Perkasa lagi Maha Mengetahui."
+        },
+        {
+          "number": 39,
+          "arab": "وَالْقَمَرَ قَدَّرْنٰهُ مَنَازِلَ حَتّٰى عَادَ كَالْعُرْجُوْنِ الْقَدِيْمِ ",
+          "latin": "Wal-qamara qaddarnāhu manāzila ḥattā ‘āda kal-‘urjūnil-qadīm(i).",
+          "translation": "(Begitu juga) bulan, Kami tetapkan bagi(-nya) tempat-tempat peredaran sehingga (setelah ia sampai ke tempat peredaran yang terakhir,) kembalilah ia seperti bentuk tandan yang tua."
+        },
+        {
+          "number": 40,
+          "arab": "لَا الشَّمْسُ يَنْۢبَغِيْ لَهَآ اَنْ تُدْرِكَ الْقَمَرَ وَلَا الَّيْلُ سَابِقُ النَّهَارِ ۗوَكُلٌّ فِيْ فَلَكٍ يَّسْبَحُوْنَ",
+          "latin": "Lasy-syamsu yambagī lahā an tudrikal-qamara wa lal-lailu sābiqun-nahār(i), wa kullun fī falakiy yasbaḥūn(a).",
+          "translation": "Tidaklah mungkin bagi matahari mengejar bulan dan malam pun tidak dapat mendahului siang. Masing-masing beredar pada garis edarnya."
+        },
+        {
+          "number": 41,
+          "arab": "وَاٰيَةٌ لَّهُمْ اَنَّا حَمَلْنَا ذُرِّيَّتَهُمْ فِى الْفُلْكِ الْمَشْحُوْنِۙ",
+          "latin": "Wa āyatul lahum annā ḥamalnā żurriyyatahum fil-fulkil-masyḥūn(i).",
+          "translation": "Suatu tanda (kebesaran Allah) bagi mereka adalah bahwa Kami mengangkut keturunan mereka dalam kapal yang penuh muatan."
+        },
+        {
+          "number": 42,
+          "arab": "وَخَلَقْنَا لَهُمْ مِّنْ مِّثْلِهٖ مَا يَرْكَبُوْنَ",
+          "latin": "Wa khalaqnā lahum mim miṡlihī mā yarkabūn(a).",
+          "translation": "(Begitu juga) Kami menciptakan untuk mereka dari jenis itu angkutan (lain) yang mereka kendarai."
+        },
+        {
+          "number": 43,
+          "arab": "وَاِنْ نَّشَأْ نُغْرِقْهُمْ فَلَا صَرِيْخَ لَهُمْ وَلَاهُمْ يُنْقَذُوْنَۙ",
+          "latin": "Wa in nasya' nugriqhum falā ṣarīkha lahum wa lā hum yunqażūn(a).",
+          "translation": "Jika Kami menghendaki, Kami akan menenggelamkan mereka. Kemudian, tidak ada penolong bagi mereka dan tidak (pula) mereka diselamatkan."
+        },
+        {
+          "number": 44,
+          "arab": "اِلَّا رَحْمَةً مِّنَّا وَمَتَاعًا اِلٰى حِيْنٍ",
+          "latin": "Illā raḥmatam minnā wa matā‘an ilā ḥīn(in).",
+          "translation": "Akan tetapi, (Kami menyelamatkan mereka) karena rahmat yang besar dari Kami dan untuk memberi mereka kesenangan hidup sampai waktu tertentu."
+        },
+        {
+          "number": 45,
+          "arab": "وَاِذَا قِيْلَ لَهُمُ اتَّقُوْا مَا بَيْنَ اَيْدِيْكُمْ وَمَا خَلْفَكُمْ لَعَلَّكُمْ تُرْحَمُوْنَ",
+          "latin": "Wa iżā qīla lahumuttaqū mā baina aidīkum wa mā khalfakum la‘allakum turḥamūn(a).",
+          "translation": "Ketika dikatakan kepada mereka, “Takutlah kamu akan (siksa) yang ada di hadapanmu (di dunia) dan azab yang ada di belakangmu (akhirat) agar kamu mendapat rahmat,” (maka mereka berpaling)."
+        },
+        {
+          "number": 46,
+          "arab": "وَمَا تَأْتِيْهِمْ مِّنْ اٰيَةٍ مِّنْ اٰيٰتِ رَبِّهِمْ اِلَّا كَانُوْا عَنْهَا مُعْرِضِيْنَ ",
+          "latin": "Wa mā ta'tīhim min āyatim min āyāti rabbihim illā kānū ‘anhā mu‘riḍīn(a).",
+          "translation": "Tidak satu pun dari tanda-tanda (kebesaran) Tuhan datang kepada mereka, kecuali mereka berpaling darinya."
+        },
+        {
+          "number": 47,
+          "arab": "وَاِذَا قِيْلَ لَهُمْ اَنْفِقُوْا مِمَّا رَزَقَكُمُ اللّٰهُ ۙقَالَ الَّذِيْنَ كَفَرُوْا لِلَّذِيْنَ اٰمَنُوْٓا اَنُطْعِمُ مَنْ لَّوْ يَشَاۤءُ اللّٰهُ اَطْعَمَهٗٓ  ۖاِنْ اَنْتُمْ اِلَّا فِيْ ضَلٰلٍ مُّبِيْنٍ",
+          "latin": "Wa iżā qīla lahum anfiqū mimmā razaqakumullāh(u), qālal-lażīna kafarū lil-lażīna āmanū anuṭ‘imu mal lau yasyā'ullāhu aṭ‘amah(ū), in antum illā fī ḍalālim mubīn(in).",
+          "translation": "Apabila dikatakan kepada mereka, “Infakkanlah sebagian rezeki yang diberikan Allah kepadamu,” orang-orang yang kufur itu berkata kepada orang-orang yang beriman, “Apakah pantas kami memberi makan kepada orang-orang yang jika Allah menghendaki, Dia akan memberinya makan? Kamu benar-benar dalam kesesatan yang nyata.”"
+        },
+        {
+          "number": 48,
+          "arab": "وَيَقُوْلُوْنَ مَتٰى هٰذَا الْوَعْدُ اِنْ كُنْتُمْ صٰدِقِيْنَ",
+          "latin": "Wa yaqūlūna matā hāżal-wa‘du in kuntum ṣādiqīn(a).",
+          "translation": "Mereka berkata, “Kapankah janji (hari Kebangkitan) ini (terjadi) jika kamu orang-orang benar?”"
+        },
+        {
+          "number": 49,
+          "arab": "مَا يَنْظُرُوْنَ اِلَّا صَيْحَةً وَّاحِدَةً تَأْخُذُهُمْ وَهُمْ يَخِصِّمُوْنَ",
+          "latin": "Mā yanẓurūna illā ṣaiḥataw wāḥidatan ta'khużuhum wa hum yakhiṣṣimūn(a).",
+          "translation": "Mereka hanya menunggu satu teriakan yang akan membinasakan mereka saat mereka (sibuk) bertengkar (tentang urusan dunia)."
+        },
+        {
+          "number": 50,
+          "arab": "فَلَا يَسْتَطِيْعُوْنَ تَوْصِيَةً وَّلَآ اِلٰٓى اَهْلِهِمْ يَرْجِعُوْنَ ࣖ  ",
+          "latin": "Falā yastaṭī‘ūna tauṣiyataw wa lā ilā ahlihim yarji‘ūn(a).",
+          "translation": "Oleh sebab itu, mereka tidak dapat berwasiat dan tidak dapat kembali kepada keluarganya."
+        },
+        {
+          "number": 51,
+          "arab": "وَنُفِخَ فِى الصُّوْرِ فَاِذَا هُمْ مِّنَ الْاَجْدَاثِ اِلٰى رَبِّهِمْ يَنْسِلُوْنَ",
+          "latin": "Wa nufikha fiṣ-ṣūri fa'iżā hum minal-ajdāṡi ilā rabbihim yansilūn(a).",
+          "translation": "Sangkakala pun ditiup dan seketika itu mereka bergerak cepat dari kuburnya menuju kepada Tuhannya."
+        },
+        {
+          "number": 52,
+          "arab": "قَالُوْا يٰوَيْلَنَا مَنْۢ بَعَثَنَا مِنْ مَّرْقَدِنَا ۜهٰذَا مَا وَعَدَ الرَّحْمٰنُ وَصَدَقَ الْمُرْسَلُوْنَ",
+          "latin": "Qālū yā wailanā mam ba‘aṡanā mim marqadinā…hāżā mā wa‘adar-raḥmānu wa ṣadaqal-mursalūn(a).",
+          "translation": "Mereka berkata, “Celakalah kami! Siapakah yang membangkitkan kami dari tempat tidur kami (kubur)?” (Lalu, dikatakan kepada mereka,) “Inilah yang dijanjikan (Allah) Yang Maha Pengasih dan benarlah para rasul(-Nya).”"
+        },
+        {
+          "number": 53,
+          "arab": "اِنْ كَانَتْ اِلَّا صَيْحَةً وَّاحِدَةً فَاِذَا هُمْ جَمِيْعٌ لَّدَيْنَا مُحْضَرُوْنَ",
+          "latin": "In kānat illā ṣaiḥataw wāḥidatan fa'iżā hum jamī‘ul ladainā muḥḍarūn(a).",
+          "translation": "Teriakan itu hanya sekali saja, maka seketika itu mereka semua dihadapkan kepada Kami (untuk dihisab)."
+        },
+        {
+          "number": 54,
+          "arab": "فَالْيَوْمَ لَا تُظْلَمُ نَفْسٌ شَيْـًٔا وَّلَا تُجْزَوْنَ اِلَّا مَا كُنْتُمْ تَعْمَلُوْنَ",
+          "latin": "Fal-yauma lā tuẓlamu nafsun syai'aw wa lā tujzauna illā mā kuntum ta‘malūn(a).",
+          "translation": "Pada hari itu tidak ada sama sekali orang yang dirugikan sedikit pun. Kamu tidak akan diberi balasan, kecuali atas apa yang telah kamu kerjakan."
+        },
+        {
+          "number": 55,
+          "arab": "اِنَّ اَصْحٰبَ الْجَنَّةِ الْيَوْمَ فِيْ شُغُلٍ فٰكِهُوْنَ ۚ  ",
+          "latin": "Inna aṣḥābal-jannatil-yauma fī syugulin fākihūn(a).",
+          "translation": "Sesungguhnya penghuni surga pada hari itu berada dalam kesibukan (sehingga tidak sempat berpikir tentang penghuni neraka) lagi bersenang-senang."
+        },
+        {
+          "number": 56,
+          "arab": "هُمْ وَاَزْوَاجُهُمْ فِيْ ظِلٰلٍ عَلَى الْاَرَاۤىِٕكِ مُتَّكِـُٔوْنَ ۚ   ",
+          "latin": "Hum wa azwājuhum fī ẓilālin ‘alal-arā'iki muttaki'ūn(a).",
+          "translation": "Mereka dan pasangan-pasangannya berada dalam tempat yang teduh sambil berbaring di atas ranjang berkelambu."
+        },
+        {
+          "number": 57,
+          "arab": "لَهُمْ فِيْهَا فَاكِهَةٌ وَّلَهُمْ مَّا يَدَّعُوْنَ ۚ ",
+          "latin": "Lahum fīhā fākihatuw wa lahum mā yadda‘ūn(a).",
+          "translation": "Di (surga) itu mereka memperoleh buah-buahan dan apa saja yang mereka inginkan."
+        },
+        {
+          "number": 58,
+          "arab": "سَلٰمٌۗ قَوْلًا مِّنْ رَّبٍّ رَّحِيْمٍ",
+          "latin": "Salāmun qaulam mir rabbir raḥīm(in).",
+          "translation": "(Kepada mereka dikatakan,) “Salam sejahtera” sebagai ucapan dari Tuhan Yang Maha Penyayang."
+        },
+        {
+          "number": 59,
+          "arab": "وَامْتَازُوا الْيَوْمَ اَيُّهَا الْمُجْرِمُوْنَ",
+          "latin": "Wamtāzul-yauma  ayyuhal-mujrimūn(a).",
+          "translation": "(Dikatakan kepada orang-orang kafir,) “Berpisahlah kamu (dari orang-orang mukmin) pada hari ini, wahai para pendurhaka!"
+        },
+        {
+          "number": 60,
+          "arab": "۞ اَلَمْ اَعْهَدْ اِلَيْكُمْ يٰبَنِيْٓ اٰدَمَ اَنْ لَّا تَعْبُدُوا الشَّيْطٰنَۚ اِنَّهٗ لَكُمْ عَدُوٌّ مُّبِيْنٌ ",
+          "latin": "Alam a‘had ilaikum yā banī ādama allā ta‘budusy-syaiṭān(a), innahū lakum ‘aduwwum mubīn(un).",
+          "translation": "Bukankah Aku telah berpesan kepadamu dengan sungguh-sungguh, wahai anak cucu Adam, bahwa janganlah kamu menyembah setan? Sesungguhnya setan itu musuh yang nyata bagi kamu."
+        },
+        {
+          "number": 61,
+          "arab": "وَاَنِ اعْبُدُوْنِيْ ۗهٰذَا صِرَاطٌ مُّسْتَقِيْمٌ ",
+          "latin": "Wa ani‘budūnī, hāżā ṣirāṭum mustaqīm(un).",
+          "translation": "(Begitu juga bahwa) sembahlah Aku. Inilah jalan yang lurus.”"
+        },
+        {
+          "number": 62,
+          "arab": "وَلَقَدْ اَضَلَّ مِنْكُمْ جِبِلًّا كَثِيْرًا ۗاَفَلَمْ تَكُوْنُوْا تَعْقِلُوْنَ ",
+          "latin": "Wa laqad aḍalla minkum jibillan kaṡīrā(n), afalam takūnū ta‘qilūn(a).",
+          "translation": "Sungguh, ia (setan itu) benar-benar telah menyesatkan sangat banyak orang dari kamu. Maka, apakah kamu tidak mengerti?"
+        },
+        {
+          "number": 63,
+          "arab": "هٰذِهٖ جَهَنَّمُ الَّتِيْ كُنْتُمْ تُوْعَدُوْنَ",
+          "latin": "Hāżihī jahannamul-latī kuntum tū‘adūn(a).",
+          "translation": "Inilah (neraka) Jahanam yang dahulu telah diperingatkan kepadamu."
+        },
+        {
+          "number": 64,
+          "arab": "اِصْلَوْهَا الْيَوْمَ بِمَا كُنْتُمْ تَكْفُرُوْنَ ",
+          "latin": "Iṣlauhal-yauma bimā kuntum takfurūn(a).",
+          "translation": "Masuklah ke dalamnya pada hari ini karena dahulu kamu mengingkarinya."
+        },
+        {
+          "number": 65,
+          "arab": "اَلْيَوْمَ نَخْتِمُ عَلٰٓى اَفْوَاهِهِمْ وَتُكَلِّمُنَآ اَيْدِيْهِمْ وَتَشْهَدُ اَرْجُلُهُمْ بِمَا كَانُوْا يَكْسِبُوْنَ ",
+          "latin": "Al-yauma nakhtimu ‘alā afwāhihim wa tukallimunā aidīhim wa tasyhadu arjuluhum bimā kānū yaksibūn(a).",
+          "translation": "Pada hari ini Kami membungkam mulut mereka. Tangan merekalah yang berkata kepada Kami dan kaki merekalah yang akan bersaksi terhadap apa yang dahulu mereka kerjakan."
+        },
+        {
+          "number": 66,
+          "arab": "وَلَوْ نَشَاۤءُ لَطَمَسْنَا عَلٰٓى اَعْيُنِهِمْ فَاسْتَبَقُوا الصِّرَاطَ فَاَنّٰى يُبْصِرُوْنَ",
+          "latin": "Wa lau nasyā'u laṭamasnā ‘alā a‘yunihim fastabaquṣ-ṣirāṭa fa annā yubṣirūn(a). ",
+          "translation": "Seandainya Kami menghendaki, pastilah Kami akan menghapus penglihatan (membutakan) mereka sehingga mereka berlomba-lomba (mencari) jalan (selamat). Maka, bagaimana mungkin mereka dapat melihat?"
+        },
+        {
+          "number": 67,
+          "arab": "وَلَوْ نَشَاۤءُ لَمَسَخْنٰهُمْ عَلٰى مَكَانَتِهِمْ فَمَا اسْتَطَاعُوْا مُضِيًّا وَّلَا يَرْجِعُوْنَ ࣖ ",
+          "latin": "Wa lau nasyā'u lamasakhnāhum ‘alā makānatihim famastaṭā‘ū muḍiyyaw wa lā yarji‘ūn(a).",
+          "translation": "Seandainya Kami menghendaki, pastilah Kami akan mengubah bentuk mereka di tempat mereka berada, sehingga mereka tidak sanggup meneruskan perjalanan dan juga tidak sanggup pulang kembali."
+        },
+        {
+          "number": 68,
+          "arab": "وَمَنْ نُّعَمِّرْهُ نُنَكِّسْهُ فِى الْخَلْقِۗ اَفَلَا يَعْقِلُوْنَ ",
+          "latin": "Wa man nu‘ammirhu nunakkishu fil-khalq(i), afalā ya‘qilūn(a).",
+          "translation": "Siapa yang Kami panjangkan umurnya niscaya Kami balik proses penciptaannya (dari kuat menuju lemah). Maka, apakah mereka tidak mengerti?"
+        },
+        {
+          "number": 69,
+          "arab": "وَمَا عَلَّمْنٰهُ الشِّعْرَ وَمَا يَنْۢبَغِيْ لَهٗ ۗاِنْ هُوَ اِلَّا ذِكْرٌ وَّقُرْاٰنٌ مُّبِيْنٌ ۙ",
+          "latin": "Wa mā ‘allamnāhusy-syi‘ra wa mā yambagī lah(ū), in huwa illā żikruw wa qur'ānum mubīn(un).",
+          "translation": "Kami tidak mengajarkan syair kepadanya (Nabi Muhammad) dan (bersyair) itu tidaklah pantas baginya. (Wahyu yang Kami turunkan kepadanya) itu tidak lain hanyalah pelajaran dan Al-Qur’an yang jelas"
+        },
+        {
+          "number": 70,
+          "arab": "لِّيُنْذِرَ مَنْ كَانَ حَيًّا وَّيَحِقَّ الْقَوْلُ عَلَى الْكٰفِرِيْنَ",
+          "latin": "Liyunżira man kāna ḥayyaw wa yaḥiqqal-qaulu ‘alal-kāfirīn(a).",
+          "translation": "agar dia (Nabi Muhammad) memberi peringatan kepada orang-orang yang hidup (hatinya) dan agar ketetapan (azab) terhadap orang-orang kafir itu menjadi pasti."
+        },
+        {
+          "number": 71,
+          "arab": "اَوَلَمْ يَرَوْا اَنَّا خَلَقْنَا لَهُمْ مِّمَّا عَمِلَتْ اَيْدِيْنَآ اَنْعَامًا فَهُمْ لَهَا مٰلِكُوْنَ ",
+          "latin": "Awalam yarau annā khalaqnā lahum mimmā ‘amilat aidīnā an‘āman fahum lahā mālikūn(a).",
+          "translation": "Tidakkah mereka mengetahui bahwa Kami telah menciptakan untuk mereka hewan-hewan ternak dari ciptaan tangan Kami (sendiri), lalu mereka menjadi pemiliknya?"
+        },
+        {
+          "number": 72,
+          "arab": "وَذَلَّلْنٰهَا لَهُمْ فَمِنْهَا رَكُوْبُهُمْ وَمِنْهَا يَأْكُلُوْنَ ",
+          "latin": "Wa żallalnāhā lahum fa minhā rakūbuhum wa minhā ya'kulūn(a).",
+          "translation": "Kami menjadikannya (hewan-hewan itu) tunduk kepada mereka. Sebagian di antaranya menjadi tunggangan mereka dan sebagian (lagi) mereka makan."
+        },
+        {
+          "number": 73,
+          "arab": "وَلَهُمْ فِيْهَا مَنَافِعُ وَمَشَارِبُۗ اَفَلَا يَشْكُرُوْنَ ",
+          "latin": "Wa lahum fīhā manāfi‘u wa masyārib(u), afalā yasykurūn(a).",
+          "translation": "Pada dirinya (hewan-hewan ternak itu) terdapat berbagai manfaat dan minuman untuk mereka. Apakah mereka tidak bersyukur?"
+        },
+        {
+          "number": 74,
+          "arab": "وَاتَّخَذُوْا مِنْ دُوْنِ اللّٰهِ اٰلِهَةً لَّعَلَّهُمْ يُنْصَرُوْنَ ۗ ",
+          "latin": "Wattakhażū min dūnillāhi ālihatal la‘allahum yunṣarūn(a).",
+          "translation": "Mereka menjadikan sesembahan selain Allah agar mereka mendapat pertolongan."
+        },
+        {
+          "number": 75,
+          "arab": "لَا يَسْتَطِيْعُوْنَ نَصْرَهُمْۙ وَهُمْ لَهُمْ جُنْدٌ مُّحْضَرُوْنَ",
+          "latin": "Lā yastaṭī‘ūna naṣrahum, wa hum lahum jundum muḥḍarūn(a).",
+          "translation": "(Sesembahan) itu tidak mampu menolong mereka, padahal (sesembahan) itu adalah tentara yang dihadirkan untuk menjaganya."
+        },
+        {
+          "number": 76,
+          "arab": "فَلَا يَحْزُنْكَ قَوْلُهُمْ ۘاِنَّا نَعْلَمُ مَا يُسِرُّوْنَ وَمَا يُعْلِنُوْنَ ",
+          "latin": "Falā yaḥzunka qauluhum, innā na‘lamu mā yusirrūna wa mā yu‘linūn(a).",
+          "translation": "Maka, jangan sampai ucapan mereka membuat engkau (Nabi Muhammad) bersedih hati. Sesungguhnya Kami mengetahui apa yang mereka rahasiakan dan apa yang mereka nyatakan."
+        },
+        {
+          "number": 77,
+          "arab": "اَوَلَمْ يَرَ الْاِنْسَانُ اَنَّا خَلَقْنٰهُ مِنْ نُّطْفَةٍ فَاِذَا هُوَ خَصِيْمٌ مُّبِيْنٌ ",
+          "latin": "Awalam yaral-insānu annā khalaqnāhu min nuṭfatin fa'iżā huwa khaṣīmum mubīn(un).",
+          "translation": "Tidakkah manusia mengetahui bahwa Kami menciptakannya dari setetes mani? Kemudian tiba-tiba saja dia menjadi musuh yang nyata."
+        },
+        {
+          "number": 78,
+          "arab": "وَضَرَبَ لَنَا مَثَلًا وَّنَسِيَ خَلْقَهٗۗ قَالَ مَنْ يُّحْيِ الْعِظَامَ وَهِيَ رَمِيْمٌ ",
+          "latin": "Wa ḍaraba lanā maṡalaw wa nasiya khalqah(ū), qāla may yuḥyil-‘iẓāma wa hiya ramīm(un).",
+          "translation": "Dia membuat perumpamaan bagi Kami dan melupakan asal penciptaannya. Dia berkata, “Siapakah yang bisa menghidupkan tulang-belulang yang telah hancur luluh?”"
+        },
+        {
+          "number": 79,
+          "arab": "قُلْ يُحْيِيْهَا الَّذِيْٓ اَنْشَاَهَآ اَوَّلَ مَرَّةٍ ۗوَهُوَ بِكُلِّ خَلْقٍ عَلِيْمٌ ۙ",
+          "latin": "Qul yuḥyīhal-lażī ansya'ahā awwala marrah(tin), wa huwa bikulli khalqin ‘alīm(un).",
+          "translation": "Katakanlah (Nabi Muhammad), “Yang akan menghidupkannya adalah Zat yang menciptakannya pertama kali. Dia Maha Mengetahui setiap makhluk."
+        },
+        {
+          "number": 80,
+          "arab": " ۨالَّذِيْ جَعَلَ لَكُمْ مِّنَ الشَّجَرِ الْاَخْضَرِ نَارًاۙ فَاِذَآ اَنْتُمْ مِّنْهُ تُوْقِدُوْنَ ",
+          "latin": "Allażī ja‘ala lakum minasy-syajaril-akhḍari nārā(n), fa'iżā antum minhu tūqidūn(a).",
+          "translation": "(Dialah) yang menjadikan api untukmu dari kayu yang hijau. Kemudian, seketika itu kamu menyalakan (api) darinya.”"
+        },
+        {
+          "number": 81,
+          "arab": "اَوَلَيْسَ الَّذِيْ خَلَقَ السَّمٰوٰتِ وَالْاَرْضَ بِقٰدِرٍ عَلٰٓى اَنْ يَّخْلُقَ مِثْلَهُمْ ۗبَلٰى وَهُوَ الْخَلّٰقُ الْعَلِيْمُ ",
+          "latin": "Awa laisal-lażī khalaqas-samāwāti wal-arḍa biqādirin ‘alā ay yakhluqa miṡlahum, balā wa huwal-khallāqul-‘alīm(u).",
+          "translation": "Bukankah Zat yang menciptakan langit dan bumi mampu menciptakan manusia yang serupa mereka itu (di akhirat kelak)? Benar. Dialah yang Maha Banyak Mencipta lagi Maha Mengetahui."
+        },
+        {
+          "number": 82,
+          "arab": "اِنَّمَآ اَمْرُهٗٓ اِذَآ اَرَادَ شَيْـًٔاۖ اَنْ يَّقُوْلَ لَهٗ كُنْ فَيَكُوْنُ ",
+          "latin": "Innamā amruhū iżā arāda syai'an ay yaqūla lahū kun fa yakūn(u).",
+          "translation": "Sesungguhnya ketetapan-Nya, jika Dia menghendaki sesuatu, Dia hanya berkata kepadanya, “Jadilah!” Maka, jadilah (sesuatu) itu."
+        },
+        {
+          "number": 83,
+          "arab": "فَسُبْحٰنَ الَّذِيْ بِيَدِهٖ مَلَكُوْتُ كُلِّ شَيْءٍ وَّاِلَيْهِ تُرْجَعُوْنَ ࣖ",
+          "latin": "Fa subḥānal-lażī biyadihī malakūtu kulli syai'iw wa ilaihi turja‘ūn(a).",
+          "translation": "Maka, Maha Suci (Allah) yang di tangan-Nya kekuasaan atas segala sesuatu dan kepada-Nya kamu dikembalikan."
+        }
+      ]
+    },
+    {
+      "number": 67,
+      "name": "Al-Mulk",
+      "translation": "Kerajaan",
+      "numberOfVerses": 30,
+      "verses": [
+        {
+          "number": 1,
+          "arab": "تَبٰرَكَ الَّذِيْ بِيَدِهِ الْمُلْكُۖ وَهُوَ عَلٰى كُلِّ شَيْءٍ قَدِيْرٌۙ",
+          "latin": "Tabārakal-lażī biyadihil-mulk(u), wa huwa ‘alā kulli syai'in qadīr(un).",
+          "translation": "Maha Berkah Zat yang menguasai (segala) kerajaan dan Dia Maha Kuasa atas segala sesuatu,"
+        },
+        {
+          "number": 2,
+          "arab": " ۨالَّذِيْ خَلَقَ الْمَوْتَ وَالْحَيٰوةَ لِيَبْلُوَكُمْ اَيُّكُمْ اَحْسَنُ عَمَلًاۗ وَهُوَ الْعَزِيْزُ الْغَفُوْرُۙ",
+          "latin": "Allażī khalaqal-mauta wal-ḥayāta liyabluwakum ayyukum aḥsanu ‘amalā(n), wa huwal-‘azīzul-gafūr(u).",
+          "translation": "yaitu yang menciptakan kematian dan kehidupan untuk menguji kamu, siapa di antara kamu yang lebih baik amalnya. Dia Maha Perkasa lagi Maha Pengampun."
+        },
+        {
+          "number": 3,
+          "arab": "الَّذِيْ خَلَقَ سَبْعَ سَمٰوٰتٍ طِبَاقًاۗ مَا تَرٰى فِيْ خَلْقِ الرَّحْمٰنِ مِنْ تَفٰوُتٍۗ فَارْجِعِ الْبَصَرَۙ هَلْ تَرٰى مِنْ فُطُوْرٍ ",
+          "latin": "Allażī khalaqa sab‘a samāwātin ṭibāqā(n), mā tarā fī khalqir-raḥmāni min tafāwut(in), farji‘il-baṣara hal tarā min fuṭūr(in).",
+          "translation": "(Dia juga) yang menciptakan tujuh langit berlapis-lapis. Kamu tidak akan melihat pada ciptaan Tuhan Yang Maha Pengasih ketidakseimbangan sedikit pun. Maka, lihatlah sekali lagi! Adakah kamu melihat suatu cela?"
+        },
+        {
+          "number": 4,
+          "arab": "ثُمَّ ارْجِعِ الْبَصَرَ كَرَّتَيْنِ يَنْقَلِبْ اِلَيْكَ الْبَصَرُ خَاسِئًا وَّهُوَ حَسِيْرٌ ",
+          "latin": "Ṡummarji‘il-baṣara karrataini yanqalib ilaikal-baṣaru khāsi'aw wa huwa ḥasīr(un).",
+          "translation": "Kemudian, lihatlah sekali lagi (dan) sekali lagi (untuk mencari cela dalam ciptaan Allah), niscaya pandanganmu akan kembali kepadamu dengan kecewa dan dalam keadaan letih (karena tidak menemukannya)."
+        },
+        {
+          "number": 5,
+          "arab": "وَلَقَدْ زَيَّنَّا السَّمَاۤءَ الدُّنْيَا بِمَصَابِيْحَ وَجَعَلْنٰهَا رُجُوْمًا لِّلشَّيٰطِيْنِ وَاَعْتَدْنَا لَهُمْ عَذَابَ السَّعِيْرِ ",
+          "latin": "Wa laqad zayyannas-samā'ad-dun-yā bimaṣābīḥa wa ja‘alnāhā rujūmal lisy-syayāṭīni wa a‘tadnā lahum ‘ażābas-sa‘īr(i).",
+          "translation": "Sungguh, Kami benar-benar telah menghiasi langit dunia dengan bintang-bintang, menjadikannya (bintang-bintang itu) sebagai alat pelempar terhadap setan, dan menyediakan bagi mereka (setan-setan itu) azab (neraka) Sa‘ir (yang menyala-nyala)."
+        },
+        {
+          "number": 6,
+          "arab": "وَلِلَّذِيْنَ كَفَرُوْا بِرَبِّهِمْ عَذَابُ جَهَنَّمَۗ وَبِئْسَ الْمَصِيْرُ",
+          "latin": "Wa lil-lażīna kafarū birabbihim ‘ażābu jahannam(a), wa bi'sal-maṣīr(u).",
+          "translation": "Orang-orang yang kufur kepada Tuhannya akan mendapat azab (neraka) Jahanam. Itulah seburuk-buruk tempat kembali."
+        },
+        {
+          "number": 7,
+          "arab": "اِذَآ اُلْقُوْا فِيْهَا سَمِعُوْا لَهَا شَهِيْقًا وَّهِيَ تَفُوْرُۙ",
+          "latin": "Iżā ulqū fīhā sami‘ū lahā syahīqaw wa hiya tafūr(u).",
+          "translation": "Apabila dilemparkan ke dalamnya (neraka), mereka pasti mendengar suaranya yang mengerikan saat ia membara."
+        },
+        {
+          "number": 8,
+          "arab": "تَكَادُ تَمَيَّزُ مِنَ الْغَيْظِۗ كُلَّمَآ اُلْقِيَ فِيْهَا فَوْجٌ سَاَلَهُمْ خَزَنَتُهَآ اَلَمْ يَأْتِكُمْ نَذِيْرٌۙ",
+          "latin": "Takādu tamayyazu minal-gaiẓ(i), kullamā ulqiya fīhā faujun sa'alahum khazanatuhā alam ya'tikum nażīr(un).",
+          "translation": "(Neraka itu) hampir meledak karena marah. Setiap kali ada sekumpulan (orang-orang kafir) dilemparkan ke dalamnya, penjaga-penjaganya bertanya kepada mereka, “Tidak pernahkah seorang pemberi peringatan datang kepadamu (di dunia)?”"
+        },
+        {
+          "number": 9,
+          "arab": "قَالُوْا بَلٰى قَدْ جَاۤءَنَا نَذِيْرٌ ەۙ فَكَذَّبْنَا وَقُلْنَا مَا نَزَّلَ اللّٰهُ مِنْ شَيْءٍۖ اِنْ اَنْتُمْ اِلَّا فِيْ ضَلٰلٍ كَبِيْرٍ",
+          "latin": "Qālū balā qad jā'anā nażīr(un), fa każżabnā wa qulnā mā nazzalallāhu min syai'(in), in antum illā fī ḍalālin kabīr(in).",
+          "translation": "Mereka menjawab, “Pernah! Sungguh, seorang pemberi peringatan telah datang kepada kami, tetapi kami mendustakan(-nya) dan mengatakan, ‘Allah tidak menurunkan sesuatu apa pun.’” (Para malaikat berkata,) “Kamu tidak lain hanyalah (berada) dalam kesesatan yang besar.”"
+        },
+        {
+          "number": 10,
+          "arab": "وَقَالُوْا لَوْ كُنَّا نَسْمَعُ اَوْ نَعْقِلُ مَا كُنَّا فِيْٓ اَصْحٰبِ السَّعِيْرِ",
+          "latin": "Wa qālū lau kunnā nasma‘u au na‘qilu mā kunnā fī aṣḥābis-sa‘īr(i).",
+          "translation": "Mereka juga berkata, “Andaikan dahulu kami mendengarkan atau memikirkan (peringatan itu), tentulah kami tidak termasuk ke dalam (golongan) para penghuni (neraka) Sa‘ir (yang menyala-nyala).”"
+        },
+        {
+          "number": 11,
+          "arab": "فَاعْتَرَفُوْا بِذَنْۢبِهِمْۚ فَسُحْقًا لِّاَصْحٰبِ السَّعِيْرِ ",
+          "latin": "Fa‘tarafū biżambihim, fasuḥqal li'aṣḥābis-sa‘īr(i).",
+          "translation": "Mereka mengakui dosanya (saat penyesalan tidak lagi bermanfaat). Maka, jauhlah (dari rahmat Allah) bagi para penghuni (neraka) Sa‘ir (yang menyala-nyala) itu."
+        },
+        {
+          "number": 12,
+          "arab": "اِنَّ الَّذِيْنَ يَخْشَوْنَ رَبَّهُمْ بِالْغَيْبِ لَهُمْ مَّغْفِرَةٌ وَّاَجْرٌ كَبِيْرٌ ",
+          "latin": "Innal-lażīna yakhsyauna rabbahum bil-gaibi lahum magfiratuw wa ajrun kabīr(un).",
+          "translation": "Sesungguhnya orang-orang yang takut kepada Tuhannya dengan tanpa melihat-Nya akan memperoleh ampunan dan pahala yang besar."
+        },
+        {
+          "number": 13,
+          "arab": "وَاَسِرُّوْا قَوْلَكُمْ اَوِ اجْهَرُوْا بِهٖۗ اِنَّهٗ عَلِيْمٌ ۢبِذَاتِ الصُّدُوْرِ ",
+          "latin": "Wa asirrū qaulakum awijharū bih(ī), innahū ‘alīmum biżātiṣ-ṣudūr(i).",
+          "translation": "Rahasiakanlah perkataanmu atau nyatakanlah. Sesungguhnya Dia Maha Mengetahui segala isi hati."
+        },
+        {
+          "number": 14,
+          "arab": "اَلَا يَعْلَمُ مَنْ خَلَقَۗ وَهُوَ اللَّطِيْفُ الْخَبِيْرُ ࣖ ",
+          "latin": "Alā ya‘lamu man khalaq(a), wa huwal-laṭīful-khabīr(u).",
+          "translation": "Apakah (pantas) Zat yang menciptakan itu tidak mengetahui, sedangkan Dia (juga) Maha Halus lagi Maha Mengetahui?"
+        },
+        {
+          "number": 15,
+          "arab": "هُوَ الَّذِيْ جَعَلَ لَكُمُ الْاَرْضَ ذَلُوْلًا فَامْشُوْا فِيْ مَنَاكِبِهَا وَكُلُوْا مِنْ رِّزْقِهٖۗ وَاِلَيْهِ النُّشُوْرُ ",
+          "latin": "Huwal-lażī ja‘ala lakumul-arḍa żalūlan famsyū fī manākibihā wa kulū mir rizqih(ī), wa ilaihin-nusyūr(u).",
+          "translation": "Dialah yang menjadikan bumi untuk kamu dalam keadaan mudah dimanfaatkan. Maka, jelajahilah segala penjurunya dan makanlah sebagian dari rezeki-Nya. Hanya kepada-Nya kamu (kembali setelah) dibangkitkan."
+        },
+        {
+          "number": 16,
+          "arab": "ءَاَمِنْتُمْ مَّنْ فِى السَّمَاۤءِ اَنْ يَّخْسِفَ بِكُمُ الْاَرْضَ فَاِذَا هِيَ تَمُوْرُۙ",
+          "latin": "A'amintum man fis-samā'i ay yakhsifa bikumul-arḍa  fa'iżā hiya tamūr(u).",
+          "translation": "Sudah merasa amankah kamu dari Zat yang di langit, yaitu (dari bencana) dibenamkannya bumi oleh-Nya bersama kamu ketika tiba-tiba ia terguncang?"
+        },
+        {
+          "number": 17,
+          "arab": "اَمْ اَمِنْتُمْ مَّنْ فِى السَّمَاۤءِ اَنْ يُّرْسِلَ عَلَيْكُمْ حَاصِبًاۗ فَسَتَعْلَمُوْنَ كَيْفَ نَذِيْرِ ",
+          "latin": "Am amintum man fis-samā'i ay yursila ‘alaikum ḥāṣibā(n), fa sata‘lamūna kaifa nażīr(i).",
+          "translation": "Atau, sudah merasa amankah kamu dari Zat yang di langit, yaitu (dari bencana) dikirimkannya badai batu oleh-Nya kepadamu? Kelak kamu akan mengetahui bagaimana (akibat mendustakan) peringatan-Ku."
+        },
+        {
+          "number": 18,
+          "arab": "وَلَقَدْ كَذَّبَ الَّذِيْنَ مِنْ قَبْلِهِمْ فَكَيْفَ كَانَ نَكِيْرِ ",
+          "latin": "Wa laqad każżabal-lażīna min qablihim fakaifa kāna nakīr(i).",
+          "translation": "Sungguh, orang-orang sebelum mereka pun benar-benar telah mendustakan (rasul-rasul-Nya). Maka, betapa hebatnya kemurkaan-Ku!"
+        },
+        {
+          "number": 19,
+          "arab": "اَوَلَمْ يَرَوْا اِلَى الطَّيْرِ فَوْقَهُمْ صٰۤفّٰتٍ وَّيَقْبِضْنَۘ مَا يُمْسِكُهُنَّ اِلَّا الرَّحْمٰنُۗ اِنَّهٗ بِكُلِّ شَيْءٍۢ بَصِيْرٌ ",
+          "latin": "Awalam yarau ilaṭ-ṭairi fauqahum ṣāffātiw wa yaqbiḍn(a), mā yumsikuhunna illar-raḥmān(u), innahū bikulli syai'im baṣīr(un).",
+          "translation": "Tidakkah mereka memperhatikan burung-burung yang mengembangkan dan mengatupkan sayapnya di atas mereka? Tidak ada yang menahannya (di udara) selain Yang Maha Pengasih. Sesungguhnya Dia Maha Melihat segala sesuatu."
+        },
+        {
+          "number": 20,
+          "arab": "اَمَّنْ هٰذَا الَّذِيْ هُوَ جُنْدٌ لَّكُمْ يَنْصُرُكُمْ مِّنْ دُوْنِ الرَّحْمٰنِۗ اِنِ الْكٰفِرُوْنَ اِلَّا فِيْ غُرُوْرٍۚ ",
+          "latin": "Am man hāżal-lażī huwa jundul lakum yanṣurukum min dūnir-raḥmān(i), inil-kāfirūna illā fī gurūr(in).",
+          "translation": "Atau, siapakah yang akan menjadi bala tentara bagimu yang dapat menolongmu selain (Allah) Yang Maha Pengasih? Orang-orang kafir itu tidak lain hanyalah dalam (keadaan) tertipu."
+        },
+        {
+          "number": 21,
+          "arab": "اَمَّنْ هٰذَا الَّذِيْ يَرْزُقُكُمْ اِنْ اَمْسَكَ رِزْقَهٗ ۚ بَلْ لَّجُّوْا فِيْ عُتُوٍّ وَّنُفُوْرٍ ",
+          "latin": "Am man hāżal-lażī yarzuqukum in amsaka rizqah(ū), bal lajjū fī ‘utuwwiw wa nufūr(in).",
+          "translation": "Atau, siapakah yang dapat memberimu rezeki jika Dia menahan rezeki-Nya? Sebaliknya, mereka terus-menerus dalam kesombongan dan menjauhkan diri (dari kebenaran)."
+        },
+        {
+          "number": 22,
+          "arab": "اَفَمَنْ يَّمْشِيْ مُكِبًّا عَلٰى وَجْهِهٖٓ اَهْدٰىٓ اَمَّنْ يَّمْشِيْ سَوِيًّا عَلٰى صِرَاطٍ مُّسْتَقِيْمٍ ",
+          "latin": "Afamay yamsyī mukibban ‘alā wajhihī ahdā ammay yamsyī sawiyyan ‘alā ṣirāṭim mustaqīm(in).",
+          "translation": "Apakah orang yang berjalan dengan wajah tertelungkup itu lebih mendapatkan petunjuk ataukah orang yang berjalan tegap di atas jalan yang lurus?"
+        },
+        {
+          "number": 23,
+          "arab": "قُلْ هُوَ الَّذِيْٓ اَنْشَاَكُمْ وَجَعَلَ لَكُمُ السَّمْعَ وَالْاَبْصَارَ وَالْاَفْـِٕدَةَۗ قَلِيْلًا مَّا تَشْكُرُوْنَ ",
+          "latin": "Qul huwal-lażī ansya'akum wa ja‘ala lakumus-sam‘a wal-abṣāra wal-af'idah(ta), qalīlam mā tasykurūn(a).",
+          "translation": "Katakanlah, “Dialah Zat yang menciptakanmu dan menjadikan bagimu pendengaran, penglihatan, dan hati nurani. (Akan tetapi,) sedikit sekali kamu bersyukur.”"
+        },
+        {
+          "number": 24,
+          "arab": "قُلْ هُوَ الَّذِيْ ذَرَاَكُمْ فِى الْاَرْضِ وَاِلَيْهِ تُحْشَرُوْنَ ",
+          "latin": "Qul huwal-lażī żara'akum fil-arḍi wa ilaihi tuḥsyarūn(a).",
+          "translation": "Katakanlah, “Dialah yang menjadikan kamu berkembang biak di muka bumi dan kepada-Nyalah kamu akan dikumpulkan.”"
+        },
+        {
+          "number": 25,
+          "arab": "وَيَقُوْلُوْنَ مَتٰى هٰذَا الْوَعْدُ اِنْ كُنْتُمْ صٰدِقِيْنَ ",
+          "latin": "Wa yaqūlūna matā hāżal-wa‘du in kuntum ṣādiqīn(a).",
+          "translation": "Mereka berkata, “Kapankah (datangnya) janji (azab) ini jika kamu orang-orang benar?”"
+        },
+        {
+          "number": 26,
+          "arab": "قُلْ اِنَّمَا الْعِلْمُ عِنْدَ اللّٰهِ ۖوَاِنَّمَآ اَنَا۠ نَذِيْرٌ مُّبِيْنٌ ",
+          "latin": "Qul innamal-‘ilmu ‘indallāh(i), wa innamā ana nażīrum mubīn(un).",
+          "translation": "Katakanlah (Nabi Muhammad), “Sesungguhnya ilmu (tentang hari Kiamat itu) hanya ada pada Allah. Aku hanyalah seorang pemberi peringatan yang jelas.”"
+        },
+        {
+          "number": 27,
+          "arab": "فَلَمَّا رَاَوْهُ زُلْفَةً سِيْۤـَٔتْ وُجُوْهُ الَّذِيْنَ كَفَرُوْا وَقِيْلَ هٰذَا الَّذِيْ كُنْتُمْ بِهٖ تَدَّعُوْنَ ",
+          "latin": "Falammā ra'auhu zulfatan sī'at wujūhul-lażīna kafarū wa qīla hāżal-lażī kuntum bihī tadda‘ūn(a).",
+          "translation": "Ketika mereka melihat azab (pada hari Kiamat) sudah dekat, wajah orang-orang kafir itu menjadi muram. Dikatakan (kepada mereka), “Ini adalah (sesuatu) yang dahulu kamu selalu mengaku (bahwa kamu tidak akan dibangkitkan).”"
+        },
+        {
+          "number": 28,
+          "arab": "قُلْ اَرَءَيْتُمْ اِنْ اَهْلَكَنِيَ اللّٰهُ وَمَنْ مَّعِيَ اَوْ رَحِمَنَاۙ فَمَنْ يُّجِيْرُ الْكٰفِرِيْنَ مِنْ عَذَابٍ اَلِيْمٍ ",
+          "latin": "Qul ara'aitum in ahlakaniyallāhu wa mam ma‘iya au raḥimanā, famay yujīrul-kāfirīna min ‘ażābin alīm(in).",
+          "translation": "Katakanlah (Nabi Muhammad), “Tahukah kamu jika Allah mematikan aku dan orang-orang yang bersamaku atau memberi rahmat kepada kami (dengan memperpanjang umur kami,) lalu siapa yang dapat melindungi orang-orang kafir dari azab yang pedih?”"
+        },
+        {
+          "number": 29,
+          "arab": "قُلْ هُوَ الرَّحْمٰنُ اٰمَنَّا بِهٖ وَعَلَيْهِ تَوَكَّلْنَاۚ فَسَتَعْلَمُوْنَ مَنْ هُوَ فِيْ ضَلٰلٍ مُّبِيْنٍ ",
+          "latin": "Qul huwar-raḥmānu āmannā bihī wa ‘alaihi tawakkalnā, fasata‘lamūna man huwa fī ḍalālim mubīn(in).",
+          "translation": "Katakanlah (Nabi Muhammad), “Dialah Zat Yang Maha Pengasih, kami beriman kepada-Nya dan hanya kepada-Nya kami bertawakal. Kelak kamu akan tahu siapa yang berada dalam kesesatan yang nyata.”"
+        },
+        {
+          "number": 30,
+          "arab": "قُلْ اَرَءَيْتُمْ اِنْ اَصْبَحَ مَاۤؤُكُمْ غَوْرًا فَمَنْ يَّأْتِيْكُمْ بِمَاۤءٍ مَّعِيْنٍ ࣖ ",
+          "latin": "Qul ara'aitum in aṣbaḥa mā'ukum gauran famay ya'tīkum bimā'im ma‘īn(in).",
+          "translation": "Katakanlah (Nabi Muhammad), “Terangkanlah kepadaku jika (sumber) air kamu surut ke dalam tanah, siapa yang akan memberimu air yang mengalir?”"
+        }
+      ]
+    }
+  ],
+  "istighotsah": [
+    {
+      "number": 1,
+      "arab": "بِسْمِ اللهِ الرَّحْمَنِ الرَّحِيْمِ",
+      "translation": "Dengan menyebut nama Allah Yang Maha Pengasih lagi Maha Penyayang."
+    },
+    {
+      "number": 2,
+      "arab": "أَلْفَاتِحَة... (إِلَى حَضْرَةِ النَّبِيِّ الْمُصْطَفَى مُحَمَّدٍ صَلَّى اللهُ عَلَيْهِ وَسَلَّمَ)",
+      "translation": "Membaca Surat Al-Fatihah (ditujukan kepada junjungan Nabi Mulia Muhammad SAW...)."
+    },
+    {
+      "number": 3,
+      "arab": "أَسْتَغْفِرُ اللهَ الْعَظِيْمَ (٣ kali)",
+      "translation": "Aku memohon ampun kepada Allah Yang Maha Agung (3x)."
+    },
+    {
+      "number": 4,
+      "arab": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللهِ الْعَلِيِّ الْعَظِيْمِ (٣ kali)",
+      "translation": "Tiada daya dan kekuatan kecuali dengan pertolongan Allah Yang Maha Tinggi lagi Maha Agung (3x)."
+    },
+    {
+      "number": 5,
+      "arab": "أَللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ وَعَلَى آلِ سَيِّدِنَا مُحَمَّدٍ (٣ kali)",
+      "translation": "Ya Allah, limpahkanlah rahmat kepada junjungan kami Nabi Muhammad beserta keluarganya (3x)."
+    },
+    {
+      "number": 6,
+      "arab": "يَا اللهُ يَا قَدِيْمُ (٣٣ kali)",
+      "translation": "Wahai Allah, Wahai Dzat Yang Maha Dahulu (33x)."
+    },
+    {
+      "number": 7,
+      "arab": "يَا سَمِيْعُ يَا بَصِيْرُ (٣٣ kali)",
+      "translation": "Wahai Dzat Yang Maha Mendengar lagi Maha Melihat (33x)."
+    },
+    {
+      "number": 8,
+      "arab": "يَا مُبْدِئُ يَا خَالِقُ (٣٣ kali)",
+      "translation": "Wahai Dzat Yang Maha Memulai lagi Maha Pencipta (33x)."
+    },
+    {
+      "number": 9,
+      "arab": "يَا حَفِيْظُ يَا نَصِيْرُ يَا وَكِيْلُ يَا اللهُ (٣٣ kali)",
+      "translation": "Wahai Dzat Yang Maha Memelihara, Wahai Dzat Yang Maha Penolong, Wahai Dzat Yang Maha Melindungi, Wahai Allah (33x)."
+    },
+    {
+      "number": 10,
+      "arab": "يَا حَيُّ يَا قَيُّوْمُ بِرَحْمَتِكَ أَسْتَغِيْثُ (٣٣ kali)",
+      "translation": "Wahai Dzat Yang Maha Hidup lagi Maha Mandiri, dengan rahmat-Mu aku memohon pertolongan (33x)."
+    },
+    {
+      "number": 11,
+      "arab": "يَا لَطِيْفُ (١٢٩ kali)",
+      "translation": "Wahai Dzat Yang Maha Lembut (129x)."
+    },
+    {
+      "number": 12,
+      "arab": "أَسْتَغْفِرُ اللهَ الْعَظِيْمَ إِنَّهُ كَانَ غَفَّارًا (٣ kali)",
+      "translation": "Aku memohon ampun kepada Allah Yang Maha Agung, sesungguhnya Dia adalah Maha Pengampun (3x)."
+    },
+    {
+      "number": 13,
+      "arab": "أَللَّهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ صَلَاةً تُنْجِيْنَا بِهَا مِنْ جَمِيْعِ الْأَهْوَALِ وَالْآفَاتِ، وَتَقْضِيْ لَنَا بِهَا جَمِيْعَ الْحَاجَاتِ، وَتُطَهِّرُنَا بِهَا مِنْ جَمِيْعِ السَّيِّئَاتِ، وَتَرْفَعُنَا بِهَا عِنْدَكَ أَعْلَى الدَّرَجَاتِ، وَتُبَلِّغُنَا بِهَا أَقْصَى الْغَايَاتِ مِنْ جَمِيْعِ الْخَيْرَاتِ فِي الْحَيَاةِ وَبَعْدَ الْمَمَاتِ.",
+      "translation": "Ya Allah, limpahkanlah rahmat kepada junjungan kami Nabi Muhammad, yang dengan berkah shalawat itu Engkau menyelamatkan kami dari setiap keadaan yang menakutkan dan dari bencana; Engkau tunaikan semua hajat kami; Engkau bersihkan kami dari semua keburukan; Engkau angkat derajat kami ke tempat tertinggi di sisi-Mu; dan Engkau sampaikan tujuan kami pada batas terjauh dari segala kebaikan baik semasa hidup maupun setelah mati."
+    }
+  ],
+  "asmaul_husna": [
+    {
+      "number": 1,
+      "arab": "الرَّحْمَنُ",
+      "latin": "Ar Rahmaan",
+      "translation": "Maha Pengasih"
+    },
+    {
+      "number": 2,
+      "arab": "الرَّحِيمُ",
+      "latin": "Ar Raheem",
+      "translation": "Maha Penyayang"
+    },
+    {
+      "number": 3,
+      "arab": "الْمَلِكُ",
+      "latin": "Al Malik",
+      "translation": "Maha Merajai"
+    },
+    {
+      "number": 4,
+      "arab": "الْقُدُّوسُ",
+      "latin": "Al Quddus",
+      "translation": "Maha Suci"
+    },
+    {
+      "number": 5,
+      "arab": "السَّلاَمُ",
+      "latin": "As Salaam",
+      "translation": "Maha Memberi Kesejahteraan"
+    },
+    {
+      "number": 6,
+      "arab": "الْمُؤْمِنُ",
+      "latin": "Al Mu'min",
+      "translation": "Maha Memberi Keamanan"
+    },
+    {
+      "number": 7,
+      "arab": "الْمُهَيْمِنُ",
+      "latin": "Al Muhaymin",
+      "translation": "Maha Mengatur"
+    },
+    {
+      "number": 8,
+      "arab": "الْعَزِيزُ",
+      "latin": "Al Azeez",
+      "translation": "Maha Perkasa"
+    },
+    {
+      "number": 9,
+      "arab": "الْجَبَّارُ",
+      "latin": "Al Jabbaar",
+      "translation": "Maha Gagah"
+    },
+    {
+      "number": 10,
+      "arab": "الْمُتَكَبِّرُ",
+      "latin": "Al Mutakabbir",
+      "translation": "Maha Memiliki Kebesaran"
+    },
+    {
+      "number": 11,
+      "arab": "الْخَالِقُ",
+      "latin": "Al Khaaliq",
+      "translation": "Maha Pencipta"
+    },
+    {
+      "number": 12,
+      "arab": "الْبَارِئُ",
+      "latin": "Al Baari",
+      "translation": "Maha Melepaskan"
+    },
+    {
+      "number": 13,
+      "arab": "الْمُصَوِّرُ",
+      "latin": "Al Musawwir",
+      "translation": "Maha Membentuk Rupa"
+    },
+    {
+      "number": 14,
+      "arab": "الْغَفَّارُ",
+      "latin": "Al Ghaffaar",
+      "translation": "Maha Pengampun"
+    },
+    {
+      "number": 15,
+      "arab": "الْقَهَّارُ",
+      "latin": "Al Qahhaar",
+      "translation": "Maha Menundukkan"
+    },
+    {
+      "number": 16,
+      "arab": "الْوَهَّابُ",
+      "latin": "Al Wahhaab",
+      "translation": "Maha Pemberi Karunia"
+    },
+    {
+      "number": 17,
+      "arab": "الرَّزَّاقُ",
+      "latin": "Ar Razzaaq",
+      "translation": "Maha Pemberi Rezeki"
+    },
+    {
+      "number": 18,
+      "arab": "الْفَتَّاحُ",
+      "latin": "Al Fattaah",
+      "translation": "Maha Pembuka Rahmat"
+    },
+    {
+      "number": 19,
+      "arab": "اَلْعَلِيْمُ",
+      "latin": "Al 'Aleem",
+      "translation": "Maha Mengetahui"
+    },
+    {
+      "number": 20,
+      "arab": "الْقَابِضُ",
+      "latin": "Al Qaabid",
+      "translation": "Maha Menyempitkan"
+    },
+    {
+      "number": 21,
+      "arab": "الْبَاسِطُ",
+      "latin": "Al Baasit",
+      "translation": "Maha Melapangkan"
+    },
+    {
+      "number": 22,
+      "arab": "الْخَافِضُ",
+      "latin": "Al Khaafid",
+      "translation": "Maha Merendahkan"
+    },
+    {
+      "number": 23,
+      "arab": "الرَّافِعُ",
+      "latin": "Ar Raafi'",
+      "translation": "Maha Meninggikan"
+    },
+    {
+      "number": 24,
+      "arab": "الْمُعِزُّ",
+      "latin": "Al Mu'iz",
+      "translation": "Maha Memuliakan"
+    },
+    {
+      "number": 25,
+      "arab": "المُذِلُّ",
+      "latin": "Al Mudhil",
+      "translation": "Maha Menghinakan"
+    },
+    {
+      "number": 26,
+      "arab": "السَّمِيعُ",
+      "latin": "As Samee'",
+      "translation": "Maha Mendengar"
+    },
+    {
+      "number": 27,
+      "arab": "الْبَصِيرُ",
+      "latin": "Al Baseer",
+      "translation": "Maha Melihat"
+    },
+    {
+      "number": 28,
+      "arab": "الْحَكَمُ",
+      "latin": "Al Hakam",
+      "translation": "Maha Menetapkan Hukum"
+    },
+    {
+      "number": 29,
+      "arab": "الْعَدْلُ",
+      "latin": "Al 'Adl",
+      "translation": "Maha Adil"
+    },
+    {
+      "number": 30,
+      "arab": "اللَّطِيفُ",
+      "latin": "Al Lateef",
+      "translation": "Maha Lembut"
+    },
+    {
+      "number": 31,
+      "arab": "الْخَبِيرُ",
+      "latin": "Al Khabeer",
+      "translation": "Maha Mengenal"
+    },
+    {
+      "number": 32,
+      "arab": "الْحَلِيمُ",
+      "latin": "Al Haleem",
+      "translation": "Maha Penyantun"
+    },
+    {
+      "number": 33,
+      "arab": "الْعَظِيمُ",
+      "latin": "Al 'Azeem",
+      "translation": "Maha Agung"
+    },
+    {
+      "number": 34,
+      "arab": "الْغَفُورُ",
+      "latin": "Al Ghafoor",
+      "translation": "Maha Pengampun"
+    },
+    {
+      "number": 35,
+      "arab": "الشَّكُورُ",
+      "latin": "Ash Shakoor",
+      "translation": "Maha Pembalas Budi"
+    },
+    {
+      "number": 36,
+      "arab": "الْعَلِيُّ",
+      "latin": "Al 'Aliyy",
+      "translation": "Maha Tinggi"
+    },
+    {
+      "number": 37,
+      "arab": "الْكَبِيرُ",
+      "latin": "Al Kabeer",
+      "translation": "Maha Besar"
+    },
+    {
+      "number": 38,
+      "arab": "الْحَفِيظُ",
+      "latin": "Al Hafeez",
+      "translation": "Maha Memelihara"
+    },
+    {
+      "number": 39,
+      "arab": "المُقيِت",
+      "latin": "Al Muqeet",
+      "translation": "Maha Pemberi Kecukupan"
+    },
+    {
+      "number": 40,
+      "arab": "الْحسِيبُ",
+      "latin": "Al Haseeb",
+      "translation": "Maha Membuat Perhitungan"
+    },
+    {
+      "number": 41,
+      "arab": "الْجَلِيلُ",
+      "latin": "Al Jaleel",
+      "translation": "Maha Mulia"
+    },
+    {
+      "number": 42,
+      "arab": "الْكَرِيمُ",
+      "latin": "Al Kareem",
+      "translation": "Maha Pemurah"
+    },
+    {
+      "number": 43,
+      "arab": "الرَّقِيبُ",
+      "latin": "Ar Raqeeb",
+      "translation": "Maha Mengawasi"
+    },
+    {
+      "number": 44,
+      "arab": "الْمُجِيبُ",
+      "latin": "Al Mujeeb ",
+      "translation": "Maha Mengabulkan"
+    },
+    {
+      "number": 45,
+      "arab": "الْوَاسِعُ",
+      "latin": "Al Waasi'",
+      "translation": "Maha Luas"
+    },
+    {
+      "number": 46,
+      "arab": "الْحَكِيمُ",
+      "latin": "Al Hakeem",
+      "translation": "Maha Bijaksana"
+    },
+    {
+      "number": 47,
+      "arab": "الْوَدُودُ",
+      "latin": "Al Wudood",
+      "translation": "Maha Mengasihi"
+    },
+    {
+      "number": 48,
+      "arab": "الْمَجِيدُ",
+      "latin": "Al Majeed",
+      "translation": "Maha Mulia"
+    },
+    {
+      "number": 49,
+      "arab": "الْبَاعِثُ",
+      "latin": "Al Baa'ith",
+      "translation": "Maha Membangkitkan"
+    },
+    {
+      "number": 50,
+      "arab": "الشَّهِيدُ",
+      "latin": "Ash Shaheed",
+      "translation": "Maha Menyaksikan"
+    },
+    {
+      "number": 51,
+      "arab": "الْحَقُّ",
+      "latin": "Al Haqq",
+      "translation": "Maha Benar"
+    },
+    {
+      "number": 52,
+      "arab": "الْوَكِيلُ",
+      "latin": "Al Wakeel",
+      "translation": "Maha Memelihara"
+    },
+    {
+      "number": 53,
+      "arab": "الْقَوِيُّ",
+      "latin": "Al Qawiyy",
+      "translation": "Maha Kuat"
+    },
+    {
+      "number": 54,
+      "arab": "الْمَتِينُ",
+      "latin": "Al Mateen",
+      "translation": "Maha Kokoh"
+    },
+    {
+      "number": 55,
+      "arab": "الْوَلِيُّ",
+      "latin": "Al Waliyy",
+      "translation": "Maha Melindungi"
+    },
+    {
+      "number": 56,
+      "arab": "الْحَمِيدُ",
+      "latin": "Al Hameed",
+      "translation": "Maha Terpuji"
+    },
+    {
+      "number": 57,
+      "arab": "الْمُحْصِي",
+      "latin": "Al Muhsi",
+      "translation": "Maha Menghitung"
+    },
+    {
+      "number": 58,
+      "arab": "الْمُبْدِئُ",
+      "latin": "Al Mubdi",
+      "translation": "Maha Memulai"
+    },
+    {
+      "number": 59,
+      "arab": "الْمُعِيدُ",
+      "latin": "Al Mu'eed",
+      "translation": "Maha Mengembalikan"
+    },
+    {
+      "number": 60,
+      "arab": "الْمُحْيِي",
+      "latin": "Al Muhiy",
+      "translation": "Maha Menghidupkan"
+    },
+    {
+      "number": 61,
+      "arab": "اَلْمُمِيتُ",
+      "latin": "Al Mumeet",
+      "translation": "Maha Mematikan"
+    },
+    {
+      "number": 62,
+      "arab": "الْحَيُّ",
+      "latin": "Al Haiyy",
+      "translation": "Maha Hidup"
+    },
+    {
+      "number": 63,
+      "arab": "الْقَيُّومُ",
+      "latin": "Al Qayyoom",
+      "translation": "Maha Mandiri"
+    },
+    {
+      "number": 64,
+      "arab": "الْوَاجِدُ",
+      "latin": "Al Waajid",
+      "translation": "Maha Penemu"
+    },
+    {
+      "number": 65,
+      "arab": "الْمَاجِدُ",
+      "latin": "Al Maajid",
+      "translation": "Maha Mulia"
+    },
+    {
+      "number": 66,
+      "arab": "الْواحِدُ",
+      "latin": "Al Waahid",
+      "translation": "Maha Tunggal"
+    },
+    {
+      "number": 67,
+      "arab": "اَلاَحَدُ",
+      "latin": "Al Ahad",
+      "translation": "Maha Esa"
+    },
+    {
+      "number": 68,
+      "arab": "الصَّمَدُ",
+      "latin": "As Samad",
+      "translation": "Maha Dibutuhkan"
+    },
+    {
+      "number": 69,
+      "arab": "الْقَادِرُ",
+      "latin": "Al Qaadir",
+      "translation": "Maha Kuasa"
+    },
+    {
+      "number": 70,
+      "arab": "الْمُقْتَدِرُ",
+      "latin": "Al Muqtadir",
+      "translation": "Maha Berkuasa"
+    },
+    {
+      "number": 71,
+      "arab": "الْمُقَدِّمُ",
+      "latin": "Al Muqaddim",
+      "translation": "Maha Mendahulukan"
+    },
+    {
+      "number": 72,
+      "arab": "الْمُؤَخِّرُ",
+      "latin": "Al Mu’akhir",
+      "translation": "Maha Mengakhirkan"
+    },
+    {
+      "number": 73,
+      "arab": "الأوَّلُ",
+      "latin": "Al Awwal",
+      "translation": "Maha Pertama"
+    },
+    {
+      "number": 74,
+      "arab": "الآخِرُ",
+      "latin": "Al Aakhir",
+      "translation": "Maha Akhir"
+    },
+    {
+      "number": 75,
+      "arab": "الظَّاهِرُ",
+      "latin": "Az Zaahir",
+      "translation": "Maha Nyata"
+    },
+    {
+      "number": 76,
+      "arab": "الْبَاطِنُ",
+      "latin": "Al Baatin",
+      "translation": "Maha Gaib"
+    },
+    {
+      "number": 77,
+      "arab": "الْوَالِي",
+      "latin": "Al Waali",
+      "translation": "Maha Memerintah"
+    },
+    {
+      "number": 78,
+      "arab": "الْمُتَعَالِي",
+      "latin": "Al Muta’ali",
+      "translation": "Maha Tinggi"
+    },
+    {
+      "number": 79,
+      "arab": "الْبَرُّ",
+      "latin": "Al Barr",
+      "translation": "Maha Penderma"
+    },
+    {
+      "number": 80,
+      "arab": "التَّوَابُ",
+      "latin": "At Tawwaab",
+      "translation": "Maha Penerima Tobat"
+    },
+    {
+      "number": 81,
+      "arab": "الْمُنْتَقِمُ",
+      "latin": "Al Muntaqim",
+      "translation": "Maha Pemberi Balasan"
+    },
+    {
+      "number": 82,
+      "arab": "العَفُوُّ",
+      "latin": "Al Afuww",
+      "translation": "Maha Pemaaf"
+    },
+    {
+      "number": 83,
+      "arab": "الرَّؤُوفُ",
+      "latin": "Ar Ra’oof",
+      "translation": "Maha Pengasih"
+    },
+    {
+      "number": 84,
+      "arab": "مَالِكُ الْمُلْكِ",
+      "latin": "Maalik Ul Mulk",
+      "translation": "Maha Pemilik Kerajaan"
+    },
+    {
+      "number": 85,
+      "arab": "ذُوالْجَلاَلِ وَالإكْرَامِ",
+      "latin": "Dhu Al Jalaali Wa Al Ikraam",
+      "translation": "Maha Pemilik Keagungan dan Kemuliaan"
+    },
+    {
+      "number": 86,
+      "arab": "الْمُقْسِطُ",
+      "latin": "Al Muqsit",
+      "translation": "Maha Pemberi Keadilan"
+    },
+    {
+      "number": 87,
+      "arab": "الْجَامِعُ",
+      "latin": "Al Jaami'",
+      "translation": "Maha Mengumpulkan"
+    },
+    {
+      "number": 88,
+      "arab": "الْغَنِيُّ",
+      "latin": "Al Ghaniyy",
+      "translation": "Maha Kaya"
+    },
+    {
+      "number": 89,
+      "arab": "الْمُغْنِي",
+      "latin": "Al Mughi",
+      "translation": "Maha Pemberi Kekayaan"
+    },
+    {
+      "number": 90,
+      "arab": "اَلْمَانِعُ",
+      "latin": "Al Maani'",
+      "translation": "Maha Mencegah"
+    },
+    {
+      "number": 91,
+      "arab": "الضَّارَّ",
+      "latin": "Ad Daaarr",
+      "translation": "Maha Pemberi Kemudaratan"
+    },
+    {
+      "number": 92,
+      "arab": "النَّافِعُ",
+      "latin": "An Naafi’",
+      "translation": "Maha Pemberi Manfaat"
+    },
+    {
+      "number": 93,
+      "arab": "النُّورُ",
+      "latin": "An Noor",
+      "translation": "Maha Bercahaya"
+    },
+    {
+      "number": 94,
+      "arab": "الْهَادِي",
+      "latin": "Al Haadi",
+      "translation": "Maha Pemberi Petunjuk"
+    },
+    {
+      "number": 95,
+      "arab": "الْبَدِيعُ",
+      "latin": "Al Badi'",
+      "translation": "Maha Pencipta Keindahan"
+    },
+    {
+      "number": 96,
+      "arab": "اَلْبَاقِي",
+      "latin": "Al Baaqi",
+      "translation": "Maha Kekal"
+    },
+    {
+      "number": 97,
+      "arab": "الْوَارِثُ",
+      "latin": "Al Waarith",
+      "translation": "Maha Pewaris"
+    },
+    {
+      "number": 98,
+      "arab": "الرَّشِيدُ",
+      "latin": "Ar Rasheed",
+      "translation": "Maha Pandai"
+    },
+    {
+      "number": 99,
+      "arab": "الصَّبُورُ",
+      "latin": "As Saboor",
+      "translation": "Maha Penyabar"
+    }
+  ],
+  "doa_pendek": [
+    {
+      "title": "Doa Sebelum Belajar",
+      "arab": "رَضِتُ بِاللهِ رَبًّا وَبِالْإِسْلَامِ دِينًا وَبِمُحَمَّدٍ نَبِيًّا وَرَسُولًا رَبِّ زِدْنِي عِلْمًا وَارْزُقْنِي فَهْمًا",
+      "latin": "Rodhitu billahi rabba, wabil islaami diina, wabimuhammadin nabiyya warasuula. Rabbi zidnii 'ilmaa warzuqnii fahmaa",
+      "translation": "Aku rida Allah sebagai Tuhanku, Islam sebagai agamaku, dan Nabi Muhammad sebagai Nabi dan Rasulku. Ya Allah, tambahkanlah kepadaku ilmu dan berikanlah aku pengertian yang baik."
+    },
+    {
+      "title": "Doa Sesudah Belajar",
+      "arab": "اللَّهُمَّ أَرِنَا الْحَقَّ حَقًّا وَارْزُقْنَا اتِّبَاعَهُ وَأَرِنَا الْبَاطِلَ بَاطِلًا وَارْزُقْنَا اجْتِنَابَهُ",
+      "latin": "Allahumma arinal haqqa haqqan warzuqnat tibaa'ah, wa arinal baathila baathilan warzuqnaj tinaabah",
+      "translation": "Ya Allah, tunjukkanlah kepada kami yang benar itu benar dan berilah kami kekuatan untuk mengikutinya, dan tunjukkanlah kepada kami yang salah itu salah dan berilah kami kekuatan untuk menjauhinya."
+    },
+    {
+      "title": "Doa Kedua Orang Tua",
+      "arab": "رَبِّ اغْفِرْ لِي وَلِوَالِدَيَّ وَارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا",
+      "latin": "Rabbighfir lii waliwaalidayya warhamhumaa kamaa rabbayaanii shaghiiraa",
+      "translation": "Ya Tuhanku, ampunilah dosaku dan dosa kedua orang tuaku, dan sayangilah mereka berdua sebagaimana mereka memelihara aku pada waktu kecil."
+    },
+    {
+      "title": "Doa Kebaikan Dunia Akhirat (Sapu Jagad)",
+      "arab": "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
+      "latin": "Rabbanaa aatinaa fid dunyaa hasanatan wafil aakhirati hasanatan waqinaa 'adzaaban naar",
+      "translation": "Ya Tuhan kami, berilah kami kebaikan di dunia dan kebaikan di akhirat, dan lindungilah kami dari azab neraka."
+    },
+    {
+      "title": "Doa Sebelum Makan",
+      "arab": "اللَّهُمَّ بَارِكْ لَنَا فِيْمَا رَزَقْتَنَا وَقِنَا عَذَابَ النَّارِ",
+      "latin": "Allahumma baarik lanaa fiimaa razaqtanaa waqinaa 'adzaaban naar",
+      "translation": "Ya Allah, berkahilah rezeki yang telah Engkau berikan kepada kami, dan peliharalah kami dari siksa neraka."
+    },
+    {
+      "title": "Doa Sesudah Makan",
+      "arab": "الْحَمْدُ للهِ الَّذِيْ أَطْعَمَنَا وَسَقَانَا وَجَعَلَنَا مُسْلِمِيْنَ",
+      "latin": "Alhamdu lillahil ladzii ath'amanaa wasaqaanaa waja'alanaa muslimiin",
+      "translation": "Segala puji bagi Allah yang telah memberi kami makan dan minum, serta menjadikan kami termasuk golongan orang-orang muslim."
+    },
+    {
+      "title": "Doa Sebelum Tidur",
+      "arab": "بِاسْمِكَ اللَّهُمَّ أَحْيَا وَأَمُوتُ",
+      "latin": "Bismika allahumma ahya wa amuutu",
+      "translation": "Dengan nama-Mu ya Allah aku hidup dan aku mati."
+    },
+    {
+      "title": "Doa Bangun Tidur",
+      "arab": "الْحَمْدُ للهِ الَّذِيْ أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ",
+      "latin": "Alhamdu lillahil ladzii ahyaanaa ba'da maa amaatanaa wa ilaihin nusyuur",
+      "translation": "Segala puji bagi Allah yang telah menghidupkan kami kembali setelah mematikan kami, dan hanya kepada-Nya kami kembali."
+    }
+  ]
+}
