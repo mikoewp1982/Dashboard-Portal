@@ -3,21 +3,46 @@
 import { useAuthStore } from "@/store/useAuthStore";
 import { StudentFeatureCard } from "@/components/siswa/StudentFeatureCard";
 import {
+  CheckCircle2,
   BookOpen,
-  CalendarClock,
   Dog,
   Bell,
-  Wallet,
-  Settings,
-  HelpCircle,
-  Trophy
+  Shield,
+  Phone,
+  Wrench,
+  ThumbsUp,
 } from "lucide-react";
 import Image from "next/image";
+
+// Custom SVG icon components to match APK's mosque icons
+function MosqueIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 3c-1.5 2-3 3.5-3 5.5a3 3 0 0 0 6 0C15 6.5 13.5 5 12 3Z" />
+      <path d="M4 21V12a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9" />
+      <path d="M3 21h18" />
+      <path d="M9 21v-4a3 3 0 0 1 6 0v4" />
+      <path d="M4 12l1-3h14l1 3" />
+    </svg>
+  );
+}
+
+function DhuhaIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 3c-1.5 2-3 3.5-3 5.5a3 3 0 0 0 6 0C15 6.5 13.5 5 12 3Z" />
+      <path d="M4 21V12a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9" />
+      <path d="M3 21h18" />
+      <path d="M9 21v-4a3 3 0 0 1 6 0v4" />
+      <circle cx="19" cy="5" r="2" />
+      <path d="M19 2v1M19 8v-1M22 5h-1M17 5h-1M21.1 3l-.7.7M17.6 6.4l-.7.7M21.1 7l-.7-.7M17.6 3.6l-.7-.7" />
+    </svg>
+  );
+}
 
 export default function SiswaHomePage() {
   const user = useAuthStore((state) => state.user);
 
-  // Jika nama siswa punya beberapa kata, ambil nama panggilannya (kata pertama)
   const firstName = user?.name?.split(" ")[0] || "Siswa";
 
   return (
@@ -37,6 +62,7 @@ export default function SiswaHomePage() {
               width={56}
               height={56}
               className="h-full w-full object-cover"
+              priority
             />
           </div>
         </div>
@@ -48,54 +74,71 @@ export default function SiswaHomePage() {
           MENU UTAMA
         </h3>
 
-        {/* 4 Kolom Grid */}
+        {/* 4 Kolom Grid — persis seperti APK GAS Siswa */}
         <div className="grid grid-cols-4 gap-x-3 gap-y-5">
+          {/* 1. Absensi */}
+          <StudentFeatureCard
+            title="Absensi"
+            href="/siswa/absen"
+            icon={<CheckCircle2 className="h-9 w-9 text-sky-400" strokeWidth={1.5} />}
+          />
+          {/* 2. Presensi Sholat */}
           <StudentFeatureCard
             title="Presensi Sholat"
             href="/siswa/sholat"
-            icon={<CalendarClock className="h-9 w-9 text-emerald-400" strokeWidth={1.5} />}
+            icon={<MosqueIcon className="h-9 w-9 text-teal-400" />}
           />
+          {/* 3. Presensi Dhuha & Jum'at */}
+          <StudentFeatureCard
+            title="Presensi Dhuha & Jum'at"
+            href="/siswa/sholat-dhuha-jumat"
+            icon={<DhuhaIcon className="h-9 w-9 text-teal-400" />}
+          />
+          {/* 4. Lentera Digital */}
           <StudentFeatureCard
             title="Lentera Digital"
             href="/siswa/lentera"
-            icon={<BookOpen className="h-9 w-9 text-amber-400" strokeWidth={1.5} />}
+            icon={<BookOpen className="h-9 w-9 text-teal-400" strokeWidth={1.5} />}
           />
+          {/* 5. 7 KAIH */}
+          <StudentFeatureCard
+            title="7 KAIH"
+            href="/siswa/7kaih"
+            icon={<ThumbsUp className="h-9 w-9 text-indigo-400" strokeWidth={1.5} />}
+          />
+          {/* 6. Virtual Pet */}
           <StudentFeatureCard
             title="Virtual Pet"
             href="/siswa/pet"
-            icon={<Dog className="h-9 w-9 text-orange-400" strokeWidth={1.5} />}
+            icon={<Dog className="h-9 w-9 text-amber-400" strokeWidth={1.5} />}
           />
+          {/* 7. Kedisiplinan */}
           <StudentFeatureCard
-            title="Pengumuman"
-            href="/siswa/pengumuman"
-            icon={<Bell className="h-9 w-9 text-sky-400" strokeWidth={1.5} />}
-            badgeCount={2}
+            title="Kedisiplinan"
+            href="/siswa/kedisiplinan"
+            icon={<Shield className="h-9 w-9 text-violet-400" strokeWidth={1.5} />}
           />
+          {/* 8. Layanan Aduan */}
           <StudentFeatureCard
-            title="Tabungan"
-            href="/siswa/tabungan"
-            disabled
-            icon={<Wallet className="h-9 w-9 text-slate-300" strokeWidth={1.5} />}
+            title="Layanan Aduan"
+            href="/siswa/aduan"
+            icon={<Phone className="h-9 w-9 text-rose-400" strokeWidth={1.5} />}
           />
+          {/* 9. Notifikasi */}
           <StudentFeatureCard
-            title="Prestasi"
-            href="/siswa/prestasi"
-            disabled
-            icon={<Trophy className="h-9 w-9 text-slate-300" strokeWidth={1.5} />}
+            title="Notifikasi"
+            href="/siswa/notifikasi"
+            icon={<Bell className="h-9 w-9 text-orange-400" strokeWidth={1.5} />}
           />
+          {/* 10. Tools */}
           <StudentFeatureCard
-            title="Pengaturan"
-            href="/siswa/profil"
-            icon={<Settings className="h-9 w-9 text-slate-300" strokeWidth={1.5} />}
-          />
-          <StudentFeatureCard
-            title="Bantuan"
-            href="/siswa/bantuan"
-            icon={<HelpCircle className="h-9 w-9 text-slate-300" strokeWidth={1.5} />}
+            title="Tools"
+            href="/siswa/tools"
+            icon={<Wrench className="h-9 w-9 text-amber-400" strokeWidth={1.5} />}
           />
         </div>
       </div>
-      
+
       {/* Info Card */}
       <div className="px-5 mt-8">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
