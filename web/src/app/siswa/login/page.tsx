@@ -1,15 +1,71 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { applyStudentAuthSession } from "@/lib/siswa/applyStudentSession";
+
+type LookupState = {
+  loading: boolean;
+  name?: string;
+  message?: string;
+};
 
 export default function SiswaLoginForm() {
   const [npsn, setNpsn] = useState("");
   const [nisn, setNisn] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [lookup, setLookup] = useState<LookupState>({ loading: false });
+
+  // Auto lookup nama siswa berdasarkan NPSN dan NISN
+  useEffect(() => {
+    const npsnValue = npsn.trim();
+    const nisnValue = nisn.trim();
+    
+    if (npsnValue.length < 6 || nisnValue.length < 5) {
+      setLookup({ loading: false });
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setLookup({ loading: true });
+      try {
+        const response = await fetch("/api/student/lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ npsn: npsnValue, nisn: nisnValue }),
+        });
+        
+        const payload = (await response.json().catch(() => ({}))) as {
+          success?: boolean;
+          name?: string;
+          message?: string;
+        };
+        
+        if (cancelled) return;
+        
+        if (!response.ok || !payload.success) {
+          setLookup({
+            loading: false,
+            message: payload.message || "Siswa tidak ditemukan di database sekolah.",
+          });
+          return;
+        }
+        
+        setLookup({ loading: false, name: payload.name || "" });
+      } catch {
+        if (!cancelled) {
+          setLookup({ loading: false, message: "Gagal memeriksa data siswa." });
+        }
+      }
+    }, 450);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [npsn, nisn]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -18,16 +74,16 @@ export default function SiswaLoginForm() {
     try {
       const npsnValue = npsn.trim();
       const nisnValue = nisn.trim();
-      const passwordValue = password.trim();
       
-      if (!npsnValue || !nisnValue || !passwordValue) {
-        throw new Error("NPSN, NISN, dan Password wajib diisi.");
+      if (!npsnValue || !nisnValue) {
+        throw new Error("NPSN dan NISN wajib diisi.");
       }
 
+      // Kirim password = nisnValue karena secara bawaan di APK, password = NISN
       const response = await fetch("/api/student/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ npsn: npsnValue, nisn: nisnValue, password: passwordValue }),
+        body: JSON.stringify({ npsn: npsnValue, nisn: nisnValue, password: nisnValue }),
       });
       
       const payload = (await response.json().catch(() => ({}))) as {
@@ -107,18 +163,26 @@ export default function SiswaLoginForm() {
             />
           </label>
           
-          <label className="block space-y-1.5">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Password</span>
-            <input
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              autoComplete="current-password"
-              placeholder="Masukkan Password"
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none ring-indigo-500/40 placeholder:text-slate-500 focus:ring-2"
-              required
-            />
-          </label>
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              Nama Siswa
+            </div>
+            <div className="mt-1 text-sm text-white">
+              {lookup.loading
+                ? "Mencari nama siswa..."
+                : lookup.name
+                  ? lookup.name
+                  : "Terisi otomatis jika NPSN dan NISN valid"}
+            </div>
+            {!lookup.loading && lookup.message && (
+              <div className="mt-1 text-xs text-rose-200">{lookup.message}</div>
+            )}
+            {!lookup.loading && lookup.name && (
+              <div className="mt-1 text-xs text-indigo-200/80">
+                Data terhubung otomatis dari server sekolah.
+              </div>
+            )}
+          </div>
 
           {error && (
             <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
@@ -131,7 +195,7 @@ export default function SiswaLoginForm() {
             disabled={loading}
             className="mt-2 w-full rounded-2xl bg-indigo-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-500 disabled:opacity-60"
           >
-            {loading ? "Masuk..." : "Masuk"}
+            {loading ? "Memproses..." : "Masuk"}
           </button>
         </form>
 
