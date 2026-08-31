@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebase-admin";
+import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { resolveCanonicalSchoolContext } from "@/lib/admin/resolveCanonicalSchoolContext";
 import { normalizeSchoolId } from "@/lib/gas/schoolId";
 import { createHash } from "crypto";
-import { getAdminDatabase } from "@/lib/firebase-admin-db";
 import { signInTeacherWithPassword } from "@/lib/guru/signInTeacherPassword";
 
 export const dynamic = "force-dynamic";
@@ -77,7 +76,7 @@ export async function POST(req: Request) {
     }
 
     const schoolId = normalizeSchoolId(schoolContext.schoolId);
-    const db = getAdminDatabase();
+    const db = adminDb;
     
     // Cari siswa di RTDB: gas/schools/{schoolId}/students/{nisn}
     const studentsRef = db.ref(`gas/schools/${schoolId}/students`);
