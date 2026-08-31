@@ -437,14 +437,18 @@ class VirtualPetViewModel : ViewModel() {
             val calculatedHappiness = (attendanceBaseline - stats.disciplinePenalty).coerceIn(0, 100)
             val prayerStatus = stats.prayerInfo.status?.trim()?.uppercase()
             // Unknown/blank status after listeners are ready means no prayer log yet
-            // (treat as not prayed). Do NOT use a pre-sync placeholder here — repository
-            // flows gate until alias/schedule bootstrap finishes to avoid SEKARAT flash.
+            val calendar = Calendar.getInstance()
+            val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+            val isPastPrayerDeadline = currentHour >= 15
+
+            // Model Opsi B: Ibadah/Sholat mulai dari 0% (seperti 7KAIH & E-Perpus),
+            // menjadi 100% jika sudah sholat/izin/libur. Batas waktu sholat Dzuhur adalah jam 15:00.
             val calculatedHealth = when {
                 isPrayerExempt(resolution.religion) -> 100
                 !stats.prayerInfo.isEffectiveDay -> 100
-                prayerStatus == "PRAY" -> 100
-                prayerStatus == "PERMIT" || prayerStatus == "HALANGAN" -> 100
-                prayerStatus == "NOT_PRAY" || prayerStatus.isNullOrBlank() -> 20
+                prayerStatus in setOf("PRAY", "PERMIT", "HALANGAN") -> 100
+                prayerStatus == "NOT_PRAY" -> 0
+                prayerStatus.isNullOrBlank() -> 0
                 else -> syncedPet.health.coerceIn(0, 100)
             }
 
@@ -469,20 +473,15 @@ class VirtualPetViewModel : ViewModel() {
             val lowestVital = minOf(newHealth, newHappiness, newEnergy, fullness)
             val averageStats = (newHealth + newHappiness + newEnergy + fullness) / 4
             val reviveGraceActive = syncedPet.isManualReviveGraceActive()
-            // Do NOT sticky-lock status=DEAD when vitals have recovered.
-            // Otherwise a previously dead pet that is already SAKIT/SEHAT in UI
-            // keeps forcing DEAD into Firebase and re-triggers lock/notifications.
-            // Grace period: jangan vonis DEAD jika hari ini belum ada aktivitas sama sekali.
-            // Penalti sesungguhnya baru dijatuhkan oleh checkDailyReset() di pergantian hari.
-            val todayHasNoActivity = statusStr.isNullOrBlank()
-                && prayerStatus.isNullOrBlank()
-                && stats.habitsCount == 0
-                && stats.readingDuration == 0L
-            val graceProtected = todayHasNoActivity && syncedPet.status != "DEAD"
+
+            // Status DEAD hanya berlaku jika Pet memang mati dari hari kemarin (hasil evaluasi checkDailyReset)
+            // atau jika manual revive grace sudah habis dan kesehatan 0 permanen.
+            // Selama hari berjalan, siswa yang sedang progres dari 0% berstatus SEKARAT (SICK) / SEDIH (SAD)
+            // agar termotivasi menyelesaikan quest hingga HAPPY.
+            val isPermanentlyDead = syncedPet.status == "DEAD" && !reviveGraceActive
 
             val newStatus = when {
-                graceProtected -> syncedPet.status  // Tahan status kemarin, jangan vonis mati
-                !reviveGraceActive && (newHealth <= 0 || lowestVital <= 0) -> "DEAD"
+                isPermanentlyDead -> "DEAD"
                 lowestVital < 30 || newHealth < 30 || newHappiness < 30 -> "SICK"
                 lowestVital < 60 || newHappiness < 50 -> "SAD"
                 else -> "HAPPY"
@@ -976,6 +975,10 @@ class VirtualPetViewModel : ViewModel() {
             else -> if (attendanceStatus.isBlank()) "Belum ada" else attendanceStatus
         }
 
+        val calendar = Calendar.getInstance()
+        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+        val isPastPrayerDeadline = currentHour >= 15
+
         val prayerStatus = stats.prayerInfo.status?.trim()?.uppercase().orEmpty()
         val prayerExempt = isPrayerExempt(religion)
         // Non-wajib / libur day must never fall through to "Belum ada" (same as Presensi Sholat)
@@ -984,7 +987,7 @@ class VirtualPetViewModel : ViewModel() {
             !stats.prayerInfo.isEffectiveDay -> "Libur / tidak wajib"
             prayerStatus in setOf("PRAY") -> "Sholat"
             prayerStatus in setOf("PERMIT", "HALANGAN") -> "Izin"
-            prayerStatus.isBlank() -> "Belum ada"
+            prayerStatus.isBlank() -> if (isPastPrayerDeadline) "Lewat waktu (15:00)" else "Belum ada"
             else -> prayerStatus
         }
 

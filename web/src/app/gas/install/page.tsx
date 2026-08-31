@@ -287,9 +287,9 @@ const gasMenuItems = [
 
 export default function GasStudentInstallPage() {
   const apkMeta = getLatestApkMetaByPackageName("com.satupintu.mobile.siswa", {
-    fileName: "GAS-Siswa-1.0.94-siswa-23091.apk",
-    versionName: "1.0.94-siswa",
-    versionCode: 23091,
+    fileName: "GAS-Siswa-1.0.95-siswa-23092.apk",
+    versionName: "1.0.95-siswa",
+    versionCode: 23092,
   });
   // URL must be the versioned file so mobile Save-As keeps the version in the name.
   const apkHref = getApkDownloadHref(apkMeta.fileName);
