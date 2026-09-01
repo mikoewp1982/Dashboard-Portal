@@ -132,8 +132,49 @@ Aksesibilitas (`AntiUninstallService.kt`) digunakan secara eksklusif untuk 2 tug
 
 ---
 
+## 📌 PILAR 4: Arsitektur Hybrid Dual-Mode (Online & Offline-First)
+
+### 4.1 Latar Belakang & Masalah
+Saat ini, aplikasi EduLock dan GAS Siswa sangat bergantung pada koneksi internet aktif secara konstan. Jika kuota data siswa habis atau sinyal di ruang kelas/gerbang sekolah lemah, sinkronisasi terhambat dan siswa kesulitan melakukan presensi.
+
+### 4.2 Konsep Solusi: "Download / Update Data Sekolah"
+Menerapkan sistem **Hybrid Dual-Mode (Online & Offline-First)** dengan tombol interaktif di dalam aplikasi:
+
+```
+                  ┌─────────────────────────────────────────────────────────────┐
+                  │                 FLOW HYBRID DUAL-MODE                       │
+                  └──────────────────────────────┬──────────────────────────────┘
+                                                 │
+                   ┌─────────────────────────────┴─────────────────────────────┐
+                   ▼                                                           ▼
+         [KONDISI AWAL / FRESH INSTALL]                               [KONDISI SETELAH DOWNLOAD]
+       Tombol: [📥 Download Data Sekolah]                          Tombol: [🔄 Update Data Sekolah]
+       ----------------------------------                          --------------------------------
+       - Mengunduh seluruh aturan sekolah                          - Menampilkan stempel waktu update
+       - Menanam payload ke Database Lokal                         - Memperbarui jika ada jadwal baru
+       - HP Siswa langsung SIAP OFFLINE!                           - Menampilkan badge jika ada revisi
+```
+
+### 4.3 Struktur Paket Data Lokal (School Rules Payload)
+Paket aturan sekolah yang diunduh dan disimpan ke `Room Database / SQLite / SharedPreferences`:
+1. **Geofencing GPS:** Koordinat lintang/bujur sekolah & radius toleransi meter. *(GPS satelit bekerja 100% gratis tanpa kuota!)*
+2. **Jadwal Jam Sekolah:** Jam masuk, batas telat, dan jam kepulangan per hari (Senin–Jumat).
+3. **Kalender Libur:** Daftar tanggal merah & libur semester.
+4. **Jadwal Ibadah & Literasi:** Deadline Dzuhur, Dhuha, Jum'at, dan target literasi harian.
+5. **Whitelist Aplikasi:** Daftar aplikasi pembelajaran yang diizinkan selama jam sekolah.
+
+### 4.4 Mekanisme Eksekusi & Antrean Tertunda (*Store & Forward*)
+- **Saat Offline:**
+  - EduLock membaca GPS Satelit + Jam Hardware HP $\rightarrow$ Tetap mengunci game/medsos di jam sekolah secara instan.
+  - GAS Siswa tetap memproses Presensi Selfie + GPS dan mencatat log dengan enkripsi lokal.
+- **Saat Online Kembali:**
+  - Antrean data presensi dan telemetri lokal otomatis dikirim (*flushed*) ke Firebase RTDB tanpa ada data yang hilang.
+
+---
+
 ## 🏁 Kesimpulan
-Dengan menerapkan ketiga pilar di atas:
+Dengan menerapkan keempat pilar di atas:
 1. EduLock **100% aman dan bersih** dari potensi spyware maupun risiko penghapusan data sepihak.
 2. Tampilan perizinan di HP siswa menjadi **profesional, transparan, dan tidak menakutkan**.
 3. Database sekolah terlindungi penuh dari ancaman manipulasi jarak jauh.
+4. Aplikasi menjadi **kebal dari masalah sinyal/kuota**, siap beroperasi di sekolah mana pun secara fleksibel (Online maupun Offline).
