@@ -10,6 +10,8 @@ Update terakhir: 2026-09-01 21:55 (Release EduLock v1.3.23 / 49 — Hapus Spam A
 
 ## ✅ [BUGFIX & UX IMPROVEMENT EDULOCK SISWA] EduLock v1.3.23 (49) Release (2026-09-01 21:55)
 
+- [x] **Relaksasi Dialog Aksesibilitas di Luar Jam Sekolah (di Rumah)**:
+  - [x] Dialog modal paksa *"Wajib Aktifkan Proteksi"* di `MainActivity.kt` otomatis ditiadakan di luar jam sekolah / mode libur. Siswa dan orang tua bebas membuka halaman EduLock di rumah tanpa terhalang pop-up modal.
 - [x] **Hapus Spam Notifikasi Aksesibilitas di Luar Jam Sekolah (di Rumah)**:
   - [x] Menghapus pemanggilan notifikasi heads-up dan intent otomatis buka Settings setiap 30 detik pada `MonitoringService.kt` saat di luar jam sekolah / di rumah.
   - [x] HP siswa 100% hening dan bebas gangguan di rumah saat aksesibilitas mati, namun enforcement tetap ketat saat jam pelajaran di area sekolah.

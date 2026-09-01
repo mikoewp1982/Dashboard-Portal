@@ -56,6 +56,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvInternetStatus: TextView
     private lateinit var tvSchoolEndTime: TextView
     private lateinit var tvSchoolStartTime: TextView
+    private lateinit var tvAppVersion: TextView
     private lateinit var btnRequestPermission: Button
     private lateinit var btnOpenSchoolAppDashboard: Button
     private lateinit var cvPermissionStatus: CardView
@@ -100,12 +101,23 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (intent?.action == "com.sekolah.edulock.ACTION_START_KIOSK") {
+                if (prefsManager.anyRecoveryTargetActive()) return
                 if (prefsManager.isHolidayMode) return
                 if (!prefsManager.isProtectionActive) return
                 if (permissionManager.isPermissionActive()) return
                 if (!scheduleManager.isSchoolTime()) return
                 if (!isStrictModeNow()) return
+                if (::locationMonitor.isInitialized && !locationMonitor.isGpsEnabled()) return
                 startKioskMode()
+            }
+        }
+    }
+
+    private val gpsProviderReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            lastGpsUiKey = null
+            if (::tvGPSStatus.isInitialized) {
+                checkGPSStatus()
             }
         }
     }
@@ -156,6 +168,10 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
+        // Self-healing: jika semua izin setup sudah ON tapi setup_completed false,
+        // set true otomatis dan force-flush RTDB. (Menanggapi badge Setup merah abadi.)
+        SetupActivity.ensureSetupCompletedIfHealed(this)
+
         // Initialize
         devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         compName = ComponentName(this, DeviceAdminReceiver::class.java)
@@ -197,7 +213,7 @@ class MainActivity : AppCompatActivity() {
                     // Cek Permission Mode
                     if (permissionManager.isPermissionActive()) {
                         tvLocationStatus.text = "Lokasi: MONITORING DI-PAUSE"
-                        tvDistance.text = "Jarak: -- meter"
+                        tvDistance.text = formatDistanceText(null)
                         return
                     }
 
@@ -233,6 +249,16 @@ class MainActivity : AppCompatActivity() {
             registerReceiver(kioskStopReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(kioskStopReceiver, filter)
+        }
+
+        val gpsFilter = android.content.IntentFilter().apply {
+            addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
+            addAction("android.location.MODE_CHANGED")
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(gpsProviderReceiver, gpsFilter, Context.RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(gpsProviderReceiver, gpsFilter)
         }
 
         initViews()
@@ -640,9 +666,24 @@ class MainActivity : AppCompatActivity() {
 
                     val warnMs = toLongMs(snapshot.child("gps_off_warn_ms"), prefsManager.gpsOffWarnMs).coerceAtLeast(0L)
                     val lockMs = toLongMs(snapshot.child("gps_off_lock_ms"), prefsManager.gpsOffLockMs).coerceAtLeast(0L)
+                    val petFirstMs = toLongMs(
+                        snapshot.child("pet_dead_reminder_first_ms"),
+                        prefsManager.petDeadReminderFirstMs
+                    ).coerceAtLeast(60_000L)
+                    val petSecondMs = toLongMs(
+                        snapshot.child("pet_dead_reminder_second_ms"),
+                        prefsManager.petDeadReminderSecondMs
+                    ).coerceAtLeast(60_000L)
+                    val petRepeatMs = toLongMs(
+                        snapshot.child("pet_dead_reminder_repeat_ms"),
+                        prefsManager.petDeadReminderRepeatMs
+                    ).coerceAtLeast(60_000L)
 
                     prefsManager.gpsOffLockMs = lockMs
                     prefsManager.gpsOffWarnMs = if (lockMs > 0L && warnMs > lockMs) lockMs else warnMs
+                    prefsManager.petDeadReminderFirstMs = petFirstMs
+                    prefsManager.petDeadReminderSecondMs = petSecondMs
+                    prefsManager.petDeadReminderRepeatMs = petRepeatMs
                 } catch (_: Exception) {
                 }
             }
@@ -768,12 +809,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun startMonitoringServiceIfPossible() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            val intent = Intent(this, MonitoringService::class.java)
+            val intent = Intent(this, MonitoringService::class.java).apply {
+                action = MonitoringService.ACTION_FORCE_ENFORCE
+            }
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 startForegroundService(intent)
             } else {
                 startService(intent)
             }
+            KeepAliveWorker.schedule(this)
+            FcmTokenRegistrar.refreshAndUpload(this)
         }
     }
 
@@ -794,6 +839,9 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         checkUninstallState()
+        if (intent?.getBooleanExtra("force_overlay_recover", false) == true) {
+            checkAndEnforceOverlayPermission()
+        }
     }
 
     private fun checkUninstallState() {
@@ -805,9 +853,15 @@ class MainActivity : AppCompatActivity() {
                 uninstallDialog = null
             }
             prefsManager.uninstallBypassUntil = 0L
-            prefsManager.settingsGraceUntil = 0L
-            prefsManager.isSettingsOpen = false
+            // Hanya clear recovery targets SEMUA jika memang sedang uninstall mode.
+            // Gunakan clearAllRecoveryTargets() agar state per-target juga bersih.
+            prefsManager.clearAllRecoveryTargets()
         }
+    }
+
+    private fun isSettingsRecoveryInProgress(now: Long = System.currentTimeMillis()): Boolean {
+        // Gunakan anyRecoveryTargetActive() sebagai GATE UTAMA (sudah termasuk legacy global safety net)
+        return isOpeningSettings || prefsManager.anyRecoveryTargetActive(now)
     }
 
     override fun onResume() {
@@ -819,12 +873,14 @@ class MainActivity : AppCompatActivity() {
 
         try {
             val ping = Intent(this, MonitoringService::class.java)
-            ping.action = "com.sekolah.edulock.ACTION_UI_FOREGROUND"
+            ping.action = MonitoringService.ACTION_UI_FOREGROUND
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(ping)
             } else {
                 startService(ping)
             }
+            KeepAliveWorker.schedule(this)
+            FcmTokenRegistrar.refreshAndUpload(this)
         } catch (_: Exception) {
         }
         
@@ -848,20 +904,26 @@ class MainActivity : AppCompatActivity() {
 
         // RESET FLAG isSettingsOpen
         // Ini memastikan jika user kembali ke app, proteksi aktif lagi
-        prefsManager.isSettingsOpen = false
-        prefsManager.settingsGraceUntil = 0L
+        val nowR = System.currentTimeMillis()
+        if (!prefsManager.anyRecoveryTargetActive(nowR)) {
+            prefsManager.isSettingsOpen = false
+            prefsManager.settingsGraceUntil = 0L
+        }
         
         // Reset flags
         isOpeningInternalActivity = false
 
-        // Reset flag isOpeningSettings tapi beri sedikit delay atau cek kondisi
-        // Agar tidak langsung lock saat baru balik dari settings
         Handler(Looper.getMainLooper()).postDelayed({
-             isOpeningSettings = false
-        }, 2000) // Delay 2 detik untuk safety
+            if (!prefsManager.anyRecoveryTargetActive()) {
+                isOpeningSettings = false
+            }
+        }, 2000)
 
         // Stop setup protection overlay saat kembali ke aplikasi
         dismissMainActivityTouchBlockers()
+
+        // Overlay sering dicabut OEM saat sleep / Mode Senyap — cek dulu sebelum enforcement lain
+        checkAndEnforceOverlayPermission()
         
         // 0. Cek Permission Lokasi (Wajib Paling Awal)
         checkAndEnforcePermissions()
@@ -909,6 +971,9 @@ class MainActivity : AppCompatActivity() {
         if (!hasTriggeredSchoolServiceExit) {
             startSchoolServiceStatusListener()
         }
+
+        lastGpsUiKey = null
+        checkGPSStatus()
     }
 
     private fun startSchoolServiceStatusListener() {
@@ -935,11 +1000,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun forceExitBecauseSchoolInactive() {
         if (hasTriggeredSchoolServiceExit) return
+        if (!prefsManager.claimSchoolServiceExit()) return
         hasTriggeredSchoolServiceExit = true
 
         stopKioskMode()
         prefsManager.isRegistered = false
-        prefsManager.isSetupCompleted = false
 
         try {
             stopService(Intent(this, MonitoringService::class.java))
@@ -1023,6 +1088,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkAndEnforceAccessibilityService() {
          if (prefsManager.isUninstallBypassActive()) return
+         if (isSettingsRecoveryInProgress()) return
 
          // Device Admin harus dipulihkan dulu agar user hanya melihat satu prompt resmi.
          if (!devicePolicyManager.isAdminActive(compName) ||
@@ -1031,30 +1097,30 @@ class MainActivity : AppCompatActivity() {
              dismissAccessibilityPrompt()
              return
          }
-         
-         // Jika proteksi mati (Mode Senyap) dan onboarding (setup) sudah selesai, tidak usah paksa aksesibilitas
-         if (!prefsManager.isProtectionActive && prefsManager.isSetupCompleted) {
-             // AUTO-DISMISS jika dialog aksesibilitas sempat terbuka
+
+         if (isAccessibilityServiceEnabled()) {
+             dismissAccessibilityPrompt()
+             prefsManager.clearRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_ACCESSIBILITY)
+             return
+         }
+
+         // Di luar jam sekolah (di rumah) / mode libur / proteksi non-aktif:
+         // Hening total agar tidak mengganggu siswa dan orang tua dengan dialog pop-up modal.
+         val isSchoolTime = scheduleManager.isSchoolTime()
+         if (!isSchoolTime || prefsManager.isHolidayMode || !prefsManager.isProtectionActive) {
              dismissAccessibilityPrompt()
              return
          }
 
-         if (!isAccessibilityServiceEnabled()) {
-             val isSchoolTime = scheduleManager.isSchoolTime()
-             if (prefsManager.isProtectionActive &&
-                 isSchoolTime &&
-                 prefsManager.isInsideSchoolZone &&
-                 !prefsManager.isHolidayMode &&
-                 !permissionManager.isPermissionActive()
-             ) {
-                 showLockdownOverlay(
-                     "PROTEKSI WAJIB AKTIF!\n\nBuka Aksesibilitas > Layanan Terinstall > EduLock Protection -> AKTIFKAN.",
-                     "accessibility"
-                 )
-             }
+         // Saat jam sekolah di area sekolah: Wajibkan aktif dan kunci jika diabaikan
+         if (prefsManager.isInsideSchoolZone && !permissionManager.isPermissionActive()) {
+             showLockdownOverlay(
+                 "PROTEKSI WAJIB AKTIF!\n\nBuka Aksesibilitas > Layanan Terinstall > EduLock Protection -> AKTIFKAN.",
+                 "accessibility"
+             )
+         }
 
-             // Cek apakah dialog sudah tampil agar tidak menumpuk
-             if (accessibilityDialog?.isShowing == true) return
+         if (accessibilityDialog?.isShowing == true) return
 
              dialogCount++
              val builder = AlertDialog.Builder(this)
@@ -1062,32 +1128,25 @@ class MainActivity : AppCompatActivity() {
                  .setMessage("EduLock memerlukan 'Layanan Aksesibilitas' agar tidak mudah dihapus.\n\n1. Klik 'Buka Pengaturan'\n2. Cari 'Aksesibilitas' > 'Layanan Terinstall' (Installed Services)\n3. Pilih 'EduLock Protection' -> AKTIFKAN")
                  .setCancelable(false)
                  .setPositiveButton("Buka Pengaturan") { _, _ ->
-                     // SET FLAG IZIN KELUAR
                      isOpeningSettings = true
-                    prefsManager.isSettingsOpen = true
-                    prefsManager.settingsGraceUntil = System.currentTimeMillis() + 120_000L
-                     
-                     // Stop Kiosk Mode sementara (penting untuk real device)
+                     prefsManager.startRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_ACCESSIBILITY, 300_000L)
+
                      stopKioskMode()
 
-                     // Start Protection Service
                      try {
                          val intent = Intent(this, SetupProtectionService::class.java)
                          startService(intent)
-                     } catch (e: Exception) {
-                         e.printStackTrace()
+                     } catch (_: Exception) {
                      }
 
-                     // Coba buka halaman spesifik accessibility settings
                      try {
                          val intent = Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
                          intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                          startActivity(intent)
                      } catch (e: Exception) {
-                         // Fallback ke settings utama jika gagal
                          try {
                              startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
-                         } catch (e2: Exception) {
+                         } catch (_: Exception) {
                              Toast.makeText(this, "Tidak bisa membuka pengaturan otomatis. Silakan buka manual.", Toast.LENGTH_LONG).show()
                          }
                      }
@@ -1110,15 +1169,12 @@ class MainActivity : AppCompatActivity() {
              }
                  
              accessibilityDialog?.show()
-         } else {
-             // AUTO-DISMISS jika sudah aktif saat kembali ke activity
-             dismissAccessibilityPrompt()
-         }
      }
      
      private var permissionDialog: AlertDialog? = null
 
     private fun checkAndEnforcePermissions() {
+        if (isSettingsRecoveryInProgress()) return
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
              if (permissionDialog?.isShowing == true) return
 
@@ -1127,8 +1183,8 @@ class MainActivity : AppCompatActivity() {
                  .setMessage("Aplikasi ini WAJIB menggunakan akses lokasi (GPS) untuk berfungsi.\n\nTanpa izin ini, aplikasi tidak bisa melanjutkan.\n\nMohon klik 'Buka Pengaturan' > 'Izin' > 'Lokasi' > Pilih 'Izinkan'.")
                  .setCancelable(false)
                  .setPositiveButton("Buka Pengaturan") { _, _ ->
-                     // SET FLAG IZIN KELUAR
                      isOpeningSettings = true
+                     prefsManager.startRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_LOCATION_PERMISSION, 300_000L)
                      stopKioskMode()
 
                      try {
@@ -1136,8 +1192,7 @@ class MainActivity : AppCompatActivity() {
                          val uri = android.net.Uri.fromParts("package", packageName, null)
                          intent.data = uri
                          startActivity(intent)
-                     } catch (e: Exception) {
-                         // Fallback
+                     } catch (_: Exception) {
                          requestNecessaryPermissions()
                      }
                  }
@@ -1149,12 +1204,13 @@ class MainActivity : AppCompatActivity() {
              
              permissionDialog?.show()
         } else {
-            // Jika sudah diizinkan, tutup dialog jika masih muncul
             permissionDialog?.dismiss()
+            prefsManager.clearRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_LOCATION_PERMISSION)
         }
     }
 
     private fun checkAndEnforceBatteryOptimization() {
+        if (isSettingsRecoveryInProgress()) return
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             val powerManager = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
             if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
@@ -1167,17 +1223,22 @@ class MainActivity : AppCompatActivity() {
                     .setMessage("Agar aplikasi tidak mati saat layar terkunci, mohon izinkan aplikasi berjalan di latar belakang (Abaikan Optimasi Baterai).")
                     .setCancelable(false)
                     .setPositiveButton("Izinkan") { _, _ ->
+                        isOpeningSettings = true
+                        prefsManager.startRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_BATTERY, 300_000L)
+                        stopKioskMode()
                         val intent = Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
                         intent.data = android.net.Uri.parse("package:$packageName")
                         try {
                             startActivity(intent)
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             Toast.makeText(this, "Gagal membuka dialog. Silakan atur manual di Pengaturan > Aplikasi > Baterai.", Toast.LENGTH_LONG).show()
                         }
                     }
                     .setOnDismissListener { dialogCount-- }
                 
                 builder.create().show()
+            } else {
+                prefsManager.clearRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_BATTERY)
             }
         }
     }
@@ -1201,7 +1262,7 @@ class MainActivity : AppCompatActivity() {
     private var isRequestingAdmin: Boolean = false
 
     private fun startKioskMode() {
-        // Cek flag lokal dulu untuk mencegah spamming internal
+        if (prefsManager.anyRecoveryTargetActive()) return
         if (isKioskModeActive) return
         val now = System.currentTimeMillis()
         if (now < prefsManager.lockTaskCooldownUntil) return
@@ -1374,6 +1435,7 @@ class MainActivity : AppCompatActivity() {
         tvInternetStatus = findViewById(R.id.tvInternetStatus)
         tvSchoolEndTime = findViewById(R.id.tvSchoolEndTime)
         tvSchoolStartTime = findViewById(R.id.tvSchoolStartTime)
+        tvAppVersion = findViewById(R.id.tvAppVersion)
         
         btnRequestPermission = findViewById(R.id.btnRequestPermission)
         cvPermissionStatus = findViewById(R.id.cvPermissionStatus)
@@ -1386,6 +1448,7 @@ class MainActivity : AppCompatActivity() {
         // Set student info
         tvStudentName.text = prefsManager.studentName
         tvClass.text = prefsManager.studentClass
+        tvAppVersion.text = "Versi ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
 
         // Setup button listener
         btnRequestPermission.setOnClickListener {
@@ -1750,8 +1813,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             // Saat kehilangan fokus (misal user tarik status bar atau tekan Recent Apps)
             // JANGAN lakukan apa-apa jika sedang menampilkan dialog sendiri ATAU Silent Mode aktif
-            if (!isOpeningSettings && !isOpeningInternalActivity && dialogCount == 0 && !prefsManager.isHolidayMode && scheduleManager.isSchoolTime() && !permissionManager.isPermissionActive() && prefsManager.isProtectionActive) {
-                // Tutup semua dialog sistem (Notification Shade, Recent Apps)
+            if (!isOpeningSettings && !isOpeningInternalActivity && dialogCount == 0 && !isSettingsRecoveryInProgress() && !prefsManager.isHolidayMode && scheduleManager.isSchoolTime() && !permissionManager.isPermissionActive() && prefsManager.isProtectionActive) {
                 collapseSystemUI()
                 
                 // Paksa tutup dialog sistem lagi dengan delay kecil untuk memastikan
@@ -1775,6 +1837,7 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun checkAndEnforceOverlayPermission() {
+        if (isSettingsRecoveryInProgress()) return
         if (!android.provider.Settings.canDrawOverlays(this)) {
             // Cek apakah dialog sudah tampil
             if (overlayDialog?.isShowing == true) return
@@ -1785,10 +1848,8 @@ class MainActivity : AppCompatActivity() {
                 .setMessage("Aplikasi ini memerlukan izin 'Tampilkan di atas aplikasi lain' agar fitur penguncian layar berfungsi.\n\nSilakan cari 'EduLock' dan AKTIFKAN.")
                 .setCancelable(false)
                 .setPositiveButton("Buka Pengaturan") { _, _ ->
-                    // IZINKAN KELUAR
                     isOpeningSettings = true
-                    prefsManager.isSettingsOpen = true
-                    prefsManager.settingsGraceUntil = System.currentTimeMillis() + 120_000L
+                    prefsManager.startRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_OVERLAY, 300_000L)
                     stopKioskMode()
 
                     val intent = Intent(
@@ -1805,6 +1866,7 @@ class MainActivity : AppCompatActivity() {
             if (overlayDialog?.isShowing == true) {
                 overlayDialog?.dismiss()
             }
+            prefsManager.clearRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_OVERLAY)
         }
     }
     
@@ -1815,6 +1877,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkAndEnforceDeviceAdmin() {
         if (prefsManager.isUninstallBypassActive()) return
+        if (isSettingsRecoveryInProgress() && !isRequestingAdmin) return
         if (isRequestingAdmin) return // Skip jika sedang dalam proses request
 
         if (!devicePolicyManager.isAdminActive(compName)) {
@@ -1864,10 +1927,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun activateDeviceAdmin() {
         if (!devicePolicyManager.isAdminActive(compName)) {
-            // IZINKAN KELUAR UNTUK KE SETTINGS
             isOpeningSettings = true
-            isRequestingAdmin = true // Tandai sedang request
-            prefsManager.deviceAdminRequestUntil = System.currentTimeMillis() + 60_000L
+            isRequestingAdmin = true
+            prefsManager.deviceAdminRequestUntil = System.currentTimeMillis() + 300_000L
+            prefsManager.startRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_DEVICE_ADMIN, 300_000L)
             stopKioskMode()
 
             // PASTIKAN OVERLAY MATI AGAR TIDAK BLOKIR TOMBOL "ACTIVATE"
@@ -1909,47 +1972,73 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkGPSStatus() {
+        if (!::tvGPSStatus.isInitialized) return
+
         val isSilent = !prefsManager.isProtectionActive
         val isHoliday = prefsManager.isHolidayMode
         val isPermissionPaused = permissionManager.isPermissionActive()
         val isSchoolTime = scheduleManager.isSchoolTime()
         val gpsEnabled = isGPSEnabled()
-        val hasPresence = locationMonitor.shouldEnforcePresenceProtection()
+        val bypass = prefsManager.isUninstallBypassActive() || prefsManager.isEmergencyUnlocked
 
         val key = when {
-            isSilent -> "silent"
             isHoliday -> "holiday"
             isPermissionPaused -> "permission"
-            else -> "enforce:$isSchoolTime:$gpsEnabled:$hasPresence"
+            bypass -> "bypass"
+            else -> "gps:$gpsEnabled"
         }
 
         if (key == lastGpsUiKey) return
         lastGpsUiKey = key
 
         tvGPSStatus.text = when {
-            isSilent -> "GPS: Mode Bebas (Silent)"
+            isSilent && gpsEnabled -> "GPS: Mode Bebas (Silent)"
             isHoliday -> "GPS: Mode Acara / Libur Sekolah (Bebas)"
             isPermissionPaused -> "GPS: Monitoring DI-PAUSE (Izin)"
-            !gpsEnabled && isSchoolTime -> "GPS: Tidak Aktif ❌"
-            !gpsEnabled -> "GPS: Tidak Aktif (Bebas) 💤"
+            !gpsEnabled -> "GPS: Tidak Aktif ❌"
             isSchoolTime -> "GPS: Aktif ✓"
-            else -> "GPS: Siaga (Bebas) 🌙"
+            else -> "GPS: Siaga ✓"
         }
 
-        if (isSilent) {
+        if (gpsEnabled) {
             val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
+            intent.setPackage(packageName)
             sendBroadcast(intent)
         }
 
-        // Hard overlay only with school-presence indication (sticky / near-school / recent geofence).
-        // Sick-at-home with GPS off and never near school must stay unlocked.
-        if (!isSilent && !isHoliday && !isPermissionPaused && !gpsEnabled && isSchoolTime && hasPresence) {
-            showLockdownOverlay("GPS MATI! Nyalakan GPS untuk melanjutkan.")
+        // Overlay GPS saat EduLock dibuka + GPS mati — termasuk Mode Senyap.
+        // Jangan menunggu admin menyalakan proteksi, dan jangan kunci kiosk.
+        if (!isHoliday && !isPermissionPaused && !bypass &&
+            prefsManager.isSetupCompleted && !gpsEnabled
+        ) {
+            showLockdownOverlay(
+                "GPS MATI!\nNyalakan GPS untuk melanjutkan.\n\n" +
+                    getString(R.string.gps_enable_steps),
+                "gps"
+            )
         }
     }
 
     private fun isGPSEnabled(): Boolean {
-        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        return if (::locationMonitor.isInitialized) {
+            locationMonitor.isGpsEnabled()
+        } else {
+            val masterOn = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                locationManager.isLocationEnabled
+            } else {
+                @Suppress("DEPRECATION")
+                val mode = android.provider.Settings.Secure.getInt(
+                    contentResolver,
+                    android.provider.Settings.Secure.LOCATION_MODE,
+                    android.provider.Settings.Secure.LOCATION_MODE_OFF
+                )
+                mode != android.provider.Settings.Secure.LOCATION_MODE_OFF
+            }
+            if (!masterOn) return false
+            val gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            val networkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            gpsEnabled || networkEnabled
+        }
     }
 
     // Legacy Listener for Backup
@@ -2131,7 +2220,7 @@ class MainActivity : AppCompatActivity() {
                 if (prefsManager.isRecentGeofenceInside()) {
                     tvLocationStatus.text = "Lokasi: Di Area Sekolah (Hybrid Geofence)"
                     tvLocationStatus.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark))
-                    tvDistance.text = "Jarak: sinkron dari geofence"
+                    tvDistance.text = "Jarak: sinkron dari geofence (terpenuhi)"
                     prefsManager.isInsideSchoolZone = true
                     prefsManager.markNearSchool()
                     updatePermissionRequestButtonVisibility()
@@ -2145,7 +2234,7 @@ class MainActivity : AppCompatActivity() {
 
                 tvLocationStatus.text = "Lokasi: Menunggu GPS Akurat..."
                 tvLocationStatus.setTextColor(ContextCompat.getColor(this, android.R.color.holo_orange_dark))
-                tvDistance.text = "Jarak: -- meter"
+                tvDistance.text = formatDistanceText(null)
                 prefsManager.isInsideSchoolZone = false
                 updatePermissionRequestButtonVisibility()
                 stopKioskMode()
@@ -2160,7 +2249,7 @@ class MainActivity : AppCompatActivity() {
             SCHOOL_LON
         )
 
-        tvDistance.text = "Jarak: ${distance.toInt()} meter"
+        tvDistance.text = formatDistanceText(distance)
         val nearBuffer = maxOf(50.0, SCHOOL_RADIUS * 0.15)
         val isInsideHybrid = if (distance <= SCHOOL_RADIUS) {
             true
@@ -2350,7 +2439,7 @@ class MainActivity : AppCompatActivity() {
     private fun shouldSkipActivityLockEnforcement(): Boolean {
         return prefsManager.isHolidayMode ||
             !prefsManager.isProtectionActive ||
-            isOpeningSettings ||
+            isSettingsRecoveryInProgress() ||
             isOpeningInternalActivity ||
             permissionManager.isPermissionActive() ||
             prefsManager.isUninstallBypassActive() ||
@@ -2359,6 +2448,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun resolveActivityLockDecision(blockedPackage: String): LockDecision {
         return lockStateManager.reconcile(lockStateManager.buildSnapshot(blockedPackage))
+    }
+
+    private fun formatDistanceText(distanceMeters: Double?): String {
+        if (distanceMeters == null) return "Jarak: -- meter"
+        val meters = distanceMeters.toInt()
+        val status = if (distanceMeters <= SCHOOL_RADIUS) "terpenuhi" else "tidak terpenuhi"
+        return "Jarak: $meters meter ($status)"
     }
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
@@ -2411,8 +2507,11 @@ class MainActivity : AppCompatActivity() {
         }
         
         if (requestCode == DEVICE_ADMIN_REQUEST) {
-            isRequestingAdmin = false // Reset flag
-            isOpeningSettings = false // Reset opening settings flag
+            isRequestingAdmin = false
+            prefsManager.clearRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_DEVICE_ADMIN)
+            if (!prefsManager.anyRecoveryTargetActive()) {
+                isOpeningSettings = false
+            }
             prefsManager.deviceAdminRequestUntil = 0L
             
             if (devicePolicyManager.isAdminActive(compName)) {
@@ -2420,8 +2519,15 @@ class MainActivity : AppCompatActivity() {
                 adminDialog?.dismiss()
             } else {
                 showToast("⚠️ Device Admin Belum Aktif. Mohon aktifkan.")
-                // Jangan panggil checkAndEnforceDeviceAdmin() di sini agar tidak loop agresif, 
-                // biarkan onResume yang handle nanti
+            }
+        }
+
+        if (requestCode == OVERLAY_PERMISSION_REQUEST) {
+            if (android.provider.Settings.canDrawOverlays(this)) {
+                prefsManager.clearRecoveryForTarget(PreferencesManager.RECOVERY_TARGET_OVERLAY)
+            }
+            if (!prefsManager.anyRecoveryTargetActive()) {
+                isOpeningSettings = false
             }
         }
     }
@@ -2452,6 +2558,10 @@ class MainActivity : AppCompatActivity() {
             unregisterReceiver(kioskStopReceiver)
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+        try {
+            unregisterReceiver(gpsProviderReceiver)
+        } catch (_: Exception) {
         }
         
         // Remove School Config Listener

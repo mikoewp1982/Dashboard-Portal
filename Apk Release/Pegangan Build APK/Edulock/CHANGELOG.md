@@ -9,6 +9,7 @@ Catatan:
 ## [Unreleased]
 
 ### Student / Web Admin
+- Fixed: **v1.3.23 (49) rebuild 2026-09-01 — Relaksasi Dialog Aksesibilitas di Luar Jam Sekolah (di Rumah)**: Dialog modal paksa *"Wajib Aktifkan Proteksi"* di `MainActivity.kt` otomatis ditiadakan di luar jam sekolah / mode libur. Siswa dan orang tua bebas membuka halaman EduLock di rumah tanpa terhalang pop-up modal.
 - Fixed: **v1.3.23 (49) rebuild 2026-09-01 — Hapus Spam Notifikasi Aksesibilitas di Luar Jam Sekolah (di Rumah)**: Mencabut pemanggilan notifikasi heads-up dan intent pembukaan Settings setiap 30 detik pada `MonitoringService.kt` saat di luar jam sekolah / di rumah. HP siswa kini 100% hening dan bebas gangguan di rumah.
 - Fixed: **v1.3.23 (49) rebuild 2026-09-01 — Fix Infinite Loop Pet Dead Lock & Hapus Dialog "Penyematan Layar" (Screen Pinning)**: Menutup bug badai activity spawn pada `PetDeadLockActivity` yang memicu dialog sistem Android *"Penyematan Layar"* berulang kali menumpuk di layar siswa.
   1. Menghapus pemanggilan `startLockTask()` / `startKioskMode()` di `PetDeadLockActivity.kt` sehingga reminder pet mati menjadi Fullscreen Activity bersih tanpa memicu modal penyematan OS.
