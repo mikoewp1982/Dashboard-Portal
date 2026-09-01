@@ -107,11 +107,55 @@ Data yang diunduh dan disimpan secara offline:
 
 ---
 
-## 6. 📅 Rencana Tahapan Implementasi
+## 6. 📷 Fitur "Mesin Scanner Berjalan" (Mobile Walking Scanner) untuk Sekretaris Kelas
+
+### A. Latar Belakang & Solusi Lapangan
+Untuk mengatasi kendala siswa yang **tidak memiliki HP, HP rusak/tertinggal, dilarang orang tua membawa HP, atau beralasan tidak punya kuota**, aplikasi GAS Siswa menghadirkan fitur **Mesin Scan Presensi Kelas Berjalan**.
+
+### B. Cara Kerja & Alur Operasional:
+```
+ ┌───────────────────────────┐                  ┌────────────────────────────────────────┐
+ │   SISWA TANPA HP          │                  │ HP SEKRETARIS KELAS (APK GAS SISWA)    │
+ │ Membawa Kartu Pelajar     │                  │ (Login sebagai Siswa Jabatan Sekretaris)│
+ │ fisik / Barcode Kertas NISN│                  └───────────────────┬────────────────────┘
+ └─────────────┬─────────────┘                                      │
+               │                                                    ▼
+               │                              [MENU KHUSUS MUNCUL DI HOMESCREEN]
+               │                              "📷 MESIN SCAN PRESENSI KELAS"
+               │                                                    │
+               │                                                    ▼
+               │                              [MODE SCANNER CEPAT / KELILING]
+               │                              Kamera menyala ➔ Arahkan ke Barcode ➔ BEEP!
+               │                                                    │
+               └────────────────────────────────────────────────────┘
+                                       │
+                                       ▼
+                     [TERCATAT LANGSUNG SEBAGAI PRESENSI RESMI]
+                     - Nama: Budi Santoso (NISN: 3114...)
+                     - Status: HADIR (07:05 WIB)
+                     - Dicatat oleh: Sekretaris Kelas (Audit Trail Valid)
+                     - Berjalan ONLINE maupun OFFLINE!
+```
+
+### C. Fitur Kunci:
+1. **Pendeteksian Jabatan Otomatis (`isClassSecretary`):**
+   - Berdasarkan `position == "Sekretaris Kelas"` di database, menu scanner **hanya muncul** pada akun sekretaris kelas.
+2. **Mode Scan Beruntun Cepat (*Continuous Scanning*):**
+   - Sekretaris cukup berkeliling di dalam kelas atau berdiri di pintu kelas.
+   - Sorot barcode kartu siswa $\rightarrow$ *BEEP (Getar Hijau: Budi Santoso - Hadir)* $\rightarrow$ Langsung siap men-scan siswa berikutnya tanpa perlu klik tombol konfirmasi.
+3. **Penyimpanan Lokal Offline:**
+   - Database nama teman sekelas (*Class Roster*) di-cache lokal di HP sekretaris.
+   - Presensi kelas tetap berjalan 100% lancar walau di ruang kelas tidak ada sinyal.
+   - Otomatis disinkronkan ke server saat HP sekretaris terhubung Wi-Fi sekolah/kuota.
+
+---
+
+## 7. 📅 Rencana Tahapan Implementasi
 
 | Fase | Target Pekerjaan | Estimasi Komponen |
 | :---: | :--- | :--- |
 | **Fase 1** | Pembuatan Service Sinkronisasi Payload & Room Database di Android | `SchoolPayloadRepository.kt`, `SchoolDatabase.kt` |
 | **Fase 2** | UI Tombol "Download / Update Data Sekolah" di GAS & EduLock Siswa | `HomeScreen.kt`, `SetupActivity.kt` |
-| **Fase 3** | Implementasi Antrean Presensi Offline (*Store & Forward Queue*) | `OfflineAttendanceWorker.kt` |
-| **Fase 4** | Uji Coba Lapangan Mode Pesawat (*Airplane Mode E2E Test*) | Uji device fisik di area sekolah demo |
+| **Fase 3** | Mesin Scanner Barcode Berjalan di Akun Sekretaris Kelas | `ClassSecretaryScannerScreen.kt`, CameraX MLKit |
+| **Fase 4** | Implementasi Antrean Presensi Offline (*Store & Forward Queue*) | `OfflineAttendanceWorker.kt` |
+| **Fase 5** | Uji Coba Lapangan Mode Pesawat (*Airplane Mode E2E Test*) | Uji device fisik di area sekolah demo |
