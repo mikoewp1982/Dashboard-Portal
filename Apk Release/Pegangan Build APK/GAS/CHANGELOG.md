@@ -26,6 +26,10 @@ Tambahkan nama pelaksana jika perlu:
 ## [Unreleased]
 
 ### Siswa
+- Fixed: **Virtual Pet Multi-Alias & Status Synchronization Web vs APK**: Memperbaiki inkonsistensi status virtual pet di mana APK siswa mendeteksi pet `DEAD` (terkunci dengan overlay *"Akses APK Ditahan"*) namun Web Admin membaca rekaman placeholder alias `"Siswa"` dengan status `SICK`/Sekarat. Perbaikan:
+  1. Penyelarasan comparator deduplikasi di API Admin Web `api/admin/virtual-pet` (`Level -> XP -> Coins -> Recency`) agar 100% identik dengan Kotlin APK `VirtualPetRepository.kt`.
+  2. Implementasi **Multi-Alias Auto Revive** di backend agar aksi Revive dari Admin Web secara otomatis menghidupkan seluruh rekaman pet yang terhubung dengan siswa tersebut.
+  3. Memperbarui `isDeadByRule()` di web agar menghormati status `DEAD` yang ditulis oleh APK.
 - Added: **100% Full Feature Parity PWA Web Siswa (`/siswa/*`)** mencakup seluruh 10 kartu menu (Absensi GPS, Sholat Dzuhur deadline 15:00, Sholat Dhuha & Jum'at, Lentera Digital + Reader + Live Reading Timer 30m, 7 KAIH Weekly Checklist, Sahabat Belajar Virtual Pet 6 Vitals interaktif, Kedisiplinan, Layanan Aduan Siswa, Notifikasi, dan Tools Belajar dengan 4 alat aktif).
 - Fixed: **Virtual Pet Real-Time Dismissal Cutoff**: Menghubungkan batas jam pulang sekolah (`hasWindowEnded`) dari Firebase RTDB `attendanceData` ke `VirtualPetViewModel.kt`. Jika jam kepulangan sekolah telah berakhir dan siswa belum tercatat hadir, sistem secara otomatis menetapkan status Alpa (0% kebahagiaan) dan memotong skor kebahagiaan harian tanpa celah absen malam hari.
 - Changed: **Build Distribusi GAS Siswa**: Versi resmi diperbarui ke `1.0.96-siswa (23093)`, disalin ke `Apk Release/Final` dan `web/public/apk/` beserta sinkronisasi `apk-manifest.json` dan `fallback-install.json`.

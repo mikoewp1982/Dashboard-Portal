@@ -1,5 +1,23 @@
 # Build Log GAS
 
+## 2026-09-01 10:45 - Sinkronisasi Status Virtual Pet Multi-Alias & EduLock UX
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `bugfix` + `integration` + `web-deploy`
+- **Tujuan perubahan:**
+  1. Memperbaiki anomali inkonsistensi Virtual Pet antara Web Admin dan APK Siswa (contoh kasus Wilda Pratiwi - NISN 3114142390), di mana APK terkunci *"Akses APK Ditahan"* (karena membaca Pet UUID berkoin 110 dengan status `DEAD`), sedangkan Web Admin menampilkan status `SICK` / Sekarat (karena membaca Pet NISN berkoin 100 dengan nama `"Siswa"` yang memiliki masa *grace period* aktif).
+  2. Menyelaraskan algoritma deduplikasi pet di `web/src/app/api/admin/virtual-pet/route.ts` (`Level -> XP -> Coins -> Recency`) agar 100% konsisten dengan Kotlin APK `VirtualPetRepository.kt`.
+  3. Menambahkan **Multi-Alias Auto Revive** pada endpoint `/api/admin/virtual-pet` agar saat Admin menekan *Revive*, seluruh rekaman pet yang terafiliasi dengan siswa/NISN tersebut ikut dihidupkan kembali bersamaan.
+  4. Memperbarui `isDeadByRule()` di `web/src/lib/guru/petStatus.ts`, `petUtils.ts`, dan `useTeacherNotificationInbox.ts` agar menghormati status `DEAD` dari APK.
+  5. Memberikan konfirmasi dialog dan feedback alert pada tombol *"Cabut Semua Izin Aktif"* di `EduLockCodesPanel.tsx`.
+- **Flavor / Sistem terdampak:** `web` (Admin Web Portal + Guru Portal) + `database` (Firebase RTDB `virtual_pets`)
+- **File utama yang diubah:**
+  - `web/src/lib/guru/petStatus.ts`
+  - `web/src/components/gas/virtual-pet/petUtils.ts`
+  - `web/src/hooks/guru/useTeacherNotificationInbox.ts`
+  - `web/src/app/api/admin/virtual-pet/route.ts`
+  - `web/src/components/edulock/panels/EduLockCodesPanel.tsx`
+- **Hasil web build & deploy:** Sukses 100%, commit `42fc2d97` dan `39d1a34c` telah di-push ke GitHub `origin/main`.
+
 ## 2026-08-31 22:30 - GAS Siswa v1.0.96 (23093) & PWA Siswa Full Feature Parity
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `feature` + `bugfix` + `build-release` + `pwa-parity`

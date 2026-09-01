@@ -6,7 +6,21 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-08-31 23:05 (PWA Siswa 100% Feature Parity dengan APK + APK GAS Siswa v1.0.96-23093 sinkron cutoff jam pulang sekolah)
+Update terakhir: 2026-09-01 10:45 (Audit & Fix Virtual Pet Multi-Alias Web vs APK + EduLock Cabut Semua Izin Feedback)
+
+## ✅ [WEB ADMIN & VIRTUAL PET INTEGRASI] Sinkronisasi Status Pet Multi-Alias & EduLock UX (2026-09-01 10:45)
+
+- [x] **Audit & Fix Anomali Virtual Pet (Kasus Siswa Wilda Pratiwi - NISN 3114142390)**:
+  - [x] **Root Cause Ditemukan**: Terdapat 2 rekaman pet di Firebase RTDB untuk siswa yang sama: Pet Utama (UUID dengan koin 110, status `DEAD`) dan Pet Placeholder (Key NISN dengan koin 100, petName `"Siswa"`, status `SICK`).
+  - [x] **Penyelarasan Algoritma Deduplikasi**: Mengubah comparator di `web/src/app/api/admin/virtual-pet/route.ts` agar berurutan `Level -> XP -> Coins -> Recency`, 100% selaras dengan Kotlin APK `VirtualPetRepository.kt` (`isBetterPetCandidate`).
+  - [x] **Multi-Alias Auto Revive**: Endpoint `/api/admin/virtual-pet` (action `revive`) kini otomatis memperbarui dan menghidupkan seluruh rekaman pet yang terhubung dengan `studentId` / `nisn` tersebut secara bersamaan.
+  - [x] **Sticky DEAD Support di Web**: Fungsi `isDeadByRule()` di `web/src/lib/guru/petStatus.ts`, `petUtils.ts`, dan `useTeacherNotificationInbox.ts` kini membaca `status = "DEAD"` yang ditulis APK agar Web Admin dan Guru Monitor tidak tertinggal membaca status kematian.
+  - [x] **Direct DB Recovery**: Pet siswa terdampak (`40168ee2...` dan `3114142390`) langsung di-revive ke status `HAPPY` dengan grace period 12 jam, membuka kembali akses APK siswa tanpa install ulang.
+- [x] **Audit & UX Hardening Tombol "Cabut Semua Izin Aktif" EduLock**:
+  - [x] Audit kondisi disabled tombol: Tombol terkunci (`disabled`) secara otomatis saat `sessions.length === 0` (tidak ada sesi izin siswa/kelas yang aktif).
+  - [x] Menambahkan konfirmasi dialog `window.confirm` dan alert notifikasi hasil (`window.alert` sukses/gagal) pada `EduLockCodesPanel.tsx` agar admin tidak mengira tombol stuck saat diproses.
+- [x] **Deploy Live**:
+  - [x] Push ke GitHub `origin/main` (commit `42fc2d97` dan `39d1a34c`) untuk auto-deploy Firebase App Hosting / Cloud Run.
 
 ## ✅ [PWA SISWA & APK GAS] Full Feature Parity PWA Siswa & Realtime Dismissal Cutoff (2026-08-31 23:05)
 
