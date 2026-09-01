@@ -6,7 +6,22 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-09-01 10:45 (Audit & Fix Virtual Pet Multi-Alias Web vs APK + EduLock Cabut Semua Izin Feedback)
+Update terakhir: 2026-09-01 19:25 (Bypass Force Update Guru & Kepala Sekolah + Web Super Admin Clarity + Rebuild APK Guru & Kepala)
+
+## ✅ [HARDENING APK & WEB SUPER ADMIN] Force Update Scope Hardening (Bypass Guru & Kepala) (2026-09-01 19:25)
+
+- [x] **Hardening Guard Force Update di APK**:
+  - [x] Pengecekan `VersionCheckService` di `Navigation.kt` kini dibatasi khusus untuk varian siswa (`isStudentFlavor = flavor in ["siswa", "legacySiswa"] || sessionRole == "student"`).
+  - [x] APK Guru dan Kepala Sekolah otomatis mengabaikan (bypass) nilai `min_version_code_gas` sehingga tidak akan pernah terkunci saat super admin menaikkan versi siswa.
+- [x] **Rebuild Release APK**:
+  - [x] Build release signed `GAS-Guru-release.apk` (`1.0.72-guru / 1064`) sukses dan disalin ke `Apk Release/Final/`.
+  - [x] Build release signed `GAS-Kepala-release.apk` sukses dan disalin ke `Apk Release/Final/`.
+- [x] **Penyempurnaan Web Super Admin (`/super-admin/mobile-apps`)**:
+  - [x] Judul & deskripsi diperbarui menegaskan kontrol versi ini khusus untuk **GAS Siswa** dan **EduLock Siswa**.
+  - [x] Label input diperjelas: *Aplikasi GAS Siswa (Absensi)* dan *Aplikasi EduLock Siswa (MDM)*.
+  - [x] Menambahkan banner status hijau: *Status GAS Guru & Kepala Sekolah: Kebal / Bypass*.
+- [x] **Deploy Live Web**:
+  - [x] Push perubahan ke GitHub `origin/main` untuk auto-deploy Firebase App Hosting / Cloud Run.
 
 ## ✅ [WEB ADMIN & VIRTUAL PET INTEGRASI] Sinkronisasi Status Pet Multi-Alias & EduLock UX (2026-09-01 10:45)
 

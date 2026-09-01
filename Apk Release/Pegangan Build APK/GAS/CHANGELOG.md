@@ -25,6 +25,9 @@ Tambahkan nama pelaksana jika perlu:
 
 ## [Unreleased]
 
+### Guru / Kepala Sekolah
+- Fixed: **Force Update Bypass Khusus Guru & Kepala Sekolah**: Pengecekan `VersionCheckService` / `min_version_code_gas` di `Navigation.kt` kini secara ketat hanya diberlakukan untuk varian Siswa. APK Guru dan Kepala Sekolah kebal permanen dan tidak akan pernah terblokir oleh batasan versi siswa. Rebuild release `GAS-Guru-release.apk` (`1.0.72-guru / 1064`) dan `GAS-Kepala-release.apk`.
+
 ### Siswa
 - Fixed: **Virtual Pet Multi-Alias & Status Synchronization Web vs APK**: Memperbaiki inkonsistensi status virtual pet di mana APK siswa mendeteksi pet `DEAD` (terkunci dengan overlay *"Akses APK Ditahan"*) namun Web Admin membaca rekaman placeholder alias `"Siswa"` dengan status `SICK`/Sekarat. Perbaikan:
   1. Penyelarasan comparator deduplikasi di API Admin Web `api/admin/virtual-pet` (`Level -> XP -> Coins -> Recency`) agar 100% identik dengan Kotlin APK `VirtualPetRepository.kt`.

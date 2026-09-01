@@ -202,8 +202,31 @@ fun AppNavigation(
         aliases = eduLockAliases,
         enabled = sessionRole == "student"
     ).value
-    // Force update berlaku untuk semua flavor GAS (siswa/guru/kepala).
-    val forceUpdatePolicy = rememberForceUpdatePolicy(BuildConfig.VERSION_CODE).value
+    val lastEduLockWarning = remember(sessionRole, sessionSchoolId, authUid) { mutableStateOf("") }
+    LaunchedEffect(sessionRole, eduLockComplianceState.warningMessage) {
+        val warning = eduLockComplianceState.warningMessage.trim()
+        if (sessionRole != "student") {
+            lastEduLockWarning.value = ""
+            return@LaunchedEffect
+        }
+
+        if (warning.isBlank()) {
+            lastEduLockWarning.value = ""
+            return@LaunchedEffect
+        }
+
+        if (warning != lastEduLockWarning.value) {
+            lastEduLockWarning.value = warning
+            Toast.makeText(context, warning, Toast.LENGTH_LONG).show()
+        }
+    }
+    // Force update HANYA berlaku untuk varian siswa (siswa/legacySiswa).
+    // Flavor guru dan kepala sekolah bebas dan kebal dari force update siswa.
+    val isStudentFlavor = flavor == "siswa" || flavor == "legacySiswa" || sessionRole == "student"
+    val forceUpdatePolicy = rememberForceUpdatePolicy(
+        currentVersionCode = BuildConfig.VERSION_CODE,
+        enabled = isStudentFlavor
+    ).value
 
     val studentPetViewModel: com.satupintu.mobile.ui.viewmodel.VirtualPetViewModel? = if (sessionRole == "student") {
         val activity = context as? androidx.activity.ComponentActivity
@@ -276,8 +299,8 @@ fun AppNavigation(
             )
         }
 
-        // Prioritas tertinggi: force update dari Super Admin.
-        if (forceUpdatePolicy.updateRequired) {
+        // Prioritas tertinggi: force update dari Super Admin khusus varian siswa.
+        if (isStudentFlavor && forceUpdatePolicy.updateRequired) {
             ForceUpdateScreen(
                 customMessage = forceUpdatePolicy.message,
                 downloadUrl = forceUpdatePolicy.downloadUrl
@@ -287,12 +310,19 @@ fun AppNavigation(
 }
 
 @Composable
-private fun rememberForceUpdatePolicy(currentVersionCode: Int): State<ForceUpdatePolicy> {
-    val state = remember(currentVersionCode) {
+private fun rememberForceUpdatePolicy(
+    currentVersionCode: Int,
+    enabled: Boolean = true
+): State<ForceUpdatePolicy> {
+    val state = remember(currentVersionCode, enabled) {
         mutableStateOf(ForceUpdatePolicy(updateRequired = false))
     }
 
-    DisposableEffect(currentVersionCode) {
+    if (!enabled) {
+        return state
+    }
+
+    DisposableEffect(currentVersionCode, enabled) {
         val service = VersionCheckService()
         val listener = service.observeVersionPolicy(currentVersionCode, continuous = true) { policy ->
             state.value = policy

@@ -129,11 +129,11 @@ export default function MobileAppsControlPage() {
                   </span>
                   <div>
                     <div className="text-xs font-semibold tracking-[0.24em] text-purple-400">MOBILE APPS</div>
-                    <h1 className="mt-1 text-2xl font-bold text-white">Force Update Control</h1>
+                    <h1 className="mt-1 text-2xl font-bold text-white">Force Update Control (Siswa & EduLock)</h1>
                   </div>
                 </div>
                 <p className="mt-4 max-w-2xl text-sm text-slate-300">
-                  Gunakan halaman ini untuk memaksa siswa meng-update aplikasi mereka. Aplikasi yang memiliki <code className="text-blue-300">VERSION_CODE</code> lebih rendah dari angka di bawah ini akan terkunci mati dan meminta update.
+                  Gunakan halaman ini untuk membatasi versi minimal aplikasi siswa (<span className="text-blue-300 font-semibold">GAS Siswa</span> & <span className="text-purple-300 font-semibold">EduLock Siswa</span>). Aplikasi siswa dengan <code className="text-blue-300">VERSION_CODE</code> lebih rendah dari angka di bawah ini akan terkunci mati dan meminta update. <span className="text-emerald-300 font-semibold">Aplikasi Guru dan Kepala Sekolah kebal dan tidak terdampak.</span>
                 </p>
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function MobileAppsControlPage() {
               <div className="space-y-6 rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-xl backdrop-blur">
                 <div className="flex items-center gap-2 border-b border-white/10 pb-4">
                   <ShieldCheck className="h-5 w-5 text-emerald-400" />
-                  <h2 className="text-lg font-bold text-white">Versi Minimal (Minimum Version Code)</h2>
+                  <h2 className="text-lg font-bold text-white">Versi Minimal Siswa (Minimum Version Code)</h2>
                 </div>
 
                 <div className="space-y-5">
@@ -159,7 +159,7 @@ export default function MobileAppsControlPage() {
                         <Rocket className="h-5 w-5" />
                       </div>
                       <div className="flex-1">
-                        <label className="text-xs font-semibold uppercase tracking-widest text-blue-300">Aplikasi GAS (Absensi)</label>
+                        <label className="text-xs font-semibold uppercase tracking-widest text-blue-300">Aplikasi GAS Siswa (Absensi)</label>
                         <div className="mt-2 text-xs text-blue-200/80">
                           Versi saat ini:{" "}
                           {currentGasVersionCode !== null ? (
@@ -189,7 +189,7 @@ export default function MobileAppsControlPage() {
                         <Lock className="h-5 w-5" />
                       </div>
                       <div className="flex-1">
-                        <label className="text-xs font-semibold uppercase tracking-widest text-purple-300">Aplikasi EduLock (MDM)</label>
+                        <label className="text-xs font-semibold uppercase tracking-widest text-purple-300">Aplikasi EduLock Siswa (MDM)</label>
                         <div className="mt-2 text-xs text-purple-200/80">
                           Versi saat ini:{" "}
                           {currentEduLockVersionCode !== null ? (
@@ -209,6 +209,16 @@ export default function MobileAppsControlPage() {
                           onChange={(e) => setEdulockVersion(Number(e.target.value))}
                           className="mt-2 block w-full rounded-xl border border-purple-500/30 bg-black/30 p-3 text-lg font-bold text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                         />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info Status Guru & Kepala Sekolah */}
+                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                    <div className="flex items-start gap-3">
+                      <ShieldCheck className="h-5 w-5 text-emerald-400 mt-0.5 shrink-0" />
+                      <div className="text-xs text-emerald-200/90 leading-relaxed">
+                        <span className="font-bold text-emerald-300">Status GAS Guru & Kepala Sekolah:</span> Kebal / Bypass. APK Guru & Kepala Sekolah tidak dibatasi oleh angka versi di atas sehingga tidak akan pernah terkunci.
                       </div>
                     </div>
                   </div>

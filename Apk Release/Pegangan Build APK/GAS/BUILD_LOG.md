@@ -1,5 +1,27 @@
 # Build Log GAS
 
+## 2026-09-01 19:25 - Force Update Scope Hardening (Bypass Guru & Kepala) + Web Super Admin Clarity
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `bugfix` + `hardening` + `build-release` + `web-ui`
+- **Tujuan perubahan:**
+  1. Membatasi fitur Force Update agar HANYA berlaku untuk varian Siswa (`flavor == "siswa"` / `flavor == "legacySiswa"` / `sessionRole == "student"`).
+  2. Memberikan kekebalan permanen (bypass) pada APK Guru dan Kepala Sekolah dari pembatasan `min_version_code_gas` siswa di `Navigation.kt`, sehingga HP guru dan kepala sekolah tidak akan pernah terkunci saat super admin menaikkan batas versi siswa.
+  3. Memperjelas UI halaman Web Super Admin `/super-admin/mobile-apps` (label khusus Siswa & EduLock, penjelasan deskriptif, dan banner status kebal/bypass guru).
+  4. Melakukan rebuild release APK `GAS Guru` (`1.0.72-guru / 1064`) dan `GAS Kepala Sekolah`.
+- **Flavor terdampak:** `guru`, `kepala`, `web`
+- **File utama yang diubah:**
+  - `native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/Navigation.kt`
+  - `web/src/app/super-admin/mobile-apps/page.tsx`
+- **Build yang dijalankan:**
+  - `./gradlew :app:assembleGuruRelease :app:assembleKepalaRelease` → BUILD SUCCESS
+- **Output APK:**
+  - `native-mobile-gas/app/build/outputs/apk/guru/release/app-guru-release.apk`
+  - `native-mobile-gas/app/build/outputs/apk/kepala/release/app-kepala-release.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-1.0.72-guru-1064.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\GAS-Kepala-release.apk`
+
 ## 2026-09-01 10:45 - Sinkronisasi Status Virtual Pet Multi-Alias & EduLock UX
 - **Pelaksana:** Assistant
 - **Jenis perubahan:** `bugfix` + `integration` + `web-deploy`
