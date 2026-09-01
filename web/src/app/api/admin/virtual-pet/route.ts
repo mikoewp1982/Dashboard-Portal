@@ -189,7 +189,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Deduplicate pets by student (keep highest level or most recently synced).
+    // Deduplicate pets by student (keep highest level -> exp -> coins -> most recently synced), aligned with APK isBetterPetCandidate.
     // Unmatched orphans keep unique keys so they can be counted then dropped.
     const petMap = new Map<string, typeof allPets[0]>();
     for (const pet of allPets) {
@@ -202,7 +202,9 @@ export async function GET(req: NextRequest) {
       } else {
         const isBetter =
           pet.stats.level > existing.stats.level ||
-          (pet.stats.level === existing.stats.level && pet.lastSync > existing.lastSync);
+          (pet.stats.level === existing.stats.level && pet.stats.exp > existing.stats.exp) ||
+          (pet.stats.level === existing.stats.level && pet.stats.exp === existing.stats.exp && pet.stats.coins > existing.stats.coins) ||
+          (pet.stats.level === existing.stats.level && pet.stats.exp === existing.stats.exp && pet.stats.coins === existing.stats.coins && pet.lastSync > existing.lastSync);
         if (isBetter) petMap.set(dedupKey, pet);
       }
     }
@@ -272,6 +274,9 @@ export async function POST(req: NextRequest) {
       const petSnap = await petRef.get();
       if (!petSnap.exists()) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
+      const petVal = petSnap.val() || {};
+      const studentId = String(petVal.studentId || "").trim();
+
       const revivedStats = {
         health: 50,
         happiness: 50,
@@ -280,12 +285,33 @@ export async function POST(req: NextRequest) {
       };
       
       const now = Date.now();
-      await petRef.update({
+      const updateData = {
         status: "HAPPY",
         ...revivedStats,
         manualReviveUntil: now + 12 * 60 * 60 * 1000,
         updatedAt: now,
-      });
+      };
+
+      await petRef.update(updateData);
+
+      // Also revive any duplicate/alias pets for the same student
+      if (studentId) {
+        const allPetsSnap = await adminDb.ref("virtual_pets").get();
+        if (allPetsSnap.exists()) {
+          const all = allPetsSnap.val() || {};
+          const multiUpdates: Record<string, any> = {};
+          for (const [k, p] of Object.entries<any>(all)) {
+            if (k !== petId && (p.studentId === studentId || p.nisn === studentId || k === studentId)) {
+              for (const [field, val] of Object.entries(updateData)) {
+                multiUpdates[`virtual_pets/${k}/${field}`] = val;
+              }
+            }
+          }
+          if (Object.keys(multiUpdates).length > 0) {
+            await adminDb.ref().update(multiUpdates);
+          }
+        }
+      }
 
       const eventRef = adminDb.ref('platform_events').push();
       await eventRef.set({
