@@ -25,6 +25,10 @@ Tambahkan nama pelaksana jika perlu:
 
 ## [Unreleased]
 
+### Siswa (Roadmap & Rencana Pengembangan Mendatang)
+- Planned / Roadmapped: **Hybrid Dual-Mode (Online & Offline-First)**: Menanamkan sistem operasi offline mandiri berbasis GPS satelit hardware dan Room database lokal. Dilengkapi UI kartu sinkronisasi dinamis: `[ 📥 Download Data Sekolah ]` $\rightarrow$ `[ 🔄 Update Data Sekolah ]` dengan stempel waktu dan hash versi.
+- Planned / Roadmapped: **Mesin Scan Presensi Kelas Berjalan (Mobile Walking Scanner)**: Menu khusus scanner CameraX & MLKit ultra-cepat yang hanya muncul pada akun siswa dengan jabatan `isClassSecretary` (Sekretaris Kelas). Berfungsi mencatat presensi teman sekelas yang tidak membawa HP secara berkeliling/beruntun (1 detik per barcode kartu NISN fisik). Berkas cetak biru: `Apk Release/Final_V2/ROADMAP_HYBRID_OFFLINE_DUAL_MODE.md`.
+
 ### Guru / Kepala Sekolah
 - Fixed: **Force Update Bypass Khusus Guru & Kepala Sekolah**: Pengecekan `VersionCheckService` / `min_version_code_gas` di `Navigation.kt` kini secara ketat hanya diberlakukan untuk varian Siswa. APK Guru dan Kepala Sekolah kebal permanen dan tidak akan pernah terblokir oleh batasan versi siswa. Rebuild release `GAS-Guru-release.apk` (`1.0.72-guru / 1064`) dan `GAS-Kepala-release.apk`.
 

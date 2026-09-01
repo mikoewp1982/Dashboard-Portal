@@ -16,9 +16,20 @@ Varian `admin` tidak menjadi fokus pegangan ini karena operasionalnya diperlakuk
 - Rollback teruji: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.12-38.apk`
 - Rollback anti-uninstall selektif: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.19-45.apk`
 
-**Status unduhan web (`/e`):** file lokal `web/public/apk` *belum* di-sync ke patch 2026-08-31.
+**Status unduhan web (`/e` dan `/edulock/install`):** file lokal `web/public/apk` **sudah di-sync & di-deploy live** ke versi `EduLock-1.3.23-49.apk` (commit `f9670945`).
 
-### Patch terkini (2026-08-31) — [BUG FIX IFP SMART TV]
+### Rilis Terkini (2026-09-01) — [RELEASE v1.3.23 / 49]
+- **Acuan Final/public live (2026-09-01):** build `1.3.23 (49)`
+  - SHA256: `255ED1FA9261223D36A33F919540D005C8A65D8E52E2A4A29BEBF324D9C437DF`
+  - Size: `3.932.567 bytes`
+  - **Perbaikan Utama:**
+    1. **Fix Infinite Loop Pet Dead Lock**: Menutup badai activity spawn dan menghapus dialog sistem Android *"Penyematan Layar"* (`startLockTask`).
+    2. **Hapus Spam Notifikasi Aksesibilitas di Rumah**: Mencabut prompt notifikasi heads-up 30 detik di `MonitoringService.kt` saat di luar jam sekolah.
+    3. **Relaksasi Dialog Aksesibilitas di `MainActivity`**: Dialog modal paksa *"Wajib Aktifkan Proteksi"* otomatis ditiadakan di rumah / mode libur.
+    4. **Hardening Device Admin Policy**: Menghapus tag `<wipe-data />`, `<reset-password />`, dll dari `device_admin.xml`, hanya mempertahankan `<force-lock />`.
+  - Deploy `/e` dan `/edulock/install` live = **SUDAH (Deployed to GitHub origin/main)**.
+
+### Patch sebelumnya (2026-08-31) — [BUG FIX IFP SMART TV]
 - **Acuan Final/public lokal (2026-08-31):** build `1.3.22 (48)` patch **Fix Kompatibilitas Smart TV/IFP tanpa GPS satellite hardware**
   - SHA256: `707E64BB56356E22BE124C3B865DA2860D7BC94D600A1CC6457C8BED1EDD...`
   - Versi tetap `1.3.22 / 48` (tidak bump, sesuai instruksi user pertahankan nomor versi untuk patch)

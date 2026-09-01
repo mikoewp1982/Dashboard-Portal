@@ -24,6 +24,11 @@ Update terakhir: 2026-09-01 21:55 (Release EduLock v1.3.23 / 49 — Hapus Spam A
   - [x] Version bumped: `versionCode = 49`, `versionName = "1.3.23"`.
   - [x] Build `./gradlew :app:assembleStudentRelease` sukses (size ~3.93 MB).
   - [x] Disalin ke `Apk Release/Final/EduLock-studentRelease.apk` dan `Apk Release/Final/EduLock-1.3.23-49.apk`.
+- [x] **Deploy Live Web Portal (`/edulock/install` & `/e`)**:
+  - [x] Disalin ke `web/public/apk/EduLock-1.3.23-49.apk` dan `web/public/apk/EduLock-studentRelease.apk`.
+  - [x] Manifest `apk-manifest.json` diperbarui dengan hash SHA256 `255ED1FA...` dan size 3.932.567 bytes.
+  - [x] Halaman `web/src/app/edulock/install/page.tsx` diperbarui menyajikan link download versi 1.3.23 (49).
+  - [x] Push ke GitHub `origin/main` (commit `f9670945`) untuk auto-deploy live.
 
 ## ✅ [HARDENING APK & WEB SUPER ADMIN] Force Update Scope Hardening (Bypass Guru & Kepala) (2026-09-01 19:25)
 
