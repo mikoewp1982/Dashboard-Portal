@@ -147,6 +147,20 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
     }
   };
 
+  const handleRevokeAll = async () => {
+    if (!window.confirm("Apakah Anda yakin ingin mencabut SEMUA izin aktif untuk seluruh siswa?")) {
+      return;
+    }
+
+    try {
+      await revokeAllSessions();
+      window.alert("Seluruh izin aktif berhasil dicabut.");
+    } catch (error) {
+      console.error("Gagal mencabut semua izin:", error);
+      window.alert(error instanceof Error ? error.message : "Gagal mencabut semua izin.");
+    }
+  };
+
   const handleDeleteExpiredCodes = () => {
     void deleteExpiredCodes();
   };
@@ -241,7 +255,7 @@ export function EduLockCodesPanel({ schoolId }: { schoolId: string }) {
 
           <button
             type="button"
-            onClick={() => void revokeAllSessions()}
+            onClick={() => void handleRevokeAll()}
             disabled={busy || sessions.length === 0}
             className="inline-flex items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/10 px-5 py-2.5 font-semibold text-rose-200 transition hover:bg-rose-500/20 disabled:opacity-50"
           >

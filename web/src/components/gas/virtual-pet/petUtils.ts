@@ -14,6 +14,7 @@ export function analyzePetRisk(pet: PetData) {
   const avgStatus = (health + happiness + energy + fullness) / 4;
   const isReviveGraceActive = Number(pet.manualReviveUntil || 0) > Date.now();
   const isDead = isDeadByRule({
+    status: pet.status,
     health,
     happiness,
     energy,

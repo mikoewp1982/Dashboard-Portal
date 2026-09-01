@@ -42,9 +42,20 @@ export function isManualReviveGraceActive(
   return Number(pet.manualReviveUntil ?? 0) > now;
 }
 
-/** Same rule as APK `VirtualPet.isDeadByRule`: vitals only, no sticky status=DEAD. */
+/**
+ * Aligned with APK `VirtualPet.isDeadByRule` + `isPermanentlyDead` sticky logic.
+ *
+ * The APK writes status="DEAD" to RTDB when the pet dies. Because the web admin
+ * only reads the RTDB snapshot (it does NOT recalculate vitals from realtime
+ * attendance/prayer/habit sources), we honour the sticky "DEAD" status so the
+ * web admin stays consistent with what the student sees on their phone.
+ */
 export function isDeadByRule(pet: PetVitalInput, now = Date.now()): boolean {
   if (isManualReviveGraceActive(pet, now)) return false;
+
+  // Honour sticky DEAD status written by the APK
+  if (typeof pet.status === "string" && pet.status.toUpperCase() === "DEAD") return true;
+
   const health = Number(pet.health ?? 100);
   return health <= 0 || lowestVitalScore(pet) <= 0;
 }

@@ -80,6 +80,7 @@ function showBrowserNotification(title: string, body: string) {
 
 function isPetDead(row: Record<string, unknown>) {
   return isDeadByRule({
+    status: String(row.status || ""),
     health: Number(row.health ?? 100),
     happiness: Number(row.happiness ?? 100),
     energy: Number(row.energy ?? 100),
