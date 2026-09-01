@@ -8,19 +8,31 @@ Dokumen ini adalah alur build release yang sesuai kondisi **EduLock siswa** saat
 Varian `admin` tidak menjadi fokus pegangan ini karena operasionalnya diperlakukan sebagai wrapper web.
 
 ## 2. Versi distribusi terkini
-- `versionName = 1.3.22`
-- `versionCode = 48`
-- Arsip versioned: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.22-48.apk`
+- `versionName = 1.3.23`
+- `versionCode = 49`
+- Arsip versioned: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.23-49.apk`
 - Alias Final: `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk`
+- Arsip sebelumnya: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.22-48.apk`
 - Rollback teruji: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.12-38.apk`
 - Rollback anti-uninstall selektif: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.19-45.apk`
 
-**Status unduhan web (`/e`):** BELUM di-sync ke rebuild 2026-08-26 19:47. File di `web/public/apk` baru berubah setelah `npm run sync:apk:edulock` + commit/push `main`. Final kanonik = `EduLock-1.3.22-48.apk`.
-- Acuan Final terkini (2026-08-26 ~19:47 WIB) = **CRITICAL SECURITY PATCH celah uninstall activation page** + fix tombol Izin Latar Belakang 3 lapis fallback.
-  - SHA256: `1E9C87FFBB19B5CBB2432C3A1E1A9280639CF61BDBE921C4CA25689BCD03E42D`
-  - Size: `3.925.320 bytes` (≈ 3,74 MB)
-  - Versi tetap `1.3.22 / 48` (tidak bump, user instruksikan "belum saya rilis untuk umum").
-  - Deploy `/e` live = **TIDAK** (Final only / distribusi manual internal QA).
+**Status unduhan web (`/e`):** file lokal `web/public/apk` *belum* di-sync ke patch 2026-08-31.
+
+### Patch terkini (2026-08-31) — [BUG FIX IFP SMART TV]
+- **Acuan Final/public lokal (2026-08-31):** build `1.3.22 (48)` patch **Fix Kompatibilitas Smart TV/IFP tanpa GPS satellite hardware**
+  - SHA256: `707E64BB56356E22BE124C3B865DA2860D7BC94D600A1CC6457C8BED1EDD...`
+  - Versi tetap `1.3.22 / 48` (tidak bump, sesuai instruksi user pertahankan nomor versi untuk patch)
+  - Root cause diatasi: `isGpsEnabled()` hanya menerima GPS_PROVIDER (satellite), padahal TV hanya punya NETWORK_PROVIDER
+  - Perubahan 3 lapis: `LocationMonitor.isGpsEnabled()` pakai logika OR (GPS atau Network), fallback `MainActivity.isGPSEnabled()` diselaraskan, hardware GPS di AndroidManifest dijadikan `required="false"`
+  - Side benefit: HP vendor China yang menonaktifkan GPS satellite hemat baterai juga tidak lagi dipusingkan overlay GPS
+
+### Patch sebelumnya (superseded — 2026-08-28 18:51 WIB)
+- Acuan Final rebuild 2026-08-28 18:51 = build `1.3.22 (48)` yang membawa patch keamanan `1.3.22` sebelumnya + fitur **Temukan Perangkat** (alarm keras + ACK status ke admin) + **patch fallback audio 2 lapis** (adjustStreamVolume `FLAG_SHOW_UI`, fallback `STREAM_MUSIC`, Vibrator fallback, status ACK detail `ALARM_STARTED_FALLBACK_MUSIC / ALARM_STARTED_VIBRATION_ONLY / FAILED_SILENT`) + **hardening enforcement** untuk bug lapangan internet mati total dan recovery Accessibility.
+  - SHA256: `F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34`
+  - Size: `3.932.182 bytes`
+  - Versi tetap `1.3.22 / 48` (tidak bump, sesuai instruksi user pertahankan versi sekarang)
+  - QA HP fisik yang sudah lulus pada build ini: `internet mati total -> lewat masa tenggang 60 detik mengunci` dan `Accessibility OFF -> admin ON -> overlay diabaikan tetap memaksa stay di EduLock`
+  - Deploy `/e` live = **BELUM**; alias publik lokal sudah ditimpa, tetapi commit/push sengaja ditahan.
 
 ## 3. Sebelum Build
 - [ ] Update atau buat entry di [BUILD_LOG.md](./BUILD_LOG.md)
@@ -84,7 +96,7 @@ Handoff lapangan:
 - [ ] Catat lokasi output asli
 - [ ] Catat lokasi file hasil copy
 - [ ] Tulis apa yang sudah dan belum diuji
-- [ ] Jangan klaim live `/e` sudah versi baru sebelum sync + push App Hosting
+- [ ] Jangan klaim live `/e` sudah versi baru sebelum sync + push App Hosting benar-benar selesai
 
 ## 10. Aturan Kejujuran Status
 - Build sukses tidak otomatis berarti proteksi lapangan aman

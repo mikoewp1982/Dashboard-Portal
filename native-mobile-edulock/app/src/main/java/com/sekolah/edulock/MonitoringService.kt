@@ -680,7 +680,8 @@ class MonitoringService : Service() {
         } catch (_: Exception) { }
 
         // CEK WAJIB: Layanan Aksesibilitas aktif saat proteksi ON
-        // Jika OFF, arahkan siswa untuk mengaktifkan kembali dengan aman dan tidak berulang terlalu sering
+        // Jika OFF saat jam sekolah di area sekolah, kunci layar untuk mencegah bypass.
+        // Di luar jam sekolah (di rumah), hening total agar tidak mengganggu siswa.
         try {
             if (!protectionTelemetry.isAccessibilityEnabled &&
                 !isSettingsGrace &&
@@ -692,15 +693,6 @@ class MonitoringService : Service() {
                         showLockScreen("PROTEKSI WAJIB AKTIF!\n\nBuka Aksesibilitas > Layanan Terinstall > EduLock Protection -> AKTIFKAN.")
                     }
                     return
-                }
-                if (now - lastAccessibilityPromptTime > 30000) {
-                    lastAccessibilityPromptTime = now
-                    updateNotification("Aktifkan Proteksi", "Nyalakan Layanan Aksesibilitas EduLock")
-                    try {
-                        val intent = Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        startActivity(intent)
-                    } catch (_: Exception) { }
                 }
             }
         } catch (_: Exception) { }

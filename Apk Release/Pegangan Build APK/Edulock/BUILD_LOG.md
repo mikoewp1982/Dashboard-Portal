@@ -26,6 +26,28 @@ Field berikut wajib dipakai di setiap entri:
 - Belum diuji
 - Catatan
 
+## 2026-09-01 21:55 — Release EduLock v1.3.23 (49): Hapus Spam Notifikasi Aksesibilitas di Luar Jam Sekolah (di Rumah)
+
+- **Waktu:** 2026-09-01 21:55
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `ux-improvement` + `version-bump`
+- **Scope terdampak:** `student` (APK EduLock Siswa)
+- **Tujuan perubahan:**
+  1. **Menghapus Spam Notifikasi Aksesibilitas di Luar Jam Sekolah**: Mencabut logika pemunculan notifikasi dan pemaksaan buka Settings setiap 30 detik di `MonitoringService.kt` saat siswa berada di luar jam sekolah (di rumah). HP siswa kini 100% tenang dan hening di rumah tanpa gangguan banner berulang.
+  2. **Enforcement Aksesibilitas Tetap Ketat di Sekolah**: Saat jam sekolah berlangsung di area sekolah, jika aksesibilitas dimatikan, sistem tetap mengunci layar penuh untuk mencegah bypass aplikasi gembok.
+  3. **Version Bump**: Naik ke **`1.3.23 (versionCode 49)`**.
+- **File utama yang diubah:**
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/build.gradle.kts`
+- **Fitur lama yang wajib ikut dicek:**
+  - Hukuman layar Pet Mati (`PetDeadLockActivity`) tetap muncul berkala dan bisa di-dismiss "Saya Mengerti"
+  - Proteksi jam sekolah dan geofence GPS tetap aktif normal
+- **Build yang dijalankan:** `./gradlew :app:assembleStudentRelease` → BUILD SUCCESS (1m 51s)
+- **Output APK:** `native-mobile-edulock/app/build/outputs/apk/student/release/EduLock-studentRelease.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.23-49.apk`
+
 ## 2026-09-01 21:45 — Fix Infinite Loop Pet Dead Lock & Hapus Dialog "Penyematan Layar" (Screen Pinning), Hardening Device Admin Policy
 
 - **Waktu:** 2026-09-01 21:45
