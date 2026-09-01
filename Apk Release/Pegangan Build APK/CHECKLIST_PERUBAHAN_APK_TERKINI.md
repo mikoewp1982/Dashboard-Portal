@@ -6,7 +6,20 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-09-01 19:25 (Bypass Force Update Guru & Kepala Sekolah + Web Super Admin Clarity + Rebuild APK Guru & Kepala)
+Update terakhir: 2026-09-01 21:45 (Fix Infinite Loop PetDeadLock & Hapus Dialog Penyematan Layar + Rebuild EduLock Final)
+
+## ✅ [BUGFIX EDULOCK SISWA] Fix Infinite Loop PetDeadLock & Hapus Dialog "Penyematan Layar" (2026-09-01 21:45)
+
+- [x] **Audit & Fix Loop Layar Pet Mati Bertumpuk**:
+  - [x] **Root Cause 1**: `MonitoringService.kt` memicu spawn `showPetDeadLock()` berulang setiap 1-2 detik dan memancarkan broadcast `ACTION_DISMISS_LOCKSCREEN` yang membunuh layarnya sendiri.
+  - [x] **Fix Service**: Menambahkan guard `if (PetDeadLockActivity.isShowing) return` dan mencabut broadcast self-dismiss.
+  - [x] **Root Cause 2**: `PetDeadLockActivity.kt` memanggil `startLockTask()` pada `onResume()`, memicu dialog sistem OS Android *"Penyematan Layar"* bertumpuk-tumpuk.
+  - [x] **Fix Activity**: Menghapus total `startLockTask()` / `startKioskMode()`. Layar hukuman pet mati kini murni Fullscreen Activity mandiri dengan tombol *"Saya Mengerti"*. Dialog penyematan layar Android lenyap 100%.
+- [x] **Hardening Device Admin Policy**:
+  - [x] Membersihkan tag `<wipe-data />`, `<reset-password />`, `<limit-password />`, `<watch-login />` di `res/xml/device_admin.xml`, hanya mempertahankan `<force-lock />` dan `<disable-keyguard-features />`.
+- [x] **Rebuild Release APK**:
+  - [x] Build `./gradlew :app:assembleStudentRelease` sukses (size ~3.93 MB).
+  - [x] Disalin ke `Apk Release/Final/EduLock-studentRelease.apk` dan `Apk Release/Final/EduLock-1.3.22-48.apk`.
 
 ## ✅ [HARDENING APK & WEB SUPER ADMIN] Force Update Scope Hardening (Bypass Guru & Kepala) (2026-09-01 19:25)
 

@@ -10,17 +10,23 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.Gravity
+import android.net.Uri
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.Space
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
@@ -42,6 +48,18 @@ class MonitoringService : Service() {
         val appVersionCode: Int
     )
 
+    companion object {
+        const val ACTION_FCM_WAKE = "com.sekolah.edulock.ACTION_FCM_WAKE"
+        const val ACTION_FORCE_ENFORCE = "com.sekolah.edulock.ACTION_FORCE_ENFORCE"
+        const val ACTION_KEEPALIVE = "com.sekolah.edulock.ACTION_KEEPALIVE"
+        const val ACTION_FIND_DEVICE_ALARM = "com.sekolah.edulock.ACTION_FIND_DEVICE_ALARM"
+        const val ACTION_STOP_FIND_DEVICE_ALARM = "com.sekolah.edulock.ACTION_STOP_FIND_DEVICE_ALARM"
+        const val ACTION_UI_FOREGROUND = "com.sekolah.edulock.ACTION_UI_FOREGROUND"
+        const val EXTRA_REQUESTED_PROTECTION = "requested_protection"
+        const val EXTRA_COMMAND_ID = "command_id"
+        const val EXTRA_FIND_DEVICE_DURATION_MS = "find_device_duration_ms"
+    }
+
     private lateinit var prefsManager: PreferencesManager
     private lateinit var permissionManager: PermissionManager
     private lateinit var offlineMonitor: OfflineMonitor
@@ -59,10 +77,14 @@ class MonitoringService : Service() {
     private val studentRemoteConfigService = StudentRemoteConfigService()
     private var lastAccessibilityPromptTime: Long = 0L
     private var lastAccessibilityLockTime: Long = 0L
+    private var lastAdminPromptTime: Long = 0L
+    private var lastOverlayRecoverAt: Long = 0L
+    private var lastGpsMustEnableOverlayAt: Long = 0L
     private var lastPermissionReleaseAt: Long = 0L
     private var lastRemoteConfigSyncAt: Long = 0L
     
     private val handler = Handler(Looper.getMainLooper())
+    private val protectionOnRetryRunnable = Runnable { tryEnforceProtectionOnActivation() }
     private val monitoringIntervalMs = if (BuildConfig.USE_GEOFENCING) 5_000L else 3_000L
     private val initialMonitoringDelayMs = if (BuildConfig.USE_GEOFENCING) 3_000L else 10_000L
     private var uninstallListener: ValueEventListener? = null
@@ -91,18 +113,41 @@ class MonitoringService : Service() {
     private var schoolServiceStatusRef: com.google.firebase.database.DatabaseReference? = null
     private var petStatusListener: ValueEventListener? = null
     private var petStatusQuery: com.google.firebase.database.Query? = null
+    private var versionCheckService: VersionCheckService? = null
+    private var forceUpdateListener: ValueEventListener? = null
     private var overlayLockView: View? = null
+    private var forceUpdateOverlayView: View? = null
     private lateinit var windowManager: WindowManager
     private var hasTriggeredSchoolServiceExit = false
-    private val petDeadReminderIntervalMs = 10 * 60 * 1000L
+    private val protectionPollingIntervalMs = 30_000L
+    private var protectionPollingRunnable: Runnable? = null
+    private var wakeLock: PowerManager.WakeLock? = null
+    private val wakeLockTimeoutMs = 10_000L
+
+    private fun resolvePetDeadReminderIntervalMs(): Long {
+        // Siklus hukuman: interval-1 → interval-2 → interval-3, lalu ulang angka terakhir.
+        // Contoh admin 30/20/10: 30 → 20 → 10 → 10 → ...
+        return when (prefsManager.petDeadReminderCount) {
+            0 -> prefsManager.petDeadReminderFirstMs
+            1 -> prefsManager.petDeadReminderSecondMs
+            else -> prefsManager.petDeadReminderRepeatMs
+        }.coerceAtLeast(60_000L)
+    }
     
-    // Receiver untuk mendeteksi layar nyala (Screen ON) secara dinamis
+    // Receiver untuk mendeteksi layar nyala (Screen ON) dan Mode Pesawat secara dinamis
     private val screenReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == Intent.ACTION_SCREEN_ON || intent?.action == Intent.ACTION_USER_PRESENT) {
+            val action = intent?.action
+            if (action == Intent.ACTION_SCREEN_ON || action == Intent.ACTION_USER_PRESENT) {
+                acquireWakeLock()
                 // Force Check saat layar nyala
                 handler.post { performChecks() }
-                
+                handler.postDelayed({ forceSyncProtectionStatus() }, 1_500)
+                // Anti-uninstall: poke Accessibility setelah sleep (event sering macet).
+                handler.post { AntiUninstallService.pokeAfterWakeIfAlive() }
+                handler.postDelayed({ AntiUninstallService.pokeAfterWakeIfAlive() }, 800L)
+                handler.postDelayed({ AntiUninstallService.pokeAfterWakeIfAlive() }, 2_000L)
+
                 // Force Sync Permission
                 if (::permissionManager.isInitialized) {
                     val nisn = prefsManager.nisn
@@ -110,13 +155,92 @@ class MonitoringService : Service() {
                         permissionManager.resumeSession(nisn)
                     }
                 }
+            } else if (action == Intent.ACTION_AIRPLANE_MODE_CHANGED) {
+                acquireWakeLock()
+                val isAirplaneOn = if (::offlineMonitor.isInitialized) {
+                    offlineMonitor.isAirplaneModeActive()
+                } else {
+                    try {
+                        Settings.Global.getInt(context?.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
+
+                android.util.Log.d("MonitoringService", "ACTION_AIRPLANE_MODE_CHANGED: isAirplaneOn=$isAirplaneOn")
+                if (isAirplaneOn) {
+                    val isSchool = if (::scheduleManager.isInitialized) scheduleManager.isSchoolTime() else false
+                    val isProtection = prefsManager.isProtectionActive && !prefsManager.isHolidayMode
+                    val isPermissionActive = if (::permissionManager.isInitialized) permissionManager.isPermissionActive() else false
+                    val hasPresence = if (::locationMonitor.isInitialized) locationMonitor.shouldEnforcePresenceProtection(System.currentTimeMillis()) else false
+
+                    if (isStrictModeNow() || (isProtection && !isPermissionActive && (isSchool || prefsManager.isInsideSchoolZone || hasPresence))) {
+                        triggerLockdown(
+                            "MODE PESAWAT DILARANG SAAT JAM SEKOLAH!\nHarap matikan Mode Pesawat.",
+                            bypassRecoveryTargets = true
+                        )
+                    }
+                } else {
+                    // Siswa mematikan mode pesawat -> langsung jalankan pemeriksaan pemulihan
+                    handler.post { performChecks() }
+                }
             }
         }
+    }
+
+    private fun acquireWakeLock() {
+        try {
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
+            }
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            wakeLock = pm.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "EduLock::MonitoringWakeLock"
+            ).apply {
+                setReferenceCounted(false)
+                acquire(wakeLockTimeoutMs)
+            }
+        } catch (_: Exception) { }
+    }
+
+    private fun startForceSyncProtectionPolling() {
+        if (protectionPollingRunnable != null) return
+        protectionPollingRunnable = object : Runnable {
+            override fun run() {
+                forceSyncProtectionStatus()
+                handler.postDelayed(this, protectionPollingIntervalMs)
+            }
+        }
+        handler.postDelayed(protectionPollingRunnable!!, 15_000L)
+    }
+
+    private fun forceSyncProtectionStatus() {
+        try {
+            val schoolId = prefsManager.schoolId.trim().lowercase()
+            if (schoolId.isEmpty()) return
+            val database = SchoolServiceGuard.database(this)
+            val ref = database.getReference("schools").child(schoolId).child("config").child("is_active_protection")
+            ref.get().addOnSuccessListener { snap ->
+                val isActive = readFlexibleBoolean(snap, true)
+                if (isActive != prefsManager.isProtectionActive) {
+                    android.util.Log.d("MonitoringService", "[forceSync] Protection status drift detected: local=${prefsManager.isProtectionActive}, remote=$isActive. Reapplying listener logic.")
+                    protectionStatusListener?.onDataChange(snap)
+                }
+            }.addOnFailureListener {
+                android.util.Log.w("MonitoringService", "[forceSync] get protection status gagal: ${it.message}")
+            }
+        } catch (_: Exception) { }
     }
 
     override fun onCreate() {
         super.onCreate()
         prefsManager = PreferencesManager(this)
+
+        // Self-healing: jika semua izin setup sudah ON tapi setup_completed false,
+        // set true otomatis dan force-flush RTDB. (Menanggapi badge Setup merah abadi.)
+        SetupActivity.ensureSetupCompletedIfHealed(this)
+
         permissionManager = PermissionManager(this)
         prefsManager.nisn.takeIf { it.isNotEmpty() }?.let { permissionManager.resumeSession(it) }
         offlineMonitor = OfflineMonitor(this, prefsManager)
@@ -134,14 +258,16 @@ class MonitoringService : Service() {
         compName = ComponentName(this, DeviceAdminReceiver::class.java)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         
-        // Register Screen Receiver
+        // Register Screen & System Events Receiver
         val filter = android.content.IntentFilter()
         filter.addAction(Intent.ACTION_SCREEN_ON)
         filter.addAction(Intent.ACTION_USER_PRESENT)
+        filter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
         registerReceiver(screenReceiver, filter)
         
         startForegroundService()
         startMonitoring()
+        startForceSyncProtectionPolling()
         startUninstallAuthorizationListener()
         startHolidayModeListener()
         startProtectionStatusListener()
@@ -153,17 +279,28 @@ class MonitoringService : Service() {
         startDeviceBindingListener()
         startSchoolServiceStatusListener()
         startPetStatusListener()
+        startForceUpdateListener()
         geofenceCoordinator.syncSchoolGeofence()
+        KeepAliveWorker.schedule(this)
+        FcmTokenRegistrar.refreshAndUpload(this)
+        locationMonitor.startListening()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "com.sekolah.edulock.ACTION_UI_FOREGROUND") {
+        locationMonitor.startListening()
+        val action = intent?.action
+        if (action == ACTION_UI_FOREGROUND) {
             hideOverlayLock()
+        }
+
+        if (intent?.hasExtra(EXTRA_REQUESTED_PROTECTION) == true) {
+            prefsManager.isProtectionActive = intent.getBooleanExtra(EXTRA_REQUESTED_PROTECTION, prefsManager.isProtectionActive)
         }
 
         prefsManager.nisn.takeIf { it.isNotEmpty() }?.let { permissionManager.resumeSession(it) }
 
         // Pastikan listener berjalan, terutama jika service di-restart atau baru login
+        startForceSyncProtectionPolling()
         startUninstallAuthorizationListener()
         startHolidayModeListener()
         startProtectionStatusListener()
@@ -175,7 +312,125 @@ class MonitoringService : Service() {
         startDeviceBindingListener()
         startSchoolServiceStatusListener()
         startPetStatusListener()
+        startForceUpdateListener()
         geofenceCoordinator.syncSchoolGeofence()
+        KeepAliveWorker.schedule(this)
+        FcmTokenRegistrar.refreshAndUpload(this)
+
+        if (action == ACTION_FIND_DEVICE_ALARM) {
+            acquireWakeLock()
+            val commandId = intent.getStringExtra(EXTRA_COMMAND_ID).orEmpty()
+            val durationMs = intent.getLongExtra(EXTRA_FIND_DEVICE_DURATION_MS, 45_000L)
+                .coerceIn(15_000L, 120_000L)
+            val alarmUntilTs = System.currentTimeMillis() + durationMs
+            try {
+                var ackStatus = "ALARM_STARTED"
+                var streamUsed: String = "ALARM"
+                var usedMusicFallback = false
+                var usedVibrationFallback = false
+                DeviceLocatorAlarm.start(
+                    context = this,
+                    durationMs = durationMs,
+                    onFinished = {
+                        firebaseReporter.acknowledgeFindDeviceCommand(
+                            commandId = commandId,
+                            status = "ALARM_FINISHED",
+                            alarmUntil = null,
+                            ackSource = "runtime",
+                            usedMusicFallback = usedMusicFallback,
+                            usedVibrationFallback = usedVibrationFallback,
+                            streamUsed = streamUsed
+                        )
+                    },
+                    onStartedWithFallback = { toMusicFallback, toVibrationFallback ->
+                        usedMusicFallback = toMusicFallback
+                        usedVibrationFallback = toVibrationFallback
+                        streamUsed = when {
+                            usedMusicFallback -> "MUSIC_FALLBACK"
+                            else -> "ALARM"
+                        }
+                        ackStatus = if (usedMusicFallback) {
+                            "ALARM_STARTED_FALLBACK_MUSIC"
+                        } else {
+                            "ALARM_STARTED"
+                        }
+                        if (!DeviceLocatorAlarm.isRunning()) {
+                            ackStatus = if (usedVibrationFallback) {
+                                "ALARM_STARTED_VIBRATION_ONLY"
+                            } else {
+                                "FAILED_SILENT"
+                            }
+                        }
+                        firebaseReporter.acknowledgeFindDeviceCommand(
+                            commandId = commandId,
+                            status = ackStatus,
+                            alarmUntil = alarmUntilTs,
+                            ackSource = "runtime",
+                            usedMusicFallback = usedMusicFallback,
+                            usedVibrationFallback = usedVibrationFallback,
+                            streamUsed = streamUsed
+                        )
+                    }
+                )
+            } catch (t: Throwable) {
+                firebaseReporter.acknowledgeFindDeviceCommand(
+                    commandId = commandId,
+                    status = "FAILED",
+                    alarmUntil = null,
+                    ackSource = "runtime",
+                    streamUsed = "EXCEPTION"
+                )
+                android.util.Log.e("MonitoringService", "Gagal memulai alarm pencarian device: ${t.message}")
+            }
+        }
+
+        if (action == ACTION_STOP_FIND_DEVICE_ALARM) {
+            acquireWakeLock()
+            val commandId = intent.getStringExtra(EXTRA_COMMAND_ID).orEmpty()
+            try {
+                if (DeviceLocatorAlarm.isRunning()) {
+                    DeviceLocatorAlarm.stop()
+                }
+                firebaseReporter.acknowledgeFindDeviceCommand(
+                    commandId = commandId,
+                    status = "ALARM_STOPPED",
+                    alarmUntil = null,
+                    ackSource = "runtime"
+                )
+            } catch (t: Throwable) {
+                firebaseReporter.acknowledgeFindDeviceCommand(
+                    commandId = commandId,
+                    status = "FAILED",
+                    alarmUntil = null,
+                    ackSource = "runtime"
+                )
+                android.util.Log.e("MonitoringService", "Gagal menghentikan alarm pencarian device: ${t.message}")
+            }
+        }
+
+        val forceWake = action == ACTION_FCM_WAKE ||
+            action == ACTION_FORCE_ENFORCE ||
+            action == ACTION_KEEPALIVE
+        if (forceWake) {
+            acquireWakeLock()
+            handler.post {
+                try {
+                    forceSyncProtectionStatus()
+                } catch (_: Exception) {
+                }
+                try {
+                    performChecks()
+                } catch (_: Exception) {
+                }
+            }
+            handler.postDelayed({
+                try {
+                    performChecks()
+                } catch (_: Exception) {
+                }
+            }, 1_500)
+        }
+
         return START_STICKY
     }
 
@@ -198,13 +453,26 @@ class MonitoringService : Service() {
         }
         syncSchoolConfigFromApi()
 
+        // Safety net: tampilkan force update overlay jika diperlukan tapi belum tampil
+        if (prefsManager.isForceUpdateRequired && forceUpdateOverlayView == null) {
+            handler.post {
+                showForceUpdateOverlay(
+                    prefsManager.forceUpdateMessage,
+                    prefsManager.forceUpdateDownloadUrl
+                )
+            }
+        } else if (!prefsManager.isForceUpdateRequired && forceUpdateOverlayView != null) {
+            handler.post { hideForceUpdateOverlay() }
+        }
+
         // ==========================================
         // 0. PRE-FETCH DATA PENTING
         // ==========================================
         val currentLocation = locationMonitor.getCurrentLocation()
         val isInternet = offlineMonitor.isInternetAvailable()
         val trustScore = prefsManager.trustScore
-        val isGpsActive = currentLocation != null
+        val isGpsActive = locationMonitor.isGpsEnabled()
+        enforceGpsOnWhenEduLockOpen()
         val isSchoolTime = scheduleManager.isSchoolTime()
         val isAfterSchool = scheduleManager.isAfterSchoolHours()
         val protectionTelemetry = buildProtectionTelemetry(isSchoolTime)
@@ -219,9 +487,28 @@ class MonitoringService : Service() {
                 showToast("Internet Kembali. Mode Darurat Dinonaktifkan.")
                 updateNotification("EduLock Aktif", "Koneksi pulih. Monitoring dilanjutkan.")
             } else {
-                // Masih offline -> Skip semua monitoring
-                updateNotification("Mode Darurat", "Menunggu koneksi internet...")
-                return
+                // Masih offline -> Hitung sisa waktu darurat (Max 10 menit)
+                val emergencyDuration = System.currentTimeMillis() - prefsManager.emergencyUnlockTimestamp
+                val maxEmergencyMs = 10 * 60 * 1000L // 10 menit
+
+                if (emergencyDuration >= maxEmergencyMs) {
+                    // Waktu habis -> Kunci ulang
+                    prefsManager.isEmergencyUnlocked = false
+                    triggerLockdown(
+                        "WAKTU DARURAT HABIS!\nSisa 10 menit telah berlalu. Silakan hubungi guru/admin.",
+                        bypassRecoveryTargets = true
+                    )
+                    return
+                } else {
+                    // Update notifikasi dengan sisa waktu
+                    val remainingMs = maxEmergencyMs - emergencyDuration
+                    val remainingMins = remainingMs / 60000
+                    val remainingSecs = (remainingMs / 1000) % 60
+                    val timeString = String.format("%02d:%02d", remainingMins, remainingSecs)
+                    
+                    updateNotification("Mode Darurat", "Sisa waktu: $timeString menit")
+                    return
+                }
             }
         }
 
@@ -235,16 +522,43 @@ class MonitoringService : Service() {
         val isSettingsPackage = currentFgPkg.startsWith("com.android.settings") ||
                 currentFgPkg.startsWith("com.samsung.accessibility") ||
                 currentFgPkg.contains("settings") ||
-                currentFgPkg == "android" ||
-                currentFgPkg.isEmpty()
+                currentFgPkg == "android"
+        val activeTargets = prefsManager.getActiveRecoveryTargets(now)
+        if (activeTargets.isNotEmpty()) {
+            for (target in activeTargets) {
+                val isTargetOn = when (target) {
+                    PreferencesManager.RECOVERY_TARGET_GPS -> locationMonitor.isGpsEnabled()
+                    PreferencesManager.RECOVERY_TARGET_ACCESSIBILITY -> protectionTelemetry.isAccessibilityEnabled
+                    PreferencesManager.RECOVERY_TARGET_DEVICE_ADMIN -> protectionTelemetry.isDeviceAdminEnabled
+                    PreferencesManager.RECOVERY_TARGET_OVERLAY -> hasOverlayPermission()
+                    PreferencesManager.RECOVERY_TARGET_BATTERY -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                            pm.isIgnoringBatteryOptimizations(packageName)
+                        } else true
+                    }
+                    PreferencesManager.RECOVERY_TARGET_LOCATION_PERMISSION -> {
+                        androidx.core.content.ContextCompat.checkSelfPermission(this@MonitoringService, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    }
+                    else -> true
+                }
+                if (isTargetOn) {
+                    prefsManager.clearRecoveryForTarget(target)
+                } else if (isSettingsPackage) {
+                    prefsManager.extendRecoveryGraceIfActive(target, 60_000L, now)
+                }
+            }
+        }
 
-        if (!isSettingsPackage && (prefsManager.isSettingsOpen || now < prefsManager.settingsGraceUntil)) {
+        val remainingActive = prefsManager.getActiveRecoveryTargets(now)
+        val legacyActive = prefsManager.isSettingsOpen || now < prefsManager.settingsGraceUntil || now < prefsManager.deviceAdminRequestUntil
+        if (remainingActive.isEmpty() && !legacyActive) {
             prefsManager.isSettingsOpen = false
             prefsManager.settingsGraceUntil = 0L
         }
 
         val isSettingsGrace =
-            (prefsManager.isSettingsOpen || now < prefsManager.settingsGraceUntil || now < prefsManager.deviceAdminRequestUntil) && isSettingsPackage
+            (prefsManager.anyRecoveryTargetActive(now) || legacyActive) && (isSettingsPackage || currentFgPkg == packageName)
         val isDeviceAdminRecoveryActive =
             !protectionTelemetry.isDeviceAdminEnabled || now < prefsManager.deviceAdminRequestUntil
 
@@ -324,29 +638,46 @@ class MonitoringService : Service() {
         // ==========================================
         // 5. CEK SILENT MODE (BYPASS SECURITY)
         // ==========================================
-        if (!prefsManager.isProtectionActive) {
+        if (!prefsManager.isProtectionActive && !isStrictModeNow()) {
              hideOverlayLock()
-             // Pastikan lockscreen tertutup
-             val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
-             sendBroadcast(intent)
-             
-             // Pastikan kotak merah (SetupProtectionService) juga dimatikan
              try { stopService(Intent(this, SetupProtectionService::class.java)) } catch (_: Exception) {}
-             
-             // Update notifikasi agar tidak mencurigakan
              updateNotification("Mode Senyap", "Monitoring Dinonaktifkan oleh Admin", true)
-             
-             // Pastikan Kiosk Mode mati
+
              val stopIntent = Intent("com.sekolah.edulock.ACTION_STOP_KIOSK")
              stopIntent.setPackage(packageName)
              sendBroadcast(stopIntent)
-             
+
+             if (shouldShowGpsEnableOverlay()) {
+                 showGpsEnableOverlayOnly()
+             } else {
+                 val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
+                 sendBroadcast(intent)
+             }
              return
         } else {
             // JIKA PROTEKSI AKTIF:
             // Cek Reward Harian
             trustScoreManager.checkAndApplyDailyReward()
         }
+
+        // CEK WAJIB: Device Admin aktif saat proteksi ON
+        // Jika OFF tanpa izin uninstall, segera arahkan ke halaman aktivasi Device Admin OS (Opsi A)
+        try {
+            if (!devicePolicyManager.isAdminActive(compName) &&
+                !prefsManager.isUninstallBypassActive(now) &&
+                prefsManager.isSetupCompleted &&
+                !isSettingsGrace
+            ) {
+                if (now - lastAdminPromptTime > 15_000) {
+                    lastAdminPromptTime = now
+                    prefsManager.deviceAdminRequestUntil = now + 60_000L
+                    val relaunchIntent = Intent(this, MainActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    }
+                    startActivity(relaunchIntent)
+                }
+            }
+        } catch (_: Exception) { }
 
         // CEK WAJIB: Layanan Aksesibilitas aktif saat proteksi ON
         // Jika OFF, arahkan siswa untuk mengaktifkan kembali dengan aman dan tidak berulang terlalu sering
@@ -375,16 +706,37 @@ class MonitoringService : Service() {
         } catch (_: Exception) { }
 
         // ==========================================
+        // 5.6 OVERLAY DICABUT OEM (sleep / Mode Senyap)
+        // Tanpa SYSTEM_ALERT_WINDOW, kunci/perintah admin gagal diam-diam.
+        // Bangunkan MainActivity agar siswa diarahkan aktifkan lagi.
+        // ==========================================
+        if (prefsManager.isProtectionActive &&
+            !prefsManager.isHolidayMode &&
+            prefsManager.isSetupCompleted &&
+            !hasOverlayPermission()
+        ) {
+            requestOverlayPermissionRecovery("performChecks")
+        }
+
+        // ==========================================
         // 5.5 CEK KEMATIAN PET (HUKUMAN KEDISIPLINAN)
+        // Interval: first → second → repeat (angka terakhir berulang).
+        // Overlay pertama TIDAK langsung; tunggu interval pertama sejak pet mati / ack.
         // ==========================================
         if (!isSchoolTime && prefsManager.isPetDead) {
-            val lastAck = prefsManager.lastPetDeadAckAt
-            if (lastAck <= 0L || now - lastAck >= petDeadReminderIntervalMs) {
+            if (PetDeadLockActivity.isShowing) {
+                return
+            }
+            var lastAck = prefsManager.lastPetDeadAckAt
+            if (lastAck <= 0L) {
+                // State lama / crash: mulai hitung dari sekarang agar interval pertama tetap dihormati
+                prefsManager.lastPetDeadAckAt = now
+                prefsManager.petDeadReminderCount = 0
+                lastAck = now
+            }
+            val reminderIntervalMs = resolvePetDeadReminderIntervalMs()
+            if (now - lastAck >= reminderIntervalMs) {
                 hideOverlayLock() // bersihkan lock lain
-                val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
-                intent.setPackage(packageName)
-                sendBroadcast(intent)
-                
                 lockEnforcer.showPetDeadLock()
                 return
             }
@@ -396,17 +748,21 @@ class MonitoringService : Service() {
         if (!isSchoolTime) {
             hideOverlayLock()
             try {
-                val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
-                intent.setPackage(packageName)
-                sendBroadcast(intent)
-            } catch (_: Exception) {
-            }
-
-            try {
                 val stopIntent = Intent("com.sekolah.edulock.ACTION_STOP_KIOSK")
                 stopIntent.setPackage(packageName)
                 sendBroadcast(stopIntent)
             } catch (_: Exception) {
+            }
+
+            if (shouldShowGpsEnableOverlay()) {
+                showGpsEnableOverlayOnly()
+            } else {
+                try {
+                    val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
+                    intent.setPackage(packageName)
+                    sendBroadcast(intent)
+                } catch (_: Exception) {
+                }
             }
 
             if (isAfterSchool || !scheduleManager.isEffectiveSchoolDayToday()) {
@@ -419,18 +775,26 @@ class MonitoringService : Service() {
         if (!isStrictModeNow()) {
             hideOverlayLock()
             try {
-                val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
-                intent.setPackage(packageName)
-                sendBroadcast(intent)
-            } catch (_: Exception) {
-            }
-
-            try {
                 val stopIntent = Intent("com.sekolah.edulock.ACTION_STOP_KIOSK")
                 stopIntent.setPackage(packageName)
                 sendBroadcast(stopIntent)
             } catch (_: Exception) {
             }
+            if (shouldShowGpsEnableOverlay()) {
+                showGpsEnableOverlayOnly()
+            } else {
+                try {
+                    val intent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
+                    intent.setPackage(packageName)
+                    sendBroadcast(intent)
+                } catch (_: Exception) {
+                }
+            }
+            return
+        }
+
+        if (shouldShowGpsEnableOverlay()) {
+            showGpsEnableOverlayOnly()
             return
         }
 
@@ -529,6 +893,15 @@ class MonitoringService : Service() {
         currentLocation: android.location.Location?,
         checkLeaveArea: Boolean = false
     ) {
+        // 7.3 Instant Airplane Mode Check
+        if (offlineMonitor.isAirplaneModeActive()) {
+            triggerLockdown(
+                "MODE PESAWAT DILARANG SAAT JAM SEKOLAH!\nHarap matikan Mode Pesawat.",
+                bypassRecoveryTargets = true
+            )
+            return
+        }
+
         if (currentLocation == null) {
             val lastGpsTime = prefsManager.lastGpsActiveTimestamp
             val currentTime = System.currentTimeMillis()
@@ -562,7 +935,10 @@ class MonitoringService : Service() {
                 showToast("PERINGATAN! Internet mati. Lockdown dalam ${remainingMs / 1000} detik.")
             },
             onLockdownTriggered = {
-                triggerLockdown("KONEKSI HILANG!\nAnda offline lebih dari 20 menit.")
+                triggerLockdown(
+                    "KONEKSI HILANG!\nAnda offline lebih dari 2 menit di jam sekolah.",
+                    bypassRecoveryTargets = true
+                )
             }
         )
     }
@@ -570,8 +946,17 @@ class MonitoringService : Service() {
     // Implementasi Helper Method isAppOnForeground
     // Removed duplicate implementation since it was already defined below
     
-    private fun triggerLockdown(message: String) {
-        // Kurangi Trust Score menggunakan Graduated Penalty
+    private fun triggerLockdown(
+        message: String,
+        bypassRecoveryTargets: Boolean = false
+    ) {
+        if (!bypassRecoveryTargets && prefsManager.anyRecoveryTargetActive()) {
+            return
+        }
+        if (GpsEnableOverlay.isRequired(this)) {
+            GpsEnableOverlay.show(this, atSchool = true)
+            return
+        }
         trustScoreManager.applyGraduatedPenalty()
         
         val intent = Intent(this, LockScreenActivity::class.java)
@@ -628,10 +1013,100 @@ class MonitoringService : Service() {
         }
     }
 
+    private fun hasOverlayPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(this)
+        } else {
+            true
+        }
+    }
+
+    /**
+     * OEM sering mencabut "Tampil di atas aplikasi lain" saat sleep / Mode Senyap.
+     * Tanpa izin ini, showOverlayLock() gagal diam-diam → proteksi ON tidak terkunci.
+     * Recovery: bangunkan MainActivity + notifikasi fullscreen agar user aktifkan lagi.
+     */
+    private fun requestOverlayPermissionRecovery(reason: String) {
+        if (hasOverlayPermission()) return
+        val now = System.currentTimeMillis()
+        if (now - lastOverlayRecoverAt < 8_000L) return
+        lastOverlayRecoverAt = now
+
+        android.util.Log.w("MonitoringService", "Overlay permission missing — recovering ($reason)")
+        acquireWakeLock()
+        updateNotification(
+            "Izin Overlay Hilang",
+            "Aktifkan 'Tampil di atas aplikasi lain' agar EduLock bisa mengunci HP"
+        )
+
+        try {
+            val intent = Intent(this, MainActivity::class.java).apply {
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                )
+                putExtra("force_overlay_recover", true)
+                putExtra("overlay_recover_reason", reason)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            android.util.Log.e("MonitoringService", "Gagal buka MainActivity untuk overlay recover: ${e.message}")
+        }
+
+        try {
+            lockEnforcer.relaunchEduLock()
+        } catch (_: Exception) {
+        }
+
+        try {
+            val channelId = "EduLockOverlayRecover"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val manager = getSystemService(NotificationManager::class.java)
+                val channel = NotificationChannel(
+                    channelId,
+                    "EduLock Overlay Recovery",
+                    NotificationManager.IMPORTANCE_HIGH
+                )
+                manager.createNotificationChannel(channel)
+            }
+            val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
+                putExtra("force_overlay_recover", true)
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                )
+            }
+            val pending = android.app.PendingIntent.getActivity(
+                this,
+                1007,
+                fullScreenIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+            val notif = NotificationCompat.Builder(this, channelId)
+                .setContentTitle("Izin Overlay Hilang")
+                .setContentText("Ketuk untuk aktifkan 'Tampil di atas aplikasi lain'")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setContentIntent(pending)
+                .setFullScreenIntent(pending, true)
+                .setAutoCancel(true)
+                .build()
+            (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(1007, notif)
+        } catch (_: Exception) {
+        }
+    }
+
     private fun showOverlayLock(message: String) {
         try {
             if (overlayLockView != null) return
-            if (!Settings.canDrawOverlays(this)) return
+            if (!hasOverlayPermission()) {
+                requestOverlayPermissionRecovery("showOverlayLock")
+                return
+            }
 
             val root = FrameLayout(this)
             root.setBackgroundColor(Color.parseColor("#CC000000"))
@@ -706,6 +1181,185 @@ class MonitoringService : Service() {
         } catch (_: Exception) {
         } finally {
             overlayLockView = null
+        }
+    }
+
+    // ==========================================
+    // FORCE UPDATE OVERLAY (SYSTEM_ALERT_WINDOW)
+    // ==========================================
+
+    private fun showForceUpdateOverlay(message: String?, downloadUrl: String?) {
+        try {
+            if (forceUpdateOverlayView != null) return
+            if (!hasOverlayPermission()) {
+                requestOverlayPermissionRecovery("forceUpdateOverlay")
+                return
+            }
+
+            val displayMessage = message?.takeIf { it.isNotBlank() }
+                ?: "Versi EduLock Anda sudah usang dan dikunci oleh Super Admin.\n\nSilakan unduh APK terbaru melalui tombol di bawah ini, lalu install manual di HP ini."
+            val targetUrl = downloadUrl?.trim()?.takeIf { it.isNotEmpty() }
+                ?: VersionCheckService.DEFAULT_EDULOCK_DOWNLOAD_URL
+
+            val root = FrameLayout(this)
+            root.setBackgroundColor(Color.parseColor("#B91C1C"))
+            // Block semua touch agar tidak bisa berinteraksi dengan app di belakang
+            root.setOnTouchListener { _, _ -> true }
+
+            val scrollView = ScrollView(this)
+            scrollView.isFillViewport = true
+
+            val container = LinearLayout(this)
+            container.orientation = LinearLayout.VERTICAL
+            container.gravity = Gravity.CENTER
+            container.setPadding(80, 80, 80, 80)
+
+            // Warning icon
+            val iconTv = TextView(this)
+            iconTv.text = "⚠\uFE0F"
+            iconTv.textSize = 48f
+            iconTv.gravity = Gravity.CENTER
+            container.addView(iconTv)
+
+            // Spacer
+            container.addView(Space(this), LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 40
+            ))
+
+            // Title
+            val titleTv = TextView(this)
+            titleTv.text = "APLIKASI KADALUARSA!"
+            titleTv.setTextColor(Color.WHITE)
+            titleTv.textSize = 24f
+            titleTv.typeface = Typeface.DEFAULT_BOLD
+            titleTv.gravity = Gravity.CENTER
+            container.addView(titleTv)
+
+            // Spacer
+            container.addView(Space(this), LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 32
+            ))
+
+            // Message
+            val msgTv = TextView(this)
+            msgTv.text = displayMessage
+            msgTv.setTextColor(Color.WHITE)
+            msgTv.textSize = 16f
+            msgTv.gravity = Gravity.CENTER
+            container.addView(msgTv)
+
+            // Spacer
+            container.addView(Space(this), LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 64
+            ))
+
+            // Download button
+            val btnDownload = Button(this)
+            btnDownload.text = "DOWNLOAD UPDATE"
+            btnDownload.setTextColor(Color.WHITE)
+            btnDownload.textSize = 16f
+            btnDownload.typeface = Typeface.DEFAULT_BOLD
+            val downloadBg = GradientDrawable()
+            downloadBg.setColor(Color.parseColor("#1E3A8A"))
+            downloadBg.cornerRadius = 16f
+            btnDownload.background = downloadBg
+            btnDownload.setPadding(32, 28, 32, 28)
+            btnDownload.setOnClickListener {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    startActivity(intent)
+                } catch (_: Exception) {
+                }
+            }
+            val lpDownload = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            container.addView(btnDownload, lpDownload)
+
+            // Spacer
+            container.addView(Space(this), LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 24
+            ))
+
+            // Close button
+            val btnClose = Button(this)
+            btnClose.text = "TUTUP APLIKASI"
+            btnClose.setTextColor(Color.parseColor("#B91C1C"))
+            btnClose.textSize = 16f
+            btnClose.typeface = Typeface.DEFAULT_BOLD
+            val closeBg = GradientDrawable()
+            closeBg.setColor(Color.WHITE)
+            closeBg.cornerRadius = 16f
+            btnClose.background = closeBg
+            btnClose.setPadding(32, 28, 32, 28)
+            btnClose.setOnClickListener {
+                // Kirim broadcast untuk mematikan semua activity
+                try {
+                    val intent = Intent("com.sekolah.edulock.ACTION_FORCE_CLOSE")
+                    sendBroadcast(intent)
+                } catch (_: Exception) {
+                }
+            }
+            val lpClose = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            container.addView(btnClose, lpClose)
+
+            // Spacer
+            container.addView(Space(this), LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 32
+            ))
+
+            // Footer note
+            val footerTv = TextView(this)
+            footerTv.text = "Setelah unduh selesai, pasang APK lalu buka kembali EduLock."
+            footerTv.setTextColor(Color.parseColor("#FFD7D7"))
+            footerTv.textSize = 13f
+            footerTv.gravity = Gravity.CENTER
+            container.addView(footerTv)
+
+            scrollView.addView(container, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+
+            root.addView(scrollView, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+
+            val type =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                type,
+                // FLAG_NOT_FOCUSABLE dihilangkan agar tombol bisa diklik
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                android.graphics.PixelFormat.TRANSLUCENT
+            )
+            params.gravity = Gravity.CENTER
+
+            forceUpdateOverlayView = root
+            windowManager.addView(root, params)
+        } catch (_: Exception) {
+            forceUpdateOverlayView = null
+        }
+    }
+
+    private fun hideForceUpdateOverlay() {
+        val v = forceUpdateOverlayView ?: return
+        try {
+            windowManager.removeView(v)
+        } catch (_: Exception) {
+        } finally {
+            forceUpdateOverlayView = null
         }
     }
 
@@ -968,6 +1622,7 @@ class MonitoringService : Service() {
 
         protectionStatusListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                acquireWakeLock()
                 // Default ke true (Proteksi Aktif) jika node tidak ditemukan di database
                 val isActive = readFlexibleBoolean(snapshot, true)
                 
@@ -979,44 +1634,32 @@ class MonitoringService : Service() {
                         showToast("🛡️ PROTEKSI SEKOLAH DIAKTIFKAN! 🛡️")
                         updateNotification("EduLock Aktif", "Keamanan sekolah telah diaktifkan")
 
+                        // Segera pulihkan overlay jika OEM mencabut saat Mode Senyap / sleep
+                        if (!hasOverlayPermission() && prefsManager.isSetupCompleted && !prefsManager.isHolidayMode) {
+                            requestOverlayPermissionRecovery("protection_on_listener")
+                        }
+
                         val isSchoolTime = scheduleManager.isSchoolTime()
                         val shouldEnforce = isSchoolTime && !prefsManager.isHolidayMode && !permissionManager.isPermissionActive()
 
                         if (shouldEnforce) {
-                            prefsManager.isInsideSchoolZone = true
-
-                            // LANGSUNG overlay lock agar TikTok/app lain langsung tertutup secara visual
-                            showOverlayLock("PERANGKAT TERKUNCI!\nProteksi Sekolah Diaktifkan.")
-
-                            // Reset grace period agar performChecks tidak skip
-                            prefsManager.appSwitchTimestamp = 0L
-
-                            try {
-                                showLockScreen("Proteksi diaktifkan kembali. EduLock mengunci perangkat.")
-                                lockEnforcer.relaunchEduLock()
-                                lockEnforcer.requestKiosk()
-                            } catch (e: Exception) {
-                                android.util.Log.e("MonitoringService", "Gagal mengunci dari listener: ${e.message}")
+                            locationMonitor.startListening()
+                            cancelProtectionOnRetries()
+                            if (shouldShowGpsEnableOverlay()) {
+                                showGpsEnableOverlayOnly()
+                            } else {
+                                val lockedNow = tryEnforceProtectionOnActivation()
+                                if (!lockedNow) {
+                                    handler.postDelayed(protectionOnRetryRunnable, 2_000L)
+                                    handler.postDelayed(protectionOnRetryRunnable, 5_000L)
+                                }
                             }
-
-                            // Retry enforcement beberapa kali untuk memastikan app benar-benar terkunci
-                            handler.postDelayed({
-                                try {
-                                    lockEnforcer.relaunchEduLock()
-                                    lockEnforcer.requestKiosk()
-                                } catch (_: Exception) {}
-                            }, 500)
-                            handler.postDelayed({
-                                try {
-                                    lockEnforcer.relaunchEduLock()
-                                    lockEnforcer.requestKiosk()
-                                } catch (_: Exception) {}
-                            }, 1500)
                         }
 
                         handler.post { performChecks() }
                         handler.postDelayed({ performChecks() }, 2000)
                     } else {
+                        cancelProtectionOnRetries()
                         showToast("🔕 Mode Senyap (Silent) Aktif")
                         updateNotification("Mode Senyap", "Monitoring Dinonaktifkan oleh Admin")
                         
@@ -1040,6 +1683,109 @@ class MonitoringService : Service() {
             }
         }
         protectionStatusRef?.addValueEventListener(protectionStatusListener!!)
+    }
+
+    private fun cancelProtectionOnRetries() {
+        handler.removeCallbacks(protectionOnRetryRunnable)
+    }
+
+    /**
+     * Saat admin menyalakan proteksi di jam sekolah: kunci hanya jika ada bukti
+     * kehadiran di zona sekolah. Jangan paksa isInsideSchoolZone = true (anak di rumah
+     * tidak boleh terkunci). Retry ~2s lalu ~5s menunggu fix GPS.
+     */
+    private fun tryEnforceProtectionOnActivation(): Boolean {
+        if (!prefsManager.isProtectionActive || prefsManager.isHolidayMode || permissionManager.isPermissionActive()) {
+            cancelProtectionOnRetries()
+            return false
+        }
+        if (prefsManager.anyRecoveryTargetActive()) {
+            return false
+        }
+        if (!scheduleManager.isSchoolTime()) {
+            android.util.Log.d("MonitoringService", "Protection ON outside school hours; skip lock")
+            cancelProtectionOnRetries()
+            return false
+        }
+
+        locationMonitor.startListening()
+        if (shouldShowGpsEnableOverlay()) {
+            showGpsEnableOverlayOnly()
+            return false
+        }
+        val now = System.currentTimeMillis()
+        val loc = locationMonitor.getCurrentLocation()
+        locationMonitor.updateSchoolPresenceFromLocation(loc, now)
+        val shouldLock = locationMonitor.shouldEnforcePresenceProtection(now) ||
+            locationMonitor.isInsideSchoolArea()
+
+        if (!shouldLock) {
+            android.util.Log.d("MonitoringService", "Protection ON but no school presence yet; not locking")
+            return false
+        }
+
+        enforceLockAfterProtectionOn()
+        cancelProtectionOnRetries()
+        return true
+    }
+
+    private fun enforceLockAfterProtectionOn() {
+        if (prefsManager.anyRecoveryTargetActive()) {
+            lockEnforcer.stopKiosk()
+            return
+        }
+        if (shouldShowGpsEnableOverlay()) {
+            showGpsEnableOverlayOnly()
+            return
+        }
+
+        prefsManager.appSwitchTimestamp = 0L
+
+        if (!hasOverlayPermission()) {
+            requestOverlayPermissionRecovery("protection_on")
+        } else {
+            showOverlayLock("PERANGKAT TERKUNCI!\nProteksi Sekolah Diaktifkan.")
+        }
+
+        try {
+            showLockScreen("Proteksi diaktifkan kembali. EduLock mengunci perangkat.")
+            lockEnforcer.relaunchEduLock()
+            lockEnforcer.requestKiosk()
+        } catch (_: Exception) {
+        }
+
+        handler.postDelayed({
+            if (!prefsManager.anyRecoveryTargetActive()) {
+                try {
+                    lockEnforcer.relaunchEduLock()
+                    lockEnforcer.requestKiosk()
+                } catch (_: Exception) {}
+            }
+        }, 500)
+        handler.postDelayed({
+            if (!prefsManager.anyRecoveryTargetActive()) {
+                try {
+                    lockEnforcer.relaunchEduLock()
+                    lockEnforcer.requestKiosk()
+                } catch (_: Exception) {}
+            }
+        }, 1500)
+    }
+
+    private fun shouldShowGpsEnableOverlay(): Boolean {
+        return GpsEnableOverlay.isRequired(this)
+    }
+
+    private fun showGpsEnableOverlayOnly() {
+        hideOverlayLock()
+        GpsEnableOverlay.show(this, atSchool = prefsManager.isInsideSchoolZone ||
+            locationMonitor.shouldEnforcePresenceProtection())
+    }
+
+    private fun enforceGpsOnWhenEduLockOpen() {
+        if (!prefsManager.isUiForeground) return
+        if (!shouldShowGpsEnableOverlay()) return
+        showGpsEnableOverlayOnly()
     }
 
     private fun startSchoolServiceStatusListener() {
@@ -1066,6 +1812,7 @@ class MonitoringService : Service() {
 
     private fun forceExitBecauseSchoolInactive() {
         if (hasTriggeredSchoolServiceExit) return
+        if (!prefsManager.claimSchoolServiceExit()) return
         hasTriggeredSchoolServiceExit = true
 
         val dismissIntent = Intent("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
@@ -1077,7 +1824,6 @@ class MonitoringService : Service() {
         }
 
         prefsManager.isRegistered = false
-        prefsManager.isSetupCompleted = false
 
         try {
             val intent = Intent(applicationContext, RegistrationActivity::class.java)
@@ -1318,6 +2064,13 @@ class MonitoringService : Service() {
                         root.put(k, obj)
                     }
                     prefsManager.weekdayScheduleJson = root.toString()
+                    // Jadwal berubah dari admin → enforce ulang tanpa tunggu buka UI
+                    handler.post {
+                        try {
+                            performChecks()
+                        } catch (_: Exception) {
+                        }
+                    }
                 } catch (_: Exception) {
                 }
             }
@@ -1383,12 +2136,27 @@ class MonitoringService : Service() {
 
                     val warnMs = toLongMs(snapshot.child("gps_off_warn_ms"), prefsManager.gpsOffWarnMs).coerceAtLeast(0L)
                     val lockMs = toLongMs(snapshot.child("gps_off_lock_ms"), prefsManager.gpsOffLockMs).coerceAtLeast(0L)
+                    val petFirstMs = toLongMs(
+                        snapshot.child("pet_dead_reminder_first_ms"),
+                        prefsManager.petDeadReminderFirstMs
+                    ).coerceAtLeast(60_000L)
+                    val petSecondMs = toLongMs(
+                        snapshot.child("pet_dead_reminder_second_ms"),
+                        prefsManager.petDeadReminderSecondMs
+                    ).coerceAtLeast(60_000L)
+                    val petRepeatMs = toLongMs(
+                        snapshot.child("pet_dead_reminder_repeat_ms"),
+                        prefsManager.petDeadReminderRepeatMs
+                    ).coerceAtLeast(60_000L)
 
                     val safeLock = lockMs
                     val safeWarn = if (safeLock > 0 && warnMs > safeLock) safeLock else warnMs
 
                     prefsManager.gpsOffWarnMs = safeWarn
                     prefsManager.gpsOffLockMs = safeLock
+                    prefsManager.petDeadReminderFirstMs = petFirstMs
+                    prefsManager.petDeadReminderSecondMs = petSecondMs
+                    prefsManager.petDeadReminderRepeatMs = petRepeatMs
                 } catch (_: Exception) {
                 }
             }
@@ -1430,6 +2198,22 @@ class MonitoringService : Service() {
 
     private fun isStrictModeNow(): Boolean {
         if (prefsManager.isHolidayMode) return false
+        
+        // Aturan ketat: Jika di jam sekolah, offline / mode pesawat memaksa strict mode AKTIF
+        // (Siswa tidak boleh bypass pantauan dengan cara mematikan internet, meskipun admin sedang mematikan proteksi)
+        if (scheduleManager.isSchoolTime()) {
+            val isAirplaneOn = if (::offlineMonitor.isInitialized) {
+                offlineMonitor.isAirplaneModeActive()
+            } else {
+                try { android.provider.Settings.Global.getInt(contentResolver, android.provider.Settings.Global.AIRPLANE_MODE_ON, 0) != 0 } catch (_: Exception) { false }
+            }
+            val isOfflineTooLong = if (::offlineMonitor.isInitialized) offlineMonitor.getOfflineDuration() > 2 * 60 * 1000L else false
+            
+            if (isAirplaneOn || isOfflineTooLong) {
+                return true
+            }
+        }
+
         if (!prefsManager.isProtectionActive) return false
         if (!scheduleManager.isSchoolTime()) return false
         return true
@@ -1663,6 +2447,11 @@ class MonitoringService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+
+        try {
+            locationMonitor.stopListening()
+        } catch (_: Exception) {
+        }
         
         // Unregister Screen Receiver
         try {
@@ -1672,6 +2461,8 @@ class MonitoringService : Service() {
         }
 
         hideOverlayLock()
+        hideForceUpdateOverlay()
+        DeviceLocatorAlarm.stop()
 
         // Remove listener
         if (uninstallDbRef != null && uninstallListener != null) {
@@ -1707,7 +2498,12 @@ class MonitoringService : Service() {
         if (deviceBindingRef != null && deviceBindingListener != null) {
             deviceBindingRef?.removeEventListener(deviceBindingListener!!)
         }
+        if (versionCheckService != null && forceUpdateListener != null) {
+            versionCheckService?.stopListening(forceUpdateListener)
+            forceUpdateListener = null
+        }
 
+        cancelProtectionOnRetries()
         handler.removeCallbacksAndMessages(null)
         // Restart service jika dimatikan
         val broadcastIntent = Intent(this, ServiceRestarter::class.java)
@@ -1791,8 +2587,13 @@ class MonitoringService : Service() {
                 val wasDead = prefsManager.isPetDead
                 if (isDead != wasDead) {
                     prefsManager.isPetDead = isDead
-                    if (!isDead) {
-                        prefsManager.lastPetDeadAckAt = 0L // reset
+                    if (isDead) {
+                        // Mulai siklus hukuman: tunggu interval pertama sebelum overlay pertama
+                        prefsManager.lastPetDeadAckAt = System.currentTimeMillis()
+                        prefsManager.petDeadReminderCount = 0
+                    } else {
+                        prefsManager.lastPetDeadAckAt = 0L
+                        prefsManager.petDeadReminderCount = 0
                     }
                 }
             }
@@ -1801,5 +2602,28 @@ class MonitoringService : Service() {
             }
         }
         petStatusQuery?.addValueEventListener(petStatusListener!!)
+    }
+
+    private fun startForceUpdateListener() {
+        if (forceUpdateListener != null) return
+        if (versionCheckService == null) {
+            versionCheckService = VersionCheckService(this)
+        }
+        forceUpdateListener = versionCheckService?.startListening(BuildConfig.VERSION_CODE) { policy ->
+            prefsManager.isForceUpdateRequired = policy.updateRequired
+            prefsManager.forceUpdateMessage = policy.message.orEmpty()
+            policy.downloadUrl?.let { prefsManager.forceUpdateDownloadUrl = it }
+
+            handler.post {
+                if (policy.updateRequired) {
+                    showForceUpdateOverlay(
+                        policy.message ?: prefsManager.forceUpdateMessage,
+                        policy.downloadUrl ?: prefsManager.forceUpdateDownloadUrl
+                    )
+                } else {
+                    hideForceUpdateOverlay()
+                }
+            }
+        }
     }
 }

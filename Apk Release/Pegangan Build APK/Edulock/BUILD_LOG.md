@@ -26,6 +26,250 @@ Field berikut wajib dipakai di setiap entri:
 - Belum diuji
 - Catatan
 
+## 2026-09-01 21:45 — Fix Infinite Loop Pet Dead Lock & Hapus Dialog "Penyematan Layar" (Screen Pinning), Hardening Device Admin Policy
+
+- **Waktu:** 2026-09-01 21:45
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `hardening` + `build-release`
+- **Scope terdampak:** `student` (APK EduLock Siswa)
+- **Tujuan perubahan:**
+  1. **Menutup Bug Infinite Loop PetDeadLockActivity**: Saat pet mati, `MonitoringService` memicu spawn activity baru setiap 1-2 detik karena `lastPetDeadAckAt` belum diupdate dan memancarkan `ACTION_DISMISS_LOCKSCREEN` yang membunuh layarnya sendiri. Diperbaiki dengan guard `if (PetDeadLockActivity.isShowing) return` dan menghapus broadcast self-dismiss saat meluncurkan lock.
+  2. **Menghapus Dialog Sistem "Penyematan Layar"**: Menghapus pemanggilan `startLockTask()` / `startKioskMode()` pada `PetDeadLockActivity.kt`. Layar pengingat pet mati kini murni berupa Fullscreen Activity biasa dengan tombol *"Saya Mengerti"*, sehingga pop-up OS Android *"Penyematan Layar"* hilang 100% selamanya.
+  3. **Hardening Device Admin Policy**: Membersihkan tag policy berlebih (`<wipe-data />`, `<reset-password />`, `<limit-password />`, `<watch-login />`) di `res/xml/device_admin.xml`, hanya mempertahankan `<force-lock />` dan `<disable-keyguard-features />`. Peringatan aktivasi admin di HP siswa kini bersih dan ramah (*"Mengunci Layar"*).
+- **File utama yang diubah:**
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PetDeadLockActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/src/main/res/xml/device_admin.xml`
+- **Fitur lama yang wajib ikut dicek:**
+  - Kemunculan reminder pet mati berkala di luar jam sekolah
+  - Penutupan layar saat tombol "Saya Mengerti" ditekan
+  - Otomatis hilang saat admin menekan tombol "Revive" di web
+  - Gembok jam sekolah dan anti-uninstall selektif tetap aktif normal
+- **Build yang dijalankan:** `./gradlew :app:assembleStudentRelease` → BUILD SUCCESS
+- **Output APK:** `native-mobile-edulock/app/build/outputs/apk/student/release/EduLock-studentRelease.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.22-48.apk`
+
+## 2026-08-31 (PATCH IFP SMART TV) — Fix GPS detection loop pada Smart TV/IFP tanpa GPS satellite hardware, pertahankan versi 1.3.22/48
+
+- **Waktu:** 2026-08-31
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Scope terdampak:** `student` (APK EduLock siswa), khususnya perangkat Android Smart TV / IFP (Interactive Flat Panel) yang tidak memiliki chip GPS satellite hardware
+- **Tujuan perubahan:** Menutup bug "terus meminta hidupkan GPS" meskipun user sudah menyalakan Pengaturan Lokasi di perangkat IFP Smart TV. Akar masalah: logika `isGpsEnabled()` hanya menerima `GPS_PROVIDER` (satellite) sebagai valid; Smart TV hanya punya `NETWORK_PROVIDER` (Wi-Fi based location) sehingga selalu dianggap GPS mati dan memunculkan overlay recovery terus-menerus.
+- **File utama yang diubah:**
+  - [LocationMonitor.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LocationMonitor.kt#L82-L109) — Ubah `isGpsEnabled()` dari AND (`masterOn && GPS_ON`) menjadi OR (`masterOn && (GPS_ON || NETWORK_ON)`). Minimal salah satu provider lokasi aktif = dianggap lokasi menyala.
+  - [MainActivity.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MainActivity.kt#L2020-L2040) — Fallback `isGPSEnabled()` (sebelum LocationMonitor diinisialisasi) diselaraskan agar juga menerima NETWORK_PROVIDER + cek master location switch.
+  - [AndroidManifest.xml](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/AndroidManifest.xml#L35-L38) — Deklarasi fitur lokasi/GPS/network diubah menjadi `android:required="false"` agar Play Store dan PackageManager tidak menganggap GPS hardware sebagai prasyarat wajib install.
+- **Fitur lama yang wajib ikut dicek:**
+  - Overlay `GpsEnableOverlay` di luar jam sekolah / di rumah
+  - Overlay "GPS MATI DI AREA SEKOLAH" beserta tombol Pengaturan Lokasi
+  - Enforcement fail-closed GPS-off berbasis school presence (geofence + near-school)
+  - Deteksi lokasi sekolah via Fused Location Provider dan legacy LocationManager
+- **Build yang dijalankan:**
+  - `cd D:\Dashboard Portal\native-mobile-edulock ; .\gradlew.bat :app:assembleStudentRelease`
+- **Hasil build:**
+  - assemble EduLock student release — **BUILD SUCCESSFUL in 2m 08s** (49 tasks: 17 executed, 32 up-to-date).
+- **Output APK:**
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.22-48.apk` (arsip versioned — **pertahankan nomor versi sesuai instruksi**)
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk` (alias Final)
+- **SHA256 EduLock-1.3.22-48.apk (patch IFP GPS 2026-08-31):** `707E64BB56356E22BE124C3B865DA2860D7BC94D600A1CC6457C8BED1EDD...` (hash lengkap lihat output `Get-FileHash`)
+- **Regression check yang dijalankan:**
+  - compile/build release EduLock (SUCCESS)
+  - salin file ke 2 target di folder Final (versioned + alias)
+  - verifikasi SHA hasil salin
+- **Belum diuji:**
+  - [ ] Instalasi di unit IFP Smart TV fisik (user uji mandiri di lapangan)
+  - [ ] Regression overlay GPS-off di HP fisik biasa (case: HP dengan GPS satellite normal)
+  - [ ] Lokasi geofence ENTER/EXIT + school presence di HP biasa setelah patch
+  - [ ] Sinkron ke `web/public/apk` dan deploy tutorial live `/e` / App Hosting
+- **Catatan:**
+  - Sesuai instruksi user, nomor versi **TIDAK** di-bump; tetap `versionCode = 48` dan `versionName = 1.3.22` (patch). File Final yang lama dengan versi yang sama ditimpa (overwrite).
+  - Logika OR provider pada `isGpsEnabled()` juga memberikan dampak positif untuk HP vendor China yang kadang menonaktifkan GPS satellite demi hemat baterai, namun tetap aktifkan Network Location via Wi-Fi.
+
+## 2026-08-30 19:02 - [DEPLOY WEB] Source tutorial `/edulock/install` didorong ke main
+- **Waktu:** 2026-08-30 19:02 WIB
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Scope terdampak:** `web tutorial /edulock/install`, `public-apk`, `deploy-web`
+- **Tujuan perubahan:** Mendorong perapian lokal tombol unduh EduLock ke `origin/main` agar route tutorial live bisa ikut mengarah ke file versioned `EduLock-1.3.22-48.apk`.
+- **File utama yang diubah:**
+  - `web/src/app/edulock/install/page.tsx`
+  - `web/public/apk/apk-manifest.json`
+  - `web/public/apk/EduLock-1.3.22-48.apk`
+- **Fitur lama yang wajib ikut dicek:**
+  - Tombol unduh di `/edulock/install` dan alias `/e`
+  - Teks versi file unduhan di kartu utama
+  - Halaman `super-admin/mobile-apps` yang membaca `apk-manifest.json`
+- **Build yang dijalankan:** tidak ada build APK baru; memakai hasil `npm run build` lokal dari patch sebelumnya
+- **Hasil build:** push web sukses
+- **Output APK:** tidak ada build APK baru; memakai file Final eksisting `EduLock-1.3.22-48.apk`
+- **Disalin ke:** tidak ada salinan baru di luar `web/public/apk` yang sudah dilakukan pada entry 18:48
+- **Regression check yang dijalankan:**
+  - `git push origin main` sukses dengan commit `329ea6c6`
+  - pengecekan live sesaat setelah push menunjukkan route `/edulock/install` dan manifest live masih menunggu rollout App Hosting
+- **Belum diuji:** route live `/edulock/install` dan `/e` setelah rollout App Hosting benar-benar selesai
+- **Catatan:** Entry ini menutup status "baru diverifikasi lokal" pada entry 18:48. Source yang benar sudah ada di `main`, tetapi perubahan live masih tergantung rollout App Hosting.
+
+## 2026-08-30 18:48 - [FIX WEB LOKAL] Tombol unduh `/edulock/install` diselaraskan ke EduLock 1.3.22 (48)
+- **Waktu:** 2026-08-30 18:48 WIB
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix`
+- **Scope terdampak:** `web tutorial /edulock/install`, `public-apk`, `manifest`
+- **Tujuan perubahan:** Halaman tutorial EduLock masih menampilkan fallback dan nama unduhan lama `EduLock-1.3.11-37.apk`, padahal file Final terbaru yang berlaku adalah `EduLock-1.3.22-48.apk`.
+- **File utama yang diubah:**
+  - `web/src/app/edulock/install/page.tsx`
+  - `web/src/data/apk-manifest.json`
+  - `web/public/apk/apk-manifest.json`
+  - `web/public/apk/EduLock-1.3.22-48.apk`
+- **Fitur lama yang wajib ikut dicek:**
+  - Tombol unduh di `/edulock/install` dan alias `/e`
+  - Teks versi file unduhan di kartu utama
+  - Halaman `super-admin/mobile-apps` yang membaca `apk-manifest.json`
+- **Build yang dijalankan:** `npm run build` pada folder `web`
+- **Hasil build:** sukses
+- **Output APK:** tidak ada build APK baru; memakai file Final eksisting `EduLock-1.3.22-48.apk`
+- **Disalin ke:** `web/public/apk/EduLock-1.3.22-48.apk`
+- **Regression check yang dijalankan:**
+  - Prerender `.next/server/app/edulock/install.html` memuat `href="/apk/EduLock-1.3.22-48.apk?..."`
+  - Teks halaman lokal menampilkan `EduLock-1.3.22-48.apk (versi 1.3.22 / 48)`
+  - `ensure-standalone-public` memasukkan `EduLock-1.3.22-48.apk` ke build standalone
+- **Belum diuji:** URL live production `/edulock/install` dan `/e` setelah deploy
+- **Catatan:** SHA acuan file publik/final yang sekarang dipakai adalah `F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34`. Perubahan ini baru diverifikasi lokal; agar live ikut berubah, perlu deploy web terpisah.
+
+## 2026-08-28 ~18:51 - [REBUILD FINAL LOKAL] EduLock 1.3.22 (48) — Hardening enforcement offline + Accessibility recovery, lulus uji HP fisik user
+
+- Pelaksana: Assistant
+- Jenis: `fix` + `build-deploy`
+- Scope: `student` (APK EduLock siswa)
+- Tujuan: Menutup dua bug lapangan yang muncul setelah patch fallback audio sebelumnya. Gejala 1: `internet mati total` sudah memberi overlay warning, tetapi setelah masa tenggang lewat tidak selalu masuk lock final. Gejala 2: `Accessibility OFF` saat jam sekolah/proteksi aktif hanya memunculkan popup EduLock berulang, tetapi tidak benar-benar memaksa HP tetap berada di jalur EduLock. Target build ini adalah memastikan kedua enforcement tersebut benar-benar keras di HP fisik.
+- File utama yang diubah:
+  - [MonitoringService.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt) hardening jalur offline / airplane / recovery guard sampai lock final tidak lagi kalah oleh state recovery yang nyangkut.
+  - [LockEnforcer.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LockEnforcer.kt) bedakan target `accessibility` dari recovery settings biasa: jangan auto-aktifkan recovery grace dan jangan longgarkan kiosk hanya karena overlay Accessibility tampil.
+  - [OverlayLockActivity.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/OverlayLockActivity.kt) perketat lifecycle untuk target `accessibility`: grace hanya hidup saat user benar-benar memilih masuk ke Settings, dan kiosk tetap boleh aktif jika overlay Accessibility diabaikan atau user balik tanpa menyalakan proteksi.
+- Fitur lama yang wajib ikut dicek:
+  - Master Switch proteksi (ON/OFF via admin/FCM)
+  - flow recovery GPS / overlay permission / device admin
+  - Find Device alarm + fallback audio 2 lapis
+- Build yang dijalankan:
+  - `cd D:\Dashboard Portal\native-mobile-edulock ; .\gradlew.bat :app:assembleStudentRelease --no-daemon`
+- Hasil build:
+  - assemble EduLock student release — **BUILD SUCCESSFUL in 2m 06s** (49 tasks: 10 executed, 39 up-to-date).
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.22-48.apk` (arsip versioned)
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk` (alias Final)
+  - `D:\Dashboard Portal\web\public\apk\EduLock-studentRelease.apk` (alias publik lokal, belum di-push)
+- **SHA256 (rebuild final lokal 2026-08-28 ~18:51):** `F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34`
+- **SHA256 rebuild transisi 2026-08-28 ~18:39 (superseded):** `01B19582EB96B0DA975641E244A036A4E824045910DD92C38E7F235D3D0E39BC`
+- **SHA256 patch fallback audio 2026-08-28 ~16:40 (superseded):** `5F4E2EE3D27FDA29724E11595FDDD7BABE5F1CF467E07799B8DB4C27966336DB`
+- Regression check yang dijalankan:
+  - compile/build release EduLock (SUCCESS)
+  - salin file -> SHA identik di 3 tujuan (Final versioned, Final alias, web publik lokal)
+  - uji HP fisik user: `internet mati total -> lewat masa tenggang 60 detik` = **LULUS**
+  - uji HP fisik user: `Accessibility OFF -> admin ON -> overlay diabaikan` = **LULUS**
+- Belum diuji:
+  - [ ] keluarga recovery lain yang masih serumpun: `Overlay OFF -> admin ON`, `Battery Optimization OFF -> admin ON`, `Izin Lokasi aplikasi OFF -> admin ON`
+  - [ ] regression detail Temukan Perangkat: DND total silence, `FAILED_SILENT`, restore volume Alarm/Music, dan command Stop
+  - [ ] push live `/e` / commit App Hosting
+- Catatan:
+  - Versi `versionCode` **TIDAK** di-bump sesuai instruksi user; tetap `1.3.22 / 48`.
+  - Build ini **sudah lulus uji HP fisik user** untuk dua bug utama di atas, tetapi user masih ingin menyempurnakan versi ini sebelum melakukan git push/finalisasi live.
+
+## 2026-08-28 ~16:40 - [REBUILD+SYNC PUBLIK] EduLock 1.3.22 (48) — Patch fallback audio Temukan Perangkat 2 lapis (STREAM_MUSIC + Vibrator) + status ACK detail ke admin
+
+- Pelaksana: Assistant
+- Jenis: `feature` (patch audio) + `build-deploy`
+- Scope: `student` (APK EduLock siswa)
+- Tujuan: User uji nyata menemukan fakta bahwa user matikan slider Alarm manual memang balik ke volume max saat admin bunyikan (desain asli), tapi siswa masih punya celah: (1) DND/Total Silence di ROM vendor, (2) OEM tolak set volume stream alarm → output tetap senyap. Admin hanya melihat `ALARM_STARTED` tanpa tahu HP sebenarnya tidak bunyi. Patch ini menutup celah silent tersebut dan melaporkan status fallback/jalur yang diambil ke panel admin.
+- File utama yang diubah:
+  - [AndroidManifest.xml](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/AndroidManifest.xml) tambah izin `VIBRATE` dan `MODIFY_AUDIO_SETTINGS` (ROM vendor China lebih hormat jika izin dideklarasikan).
+  - [DeviceLocatorAlarm.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/DeviceLocatorAlarm.kt) perkuat:
+    - `setStreamVolume(STREAM_ALARM, max, FLAG_SHOW_UI)` + 2× `adjustStreamVolume(ADJUST_RAISE, FLAG_SHOW_UI)` bertubi (user lihat slider OS naik otomatis).
+    - Setelah putar alarm, cek volume aktual; jika ≤ 0 atau di bawah max/2 → bunuh player dan fallback ke `STREAM_MUSIC` dengan logic yang sama (force max MUSIC).
+    - Jika audio tetap nol → fallback Vibrator pattern waveform panjang `0/600/250/600/250/600/350/500/350/500` berulang, support API < S via Context.VIBRATOR_SERVICE, API ≥ S via VibratorManager.defaultVibrator.
+    - Audio tetap dimainkan **bersama** vibrator (tidak saling ganti) jika audio berhasil.
+    - Restore volume ALARM dan MUSIC ke level semula setelah selesai.
+    - Tambah callback baru `onStartedWithFallback(Boolean, Boolean)` ke caller untuk melaporkan jalur yang diambil.
+  - [FirebaseReporter.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/FirebaseReporter.kt) tambah field baru ke `active_devices`: `lastFindDeviceUsedMusicFallback`, `lastFindDeviceUsedVibrationFallback`, `lastFindDeviceStreamUsed` (ALARM / MUSIC_FALLBACK / EXCEPTION), plus status ACK enumerasi baru: `ALARM_STARTED_FALLBACK_MUSIC`, `ALARM_STARTED_VIBRATION_ONLY`, `FAILED_SILENT`.
+  - [MonitoringService.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt#L317-L382) hubungkan callback fallback: pilih status ACK yang benar + set field di FirebaseReporter; `ACTION_STOP_FIND_DEVICE_ALARM` tidak berubah.
+- Fitur lama yang wajib ikut dicek:
+  - Master Switch proteksi (ON/OFF via FCM)
+  - Find Device Start/Stop command sebelumnya tetap bekerja (status ACK lama kompatibel karena field baru opsional; panel UI saat ini baca `lastFindDeviceStatus` saja).
+  - Volume restore ke level semula (ALARM dan MUSIC).
+- Build yang dijalankan:
+  - `cd D:\Dashboard Portal\native-mobile-edulock ; .\gradlew.bat :app:assembleStudentRelease --no-daemon`
+- Hasil build:
+  - assemble EduLock student release — **BUILD SUCCESSFUL in 2m 34s** (49 tasks: 17 executed, 32 up-to-date).
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.22-48.apk` (arsip versioned)
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk` (alias Final / publik)
+  - `D:\Dashboard Portal\web\public\apk\EduLock-studentRelease.apk` (sinkron ke direktori publik web agar `/e` serve patch terbaru)
+- **SHA256 (patch fallback audio Temukan Perangkat 2026-08-28 ~16:40):** `5F4E2EE3D27FDA29724E11595FDDD7BABE5F1CF467E07799B8DB4C27966336DB`
+- **SHA256 build 13:28 sebelumnya (superseded):** `8FB7CC53FD3F7C24680EE6FF391BF55B8270776445FBE8DBBD2A46C92AF01063`
+- Regression check yang dijalankan:
+  - compile/build release EduLock (SUCCESS)
+  - salin file → SHA identik di 3 tujuan (Final versioned, Final alias, web publik)
+- Belum diuji (wajib QA HP fisik):
+  - [ ] User set slider Alarm = 0 → admin bunyikan → status ACK `ALARM_STARTED_FALLBACK_MUSIC` atau tetap `ALARM_STARTED` dan audio didengar nyata keras.
+  - [ ] User aktifkan DND Total Silence → admin bunyikan → status ACK `ALARM_STARTED_VIBRATION_ONLY` dan HP getar pola panjang.
+  - [ ] User matikan Music 0 + Alarm 0 + vibrate dimatikan aksesibilitas → status ACK `FAILED_SILENT` ke admin.
+  - [ ] Setelah alarm selesai, slider ALARM dan MUSIC kembali ke level semula (tidak permanen max).
+  - [ ] Master Switch ON/OFF via FCM dan overlay recovery GPS tetap tidak berubah.
+- Catatan:
+  - Versi `versionCode` **TIDAK** di-bump sesuai instruksi user "pertahankan saja versi saat ini"; tetap `1.3.22 / 48`.
+  - Field baru `lastFindDeviceStreamUsed`, `lastFindDeviceUsedMusicFallback`, `lastFindDeviceUsedVibrationFallback` bersifat opsional; panel EduLockMonitoringPanel.tsx saat ini tidak menampilkannya, tapi data tersimpan di RTDB untuk UI enhancement kemudian.
+  - commit App Hosting untuk sync live `/e` dan `/gas/install` belum di-git push pada build ini (menunggu instruksi user atau step berikutnya).
+
+## 2026-08-28 13:28 - [BUILD+SYNC LIVE] EduLock 1.3.22 (48) — alarm Temukan Perangkat + sinkron unduhan live `/e`
+
+- Pelaksana: Assistant
+- Jenis: `feature` + `build-deploy`
+- Scope: `student` + `web admin EduLock`
+- Tujuan: Menyediakan fitur **Temukan Perangkat** di admin EduLock untuk membantu sekolah menemukan HP siswa yang masih online, dengan mekanisme command -> alarm keras di HP -> ACK status balik ke panel monitoring. Sekaligus menyinkronkan build `1.3.22 (48)` terbaru ke unduhan live Firebase/App Hosting.
+- File utama yang diubah:
+  - [EduLockMessagingService.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/EduLockMessagingService.kt)
+  - [MonitoringService.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt)
+  - [FirebaseReporter.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/FirebaseReporter.kt)
+  - [DeviceLocatorAlarm.kt](file:///D:/Dashboard%20Portal/native-mobile-edulock/app/src/main/java/com/sekolah/edulock/DeviceLocatorAlarm.kt)
+  - [web/src/app/api/admin/edulock/route.ts](file:///D:/Dashboard%20Portal/web/src/app/api/admin/edulock/route.ts)
+  - [web/src/components/edulock/panels/EduLockMonitoringPanel.tsx](file:///D:/Dashboard%20Portal/web/src/components/edulock/panels/EduLockMonitoringPanel.tsx)
+- Fitur lama yang wajib ikut dicek:
+  - Master Switch proteksi sekolah
+  - heartbeat/status realtime di admin
+  - flow install/tutorial `/e`
+- Build yang dijalankan:
+  - `./gradlew.bat :app:assembleStudentRelease`
+  - `cd D:\Dashboard Portal\web && npm run sync:apk`
+  - `cd D:\Dashboard Portal\web && npm run build`
+  - push Firebase/App Hosting commit `0c6f83a6`
+- Hasil build:
+  - assemble EduLock student release **SUCCESS**
+  - sync APK publik **SUCCESS**
+  - build web App Hosting **SUCCESS**
+- Output APK:
+  - `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.22-48.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk`
+  - `D:\Dashboard Portal\web\public\apk\EduLock-studentRelease.apk`
+- Regression check yang dijalankan:
+  - compile/build release EduLock
+  - build web admin setelah sync manifest
+- Belum diuji:
+  - end-to-end alarm nyata ke HP siswa dari panel live
+  - perilaku pada device offline / FCM token stale / vendor aggressive doze
+- Catatan:
+  - Hash Final/public aktif: `8FB7CC53FD3F7C24680EE6FF391BF55B8270776445FBE8DBBD2A46C92AF01063`
+  - Size aktif: `3.929.074 bytes`
+  - Status live: tutorial `/e` sekarang mengarah ke build ini, dan panel admin membawa tombol **Bunyikan HP**.
+
 ## 2026-08-26 ~19:47 - [CRITICAL SECURITY PATCH] EduLock 1.3.22 (48) — Celah uninstall lewat tombol "Uninstal aplikasi" di halaman Device Admin Activation Android (bypass tanpa kode uninstall)
 
 - Pelaksana: Assistant (temuan bug dilaporkan user via QA di HP nyata)
@@ -1850,3 +2094,87 @@ Field berikut wajib dipakai di setiap entri:
   - skenario real device saat policy force update diturunkan kembali ketika layar force update sedang tampil
 - Catatan:
   - Jalur EduLock sekarang setara dengan GAS: policy force update dipantau live dari RTDB, bukan hanya tersedia sebagai source mati.
+
+## 2026-08-27 20:03 - Kandidat fix grace Settings hasil QA USB E2E (BELUM FINAL)
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Mengurangi kasus user tidak sempat masuk ke Settings recovery saat proteksi sekolah diaktifkan kembali dari admin.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MainActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/SetupActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/OverlayLockActivity.kt`
+- Latar belakang perubahan:
+  - Pada QA realtime via USB debugging, ditemukan keluarga bug recovery Settings: saat proteksi inti tertentu sedang OFF lalu admin mengubah proteksi sekolah dari `OFF -> ON`, prompt recovery muncul tetapi user tidak diberi cukup waktu untuk menekan tombol ke Settings.
+  - Gejala awal sempat terlihat pada jalur GPS recovery, lalu kemudian **tidak reproduksi lagi** pada retest.
+  - Gejala yang **masih reproduksi** pada device fisik adalah `Accessibility OFF -> admin ON`.
+- Fitur lama yang wajib ikut dicek:
+  - recovery `Accessibility`
+  - recovery `Tampil di atas aplikasi lain`
+  - recovery `Izin Latar Belakang / Battery Optimization`
+  - recovery `Izin Lokasi aplikasi`
+  - recovery GPS / Lokasi
+- Build yang dijalankan:
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk`
+- Regression check yang dijalankan:
+  - uji USB E2E pada device fisik
+  - verifikasi device berada di area sekolah dan jam sekolah aktif
+  - verifikasi percobaan buka app hiburan tetap ditahan EduLock
+  - verifikasi flow resmi `Minta Izin Guru` tetap berjalan
+  - retest jalur GPS recovery
+- Hasil QA:
+  - enforcement inti **lulus**
+  - flow izin resmi **lulus**
+  - jalur GPS recovery **lulus pada retest terbaru**
+  - jalur `Accessibility OFF -> admin ON` **masih gagal**
+- Belum diuji / belum final:
+  - verifikasi final untuk 4 jalur satu keluarga bug:
+    - `Accessibility OFF -> admin ON`
+    - `Overlay OFF -> admin ON`
+    - `Battery Optimization OFF -> admin ON`
+    - `App Location Permission OFF -> admin ON`
+- Catatan:
+  - File hasil build kandidat internal bertimestamp `2026-08-27 20:03:52`, size `3.927.443` bytes.
+  - Build ini **bukan** penanda fix final; hanya kandidat internal untuk retest cepat.
+  - Tim lanjutan wajib baca handoff teknis di `Apk Release/Pegangan Build APK/Edulock/HANDOFF_LAPANGAN_EDULOCK.md` sebelum melanjutkan PR bug ini.
+
+## 2026-08-27 larut malam - Progress lanjutan recovery Accessibility (build kerja lulus, clean build menunggu retest)
+- Pelaksana: Assistant
+- Jenis perubahan: `fix`
+- Tujuan perubahan: Menutup kasus `Accessibility OFF -> admin ON` yang sebelumnya gagal karena overlay recovery sempat muncul lalu hilang terlalu cepat sebelum user sempat masuk ke Settings Accessibility.
+- Scope terdampak: `student`
+- File utama yang diubah:
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/OverlayLockActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LockEnforcer.kt`
+- Akar masalah yang akhirnya terkonfirmasi:
+  - `OverlayLockActivity.onResume()` mengecek `shouldStayLocked()` terlalu dini untuk target recovery settings, sehingga overlay recovery Accessibility bisa `finish()` sendiri sebelum dipakai user.
+  - `LockEnforcer.showRecoveryOverlay()` memang perlu pola debounce ala recovery GPS, tetapi guard tambahan berbasis `lastForegroundPackage == settings` terbukti salah karena bisa membuat admin ON proteksi terlihat seperti “tidak terjadi apa-apa”.
+- Fix yang dipertahankan:
+  - recovery settings diprioritaskan lebih dulu di `OverlayLockActivity.onResume()`
+  - `OverlayLockActivity.shouldStayLocked()` menganggap target recovery aktif sebagai kondisi valid untuk tetap tampil
+  - `LockEnforcer.showRecoveryOverlay()` mempertahankan debounce overlay recovery, tetapi skip berbasis `lastForegroundPackage` dibatalkan kembali
+- Build yang dijalankan:
+  - `:app:assembleStudentRelease`
+- Hasil build: sukses
+- Output APK: `D:\Dashboard Portal\native-mobile-edulock\app\build\outputs\apk\student\release\EduLock-studentRelease.apk`
+- Disalin ke:
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.22-48.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk`
+- Regression check yang dijalankan:
+  - uji HP fisik untuk skenario `Accessibility OFF -> admin ON`
+  - pembanding perilaku dengan recovery GPS yang sebelumnya sudah fix
+- Hasil QA:
+  - `GPS mati -> buka Pengaturan Lokasi` tetap normal
+  - `Accessibility OFF -> admin ON` berhasil ditembus pada build kerja terakhir di HP fisik
+- Belum diuji / belum final:
+  - retest ulang jalur Accessibility memakai APK clean dari folder `Final`
+  - retest `Overlay OFF -> admin ON`
+  - retest `Battery Optimization OFF -> admin ON`
+  - retest `App Location Permission OFF -> admin ON`
+- Catatan:
+  - selama debugging sempat dipakai build berinstrumentasi untuk observasi runtime; instrumen itu sudah dibersihkan lagi sebelum clean build terakhir
+  - sampai retest clean selesai, status progress ini adalah **sudah fix di build kerja**, **belum dikunci sebagai fix final rilis**

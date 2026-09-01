@@ -12,6 +12,12 @@ import androidx.appcompat.app.AppCompatActivity
 
 class PetDeadLockActivity : AppCompatActivity() {
 
+    companion object {
+        @Volatile
+        var isShowing: Boolean = false
+            private set
+    }
+
     private lateinit var prefsManager: PreferencesManager
     private lateinit var lockEnforcer: LockEnforcer
     private lateinit var scheduleManager: SchoolScheduleManager
@@ -25,6 +31,7 @@ class PetDeadLockActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        isShowing = true
         setContentView(R.layout.activity_pet_dead_lock)
         
         prefsManager = PreferencesManager(this)
@@ -35,6 +42,7 @@ class PetDeadLockActivity : AppCompatActivity() {
         btnUnderstood.setOnClickListener {
             // Dismiss temporarily
             prefsManager.lastPetDeadAckAt = System.currentTimeMillis()
+            prefsManager.petDeadReminderCount = prefsManager.petDeadReminderCount + 1
             Toast.makeText(this, "Akses dibuka sementara.", Toast.LENGTH_SHORT).show()
             finishPetDeadLock()
         }
@@ -42,15 +50,16 @@ class PetDeadLockActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        isShowing = true
         if (scheduleManager.isSchoolTime() || prefsManager.isHolidayMode || !prefsManager.isProtectionActive) {
             finishPetDeadLock()
             return
         }
-        startKioskMode()
     }
 
     override fun onStart() {
         super.onStart()
+        isShowing = true
         val filter = IntentFilter("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(dismissReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
@@ -67,25 +76,13 @@ class PetDeadLockActivity : AppCompatActivity() {
         }
     }
 
-    private fun startKioskMode() {
-        try {
-            val activityManager = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
-            val isSystemLocked = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                activityManager.lockTaskModeState != android.app.ActivityManager.LOCK_TASK_MODE_NONE
-            } else {
-                @Suppress("DEPRECATION")
-                activityManager.isInLockTaskMode
-            }
-            if (!isSystemLocked) {
-                startLockTask()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    override fun onDestroy() {
+        isShowing = false
+        super.onDestroy()
     }
 
     private fun finishPetDeadLock() {
-        lockEnforcer.stopKiosk()
+        isShowing = false
         finish()
     }
 
