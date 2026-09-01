@@ -84,23 +84,25 @@ Jika menyentuh area berikut, minimal compile 3 flavor utama:
 - screen di `src/main` yang dipakai lintas role
 
 ## 9. Catatan Versi
-Versi dasar saat dokumen ini dirapikan:
-- `defaultConfig versionCode = 1039`
-- `defaultConfig versionName = 1.0.30`
-- `flavor siswa versionCode = 23022` (working/distribusi Final; cek `build.gradle.kts` saat build siswa)
-- `flavor legacySiswa versionCode = 23003`
+Cek `native-mobile-gas/app/build.gradle.kts` sebelum assemble. Acuan terbaru 2026-09-01:
+- `defaultConfig versionCode = 23093` / `versionName = 1.0.96`
+- `flavor siswa` → `versionCode = 23093` / `versionName = 1.0.96` (+ suffix `-siswa`)
+- `flavor guru` → `versionCode = 1064` / `versionName = 1.0.72` (+ suffix `-guru`)
+- `flavor legacySiswa versionCode = 23003` (jangan turun di bawah ini)
 
 ## 10. Catatan Distribusi Aman GAS Siswa
 - `GAS Siswa` memakai `applicationId` `com.satupintu.mobile.siswa`.
 - Jalur `legacySiswa` pernah memakai `versionCode 23003` untuk package yang sama.
 - Karena itu, semua release `siswa` berikutnya wajib menjaga `versionCode` tetap monoton naik di atas riwayat distribusi package yang sama.
-- Build final siswa terbaru yang sudah dicatat saat ini adalah `1.0.80-siswa (23077)` di folder `D:\Dashboard Portal\Apk Release\Final` — URL unduhan web sudah `1.0.80-siswa` / `23077` (`/apk/GAS-Siswa-1.0.80-siswa-23077.apk`).
+- Build final siswa terbaru yang aktif saat ini adalah `1.0.96-siswa (23093)` di `D:\Dashboard Portal\Apk Release\Final` (`GAS-Siswa-1.0.96-siswa-23093.apk` + alias `GAS-Siswa-release.apk`).
+- Jalur Force Update di Web Super Admin (`min_version_code_gas`) secara ketat hanya menargetkan APK Siswa.
 
-## 11. Catatan Distribusi GAS Guru
-- Build acuan terbaru: `1.0.30-guru (versionCode 1039)` — rebuild sore 2026-08-03 (~14:30) menyertakan fix ikon `cb3bed4d` di atas fitur notifikasi `ebfeb7b8`.
-- File Final tunggal: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` (hindari salinan bertanggal ganda di Final).
-- Salinan kerja: `Apk Release/GAS/app-guru-release.apk`.
-- Fitur notifikasi 2026-08-03: `LITERACY_INCOMPLETE` + `PET_DEAD` untuk siswa wali/diampu; aduan/literasi pending lama tetap ada; badge di menu Notifikasi; belum FCM (tray hanya saat app hidup).
-- Portal PWA Guru live: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/guru` (9 menu APK-parity; Web Push VAPID masih terbuka).
-- Guru **tidak** disinkronkan ke `web/public/apk` jalur tutorial siswa.
+## 11. Catatan Distribusi GAS Guru & Kepala Sekolah
+- Build acuan terbaru: `1.0.72-guru (versionCode 1064)` — rebuild 2026-09-01 19:25 membawa proteksi kekebalan/bypass Force Update Siswa.
+- File Final: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` dan `GAS-Kepala-release.apk`.
+- Muatan penting build guru & kepala sekolah terkini:
+  - Kebal dan mengabaikan `min_version_code_gas` dari web super admin sehingga tidak akan pernah terkunci saat batas versi siswa dinaikkan.
+  - Rule presensi `Wali Kelas` dan `Sekretaris Kelas` final langsung.
+  - Tab `Rekap Mingguan` aktif.
+- Portal PWA Guru live: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/guru`.
 
