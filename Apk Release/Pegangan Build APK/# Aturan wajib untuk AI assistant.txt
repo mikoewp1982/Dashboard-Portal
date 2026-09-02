@@ -9,6 +9,40 @@
   tanya dulu apakah perubahan ini akan berdampak ke flavor lain
 - Setelah selesai, jelaskan file apa saja yang tersentuh
 
+---
+
+### ⚠️⚠️⚠️ SUB-ATURAN TAMBAHAN KHUSUS UI APK GAS (Home Screen & Kartu Menu) ⚠️⚠️⚠️
+(Kesalahan fatal 4x terjadi build 1048→1049→1050 tanggal 2026-08-28: UI GAS GURU MALAH SAMA PERSIS DENGAN UI GAS SISWA.
+Untuk cegah kejadian terulang, WAJIB IKUTI 6 butir ini SEBELUM & SESUDAH ubah UI Home / Kartu Menu):
+
+1. **WAJIB BACA DULU** `GAS/README.md` section **`PERBEDAAN UI GAS SISWA vs GAS GURU`** (baris ~L75-L109) SEBELUM menyentuh file `HomeScreen.kt` atau komponen menu beranda. JANGAN anggap sama!
+
+2. **Perbedaan MUTLAK GAS SISWA vs GAS GURU yang TIDAK BOLEH DILANGGAR**:
+   - **GAS SISWA (flavor `siswa` + `kepala`)**: 4 kolom kartu kecil + Bottom Nav 3 tab WAJIB ADA (termasuk tombol hitam absen FLOAT TENGAH BESAR offset -28dp). Background = gelap slate-indigo linear. Icon 36dp di kotak 64dp. Label text POLOS tanpa pill shape.
+   - **GAS GURU (flavor `guru`)**: 2 kolom kartu BESAR glassmorphism 2 BARIS (atas: icon 84dp, BAWAH: label DIDALAM PILL SHAPE biru-muda transluscent). Background = vertical gradient MAKIN KE BAWAH MAKIN GELAP (teal tua → sky600 → blue700 → indigo800 → navy950). **BOTTOM NAV 3 TAB HARAM ADA (wajib NULL)**. Hanya 1 icon `ArrowForward` (Tutup) di POJOK KANAN ATAS HEADER. **JANGAN tambah icon orang Profil duplikat di header kanan (kiri sudah ada avatar)**.
+
+3. **Percabangan UI WAJIB menggunakan variabel `val isGuruFlavor = BuildConfig.FLAVOR == "guru"`** di dalam HomeScreen. JANGAN percabangan manual lewat string equality per baris, atau — PALING PARAH — TIDAK DIPERCABANG (akibatnya 1 style dipakai semua flavor, jadilah UI guru = UI siswa).
+
+4. **List titik yang WAJIB di-branch dengan `isGuruFlavor` di HomeScreen:**
+   - `screenBackground` (color/brush)
+   - `navBarContainerColor`
+   - `Scaffold.bottomBar = { if (!isGuruFlavor) { NavigationBar(3 item: Beranda | Absen | Profil) } else { null } }`
+   - `GridCells.Fixed(N)` & spacing LazyVerticalGrid
+   - Judul section ("MENU UTAMA" vs "Menu Guru")
+   - Call composable kartu (StudentFeatureCard vs GuruMenuCard)
+   - Top-right area header icon (hanya flavor guru yang pakai single ArrowForward onLogout)
+
+5. **SEBELUM SHIP / copy ke Final, WAJIB build SETIDAKNYA 2 FLAVOR SEKALI JALAN**:
+   `./gradlew :app:assembleSiswaRelease :app:assembleGuruRelease`
+   Tujuannya: jika ada file `src/main` berubah yang break salah satu flavor, ketahuan SEBELUM copy ke Final. Bukan cuma build 1 flavor saja (`assembleGuruRelease` terus langsung ship tanpa cross-check siswa).
+
+6. **Sesudah build 2 flavor sukses, lakukan 3 CEK VISUAL CEPAT via ADB (jika HP terhubung) atau bayangkan dari screenshot referensi:**
+   - [ ] GAS SISWA: Bottom Nav 3 tab ADA (termasuk tombol absen hitam tengah), kartu menu 4 kolom kecil.
+   - [ ] GAS GURU: Bottom Nav 3 tab HILANG, kartu 2 kolom BESAR + pill label transluscent, background navy lebih gelap, header kanan cuma ada icon panah Tutup.
+   - [ ] KEDUA FLAVOR: Teks label versi tampil di Login Screen + footer Home Screen.
+   Jika salah satu di atas gagal → JANGAN ship ke Final. Perbaiki, rebuild, cek lagi.
+---
+
 ## === BAGIAN 2: ATURAN DEPLOY WEB (Next.js + Firebase App Hosting) ===
 
 - Deploy Dashboard Portal WAJIB via `git push origin main` dari root repo `D:\Dashboard Portal`.

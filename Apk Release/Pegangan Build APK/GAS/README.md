@@ -8,8 +8,8 @@ Folder ini adalah pegangan operasional untuk semua perubahan APK `GAS` pada proy
 - Root project name: `SatuPintuNativeMobile`
 - Application ID dasar: `com.satupintu.mobile`
 - Versi distribusi terkini (update 2026-08-30):
-  - `flavor siswa` → `versionName 1.0.90-siswa` / `versionCode 23087` (Final lokal terbaru untuk `Rekap Mingguan` Presensi Siswa; live unduhan web masih `1.0.82-siswa (23079)`)
-  - `flavor guru` → `versionName 1.0.70-guru` / `versionCode 1062` (Final terbaru yang sudah dicatat di folder Final)
+  - `flavor siswa` → `versionName 1.0.92-siswa` / `versionCode 23089` (Final lokal terbaru; rebuild patch lock harian 7KAIH setelah penyempurnaan Virtual Pet. APK publik web masih hash build 14:53, tetapi source `/gas/install` sudah dirapikan lagi via commit `aef94fb1` agar metadata/fallback tetap konsisten)
+  - `flavor guru` → `versionName 1.0.72-guru` / `versionCode 1064` (Final terbaru yang sudah dicatat di folder Final)
   - `flavor legacySiswa versionCode = 23003` (kompatibilitas; jangan turun di bawah ini)
   - Pastikan `native-mobile-gas/app/build.gradle.kts` selaras sebelum assemble
 
@@ -69,8 +69,13 @@ D:\Dashboard Portal\Apk Release\Final
 Jika user meminta folder lain, catat di [BUILD_LOG.md](./BUILD_LOG.md).
 
 Rilis final terbaru yang sudah dicatat saat ini:
-- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.90-siswa-23087.apk` (`1.0.90-siswa` / `versionCode 23087`, SHA256 `77AD148F7557F609226FB1CBD7C65440DEB3BC56D8CDD11DB7C09E89729DF8E5`) — rebuild final lokal terbaru 2026-08-30 untuk menambahkan **Rekap Mingguan** pada menu `Presensi Siswa` sambil mempertahankan guard `Sekretaris Kelas` sebagai jalur **usulan -> verifikasi -> final**. **BELUM disinkronkan** ke `web/public/apk`; live unduhan web masih memakai build `1.0.82-siswa (23079)` hash `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`.
-- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` + `GAS-Guru-1.0.70-guru-1062.apk` (`1.0.70-guru` / `versionCode 1062`, SHA256 `5C98AA6DDA272EEF4D9427CF06DD9615BC9C14D514608533827D6D30B904291E`). Muatan final terkini: tab **Rekap Mingguan** untuk monitoring kelas lebih cepat dan hardening verifikasi akhir untuk usulan sekretaris kelas tetap aktif. Lihat bagian **PERBEDAAN UI GAS SISWA vs GAS GURU** di bawah ini — WAJIB BACA sebelum ubah UI Home.
+- Siswa: `D:\Dashboard Portal\Apk Release\Final\GAS-Siswa-release.apk` + `GAS-Siswa-1.0.92-siswa-23089.apk` (`1.0.92-siswa` / `versionCode 23089`, SHA256 `A936F12FACAE586CC2A13934BF066254262685FA10EA708819E81BF9F334A77A`) — rebuild final lokal terbaru 2026-08-30 16:03 untuk penyempurnaan lock harian `7KAIH`: minggu yang memuat hari ini tidak lagi terkunci penuh, sehingga siswa tetap bisa mengisi dan menyimpan laporan untuk hari berjalan sesuai konsep tugas harian. Catatan: APK publik web masih build `1.0.92-siswa (23089)` sesi 14:53, tetapi source `/gas/install` dan manifest sumber sudah dirapikan lagi lewat commit `aef94fb1` agar angka versi lama tidak tersisa.
+- Guru: `D:\Dashboard Portal\Apk Release\Final\GAS-Guru-release.apk` + `GAS-Guru-1.0.72-guru-1064.apk` (`1.0.72-guru` / `versionCode 1064`, SHA256 `06A775096952C592F6E00B43C420311165BE7189BABEF9609D2B5A4DD19A02E3`). Muatan final terkini: tab **Rekap Mingguan** tetap aktif, tetapi kontrak kolaborasi presensi kini berubah menjadi `final langsung` untuk wali kelas maupun sekretaris, dengan jalur finalisasi admin/guru hanya untuk data legacy yang masih pending. Lihat bagian **PERBEDAAN UI GAS SISWA vs GAS GURU** di bawah ini — WAJIB BACA sebelum ubah UI Home.
+
+Status live web terbaru yang relevan dengan modul GAS:
+- Web Admin `Rekap Kehadiran` live commit `089fe1da`: area admin GAS sekarang memiliki tab `Rekap Mingguan` dengan navigator minggu, dan sesi perubahan terbaru mengalihkan kontrak input `Sekretaris Kelas` menjadi final langsung sambil tetap menyisakan tombol finalisasi untuk data legacy `PENDING_TEACHER`.
+- Web Admin `Rekap Kehadiran` live commit `c781bc8f`: admin sekolah sekarang bisa memverifikasi usulan presensi `Sekretaris Kelas` langsung dari dashboard saat wali kelas berhalangan.
+- Portal Guru `/guru/presensi` live commit `089fe1da`: web guru tetap setara dengan APK GAS Guru terbaru untuk area presensi, termasuk tab **Rekap Mingguan**, badge audit sumber input, dan finalisasi legacy jika masih ada data lama yang `pending`.
 
 ---
 
@@ -92,7 +97,7 @@ Rilis final terbaru yang sudah dicatat saat ini:
 | **Bottom Nav 3 tab (Beranda / Absen Float / Profil)** | ✅ **WAJIB ADA**. Termasuk **tombol hitam absen FLOAT TENGAH BESAR (offset -28dp). Ini ciri khas SISWA.** | ❌ **HARAM ADA — WAJIB NULL di `Scaffold.bottomBar = null`**. Guru **TIDAK PERLU shortcut absensi floating, karena guru tidak meng-absen diri lewat sini. |
 | **Akses Profil & Logout** | Klik icon Profil di **Bottom Nav kanan** | HANYA lewat **ICON BUTTON KECIL 28.dp di POJOK KANAN ATAS HEADER**: `Icons.Default.ArrowForward` → `onLogout()`. (Tidak usah icon orang / Person duplikat, karena kiri sudah ada avatar.) |
 | **Padding bawah dari Scaffold** | Bottom padding otomatis 56dp dari navbar | Tidak ada / 0. Kartu menu turun sampai area bawah dekat system navigation bar. |
-| **Contoh versi acuan benar** | GAS Siswa `1.0.90-siswa (23087)` | GAS Guru **`1.0.70-guru (1062)`** build final 2026-08-30 |
+| **Contoh versi acuan benar** | GAS Siswa `1.0.92-siswa (23089)` | GAS Guru **`1.0.72-guru (1064)`** build final 2026-08-30 |
 | **Lokasi composable di HomeScreen.kt** | `StudentFeatureCard` (TIDAK DIUBAH tanpa persetujuan user!) | `GuruMenuCard` + `isGuruFlavor` branch di Scaffold, LazyVerticalGrid, dan screenBackground. |
 
 ## LANGKAH KONTROL SETIAP MAU UBAH UI HOME
@@ -120,7 +125,9 @@ Rilis final terbaru yang sudah dicatat saat ini:
 - Untuk `GAS Siswa`, `versionCode` release harus selalu naik untuk package `com.satupintu.mobile.siswa`.
 - Riwayat proyek ini sudah memakai jalur kompatibilitas `legacySiswa` dengan `versionCode 23003`, jadi release siswa reguler tidak boleh kembali ke angka di bawah itu.
 - Sebelum APK dibagikan lewat portal/web, jalankan `npm run sync:apk:gas` dari folder `web`.
-- Per 2026-08-28 13:38: **Public unduhan web** = `1.0.82-siswa (23079)` — `web/public/apk/GAS-Siswa-release.apk` + manifest sudah sinkron. SHA public `C09A10E08D23BFEE98F8DB4D2B60BE547F9FAA928459E0BB8F9695EA806B2C4C`.
+- Per 2026-08-30 14:53: **Public unduhan web lokal** = `1.0.92-siswa (23089)` hasil sinkron sesi cleanup rule `final langsung` sebelumnya. SHA public saat ini `D16CDD254843B121D850E3ED772A5A2E287A8DF7457321875B3DA515958A7F12`.
+- Per 2026-08-30 16:03: **Final lokal terbaru** tetap `1.0.92-siswa (23089)`, tetapi hash final lokal kini berubah lagi menjadi `A936F12FACAE586CC2A13934BF066254262685FA10EA708819E81BF9F334A77A` karena membawa penyempurnaan lock harian `7KAIH`. Artinya, sebelum sinkronisasi web berikutnya, file `Final` dan `web/public/apk` **belum identik** walaupun nomor versi sama.
+- Per 2026-08-30 malam: **source `/gas/install`** dan `src/data/apk-manifest.json` sudah dirapikan lagi via commit `aef94fb1` agar fallback/metadata tidak lagi menyimpan angka lama. User mengonfirmasi hasil unduh live GAS siswa sudah terbaca sebagai versi terbaru `1.0.92-siswa (23089)`.
 - Skrip sinkronisasi web sekarang akan:
   - membaca metadata APK (`packageName`, `versionCode`, `versionName`)
   - menolak sinkronisasi jika `versionCode` GAS siswa turun

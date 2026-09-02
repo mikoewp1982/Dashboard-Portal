@@ -4,12 +4,12 @@ Dokumen ini adalah catatan desain untuk melengkapi fitur monitoring **Rekap Pres
 
 Target pembaca: tim pengembang internal.
 
-## Status (2026-08-16)
-**DONE / shipped.** Menu **Rekap Dhuha & Jumat** + pengaturan `prayer_v2` sudah live; restore deploy `39f8bb48`, matching classIds `13c86d2f`, normalize jam `HH.mm`→`HH:mm` `b3f5ce4f`. Dokumen ini dipertahankan sebagai acuan desain (bukan backlog terbuka).
+## Status (2026-08-27)
+**DONE / shipped (web).** Menu **Rekap Dhuha & Jumat** + pengaturan `prayer_v2` live. APK Siswa **Presensi Dhuha & Jum'at** sudah membaca sumber yang sama (audit kode 2026-08-27): `prayer_v2` types + Jadwal Per Kelas + Override; bukan Dzuhur / Presensi Sekolah. Baris **Jam** di APK **statis** (sengaja). Kartu **Aturan Hari** Dzuhur diperbaiki terpisah di Final **1.0.82** (live unduhan web tetap **1.0.80**).
 
 Catatan operasional terkait:
 - Override / Generator Jumat = **tanggal + kelas** saja; **Jam** diatur di **Jadwal Sholat Per Kelas**.
-- APK Siswa Final terkait: `1.0.78` (match + jam) → `1.0.79` (NavigationKt MultiDex) → `1.0.80` (Virtual Pet sync) — URL unduhan web sudah `1.0.80`.
+- APK Siswa Final QA: `1.0.82` (Aturan Hari Dzuhur). Rantai sebelumnya `1.0.78` (match + jam Dhuha) → `1.0.79` (NavigationKt) → `1.0.80` (pet sync, **public `/gas/install`**) → `1.0.81` INTERNAL (KBBI).
 
 ## Ringkasan
 - Rekomendasi utama: buat **menu baru** untuk rekap `Dhuha & Jum'at` agar tidak merusak halaman rekap `Dzuhur` yang sudah berjalan.

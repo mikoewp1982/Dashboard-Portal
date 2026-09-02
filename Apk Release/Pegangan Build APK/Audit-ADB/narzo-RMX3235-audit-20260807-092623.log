@@ -1,0 +1,270 @@
+﻿
+================ STEP 1 : Info HP (model / build / id) ================
+> adb shell getprop ro.product.model
+RMX3235
+
+================ STEP 1b :  ================
+> adb shell getprop ro.build.display.id
+RMX3235_11.A.63
+
+================ STEP 2 : EduLock App Ops Summary ================
+> adb shell dumpsys appops get com.sekolah.edulock
+Unknown command: get
+
+================ STEP 2b : GAS App Ops Summary ================
+> adb shell dumpsys appops get com.satupintu.mobile.siswa
+Unknown command: get
+
+================ STEP 3 : Verify Accessibility (read-back) ================
+> adb shell settings get secure enabled_accessibility_services
+com.sekolah.edulock/com.sekolah.edulock.AntiUninstallService
+
+================ STEP 3b :  ================
+> adb shell settings get secure accessibility_enabled
+1
+
+================ STEP 4 : Device Admin via dumpsys (Android 11 tidak punya list-active-admins di dpm CLI) ================
+> adb shell dumpsys device_policy
+Current Device Policy Manager state:
+  
+  
+  
+  Enabled Device Admins (User 0, provisioningState: 0):
+    com.google.android.gms/.mdm.receivers.MdmDeviceAdminReceiver:
+      uid=10140
+      testOnlyAdmin=false
+      policies:
+        wipe-data
+        reset-password
+        force-lock
+        disable-keyguard-features
+      passwordQuality=0x0
+      minimumPasswordLength=0
+      passwordHistoryLength=0
+      minimumPasswordUpperCase=0
+      minimumPasswordLowerCase=0
+      minimumPasswordLetters=1
+      minimumPasswordNumeric=1
+      minimumPasswordSymbols=1
+      minimumPasswordNonLetter=0
+      maximumTimeToUnlock=0
+      strongAuthUnlockTimeout=0
+      maximumFailedPasswordsForWipe=0
+      specifiesGlobalProxy=false
+      passwordExpirationTimeout=0
+      passwordExpirationDate=0
+      encryptionRequested=false
+      disableCamera=false
+      disableCallerId=false
+      disableContactsSearch=false
+      disableBluetoothContactSharing=true
+      disableScreenCapture=false
+      requireAutoTime=false
+      forceEphemeralUsers=false
+      isNetworkLoggingEnabled=false
+      disabledKeyguardFeatures=0
+      crossProfileWidgetProviders=null
+      organizationColor=-16746133
+      userRestrictions:
+        null
+      defaultEnabledRestrictionsAlreadySet={}
+      isParent=false
+      mCrossProfileCalendarPackages=[]
+      mCrossProfilePackages=[]
+      mSuspendPersonalApps=false
+      mProfileMaximumTimeOffMillis=0
+      mProfileOffDeadline=0
+      mAlwaysOnVpnPackage=null
+      mAlwaysOnVpnLockdown=false
+      mCommonCriteriaMode=false
+    com.sekolah.edulock/.DeviceAdminReceiver:
+      uid=11144
+      testOnlyAdmin=false
+      policies:
+        wipe-data
+        reset-password
+        limit-password
+        watch-login
+        force-lock
+        disable-keyguard-features
+      passwordQuality=0x0
+      minimumPasswordLength=0
+      passwordHistoryLength=0
+      minimumPasswordUpperCase=0
+      minimumPasswordLowerCase=0
+      minimumPasswordLetters=1
+      minimumPasswordNumeric=1
+      minimumPasswordSymbols=1
+      minimumPasswordNonLetter=0
+      maximumTimeToUnlock=0
+      strongAuthUnlockTimeout=0
+      maximumFailedPasswordsForWipe=0
+      specifiesGlobalProxy=false
+      passwordExpirationTimeout=0
+      passwordExpirationDate=0
+      encryptionRequested=false
+      disableCamera=false
+      disableCallerId=false
+      disableContactsSearch=false
+      disableBluetoothContactSharing=true
+      disableScreenCapture=false
+      requireAutoTime=false
+      forceEphemeralUsers=false
+      isNetworkLoggingEnabled=false
+      disabledKeyguardFeatures=0
+      crossProfileWidgetProviders=null
+      organizationColor=-16746133
+      userRestrictions:
+        null
+      defaultEnabledRestrictionsAlreadySet={}
+      isParent=false
+      mCrossProfileCalendarPackages=[]
+      mCrossProfilePackages=[]
+      mSuspendPersonalApps=false
+      mProfileMaximumTimeOffMillis=0
+      mProfileOffDeadline=0
+      mAlwaysOnVpnPackage=null
+      mAlwaysOnVpnLockdown=false
+      mCommonCriteriaMode=false
+  
+    mPasswordOwner=-1
+    mUserControlDisabledPackages=[]
+    mAppsSuspended=false
+  
+  Constants:
+    DAS_DIED_SERVICE_RECONNECT_BACKOFF_SEC: 3600
+    DAS_DIED_SERVICE_RECONNECT_BACKOFF_INCREASE: 2.0
+    DAS_DIED_SERVICE_RECONNECT_MAX_BACKOFF_SEC: 86400
+    DAS_DIED_SERVICE_STABLE_CONNECTION_THRESHOLD_SEC: 120
+  
+  Stats:
+    LockGuard.guard(): count=173848, total=2096,7ms, avg=0,012ms, max calls/s=968 max dur/s=31,6ms max time=31,1ms
+  
+  Encryption Status: per-user
+  
+  Device policy cache:
+    Screen capture disabled: {0=false}
+    Password quality: {0=0}
+  
+  Device state cache:
+    Device provisioned: true
+
+
+================ STEP 5 : Battery Idle Whitelist (cek EduLock + GAS ada) ================
+> adb shell dumpsys deviceidle whitelist
+system-excidle,com.android.providers.calendar,10165
+system-excidle,com.android.providers.downloads,10087
+system-excidle,com.android.vending,10139
+system-excidle,com.facebook.services,10098
+system-excidle,com.android.cellbroadcastreceiver,10166
+system-excidle,com.google.android.gms,10140
+system-excidle,com.google.android.ims,10131
+system-excidle,com.android.proxyhandler,10082
+system-excidle,com.spreadtrum.vowifi,1000
+system-excidle,com.android.shell,2000
+system-excidle,com.facebook.appmanager,10123
+system-excidle,com.android.providers.contacts,10085
+system,com.android.providers.downloads,10087
+system,com.facebook.services,10098
+system,com.android.cellbroadcastreceiver,10166
+system,com.google.android.gms,10140
+system,com.google.android.ims,10131
+system,com.spreadtrum.vowifi,1000
+system,com.android.shell,2000
+user,com.satupintu.mobile.siswa,11143
+user,com.sekolah.edulock,11144
+
+================ STEP 6 : Permission SYSTEM_ALERT_WINDOW / OVERLAY (Tampil di atas apl lain) - EDULOCK ================
+> adb shell dumpsys package com.sekolah.edulock | findstr /i SYSTEM_ALERT_WINDOW
+/system/bin/sh: findstr: inaccessible or not found
+Failed to write while dumping service package: Broken pipe
+
+================ STEP 6b :  ================
+> adb shell dumpsys package com.satupintu.mobile.siswa | findstr /i SYSTEM_ALERT_WINDOW
+/system/bin/sh: findstr: inaccessible or not found
+Failed to write while dumping service package: Broken pipe
+
+================ STEP 7 : Permission WRITE_SETTINGS + WRITE_SECURE_SETTINGS (Ubah Pengaturan) - EDULOCK ================
+> adb shell dumpsys package com.sekolah.edulock | findstr /i WRITE_SETTINGS WRITE_SECURE
+/system/bin/sh: findstr: inaccessible or not found
+Failed to write while dumping service package: Broken pipe
+
+================ STEP 8 : AppOps GET_USAGE_STATS (Akses Penggunaan) - EDULOCK ================
+> adb shell appops get com.sekolah.edulock GET_USAGE_STATS
+GET_USAGE_STATS: allow
+
+================ STEP 8b :  ================
+> adb shell appops get com.satupintu.mobile.siswa GET_USAGE_STATS
+GET_USAGE_STATS: allow
+
+================ STEP 9 : LAUNCH EDULOCK via Monkey (buka app) agar SetupActivity dijalankan ================
+> adb shell monkey -p com.sekolah.edulock -c android.intent.category.LAUNCHER 1
+  bash arg: -p
+  bash arg: com.sekolah.edulock
+  bash arg: -c
+  bash arg: android.intent.category.LAUNCHER
+  bash arg: 1
+args: [-p, com.sekolah.edulock, -c, android.intent.category.LAUNCHER, 1]
+ arg: "-p"
+ arg: "com.sekolah.edulock"
+ arg: "-c"
+ arg: "android.intent.category.LAUNCHER"
+ arg: "1"
+data="com.sekolah.edulock"
+data="android.intent.category.LAUNCHER"
+// Monkey Version Informations:  
+// Build Label: realme/RMX3235/RED8FA:11/RP1A.201005.001/1709693423086:user/release-keys
+// Build Time: 1715257816000
+// Build Type: user
+// Build Tags: release-keys
+// Build Debugable: false
+// Build Changelist: 538
+// Monkey Start Time : 154552511; Monkey Start Calendar Time : 2026-08-07 09:26:27.749 
+** New tombstone found: /data/tombstones/tombstone_00, size: 88550
+** New tombstone found: /data/tombstones/tombstone_01, size: 39304
+** New tombstone found: /data/tombstones/tombstone_02, size: 88159
+** New tombstone found: /data/tombstones/tombstone_03, size: 39304
+** New tombstone found: /data/tombstones/tombstone_04, size: 88484
+** New tombstone found: /data/tombstones/tombstone_05, size: 39304
+** New tombstone found: /data/tombstones/tombstone_06, size: 88571
+** New tombstone found: /data/tombstones/tombstone_07, size: 45227
+** New tombstone found: /data/tombstones/tombstone_08, size: 46371
+** New tombstone found: /data/tombstones/tombstone_09, size: 81797
+** New tombstone found: /data/tombstones/tombstone_10, size: 39304
+** New tombstone found: /data/tombstones/tombstone_11, size: 88225
+** New tombstone found: /data/tombstones/tombstone_12, size: 39304
+** New tombstone found: /data/tombstones/tombstone_13, size: 88136
+** New tombstone found: /data/tombstones/tombstone_14, size: 39304
+** New tombstone found: /data/tombstones/tombstone_15, size: 81653
+** New tombstone found: /data/tombstones/tombstone_16, size: 88136
+** New tombstone found: /data/tombstones/tombstone_17, size: 39304
+** New tombstone found: /data/tombstones/tombstone_18, size: 88527
+** New tombstone found: /data/tombstones/tombstone_19, size: 39304
+** New tombstone found: /data/tombstones/tombstone_20, size: 88408
+** New tombstone found: /data/tombstones/tombstone_21, size: 154968
+** New tombstone found: /data/tombstones/tombstone_22, size: 88527
+** New tombstone found: /data/tombstones/tombstone_23, size: 88550
+** New tombstone found: /data/tombstones/tombstone_24, size: 84664
+** New tombstone found: /data/tombstones/tombstone_25, size: 45227
+** New tombstone found: /data/tombstones/tombstone_26, size: 53235
+** New tombstone found: /data/tombstones/tombstone_27, size: 88159
+** New tombstone found: /data/tombstones/tombstone_28, size: 39304
+** New tombstone found: /data/tombstones/tombstone_29, size: 88136
+** New tombstone found: /data/tombstones/tombstone_30, size: 88550
+** New tombstone found: /data/tombstones/tombstone_31, size: 39304
+// First NativeCrash Time : 154584589; First NativeCrash Calendar Time : 2026-08-07 09:26:59.848 
+Events injected: 1
+## Network stats: elapsed time=32122ms (0ms mobile, 0ms wifi, 32122ms not connected)
+
+================ STEP 10 : LIST RECENT ACTIVITY (terakhir dijalankan) ================
+> adb shell dumpsys activity activities | findstr /i ResumedActivity
+adb.exe : /system/bin/sh: findstr: inaccessible or not found
+At D:\Dashboard Portal\scripts\adb-final-verify-narzo.ps1:16 char:11
++     $o = (& $adb ($cmd -split " ") 2>&1) | Out-String
++           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (/system/bin/sh:...le or not found 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Failed to write while dumping service activity: Broken pipe
+

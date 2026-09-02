@@ -61,7 +61,7 @@ Tidak ada `src/student` dan `src/admin` terpisah saat ini. Perbedaan perilaku di
 - `isMinifyEnabled = true`
 - `isShrinkResources = true`
 - Nama file output release sudah diatur otomatis dengan format `EduLock-<variant>.apk`
-- Ship 1.3.22 (48) Final terkini = rebuild **2026-08-26 19:47 WIB** (CRITICAL SECURITY PATCH celah uninstall activation page + fix tombol Izin Latar Belakang 3 lapis fallback battery optimization). Link `/e` belum otomatis ikut sampai `npm run sync:apk:edulock` + push. Tetap Final only / distribusi manual internal QA sesuai instruksi user "versi ini belum saya rilis untuk umum".
+- Ship 1.3.22 (48) Final terkini = rebuild **2026-08-28 18:51 WIB**. Build ini tetap memakai versi `1.3.22 (48)` dan sekarang menjadi acuan final/public lokal. Selain patch keamanan `1.3.22` sebelumnya, build kerja terbaru juga membawa fitur **Temukan Perangkat** (alarm keras + ACK status ke admin), fallback audio 2 lapis, dan hardening enforcement offline + Accessibility recovery. Source tutorial `/edulock/install` sudah dirapikan lagi dan dipush lewat commit `329ea6c6`, tetapi route live masih perlu menunggu rollout App Hosting.
 
 ## Folder Distribusi
 Rumah file distribusi kanonik:
@@ -85,11 +85,15 @@ Handoff lapangan (troubleshooting admin/guru IT) — salinan MD juga di folder i
 - URL fallback tutorial instalasi: `https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/edulock/install`
 - Alias pendek `/e` dipakai agar link browser siswa lebih ringkas saat belum ada custom domain.
 - Jika rollout App Hosting belum selesai, route live bisa sementara belum aktif walau source, build, commit, dan push sudah selesai.
-- Unduh APK di tutorial live sudah dipulihkan (`3c9b1413` + ship `24e3ffa6`); App Hosting standalone wajib mengemas ulang isi `public/apk`.
-- **Per 2026-08-26 19:47 WIB:** file Final = `1.3.22-48` (SHA `1E9C87FFBB19B5CBB2432C3A1E1A9280639CF61BDBE921C4CA25689BCD03E42D`, 3.925.320 bytes). Isi perbaikan 2 item utama:
-  1. **CRITICAL SECURITY PATCH Anti-Uninstall:** celah uninstall tanpa kode via halaman Device Admin Activation tombol "Uninstal aplikasi" (native Android typo 1 huruf L — lolos keyword detector + activation page post-Setup tidak masuk dangerousPage). Fix: 27 keyword uninstall diperluas + isActivationPageDangerous safety-net + cross-check hasUninstall.
-  2. **Fix tombol Izin Latar Belakang:** permission manifest + 3 lapis fallback Intent (direct popup → daftar Ignore Settings → App Details) untuk vendor ROM China.
-  Tutorial live `/e` **belum** diarahkan ke rebuild ini sampai `npm run sync:apk:edulock` + push. Tetap Final only internal QA.
+- Unduh APK di tutorial live pernah dipulihkan pada sesi sebelumnya, tetapi source `/edulock/install` sempat kembali menampilkan fallback lama. Per 2026-08-30 malam, source tutorial sudah dirapikan lagi dan dipush lewat commit `329ea6c6`; App Hosting standalone tetap wajib menuntaskan rollout sebelum route live ikut berubah.
+- **Per 2026-08-31:** file Final/public lokal aktif = `1.3.22-48` (hash `707E64BB56356E22BE124C3B865DA2860D7BC94D600A1CC6457C8BED1EDD...`, patch IFP Smart TV). Isi perbaikan aktif yang dibawa build ini (di atas build 2026-08-28):
+  1. **Patch Kompatibilitas IFP Smart TV — Fix deteksi GPS tanpa GPS hardware**: Logika `isGpsEnabled()` diubah dari AND (`GPS_PROVIDER wajib ON`) menjadi OR (`GPS_PROVIDER atau NETWORK_PROVIDER ON`). Perangkat Smart TV/IFP yang tidak punya chip GPS satellite namun aktifkan Lokasi via Wi-Fi (NETWORK_PROVIDER) sekarang dianggap lokasi AKTIF, tidak lagi dipaksa memunculkan overlay "nyalakan GPS" terus-menerus. Deklarasi hardware GPS di AndroidManifest juga dijadikan `required="false"` agar instalasi tidak diblokir Play Store/PackageManager. Side benefit: HP vendor China yang nonaktifkan GPS satellite hemat baterai juga tidak lagi dipusingkan overlay GPS.
+
+- **Per 2026-08-28 18:51 WIB (superseded):** file Final/public lokal aktif = `1.3.22-48` (SHA `F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34`). Isi perbaikan aktif yang sudah dibawa build ini:
+  1. **Patch keamanan 1.3.22** tetap ikut: celah uninstall tanpa kode via halaman Device Admin Activation + fallback tombol Izin Latar Belakang.
+  2. **Temukan Perangkat**: APK EduLock siswa sekarang bisa menerima command admin untuk **membunyikan alarm keras**, lalu mengirim ACK status lebih rinci (`ALARM_STARTED`, `ALARM_STARTED_FALLBACK_MUSIC`, `ALARM_STARTED_VIBRATION_ONLY`, `FAILED_SILENT`, `ALARM_FINISHED`) ke panel monitoring web admin.
+  3. **Hardening enforcement**: kasus internet mati total > 60 detik dan `Accessibility OFF` yang diabaikan sudah lulus uji HP fisik pada build final terbaru.
+  Tutorial `/e` dan `/edulock/install` di source sudah diarahkan ke file versioned `EduLock-1.3.22-48.apk`, tetapi status live tetap mengikuti rollout App Hosting terakhir.
 
 ## Perintah Build yang Paling Sering Dipakai
 
