@@ -20,6 +20,7 @@ object GpsEnableOverlay {
         if (PermissionManager(context).isPermissionActive()) return false
         if (prefs.isUninstallBypassActive()) return false
         if (prefs.isEmergencyUnlocked) return false
+        if (!SchoolScheduleManager(prefs).isSchoolTime()) return false
         return !LocationMonitor(context, prefs).isGpsEnabled()
     }
 

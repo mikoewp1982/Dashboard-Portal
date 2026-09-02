@@ -1645,6 +1645,7 @@ class MonitoringService : Service() {
 
     private fun enforceGpsOnWhenEduLockOpen() {
         if (!prefsManager.isUiForeground) return
+        if (!scheduleManager.isSchoolTime()) return // Bebaskan GPS saat di rumah
         if (!shouldShowGpsEnableOverlay()) return
         showGpsEnableOverlayOnly()
     }
