@@ -8,6 +8,10 @@ Catatan:
 
 ## [Unreleased]
 
+- Fixed: **v1.3.25 (51) rebuild 2026-09-02 — Fix Celah Bypass Internet Kuota Sosmed**:
+  1. Merombak `OfflineMonitor.kt` dengan menambah validasi koneksi via `NetworkCapabilities.NET_CAPABILITY_VALIDATED` dan listener Firebase `.info/connected` dari `MonitoringService.kt`. EduLock sekarang bisa membedakan internet utuh vs internet "palsu" (misal paket data hanya untuk TikTok/medsos).
+  2. Fix kritis di `FirebaseReporter.kt`: `ensureMasterSwitchListener` sekarang mengupdate state lokal `prefsManager.isProtectionActive` alih-alih hanya mengirim ACK kosong.
+  3. Deploy APK `EduLock-1.3.25-51.apk` ke web live portal `/edulock/install` dan `/e`.
 - Fixed: **v1.3.24 (50) rebuild 2026-09-02 — Audit & Perbaikan Total Force Update Overlay (Native Activity + Bypass Browser & Installer)**:
   1. Menghapus floating window programmatic overlay mentah di `MonitoringService.kt` yang sebelumnya mencegat touch event (`root.setOnTouchListener { _, _ -> true }`) sehingga tombol *"DOWNLOAD UPDATE"* dan *"TUTUP APLIKASI"* di HP siswa tidak bisa diklik sama sekali.
   2. Mengalihkan antarmuka force update 100% ke `ForceUpdateActivity.kt` native yang responsif dan mendukung klik normal.

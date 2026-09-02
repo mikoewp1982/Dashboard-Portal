@@ -6,7 +6,23 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-09-02 07:45 (Release EduLock v1.3.24 / 50 — Audit & Perbaikan Total Force Update Overlay)
+Update terakhir: 2026-09-02 09:30 (Release EduLock v1.3.25 / 51 — Fix Celah Bypass Internet Kuota Sosmed)
+
+## ✅ [BUGFIX & UX IMPROVEMENT EDULOCK SISWA] EduLock v1.3.25 (51) Release (2026-09-02 09:30)
+
+- [x] **Fix Celah Bypass Internet Kuota Sosmed**:
+  - [x] Merombak `OfflineMonitor.isInternetAvailable()` menjadi `isRealInternetAvailable()` dengan menambahkan deteksi `NetworkCapabilities.NET_CAPABILITY_VALIDATED` agar HP membuktikan koneksi bisa mencapai internet publik, bukan cuma intranet provider.
+  - [x] Menambahkan listener `FirebaseDatabase.getInstance().getReference(".info/connected")` di `MonitoringService.kt` dan menghubungkannya dengan state `OfflineMonitor`. Jika internet ada tapi Firebase tak bisa dihubungi (karena kuota umum habis), EduLock kini men-trigger lockdown offline.
+- [x] **Fix Kritis Master Switch Sinkronisasi Lokal**:
+  - [x] Memperbaiki `ensureMasterSwitchListener` di `FirebaseReporter.kt` yang sebelumnya hanya mengirim ACK command ke server namun tidak meng-update `prefsManager.isProtectionActive` secara lokal, sehingga state perlindungan HP tidak sinkron dengan server.
+- [x] **Rebuild Release APK**:
+  - [x] Version bumped: `versionCode = 51`, `versionName = "1.3.25"`.
+  - [x] Build `./gradlew :app:assembleStudentRelease` sukses (size ~3.75 MB, SHA256 `024E1DEA566A1E41F3207E01B9B4047349F2C80E7ECC29DBBA32B5440A33102D`).
+  - [x] Disalin ke `Apk Release/Final/EduLock-studentRelease.apk`, `Apk Release/Final/EduLock-1.3.25-51.apk`, dan `Apk Release/Final_V2/EduLock-1.3.25-51.apk`.
+- [x] **Deploy Live Web Portal (`/edulock/install` & `/e`)**:
+  - [x] Disalin ke `web/public/apk/EduLock-studentRelease.apk`.
+  - [x] Manifest `apk-manifest.json` diperbarui.
+  - [x] Di-push ke GitHub untuk auto-deploy App Hosting.
 
 ## ✅ [BUGFIX & UX IMPROVEMENT EDULOCK SISWA] EduLock v1.3.24 (50) Release (2026-09-02 07:45)
 
