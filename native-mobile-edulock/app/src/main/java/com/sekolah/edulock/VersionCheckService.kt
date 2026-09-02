@@ -9,6 +9,7 @@ import com.google.firebase.database.ValueEventListener
  * RTDB path: app_settings/android
  *  - min_version_code_edulock
  *  - update_message (atau update_message_edulock)
+ *  - download_url_edulock (atau download_url)
  *
  * Fail-open: error jaringan / node kosong = tidak mengunci.
  */
@@ -16,7 +17,8 @@ class VersionCheckService(private val context: android.content.Context) {
 
     data class VersionPolicy(
         val updateRequired: Boolean,
-        val message: String?
+        val message: String?,
+        val downloadUrl: String? = DEFAULT_EDULOCK_DOWNLOAD_URL
     )
 
     private val db = SchoolServiceGuard.database(context)
@@ -29,7 +31,7 @@ class VersionCheckService(private val context: android.content.Context) {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                onResult(VersionPolicy(updateRequired = false, message = null))
+                onResult(VersionPolicy(updateRequired = false, message = null, downloadUrl = DEFAULT_EDULOCK_DOWNLOAD_URL))
             }
         })
     }
@@ -62,7 +64,7 @@ class VersionCheckService(private val context: android.content.Context) {
 
     private fun parsePolicy(snapshot: DataSnapshot, currentVersionCode: Int): VersionPolicy {
         if (!snapshot.exists()) {
-            return VersionPolicy(updateRequired = false, message = null)
+            return VersionPolicy(updateRequired = false, message = null, downloadUrl = DEFAULT_EDULOCK_DOWNLOAD_URL)
         }
 
         val minVersion = readFlexibleInt(snapshot.child("min_version_code_edulock"), 0)
@@ -70,8 +72,16 @@ class VersionCheckService(private val context: android.content.Context) {
             ?.takeIf { it.isNotBlank() }
             ?: snapshot.child("update_message").getValue(String::class.java)
 
+        val downloadUrl = snapshot.child("download_url_edulock").getValue(String::class.java)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: snapshot.child("download_url").getValue(String::class.java)
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+            ?: DEFAULT_EDULOCK_DOWNLOAD_URL
+
         val required = minVersion > 0 && currentVersionCode < minVersion
-        return VersionPolicy(updateRequired = required, message = message)
+        return VersionPolicy(updateRequired = required, message = message, downloadUrl = downloadUrl)
     }
 
     private fun readFlexibleInt(snapshot: DataSnapshot, defaultValue: Int): Int {
@@ -90,5 +100,9 @@ class VersionCheckService(private val context: android.content.Context) {
         } catch (_: Exception) {
         }
         return defaultValue
+    }
+
+    companion object {
+        const val DEFAULT_EDULOCK_DOWNLOAD_URL = "https://gerbang-aplikasi-sekolah--kompas-5f0b4.asia-southeast1.hosted.app/edulock/install"
     }
 }

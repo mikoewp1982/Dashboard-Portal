@@ -480,13 +480,24 @@
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="8dp"
-            android:layout_marginBottom="16dp"
             android:text="BUKA APLIKASI SEKOLAH"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:background="@drawable/bg_btn_secondary"
             android:visibility="visible" />
+
+        <!-- Versi APK terinstal (bawah sendiri) -->
+        <TextView
+            android:id="@+id/tvAppVersion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="12dp"
+            android:gravity="center"
+            android:text="Versi —"
+            android:textSize="12sp"
+            android:textColor="#8899AA" />
 
     </LinearLayout>
 </ScrollView>

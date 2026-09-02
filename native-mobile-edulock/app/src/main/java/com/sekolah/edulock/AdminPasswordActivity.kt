@@ -34,6 +34,12 @@ class AdminPasswordActivity : AppCompatActivity() {
         // Prevent back button
         supportActionBar?.hide()
 
+        window.addFlags(
+            android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+            android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+            android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+        )
+
         // Initialize
         prefsManager = PreferencesManager(this)
         dbHelper = DatabaseHelper(this)
@@ -219,5 +225,17 @@ class AdminPasswordActivity : AppCompatActivity() {
     override fun onBackPressed() {
         // Disable back button
         Toast.makeText(this, "Klik tombol Batal untuk keluar", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        // User menekan tombol Home untuk mencoba bypass layar ini
+        Toast.makeText(this, "⚠️ Verifikasi dibatalkan", Toast.LENGTH_SHORT).show()
+        try {
+            if (devicePolicyManager.isAdminActive(compName)) {
+                devicePolicyManager.lockNow()
+            }
+        } catch (_: Exception) {}
+        finishAndRemoveTask()
     }
 }

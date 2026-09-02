@@ -28,6 +28,10 @@ class FirebaseReporter(private val context: Context, private val prefsManager: P
                 val commandId = snapshot.child("commandId").getValue(String::class.java).orEmpty()
                 val requestedState = snapshot.child("requestedState").getValue(Boolean::class.java) ?: false
                 if (commandId.isNotBlank()) {
+                    // FIX KRITIS: Setel status proteksi lokal agar HP langsung sinkron
+                    // Sebelumnya hanya mengirim ACK tanpa mengupdate pref lokal!
+                    prefsManager.isProtectionActive = requestedState
+
                     val ackData = hashMapOf<String, Any?>(
                         "lastMasterSwitchCommandId" to commandId,
                         "lastMasterSwitchAppliedState" to requestedState,
@@ -35,6 +39,23 @@ class FirebaseReporter(private val context: Context, private val prefsManager: P
                         "lastMasterSwitchAckSource" to "runtime"
                     )
                     activeDevicesRef.child(schoolId).child(deviceId).updateChildren(ackData)
+
+                    // Kirim intent ke MonitoringService agar segera enforce/release proteksi
+                    try {
+                        if (prefsManager.isSetupCompleted) {
+                            val intent = android.content.Intent(context, MonitoringService::class.java).apply {
+                                putExtra(MonitoringService.EXTRA_REQUESTED_PROTECTION, requestedState)
+                                putExtra(MonitoringService.EXTRA_COMMAND_ID, commandId)
+                            }
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                context.startForegroundService(intent)
+                            } else {
+                                context.startService(intent)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w("FirebaseReporter", "Gagal mengirim intent ke MonitoringService: ${e.message}")
+                    }
                 }
             }
             override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
@@ -56,7 +77,9 @@ class FirebaseReporter(private val context: Context, private val prefsManager: P
         complianceStatus: String,
         protectionHealth: String,
         lastProtectionCheckAt: Long,
-        appVersionCode: Int
+        appVersionCode: Int,
+        isSetupCompleted: Boolean = prefsManager.isSetupCompleted,
+        forceFlush: Boolean = false
     ) {
         val nisn = prefsManager.nisn
         val name = prefsManager.studentName
@@ -97,15 +120,26 @@ class FirebaseReporter(private val context: Context, private val prefsManager: P
             "complianceStatus" to complianceStatus,
             "protectionHealth" to protectionHealth,
             "lastProtectionCheckAt" to lastProtectionCheckAt,
-            "appVersionCode" to appVersionCode
+            "appVersionCode" to appVersionCode,
+            "isSetupCompleted" to isSetupCompleted
         )
 
         getBatteryLevel()?.let { currentData["battery"] = it }
+
+        try {
+            val fcmPrefs = context.getSharedPreferences("EduLockFcm", Context.MODE_PRIVATE)
+            val token = fcmPrefs.getString("last_fcm_token", "").orEmpty()
+            if (token.isNotBlank()) {
+                currentData["fcmToken"] = token
+            }
+        } catch (_: Exception) {
+        }
 
         // THROTTLING CHECK:
         // Kirim update HANYA jika:
         // 1. Sudah waktunya heartbeat (> 5 menit) -> WAJIB KIRIM
         // 2. ATAU (Data Berubah DAN Sudah lewat jeda minimum 30 detik)
+        // 3. ATAU forceFlush = true (misal: setelah self-healing setup_completed)
         
         val currentTime = System.currentTimeMillis()
         val timeSinceLastReport = currentTime - lastReportTime
@@ -114,7 +148,7 @@ class FirebaseReporter(private val context: Context, private val prefsManager: P
         val isDataChanged = hasDataChanged(currentData)
         val isMinIntervalPassed = timeSinceLastReport > MIN_UPDATE_INTERVAL
 
-        if (!isHeartbeatDue && !(isDataChanged && isMinIntervalPassed)) {
+        if (!forceFlush && !isHeartbeatDue && !(isDataChanged && isMinIntervalPassed)) {
             // Skip update untuk menghemat kuota & koneksi Firebase
             return
         }
@@ -141,7 +175,8 @@ class FirebaseReporter(private val context: Context, private val prefsManager: P
             "latitude", "longitude", "isInsideZone", "trustScore", 
             "isGpsActive", "isInternetActive", "statusMessage", "deviceStatus",
             "isAccessibilityEnabled", "isDeviceAdminEnabled", "isProtectionActive",
-            "isPermissionActive", "complianceStatus", "protectionHealth", "battery"
+            "isPermissionActive", "complianceStatus", "protectionHealth", "battery",
+            "isSetupCompleted"
         )
         
         for (key in keysToCheck) {
@@ -168,6 +203,33 @@ class FirebaseReporter(private val context: Context, private val prefsManager: P
         )
         
         deviceNode.updateChildren(offlineData)
+    }
+
+    fun acknowledgeFindDeviceCommand(
+        commandId: String,
+        status: String,
+        alarmUntil: Long? = null,
+        ackSource: String = "runtime",
+        usedMusicFallback: Boolean? = null,
+        usedVibrationFallback: Boolean? = null,
+        streamUsed: String? = null
+    ) {
+        val schoolId = prefsManager.schoolId.trim().lowercase()
+        val deviceId = prefsManager.deviceId
+        if (commandId.isBlank() || schoolId.isBlank() || deviceId.isBlank()) return
+
+        val data = hashMapOf<String, Any?>(
+            "lastFindDeviceCommandId" to commandId,
+            "lastFindDeviceAckAt" to ServerValue.TIMESTAMP,
+            "lastFindDeviceAckSource" to ackSource,
+            "lastFindDeviceStatus" to status
+        )
+
+        data["lastFindDeviceAlarmUntil"] = alarmUntil
+        if (usedMusicFallback != null) data["lastFindDeviceUsedMusicFallback"] = usedMusicFallback
+        if (usedVibrationFallback != null) data["lastFindDeviceUsedVibrationFallback"] = usedVibrationFallback
+        if (streamUsed != null) data["lastFindDeviceStreamUsed"] = streamUsed
+        activeDevicesRef.child(schoolId).child(deviceId).updateChildren(data)
     }
 
     private fun getBatteryLevel(): Int? {

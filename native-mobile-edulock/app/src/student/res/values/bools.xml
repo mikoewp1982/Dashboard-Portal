@@ -1,0 +1,4 @@
+<resources>
+    <bool name="sync_setup_completed_write">true</bool>
+    <bool name="preserve_setup_completed_on_registration_reset">true</bool>
+</resources>

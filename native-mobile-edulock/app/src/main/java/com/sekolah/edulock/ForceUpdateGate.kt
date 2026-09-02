@@ -16,14 +16,15 @@ class ForceUpdateGate(
     private var versionListener: ValueEventListener? = null
 
     fun start() {
-        launchIfRequired(prefsManager.forceUpdateMessage)
+        launchIfRequired(prefsManager.forceUpdateMessage, prefsManager.forceUpdateDownloadUrl)
 
         versionListener = versionCheckService.startListening(BuildConfig.VERSION_CODE) { policy ->
             prefsManager.isForceUpdateRequired = policy.updateRequired
             prefsManager.forceUpdateMessage = policy.message.orEmpty()
+            policy.downloadUrl?.let { prefsManager.forceUpdateDownloadUrl = it }
 
             if (policy.updateRequired) {
-                launchIfRequired(policy.message)
+                launchIfRequired(policy.message, policy.downloadUrl)
             }
         }
     }
@@ -33,13 +34,14 @@ class ForceUpdateGate(
         versionListener = null
     }
 
-    private fun launchIfRequired(message: String?) {
+    private fun launchIfRequired(message: String?, downloadUrl: String?) {
         if (!prefsManager.isForceUpdateRequired) return
         if (activity is ForceUpdateActivity) return
 
         val intent = Intent(activity, ForceUpdateActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             putExtra(ForceUpdateActivity.EXTRA_MESSAGE, message)
+            putExtra(ForceUpdateActivity.EXTRA_DOWNLOAD_URL, downloadUrl ?: prefsManager.forceUpdateDownloadUrl)
         }
         activity.startActivity(intent)
     }

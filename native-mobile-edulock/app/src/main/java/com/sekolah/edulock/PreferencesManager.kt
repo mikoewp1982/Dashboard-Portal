@@ -70,6 +70,7 @@ class PreferencesManager(context: Context) {
         private const val KEY_LOCKTASK_LAST_ATTEMPT_AT = "locktask_last_attempt_at"
         private const val KEY_FORCE_UPDATE_REQUIRED = "force_update_required"
         private const val KEY_FORCE_UPDATE_MESSAGE = "force_update_message"
+        private const val KEY_FORCE_UPDATE_DOWNLOAD_URL = "force_update_download_url"
         private const val KEY_DAILY_ATTENDANCE_DATE_KEY = "daily_attendance_date_key"
         private const val KEY_DAILY_ATTENDANCE_STATUS = "daily_attendance_status"
         private const val KEY_LAST_GEOFENCE_TRANSITION = "last_geofence_transition"
@@ -77,6 +78,24 @@ class PreferencesManager(context: Context) {
         private const val KEY_LAST_NEAR_SCHOOL_AT = "last_near_school_at"
         private const val KEY_IS_PET_DEAD = "is_pet_dead"
         private const val KEY_LAST_PET_DEAD_ACK_AT = "last_pet_dead_ack_at"
+        private const val KEY_PET_DEAD_REMINDER_COUNT = "pet_dead_reminder_count"
+        private const val KEY_PET_DEAD_REMINDER_FIRST_MS = "pet_dead_reminder_first_ms"
+        private const val KEY_PET_DEAD_REMINDER_SECOND_MS = "pet_dead_reminder_second_ms"
+        private const val KEY_PET_DEAD_REMINDER_REPEAT_MS = "pet_dead_reminder_repeat_ms"
+        private const val KEY_SCHOOL_SERVICE_EXIT_AT = "school_service_exit_at"
+
+        // ===== Recovery Target-Specific Grace Keys (PR Bug: Settings Recovery Family) =====
+        // Targets: accessibility, overlay, battery, location_permission, gps, device_admin
+        // Tujuannya: setiap izin punya state recovery SENDIRI,
+        // sehingga recovery GPS tidak meng-clear recovery Accessibility (dan sebaliknya).
+        const val RECOVERY_TARGET_ACCESSIBILITY = "accessibility"
+        const val RECOVERY_TARGET_OVERLAY = "overlay"
+        const val RECOVERY_TARGET_BATTERY = "battery"
+        const val RECOVERY_TARGET_LOCATION_PERMISSION = "location_permission"
+        const val RECOVERY_TARGET_GPS = "gps"
+        const val RECOVERY_TARGET_DEVICE_ADMIN = "device_admin"
+        private const val KEY_PREFIX_RECOVERY_ACTIVE = "recovery_active_"
+        private const val KEY_PREFIX_RECOVERY_GRACE_UNTIL = "recovery_grace_until_"
 
         /** Default TTL for "last fix near school" presence evidence (covers a school day). */
         const val NEAR_SCHOOL_PRESENCE_FRESHNESS_MS = 12 * 60 * 60 * 1000L
@@ -90,6 +109,11 @@ class PreferencesManager(context: Context) {
         get() = prefs.getString(KEY_FORCE_UPDATE_MESSAGE, "") ?: ""
         set(value) = prefs.edit().putString(KEY_FORCE_UPDATE_MESSAGE, value).apply()
 
+    var forceUpdateDownloadUrl: String
+        get() = prefs.getString(KEY_FORCE_UPDATE_DOWNLOAD_URL, VersionCheckService.DEFAULT_EDULOCK_DOWNLOAD_URL)
+            ?: VersionCheckService.DEFAULT_EDULOCK_DOWNLOAD_URL
+        set(value) = prefs.edit().putString(KEY_FORCE_UPDATE_DOWNLOAD_URL, value).apply()
+
     var isPetDead: Boolean
         get() = prefs.getBoolean(KEY_IS_PET_DEAD, false)
         set(value) = prefs.edit().putBoolean(KEY_IS_PET_DEAD, value).apply()
@@ -97,6 +121,22 @@ class PreferencesManager(context: Context) {
     var lastPetDeadAckAt: Long
         get() = prefs.getLong(KEY_LAST_PET_DEAD_ACK_AT, 0L)
         set(value) = prefs.edit().putLong(KEY_LAST_PET_DEAD_ACK_AT, value).apply()
+
+    var petDeadReminderCount: Int
+        get() = prefs.getInt(KEY_PET_DEAD_REMINDER_COUNT, 0)
+        set(value) = prefs.edit().putInt(KEY_PET_DEAD_REMINDER_COUNT, value.coerceAtLeast(0)).apply()
+
+    var petDeadReminderFirstMs: Long
+        get() = prefs.getLong(KEY_PET_DEAD_REMINDER_FIRST_MS, 30 * 60 * 1000L)
+        set(value) = prefs.edit().putLong(KEY_PET_DEAD_REMINDER_FIRST_MS, value.coerceAtLeast(60_000L)).apply()
+
+    var petDeadReminderSecondMs: Long
+        get() = prefs.getLong(KEY_PET_DEAD_REMINDER_SECOND_MS, 20 * 60 * 1000L)
+        set(value) = prefs.edit().putLong(KEY_PET_DEAD_REMINDER_SECOND_MS, value.coerceAtLeast(60_000L)).apply()
+
+    var petDeadReminderRepeatMs: Long
+        get() = prefs.getLong(KEY_PET_DEAD_REMINDER_REPEAT_MS, 10 * 60 * 1000L)
+        set(value) = prefs.edit().putLong(KEY_PET_DEAD_REMINDER_REPEAT_MS, value.coerceAtLeast(60_000L)).apply()
 
     var lockTaskCooldownUntil: Long
         get() = prefs.getLong(KEY_LOCKTASK_COOLDOWN_UNTIL, 0L)
@@ -203,6 +243,10 @@ class PreferencesManager(context: Context) {
     var isEmergencyUnlocked: Boolean
         get() = prefs.getBoolean("is_emergency_unlocked", false)
         set(value) = prefs.edit().putBoolean("is_emergency_unlocked", value).apply()
+
+    var emergencyUnlockTimestamp: Long
+        get() = prefs.getLong("emergency_unlock_timestamp", 0L)
+        set(value) = prefs.edit().putLong("emergency_unlock_timestamp", value).apply()
 
     var isHolidayMode: Boolean
         get() = prefs.getBoolean(KEY_IS_HOLIDAY_MODE, false)
@@ -381,6 +425,17 @@ class PreferencesManager(context: Context) {
         prefs.edit().clear().apply()
     }
 
+    fun claimSchoolServiceExit(now: Long = System.currentTimeMillis(), cooldownMs: Long = 15_000L): Boolean {
+        val last = prefs.getLong(KEY_SCHOOL_SERVICE_EXIT_AT, 0L)
+        if (last > 0L && now - last < cooldownMs) return false
+        prefs.edit().putLong(KEY_SCHOOL_SERVICE_EXIT_AT, now).apply()
+        return true
+    }
+
+    fun resetSchoolServiceExitClaim() {
+        prefs.edit().remove(KEY_SCHOOL_SERVICE_EXIT_AT).apply()
+    }
+
     // Save student registration
     fun saveStudentRegistration(
         studentId: Long,
@@ -409,5 +464,152 @@ class PreferencesManager(context: Context) {
             putString(KEY_STUDENT_REMOTE_KEY, remoteStudentKey.trim())
             putString(KEY_STUDENT_USERNAME, username.trim())
         }.apply()
+    }
+
+    // ============================================================
+    // Target-Specific Recovery Grace (Bug PR: Settings Recovery)
+    // ============================================================
+
+    private fun isValidRecoveryTarget(target: String): Boolean {
+        return when (target) {
+            RECOVERY_TARGET_ACCESSIBILITY,
+            RECOVERY_TARGET_OVERLAY,
+            RECOVERY_TARGET_BATTERY,
+            RECOVERY_TARGET_LOCATION_PERMISSION,
+            RECOVERY_TARGET_GPS,
+            RECOVERY_TARGET_DEVICE_ADMIN -> true
+            else -> false
+        }
+    }
+
+    /**
+     * Mulai recovery untuk target izin tertentu.
+     * Set state active + graceUntil (default 180 detik = 3 menit).
+     * Jangan lupa stopKioskMode sebelum panggil ini di UI.
+     */
+    fun startRecoveryForTarget(
+        target: String,
+        graceMs: Long = 180_000L,
+        now: Long = System.currentTimeMillis()
+    ) {
+        if (!isValidRecoveryTarget(target)) return
+        val grace = graceMs.coerceAtLeast(30_000L)
+        prefs.edit().apply {
+            putBoolean(KEY_PREFIX_RECOVERY_ACTIVE + target, true)
+            putLong(KEY_PREFIX_RECOVERY_GRACE_UNTIL + target, now + grace)
+        }.apply()
+        // Legacy global gate tetap di-set sebagai safety net (jangan overwrite lebih kecil)
+        val globalGrace = now + grace
+        if (globalGrace > settingsGraceUntil) {
+            settingsGraceUntil = globalGrace
+        }
+        isSettingsOpen = true
+    }
+
+    /** Clear recovery state untuk target tertentu (misal setelah izin berhasil diaktifkan). */
+    fun clearRecoveryForTarget(target: String) {
+        if (!isValidRecoveryTarget(target)) return
+        prefs.edit().apply {
+            remove(KEY_PREFIX_RECOVERY_ACTIVE + target)
+            remove(KEY_PREFIX_RECOVERY_GRACE_UNTIL + target)
+        }.apply()
+        // Jika sudah tidak ada recovery target aktif sama sekali, clear legacy global gate juga
+        if (!anyRecoveryTargetActive()) {
+            isSettingsOpen = false
+            if (settingsGraceUntil > 0L && System.currentTimeMillis() < settingsGraceUntil) {
+                // Biarkan legacy grace sampai habis untuk kompatibilitas, tapi jangan false positive kick
+            } else {
+                settingsGraceUntil = 0L
+            }
+        }
+    }
+
+    /** Cek apakah recovery untuk target ini MASIH AKTIF (belum lewat grace & flag active true). */
+    fun isRecoveryActiveForTarget(
+        target: String,
+        now: Long = System.currentTimeMillis()
+    ): Boolean {
+        if (!isValidRecoveryTarget(target)) return false
+        val active = prefs.getBoolean(KEY_PREFIX_RECOVERY_ACTIVE + target, false)
+        if (!active) return false
+        val graceUntil = prefs.getLong(KEY_PREFIX_RECOVERY_GRACE_UNTIL + target, 0L)
+        if (now > graceUntil) {
+            // Grace expired: auto-clean target ini
+            clearRecoveryForTarget(target)
+            return false
+        }
+        return true
+    }
+
+    /**
+     * Perpanjang grace untuk target recovery aktif.
+     * Dipanggil saat MonitoringService mendeteksi user masih di Settings package untuk target ini.
+     */
+    fun extendRecoveryGraceIfActive(
+        target: String,
+        additionalMs: Long = 60_000L,
+        now: Long = System.currentTimeMillis()
+    ): Boolean {
+        if (!isRecoveryActiveForTarget(target, now)) return false
+        val currentGrace = prefs.getLong(KEY_PREFIX_RECOVERY_GRACE_UNTIL + target, 0L)
+        val newGrace = (now + additionalMs).coerceAtLeast(currentGrace)
+        prefs.edit().putLong(KEY_PREFIX_RECOVERY_GRACE_UNTIL + target, newGrace).apply()
+        // Perpanjang juga legacy global
+        if (newGrace > settingsGraceUntil) {
+            settingsGraceUntil = newGrace
+        }
+        return true
+    }
+
+    /**
+     * Cek APA SAJA recovery target yang masih aktif.
+     * Ini GATE UTAMA untuk menunda relaunchEduLock/requestKiosk.
+     */
+    fun anyRecoveryTargetActive(now: Long = System.currentTimeMillis()): Boolean {
+        val targets = listOf(
+            RECOVERY_TARGET_ACCESSIBILITY,
+            RECOVERY_TARGET_OVERLAY,
+            RECOVERY_TARGET_BATTERY,
+            RECOVERY_TARGET_LOCATION_PERMISSION,
+            RECOVERY_TARGET_GPS,
+            RECOVERY_TARGET_DEVICE_ADMIN
+        )
+        // Juga cek legacy global grace sebagai safety net
+        val legacyActive = isSettingsOpen || now < settingsGraceUntil || now < deviceAdminRequestUntil
+        if (legacyActive) return true
+        return targets.any { isRecoveryActiveForTarget(it, now) }
+    }
+
+    /** Dapatkan daftar target recovery yang masih aktif (untuk logging/debug). */
+    fun getActiveRecoveryTargets(now: Long = System.currentTimeMillis()): List<String> {
+        val targets = listOf(
+            RECOVERY_TARGET_ACCESSIBILITY,
+            RECOVERY_TARGET_OVERLAY,
+            RECOVERY_TARGET_BATTERY,
+            RECOVERY_TARGET_LOCATION_PERMISSION,
+            RECOVERY_TARGET_GPS,
+            RECOVERY_TARGET_DEVICE_ADMIN
+        )
+        return targets.filter { isRecoveryActiveForTarget(it, now) }
+    }
+
+    /** Clear SEMUA recovery state (digunakan saat logout / uninstall mode ON). */
+    fun clearAllRecoveryTargets() {
+        val targets = listOf(
+            RECOVERY_TARGET_ACCESSIBILITY,
+            RECOVERY_TARGET_OVERLAY,
+            RECOVERY_TARGET_BATTERY,
+            RECOVERY_TARGET_LOCATION_PERMISSION,
+            RECOVERY_TARGET_GPS,
+            RECOVERY_TARGET_DEVICE_ADMIN
+        )
+        val edit = prefs.edit()
+        targets.forEach { t ->
+            edit.remove(KEY_PREFIX_RECOVERY_ACTIVE + t)
+            edit.remove(KEY_PREFIX_RECOVERY_GRACE_UNTIL + t)
+        }
+        edit.apply()
+        isSettingsOpen = false
+        settingsGraceUntil = 0L
     }
 }

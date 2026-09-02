@@ -1,6 +1,8 @@
 package com.sekolah.edulock
 
 import android.app.admin.DeviceAdminReceiver
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -31,10 +33,14 @@ class DeviceAdminReceiver : DeviceAdminReceiver() {
         logToDatabase(context, "DEVICE_ADMIN_DISABLED", "Device Admin dinonaktifkan")
 
         if (!prefsManager.isUninstallBypassActive()) {
-            val relaunchIntent = Intent(context, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
-            context.startActivity(relaunchIntent)
+            // Paksa buka MainActivity agar activateDeviceAdmin() terpanggil dari foreground
+            try {
+                prefsManager.deviceAdminRequestUntil = System.currentTimeMillis() + 60_000L
+                val relaunchIntent = Intent(context, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                }
+                context.startActivity(relaunchIntent)
+            } catch (_: Exception) { }
         }
     }
 
@@ -42,24 +48,16 @@ class DeviceAdminReceiver : DeviceAdminReceiver() {
         val prefsManager = PreferencesManager(context)
         if (prefsManager.isUninstallBypassActive()) return null
 
-        // Hindari menarik layar secara agresif dari halaman sistem agar flow tetap stabil.
-        // Jika user benar-benar menonaktifkan admin, onDisabled() akan membawa mereka kembali
-        // ke EduLock dan MainActivity akan menampilkan prompt Device Admin yang resmi.
+        // Log percobaan (AntiUninstallService Accessibility akan menendang keluar)
         logToDatabase(
             context,
             "DISABLE_ADMIN_ATTEMPTED",
-            "User mencoba menonaktifkan Device Admin"
+            "User mencoba menonaktifkan Device Admin — Accessibility service akan menendang keluar."
         )
 
-        return """
-            ⚠️ PERINGATAN KEAMANAN ⚠️
-            
-            Menonaktifkan EduLock Device Admin memerlukan PASSWORD ADMIN SEKOLAH.
-            
-            Hanya guru/admin yang memiliki password ini.
-            
-            Percobaan menonaktifkan tanpa izin akan dicatat sebagai PELANGGARAN.
-        """.trimIndent()
+        // TIDAK meluncurkan AdminPasswordActivity — overlay sudah dihapus.
+        // Penjagaan dilakukan oleh AntiUninstallService (tendang langsung via Accessibility).
+        return null
     }
 
     override fun onPasswordChanged(context: Context, intent: Intent) {

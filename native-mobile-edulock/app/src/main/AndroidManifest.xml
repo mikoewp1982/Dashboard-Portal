@@ -17,7 +17,10 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
@@ -29,6 +32,11 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    <!-- GPS/Lokasi - dibuat optional agar kompatibel dengan Smart TV/IFP tanpa GPS satellite hardware -->
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.location.network" android:required="false" />
 
     <!-- WAJIB UNTUK ANDROID 11+: Agar EduLock bisa mendeteksi aplikasi lain -->
     <queries>
@@ -178,7 +186,7 @@
             android:enabled="true"
             android:exported="false"
             android:stopWithTask="false"
-            android:foregroundServiceType="location" />
+            android:foregroundServiceType="location|dataSync" />
 
         <!-- FCM: wake HP saat admin ubah Master Switch / push perintah -->
         <service

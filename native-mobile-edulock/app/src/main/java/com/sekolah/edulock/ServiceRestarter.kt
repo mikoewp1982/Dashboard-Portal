@@ -9,10 +9,16 @@ import android.util.Log
 class ServiceRestarter : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("ServiceRestarter", "Restarting MonitoringService...")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(Intent(context, MonitoringService::class.java))
-        } else {
-            context.startService(Intent(context, MonitoringService::class.java))
+        val serviceIntent = Intent(context, MonitoringService::class.java).apply {
+            action = MonitoringService.ACTION_KEEPALIVE
+            setPackage(context.packageName)
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent)
+        } else {
+            context.startService(serviceIntent)
+        }
+        KeepAliveWorker.schedule(context)
+        FcmTokenRegistrar.refreshAndUpload(context)
     }
 }

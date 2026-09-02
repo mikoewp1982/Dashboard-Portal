@@ -17,7 +17,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AKSES DIBLOKIR!"
+            android:text="PET BUTUH PERHATIAN!"
             android:textColor="#FF0000"
             android:textSize="36sp"
             android:textStyle="bold"
@@ -30,7 +30,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Pet Anda telah mati karena pelanggaran kedisiplinan.\n\nSegera hubungi Admin atau Guru BK untuk menghidupkan kembali Pet Anda."
+            android:text="Sahabat Belajar pet Anda sedang tidak aktif (butuh direvive) akibat pelanggaran kedisiplinan.\n\nSegera hubungi Admin atau Guru BK untuk menghidupkan kembali pet Anda."
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -43,7 +43,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="PERINGATAN:\nJika dibiarkan, sistem akan mengambil alih dan menonaktifkan HP Anda sepenuhnya dalam 24 jam!"
+            android:text="CATATAN:\nJika tidak segera direvive, sistem akan terus mengingatkan Anda sampai pet kembali aktif."
             android:textColor="#FF5252"
             android:textSize="16sp"
             android:textStyle="bold"

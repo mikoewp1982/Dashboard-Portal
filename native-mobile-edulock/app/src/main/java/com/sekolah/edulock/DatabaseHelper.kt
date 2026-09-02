@@ -100,6 +100,17 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return db.insert(TABLE_STUDENTS, null, values)
     }
 
+    fun updateStudent(studentId: Long, nisn: String, name: String, studentClass: String): Boolean {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COL_NISN, nisn)
+            put(COL_NAME, name)
+            put(COL_CLASS, studentClass)
+            put(COL_REG_DATE, getCurrentDateTime())
+        }
+        return db.update(TABLE_STUDENTS, values, "$COL_ID = ?", arrayOf(studentId.toString())) > 0
+    }
+
     fun getStudentByNisn(nisn: String): Student? {
         val db = readableDatabase
         val cursor = db.query(

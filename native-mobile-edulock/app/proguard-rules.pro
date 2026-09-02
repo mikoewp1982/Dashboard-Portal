@@ -19,3 +19,8 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep Accessibility anti-uninstall service after R8
+-keep class com.sekolah.edulock.AntiUninstallService { *; }
+-keep class com.sekolah.edulock.EduLockMessagingService { *; }
+-keep class com.google.firebase.messaging.** { *; }

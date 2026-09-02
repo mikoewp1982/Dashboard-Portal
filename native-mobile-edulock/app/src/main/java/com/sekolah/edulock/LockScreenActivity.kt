@@ -32,13 +32,33 @@ class LockScreenActivity : AppCompatActivity() {
     
     private val dismissReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == "com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN") {
+            val action = intent?.action
+            if (action == "com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN") {
                 Toast.makeText(context, "Mode Bebas Aktif. Kunci dibuka.", Toast.LENGTH_LONG).show()
                 stopKioskMode()
                 finish()
+            } else if (action == Intent.ACTION_AIRPLANE_MODE_CHANGED) {
+                val isAirplaneOn = try {
+                    android.provider.Settings.Global.getInt(contentResolver, android.provider.Settings.Global.AIRPLANE_MODE_ON, 0) != 0
+                } catch (_: Exception) {
+                    false
+                }
+
+                if (!isAirplaneOn) {
+                    val currentMsg = tvMessage.text?.toString() ?: ""
+                    if (currentMsg.contains("MODE PESAWAT", ignoreCase = true)) {
+                        Toast.makeText(context, "Mode Pesawat dimatikan. Memeriksa kepatuhan...", Toast.LENGTH_SHORT).show()
+                        handler.postDelayed({
+                            stopKioskMode()
+                            finish()
+                        }, 800)
+                    }
+                }
             }
         }
     }
+
+    private lateinit var forceUpdateGate: ForceUpdateGate
 
     private var tapCount = 0
     private var lastTapTime = 0L
@@ -51,6 +71,7 @@ class LockScreenActivity : AppCompatActivity() {
         lockStateManager = LockStateManager.getInstance(this)
         lockEnforcer = LockEnforcer(this)
         permissionManager = PermissionManager(this)
+        forceUpdateGate = ForceUpdateGate(this)
 
         rootLockScreen = findViewById(R.id.rootLockScreen)
         tvMessage = findViewById(R.id.tvLockMessage)
@@ -133,6 +154,7 @@ class LockScreenActivity : AppCompatActivity() {
 
         // Register receiver
         val filter = android.content.IntentFilter("com.sekolah.edulock.ACTION_DISMISS_LOCKSCREEN")
+        filter.addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             registerReceiver(dismissReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
@@ -202,6 +224,7 @@ class LockScreenActivity : AppCompatActivity() {
                     prefsManager.isForcedLocation = true
                     prefsManager.isInsideSchoolZone = true
                     prefsManager.isEmergencyUnlocked = true // Mencegah relock oleh OfflineMonitor
+                    prefsManager.emergencyUnlockTimestamp = System.currentTimeMillis()
                     
                     stopKioskMode()
                     finish()
@@ -269,6 +292,7 @@ class LockScreenActivity : AppCompatActivity() {
                     prefsManager.isForcedLocation = true
                     prefsManager.isInsideSchoolZone = true
                     prefsManager.isEmergencyUnlocked = true
+                    prefsManager.emergencyUnlockTimestamp = System.currentTimeMillis()
 
                     stopKioskMode()
                     finish()
@@ -349,6 +373,13 @@ class LockScreenActivity : AppCompatActivity() {
             }
         } catch (_: Exception) {
         }
+
+        if (GpsEnableOverlay.isRequired(this)) {
+            stopKioskMode()
+            GpsEnableOverlay.show(this, atSchool = true)
+            finish()
+            return
+        }
         
         // UPDATE DYNAMIC BUTTON: Cek apakah Aplikasi Sekolah sudah terinstall
         val targetPackage = SchoolAppRegistry.STUDENT_GAS_PACKAGE
@@ -374,9 +405,11 @@ class LockScreenActivity : AppCompatActivity() {
         val holidayCheckRunnable = object : Runnable {
             override fun run() {
                 // Cek Holiday Mode ATAU Silent Mode (Protection Inactive)
-                if (prefsManager.isHolidayMode || !prefsManager.isProtectionActive) {
+                // TAPI jangan dismiss jika offline/airplane fail-safe aktif
+                if (!shouldStayLocked()) {
                     val msg = if (prefsManager.isHolidayMode) "Mode Bebas Terdeteksi (Auto)" else "Mode Silent Aktif (Auto)"
                     Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT).show()
+                    stopKioskMode()
                     finish()
                 } else {
                     handler.postDelayed(this, 2000)
@@ -388,9 +421,7 @@ class LockScreenActivity : AppCompatActivity() {
         if (!shouldStayLocked()) {
             val msg = if (prefsManager.isHolidayMode) "Mode Bebas sedang aktif." else "Mode Silent sedang aktif."
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-            if (!prefsManager.isProtectionActive) {
-                stopKioskMode()
-            }
+            stopKioskMode()
             finish()
             return
         }
@@ -424,14 +455,13 @@ class LockScreenActivity : AppCompatActivity() {
     private fun startKioskMode() {
         if (isKioskModeActive) return
         
-        // SAFETY CHECK: Jangan aktifkan Kiosk Mode jika Silent Mode aktif
+        // SAFETY CHECK: Jangan aktifkan Kiosk Mode jika benar-benar tidak perlu dikunci
         val prefsManager = PreferencesManager(this)
         val now = System.currentTimeMillis()
         if (now < prefsManager.lockTaskCooldownUntil) return
         if (prefsManager.isHolidayMode) return
-        if (!prefsManager.isProtectionActive && !prefsManager.isEmulator && !prefsManager.isForcedLocation) {
-             return
-        }
+        // Izinkan kiosk jika shouldStayLocked() true (termasuk offline fail-safe)
+        if (!shouldStayLocked()) return
         
         try {
             val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
@@ -525,6 +555,16 @@ class LockScreenActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        forceUpdateGate.start()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        forceUpdateGate.stop()
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus && shouldStayLocked()) {
@@ -571,11 +611,31 @@ class LockScreenActivity : AppCompatActivity() {
 
     private fun shouldStayLocked(): Boolean {
         val prefs = PreferencesManager(this)
-        if (!prefs.isProtectionActive) return false
+        if (prefs.isForceUpdateRequired) return false
         if (prefs.isHolidayMode) return false
         if (prefs.isEmergencyUnlocked) return false
         if (prefs.isUninstallBypassActive()) return false
         if (PermissionManager(this).isPermissionActive()) return false
+
+        // Fail-safe: Jika di jam sekolah dan offline/mode pesawat, tetap harus terkunci
+        // meskipun admin sedang mematikan proteksi (jam istirahat)
+        if (!prefs.isProtectionActive) {
+            val scheduleManager = SchoolScheduleManager(prefs)
+            if (scheduleManager.isSchoolTime()) {
+                val isAirplaneOn = try {
+                    android.provider.Settings.Global.getInt(contentResolver, android.provider.Settings.Global.AIRPLANE_MODE_ON, 0) != 0
+                } catch (_: Exception) { false }
+                val lastOnline = prefs.lastOnlineTimestamp
+                val offlineDuration = if (lastOnline > 0) System.currentTimeMillis() - lastOnline else 0L
+                val isOfflineTooLong = offlineDuration > 2 * 60 * 1000L
+
+                if (isAirplaneOn || isOfflineTooLong) {
+                    return true // Tetap terkunci!
+                }
+            }
+            return false // Proteksi OFF, tidak offline → bebas
+        }
+
         return true
     }
 }

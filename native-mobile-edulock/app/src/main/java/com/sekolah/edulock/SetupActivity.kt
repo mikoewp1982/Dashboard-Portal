@@ -158,11 +158,18 @@ class SetupActivity : AppCompatActivity() {
         forceUpdateGate.stop()
     }
 
+    private fun isSettingsRecoveryInProgress(now: Long = System.currentTimeMillis()): Boolean {
+        return now < prefsManager.settingsGraceUntil ||
+            now < prefsManager.deviceAdminRequestUntil
+    }
+
     override fun onResume() {
         super.onResume()
-        prefsManager.isSettingsOpen = false
-        prefsManager.settingsGraceUntil = 0L
-        prefsManager.deviceAdminRequestUntil = 0L
+        if (!isSettingsRecoveryInProgress()) {
+            prefsManager.isSettingsOpen = false
+            prefsManager.settingsGraceUntil = 0L
+            prefsManager.deviceAdminRequestUntil = 0L
+        }
         checkStatus()
         triggerTelemetryUpdate()
     }

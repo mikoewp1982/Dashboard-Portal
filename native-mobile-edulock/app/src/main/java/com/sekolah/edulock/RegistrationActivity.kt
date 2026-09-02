@@ -46,19 +46,36 @@ class RegistrationActivity : AppCompatActivity() {
             return
         }
 
-        setContentView(R.layout.activity_registration)
-
         prefsManager = PreferencesManager(this)
         dbHelper = DatabaseHelper(this)
         forceUpdateGate = ForceUpdateGate(this)
 
         // Cek apakah user sudah register
         if (prefsManager.isRegistered) {
+            // Tampilkan loading screen sederhana agar form login tidak berkedip
+            val loadingView = android.widget.FrameLayout(this)
+            loadingView.setBackgroundColor(android.graphics.Color.parseColor("#0F172A")) // Background gelap
+            val spinner = android.widget.ProgressBar(this)
+            val params = android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+            params.gravity = android.view.Gravity.CENTER
+            loadingView.addView(spinner, params)
+            setContentView(loadingView)
+
             ensureStudentSignedIn {
                 verifyCurrentSchoolStatusAndProceed()
             }
             return
         }
+
+        showRegistrationForm()
+    }
+
+    private fun showRegistrationForm() {
+        setContentView(R.layout.activity_registration)
+        prefsManager.resetSchoolServiceExitClaim()
         
         // Cek Error Message dari Intent (misal logout paksa)
         val errorMessage = intent.getStringExtra("ERROR_MESSAGE")
@@ -225,16 +242,13 @@ class RegistrationActivity : AppCompatActivity() {
         val schoolId = SchoolServiceGuard.normalizeSchoolId(prefsManager.schoolId)
         if (schoolId.isBlank()) {
             prefsManager.isRegistered = false
-            initViews()
-            setupListeners()
+            showRegistrationForm()
             return
         }
 
         ensureSchoolServiceActive(schoolId, onDenied = {
             prefsManager.isRegistered = false
-            prefsManager.isSetupCompleted = false
-            initViews()
-            setupListeners()
+            showRegistrationForm()
             showSchoolInactiveDialog()
         }) {
             checkSetupAndProceed()
@@ -267,7 +281,6 @@ class RegistrationActivity : AppCompatActivity() {
             runOnUiThread {
                 if (result == null) {
                     prefsManager.isRegistered = false
-                    prefsManager.isSetupCompleted = false
                     initViews()
                     setupListeners()
                     Toast.makeText(this@RegistrationActivity, error ?: "Sesi siswa tidak valid.", Toast.LENGTH_LONG).show()
@@ -353,8 +366,13 @@ class RegistrationActivity : AppCompatActivity() {
         studentKey: String,
         studentUsername: String
     ) {
-        // Simpan ke database lokal
-        val id = dbHelper.insertStudent(nisn, name, studentClass)
+        val existingLocalStudent = dbHelper.getStudentByNisn(nisn)
+        val id = if (existingLocalStudent != null) {
+            val updated = dbHelper.updateStudent(existingLocalStudent.id, nisn, name, studentClass)
+            if (updated) existingLocalStudent.id else -1L
+        } else {
+            dbHelper.insertStudent(nisn, name, studentClass)
+        }
 
         if (id > 0) {
             val deviceId = prefsManager.getDeviceBindingId(this)

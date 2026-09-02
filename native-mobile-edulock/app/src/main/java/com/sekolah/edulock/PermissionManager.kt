@@ -242,22 +242,14 @@ class PermissionManager(private val context: Context) {
         pollingHandler = android.os.Handler(android.os.Looper.getMainLooper())
         pollingRunnable = object : Runnable {
             override fun run() {
-                if (!isPermissionActive()) {
-                    stopPolling()
-                    return
-                }
-
-                // Debug Toast setiap polling (Temporary)
-                // android.widget.Toast.makeText(context, "Cek status izin untuk: $nisn...", android.widget.Toast.LENGTH_SHORT).show()
-
-                // Cek manual ke database
+                // Poll terus selama listener aktif — juga untuk MENEMUKAN izin remote baru
+                // (bukan hanya cabut). Sebelumnya polling berhenti jika lokal belum grant.
                 activeSessionsRef.child(nisn).get().addOnSuccessListener { snapshot ->
                     handleSessionSnapshot(nisn, snapshot, "Polling")
                 }.addOnFailureListener {
                     // Ignore error silently in production
                 }
 
-                // Ulangi setiap 10 detik
                 pollingHandler?.postDelayed(this, 10000)
             }
         }
@@ -345,7 +337,36 @@ class PermissionManager(private val context: Context) {
         val startTime = snapshot.child("startTime").getValue(Long::class.java) ?: 0L
         val endTime = snapshot.child("endTime").getValue(Long::class.java) ?: 0L
         val duration = snapshot.child("duration").getValue(Int::class.java) ?: 0
+        val sessionStart = snapshot.child("sessionStart").getValue(String::class.java)
+        val sessionEnd = snapshot.child("sessionEnd").getValue(String::class.java)
         val now = System.currentTimeMillis()
+        val nowCal = Calendar.getInstance()
+        val currentMinutes = (nowCal.get(Calendar.HOUR_OF_DAY) * 60) + nowCal.get(Calendar.MINUTE)
+        val startMinutes = parseTimeToMinutes(sessionStart)
+        val endMinutes = parseTimeToMinutes(sessionEnd)
+
+        // Prefer jam dinding lokal (sessionStart/sessionEnd) — anti-bug timezone server UTC
+        // yang membuat startTime/endTime bergeser ~+7 jam di WIB.
+        val clockRemaining = if (startMinutes != null && endMinutes != null) {
+            calculateRemainingSessionMinutes(currentMinutes, startMinutes, endMinutes)
+        } else {
+            null
+        }
+
+        if (clockRemaining != null) {
+            cancelScheduledRemoteActivation()
+            if (clockRemaining <= 0) {
+                revokePermission(removeRemoteSession = true, keepListening = true, showReturnToMain = isGranted)
+                return
+            }
+            val localEndTime = getLocalPermissionEndTime()
+            val expectedEnd = now + (clockRemaining * 60_000L)
+            if (!isGranted || abs(localEndTime - expectedEnd) > 60_000L) {
+                grantPermission(buildRemotePermissionLabel(snapshot), clockRemaining)
+                startPolling(nisn)
+            }
+            return
+        }
 
         if (startTime > now) {
             scheduleRemoteActivationCheck(nisn, startTime - now)

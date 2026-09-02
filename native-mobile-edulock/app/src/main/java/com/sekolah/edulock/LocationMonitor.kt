@@ -13,6 +13,100 @@ class LocationMonitor(private val context: Context, private val prefsManager: Pr
 
     private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private var lastLocation: Location? = null
+    private var isListening = false
+
+    private val locationListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            lastLocation = location
+            prefsManager.lastGpsActiveTimestamp = System.currentTimeMillis()
+            updateSchoolPresenceFromLocation(location)
+            if (isInsideSchoolArea()) {
+                prefsManager.isInsideSchoolZone = true
+            }
+        }
+        override fun onProviderEnabled(provider: String) {
+            prefsManager.lastGpsActiveTimestamp = System.currentTimeMillis()
+        }
+        override fun onProviderDisabled(provider: String) {}
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+    }
+
+    fun startListening() {
+        if (isListening) return
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+        try {
+            var registered = false
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    12_000L,
+                    12f,
+                    locationListener,
+                    android.os.Looper.getMainLooper()
+                )
+                registered = true
+            }
+            if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER,
+                    25_000L,
+                    25f,
+                    locationListener,
+                    android.os.Looper.getMainLooper()
+                )
+                registered = true
+            }
+            isListening = registered
+            if (registered) {
+                android.util.Log.d("LocationMonitor", "Active location updates started")
+            } else {
+                android.util.Log.w("LocationMonitor", "No location provider enabled; listening not started")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("LocationMonitor", "Failed to start active location updates: ${e.message}")
+        }
+    }
+
+    fun stopListening() {
+        if (!isListening) return
+        try {
+            locationManager.removeUpdates(locationListener)
+            isListening = false
+            android.util.Log.d("LocationMonitor", "Active location updates stopped")
+        } catch (_: Exception) {}
+    }
+
+    /** True jika saklar Lokasi ON dan setidaknya SATU provider lokasi tersedia (GPS OR Network). */
+    fun isGpsEnabled(): Boolean {
+        return try {
+            val masterOn = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                locationManager.isLocationEnabled
+            } else {
+                @Suppress("DEPRECATION")
+                val mode = android.provider.Settings.Secure.getInt(
+                    context.contentResolver,
+                    android.provider.Settings.Secure.LOCATION_MODE,
+                    android.provider.Settings.Secure.LOCATION_MODE_OFF
+                )
+                mode != android.provider.Settings.Secure.LOCATION_MODE_OFF
+            }
+            if (!masterOn) return false
+            val gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            val networkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            gpsEnabled || networkEnabled
+        } catch (_: Exception) {
+            try {
+                val gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                val networkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+                gpsEnabled || networkEnabled
+            } catch (_: Exception) {
+                false
+            }
+        }
+    }
 
     fun getCurrentLocation(): Location? {
         // Cek Mode Paksa (Emulator/Debug)
@@ -26,48 +120,6 @@ class LocationMonitor(private val context: Context, private val prefsManager: Pr
              return fakeLocation
         }
 
-        // AUTO-DETECT EMULATOR & FORCE LOCATION
-        // Ini menangani kasus di mana user lupa menyalakan mode paksa di emulator
-        /*
-        if (isEmulator()) {
-             // Cek jika lokasi asli jauh dari sekolah (misal > 5000m)
-             val realLocation = getRealLocation()
-             if (realLocation != null) {
-                 val results = FloatArray(1)
-                 Location.distanceBetween(
-                    realLocation.latitude, realLocation.longitude,
-                    prefsManager.schoolLatitude, prefsManager.schoolLongitude,
-                    results
-                 )
-                 
-                 // Jika jarak > 2000 meter (2km), asumsikan ini lokasi default emulator (Googleplex dll)
-                 if (results[0] > 2000) {
-                     // AUTO FORCE!
-                     prefsManager.isForcedLocation = true
-                     prefsManager.isEmulator = true // Pastikan flag ini aktif
-                     
-                     val fakeLocation = Location("AUTO_EMULATOR_FIX")
-                     fakeLocation.latitude = prefsManager.schoolLatitude
-                     fakeLocation.longitude = prefsManager.schoolLongitude
-                     fakeLocation.accuracy = 1.0f
-                     fakeLocation.time = System.currentTimeMillis()
-                     return fakeLocation
-                 }
-             } else {
-                 // Jika lokasi null di emulator, paksa saja biar aman
-                 prefsManager.isForcedLocation = true
-                 prefsManager.isEmulator = true
-                 
-                 val fakeLocation = Location("AUTO_EMULATOR_FIX_NULL")
-                 fakeLocation.latitude = prefsManager.schoolLatitude
-                 fakeLocation.longitude = prefsManager.schoolLongitude
-                 fakeLocation.accuracy = 1.0f
-                 fakeLocation.time = System.currentTimeMillis()
-                 return fakeLocation
-             }
-        }
-        */
-
         return getRealLocation()
     }
 
@@ -76,19 +128,24 @@ class LocationMonitor(private val context: Context, private val prefsManager: Pr
             return null
         }
         
+        // Pastikan listening aktif
+        if (!isListening) {
+            startListening()
+        }
+
         // Coba dapatkan lokasi terakhir yang diketahui
         val locationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
         val locationNetwork = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
 
         val now = System.currentTimeMillis()
-        val maxAgeMs = 2 * 60 * 1000L // 2 menit untuk "fresh"
+        val maxAgeMs = 5 * 60 * 1000L // 5 menit untuk "fresh"
 
         fun isFresh(loc: Location): Boolean {
             val age = kotlin.math.abs(now - loc.time)
             return age <= maxAgeMs
         }
 
-        val candidates = listOf(locationGPS, locationNetwork).filterNotNull().filter { isFresh(it) }
+        val candidates = listOf(locationGPS, locationNetwork, lastLocation).filterNotNull().filter { isFresh(it) }
         val bestLocation = when {
             candidates.isEmpty() -> null
             candidates.size == 1 -> candidates.first()
@@ -106,11 +163,9 @@ class LocationMonitor(private val context: Context, private val prefsManager: Pr
             return bestLocation
         }
 
-        // FALLBACK: Jika tidak ada lokasi fresh, gunakan cache terakhir (max 30 menit)
-        // Ini mencegah isInsideSchoolArea() mengembalikan false saat HP idle lama
-        // (misalnya: layar mati selama Mode Acara berlangsung berjam-jam)
+        // FALLBACK: Jika tidak ada lokasi fresh, gunakan cache terakhir (max 60 menit)
         val cachedAge = lastLocation?.let { kotlin.math.abs(now - it.time) } ?: Long.MAX_VALUE
-        val maxCacheAgeMs = 30 * 60 * 1000L // 30 menit
+        val maxCacheAgeMs = 60 * 60 * 1000L // 60 menit
         if (cachedAge <= maxCacheAgeMs) {
             android.util.Log.d("LocationMonitor", "Using cached location (age: ${cachedAge / 1000}s)")
             return lastLocation

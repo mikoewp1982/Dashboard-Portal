@@ -15,12 +15,16 @@ class BootReceiver : BroadcastReceiver() {
             intent.action == Intent.ACTION_MY_PACKAGE_REPLACED ||
             intent.action == "android.intent.action.QUICKBOOT_POWERON"
         ) {
-            val serviceIntent = Intent(context, MonitoringService::class.java)
+            val serviceIntent = Intent(context, MonitoringService::class.java).apply {
+                action = MonitoringService.ACTION_FORCE_ENFORCE
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(serviceIntent)
             } else {
                 context.startService(serviceIntent)
             }
+            KeepAliveWorker.schedule(context)
+            FcmTokenRegistrar.refreshAndUpload(context)
         }
     }
 }

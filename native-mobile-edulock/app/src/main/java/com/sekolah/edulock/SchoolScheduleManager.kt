@@ -43,7 +43,8 @@ class SchoolScheduleManager(private val prefs: PreferencesManager) {
     }
 
     private fun parseMinutes(hhmm: String): Int? {
-        val parts = hhmm.split(":")
+        val normalized = hhmm.trim().replace('.', ':').replace(',', ':')
+        val parts = normalized.split(":")
         val h = parts.getOrNull(0)?.toIntOrNull() ?: return null
         val m = parts.getOrNull(1)?.toIntOrNull() ?: return null
         if (h !in 0..23) return null

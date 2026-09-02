@@ -122,6 +122,8 @@ class MonitoringService : Service() {
     private var protectionPollingRunnable: Runnable? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private val wakeLockTimeoutMs = 10_000L
+    private var firebaseConnectedListener: com.google.firebase.database.ValueEventListener? = null
+    private var firebaseConnectedRef: com.google.firebase.database.DatabaseReference? = null
 
     private fun resolvePetDeadReminderIntervalMs(): Long {
         // Siklus hukuman: interval-1 → interval-2 → interval-3, lalu ulang angka terakhir.
@@ -203,6 +205,39 @@ class MonitoringService : Service() {
         } catch (_: Exception) { }
     }
 
+    /**
+     * Listener Firebase .info/connected — mendeteksi apakah WebSocket Firebase benar-benar
+     * terhubung ke server. Ini menutup celah kuota medsos (TikTok/IG saja tanpa kuota umum).
+     *
+     * Jika Firebase terputus (karena kuota umum habis), OfflineMonitor akan mengetahui
+     * bahwa internet yang dilihat Android (hasTransport=CELLULAR) sebenarnya "palsu"
+     * dan memicu countdown offline lockdown.
+     */
+    private fun startFirebaseConnectedListener() {
+        if (firebaseConnectedListener != null) return
+        try {
+            val database = SchoolServiceGuard.database(this)
+            firebaseConnectedRef = database.getReference(".info/connected")
+            firebaseConnectedListener = object : com.google.firebase.database.ValueEventListener {
+                override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                    val connected = snapshot.getValue(Boolean::class.java) ?: false
+                    if (::offlineMonitor.isInitialized) {
+                        offlineMonitor.isFirebaseConnected = connected
+                        if (connected) {
+                            offlineMonitor.lastFirebaseConnectedAt = System.currentTimeMillis()
+                        }
+                    }
+                    android.util.Log.d("MonitoringService", "[FirebaseConnected] status=$connected")
+                }
+
+                override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+            }
+            firebaseConnectedRef?.addValueEventListener(firebaseConnectedListener!!)
+        } catch (e: Exception) {
+            android.util.Log.w("MonitoringService", "startFirebaseConnectedListener gagal: ${e.message}")
+        }
+    }
+
     private fun startForceSyncProtectionPolling() {
         if (protectionPollingRunnable != null) return
         protectionPollingRunnable = object : Runnable {
@@ -267,6 +302,7 @@ class MonitoringService : Service() {
         startForegroundService()
         startMonitoring()
         startForceSyncProtectionPolling()
+        startFirebaseConnectedListener()
         startUninstallAuthorizationListener()
         startHolidayModeListener()
         startProtectionStatusListener()
@@ -300,6 +336,7 @@ class MonitoringService : Service() {
 
         // Pastikan listener berjalan, terutama jika service di-restart atau baru login
         startForceSyncProtectionPolling()
+        startFirebaseConnectedListener()
         startUninstallAuthorizationListener()
         startHolidayModeListener()
         startProtectionStatusListener()
@@ -1226,7 +1263,24 @@ class MonitoringService : Service() {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+            try {
+                val hasLocation = androidx.core.content.ContextCompat.checkSelfPermission(
+                    this, android.Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                
+                if (hasLocation) {
+                    startForeground(1, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+                } else {
+                    // Fallback ke dataSync jika belum ada permission lokasi (mencegah SecurityException di Android 14)
+                    startForeground(1, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+                }
+            } catch (e: Exception) {
+                try {
+                    startForeground(1, builder.build())
+                } catch (e2: Exception) {
+                    android.util.Log.e("MonitoringService", "Gagal startForeground: ${e2.message}")
+                }
+            }
         } else {
             startForeground(1, builder.build())
         }
