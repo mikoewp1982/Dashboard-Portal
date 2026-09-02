@@ -42,16 +42,14 @@ class FirebaseReporter(private val context: Context, private val prefsManager: P
 
                     // Kirim intent ke MonitoringService agar segera enforce/release proteksi
                     try {
-                        if (prefsManager.isSetupCompleted) {
-                            val intent = android.content.Intent(context, MonitoringService::class.java).apply {
-                                putExtra(MonitoringService.EXTRA_REQUESTED_PROTECTION, requestedState)
-                                putExtra(MonitoringService.EXTRA_COMMAND_ID, commandId)
-                            }
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                context.startForegroundService(intent)
-                            } else {
-                                context.startService(intent)
-                            }
+                        val intent = android.content.Intent(context, MonitoringService::class.java).apply {
+                            putExtra(MonitoringService.EXTRA_REQUESTED_PROTECTION, requestedState)
+                            putExtra(MonitoringService.EXTRA_COMMAND_ID, commandId)
+                        }
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            context.startForegroundService(intent)
+                        } else {
+                            context.startService(intent)
                         }
                     } catch (e: Exception) {
                         Log.w("FirebaseReporter", "Gagal mengirim intent ke MonitoringService: ${e.message}")

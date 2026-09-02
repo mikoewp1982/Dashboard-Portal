@@ -21,8 +21,8 @@ android {
         applicationId = "com.sekolah.edulock"
         minSdk = 21
         targetSdk = 34
-        versionCode = 52
-        versionName = "1.3.26"
+        versionCode = 53
+        versionName = "1.3.27"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
