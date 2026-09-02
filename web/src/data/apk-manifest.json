@@ -1,14 +1,14 @@
 {
-    "updatedAt": "2026-09-02T09:57:57",
+    "updatedAt": "2026-09-02T10:22:49",
     "files": {
-        "EduLock-1.3.22-48.apk": {
-            "lastModified": "2026-08-30T15:06:45",
+        "EduLock-1.3.24-50.apk": {
+            "lastModified": "2026-09-02T07:45:00",
             "packageName": "com.sekolah.edulock",
             "sizeMB": 3.75,
-            "sha256": "F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34",
-            "versionName": "1.3.22",
-            "versionCode": 48,
-            "sizeBytes": 3932182
+            "sha256": "38E97141FF45DFB49AD658211B0BA1F7699B645178E50170F68F3E9BEAEA927E",
+            "versionName": "1.3.24",
+            "versionCode": 50,
+            "sizeBytes": 3931228
         },
         "GAS-Siswa-1.0.92-siswa-23089.apk": {
             "lastModified": "2026-08-31T09:05:28",
@@ -21,6 +21,15 @@
             "signerSha256": "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",
             "releaseNotes": "Patch perbaikan false-block GPS di IFP Smart TV / Android TV. Perangkat TV yang tidak memiliki modul GPS hardware sekarang di-skip dari pengecekan wajib GPS dan izin ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION, sehingga dialog 'GPS Wajib Aktif' tidak lagi muncul terus menerus dan memblokir akses aplikasi. Nomor versi tetap sama (1.0.92-siswa / 23089), hanya hash APK yang berbeda karena patch kode di HomeScreen.kt."
         },
+        "GAS-Siswa-1.0.94-siswa-23091.apk": {
+            "versionCode": 23091,
+            "sizeMB": 20.51,
+            "lastModified": "2026-08-31T21:55:58",
+            "sha256": "4F931B09D9A45374FA7B4697FF7537219BB75A5F4643734A295C85DB478D707F",
+            "sizeBytes": 21511022,
+            "versionName": "1.0.94-siswa",
+            "packageName": "com.satupintu.mobile.siswa"
+        },
         "GAS-Siswa-1.0.93-siswa-23090.apk": {
             "versionCode": 23090,
             "sizeMB": 20.51,
@@ -30,16 +39,7 @@
             "versionName": "1.0.93-siswa",
             "packageName": "com.satupintu.mobile.siswa"
         },
-        "EduLock-1.3.23-49.apk": {
-            "lastModified": "2026-09-01T22:20:00",
-            "packageName": "com.sekolah.edulock",
-            "sizeMB": 3.75,
-            "sha256": "255ED1FA9261223D36A33F919540D005C8A65D8E52E2A4A29BEBF324D9C437DF",
-            "versionName": "1.3.23",
-            "versionCode": 49,
-            "sizeBytes": 3932567
-        },
-        "EduLock-studentRelease.apk": {
+        "EduLock-1.3.25-51.apk": {
             "lastModified": "2026-09-02T09:31:34",
             "packageName": "com.sekolah.edulock",
             "sizeMB": 3.75,
@@ -47,33 +47,6 @@
             "versionName": "1.3.25",
             "versionCode": 51,
             "sizeBytes": 3932230
-        },
-        "EduLock-1.3.11-37.apk": {
-            "lastModified": "2026-08-15T09:01:50",
-            "packageName": "com.sekolah.edulock",
-            "sizeMB": 3.61,
-            "sha256": "05F0BDF5AC0F6C2620545B72A761A30A2317C797A808C1F34F13F4994B207224",
-            "versionName": "1.3.11",
-            "versionCode": 37,
-            "sizeBytes": 3790306
-        },
-        "EduLock-1.3.24-50.apk": {
-            "lastModified": "2026-09-02T07:45:00",
-            "packageName": "com.sekolah.edulock",
-            "sizeMB": 3.75,
-            "sha256": "38E97141FF45DFB49AD658211B0BA1F7699B645178E50170F68F3E9BEAEA927E",
-            "versionName": "1.3.24",
-            "versionCode": 50,
-            "sizeBytes": 3931228
-        },
-        "GAS-Siswa-1.0.95-siswa-23092.apk": {
-            "versionCode": 23092,
-            "sizeMB": 20.51,
-            "lastModified": "2026-08-31T22:10:19",
-            "sha256": "CCC6F1F73A1FD1C478077B69265F844EA54DE3B1408B2EAA81D52C3303A94DA2",
-            "sizeBytes": 21511017,
-            "versionName": "1.0.95-siswa",
-            "packageName": "com.satupintu.mobile.siswa"
         },
         "GAS-Siswa-1.0.96-siswa-23093.apk": {
             "sha256": "35039aa99575573fb7295a0b8c1ce25676c318ed80f341c8466e7ef49b2e048a",
@@ -84,32 +57,69 @@
             "packageName": "com.satupintu.mobile.siswa",
             "sizeBytes": 21511011
         },
-        "GAS-Siswa-1.0.94-siswa-23091.apk": {
-            "versionCode": 23091,
-            "sizeMB": 20.51,
-            "lastModified": "2026-08-31T21:55:58",
-            "sha256": "4F931B09D9A45374FA7B4697FF7537219BB75A5F4643734A295C85DB478D707F",
-            "sizeBytes": 21511022,
-            "versionName": "1.0.94-siswa",
-            "packageName": "com.satupintu.mobile.siswa"
-        },
-        "GAS-Siswa-release.apk": {
-            "sha256": "35039aa99575573fb7295a0b8c1ce25676c318ed80f341c8466e7ef49b2e048a",
-            "sizeMB": 20.51,
-            "versionName": "1.0.96-siswa",
-            "lastModified": "2026-08-31T22:34:06",
-            "versionCode": 23093,
-            "packageName": "com.satupintu.mobile.siswa",
-            "sizeBytes": 21511011
-        },
-        "EduLock-1.3.25-51.apk": {
-            "lastModified": "2026-09-02T09:31:34",
+        "EduLock-1.3.22-48.apk": {
+            "lastModified": "2026-08-30T15:06:45",
             "packageName": "com.sekolah.edulock",
             "sizeMB": 3.75,
-            "sha256": "024E1DEA566A1E41F3207E01B9B4047349F2C80E7ECC29DBBA32B5440A33102D",
-            "versionName": "1.3.25",
-            "versionCode": 51,
-            "sizeBytes": 3932230
+            "sha256": "F6D6C3EEE4882266CB59BFFC60150BEB8A73B4F7D533BB972CA2D90D86ADEC34",
+            "versionName": "1.3.22",
+            "versionCode": 48,
+            "sizeBytes": 3932182
+        },
+        "EduLock-studentRelease.apk": {
+            "lastModified": "2026-09-02T10:22:08",
+            "packageName": "com.sekolah.edulock",
+            "sizeMB": 3.75,
+            "sha256": "846D54CE2F7ECF993B2F346EBBF04D463DC6F83B7032C8C1FDB02C63BBF86F3C",
+            "versionName": "1.3.26",
+            "versionCode": 52,
+            "sizeBytes": 3932366
+        },
+        "EduLock-1.3.11-37.apk": {
+            "lastModified": "2026-08-15T09:01:50",
+            "packageName": "com.sekolah.edulock",
+            "sizeMB": 3.61,
+            "sha256": "05F0BDF5AC0F6C2620545B72A761A30A2317C797A808C1F34F13F4994B207224",
+            "versionName": "1.3.11",
+            "versionCode": 37,
+            "sizeBytes": 3790306
+        },
+        "GAS-Siswa-release.apk": {
+            "signerSha256": "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",
+            "lastModified": "2026-08-31T22:32:11",
+            "packageName": "com.satupintu.mobile.siswa",
+            "sizeMB": 20.51,
+            "sha256": "35039AA99575573FB7295A0B8C1CE25676C318ED80F341C8466E7EF49B2E048A",
+            "versionName": "1.0.96-siswa",
+            "versionCode": 23093,
+            "sizeBytes": 21511011
+        },
+        "EduLock-1.3.23-49.apk": {
+            "lastModified": "2026-09-01T22:20:00",
+            "packageName": "com.sekolah.edulock",
+            "sizeMB": 3.75,
+            "sha256": "255ED1FA9261223D36A33F919540D005C8A65D8E52E2A4A29BEBF324D9C437DF",
+            "versionName": "1.3.23",
+            "versionCode": 49,
+            "sizeBytes": 3932567
+        },
+        "GAS-Siswa-1.0.95-siswa-23092.apk": {
+            "versionCode": 23092,
+            "sizeMB": 20.51,
+            "lastModified": "2026-08-31T22:10:19",
+            "sha256": "CCC6F1F73A1FD1C478077B69265F844EA54DE3B1408B2EAA81D52C3303A94DA2",
+            "sizeBytes": 21511017,
+            "versionName": "1.0.95-siswa",
+            "packageName": "com.satupintu.mobile.siswa"
+        },
+        "EduLock-1.3.26-52.apk": {
+            "lastModified": "2026-09-02T10:22:08",
+            "packageName": "com.sekolah.edulock",
+            "sizeMB": 3.75,
+            "sha256": "846D54CE2F7ECF993B2F346EBBF04D463DC6F83B7032C8C1FDB02C63BBF86F3C",
+            "versionName": "1.3.26",
+            "versionCode": 52,
+            "sizeBytes": 3932366
         }
     }
 }

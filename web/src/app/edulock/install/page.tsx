@@ -140,9 +140,9 @@ const oppoStepsFisik = [
 
 export default function EduLockInstallPage() {
   const apkMeta = getLatestApkMetaByPackageName("com.sekolah.edulock", {
-    fileName: "EduLock-1.3.25-51.apk",
-    versionName: "1.3.25",
-    versionCode: 51,
+    fileName: "EduLock-1.3.26-52.apk",
+    versionName: "1.3.26",
+    versionCode: 52,
   });
   // URL must be the versioned file so mobile Save-As keeps the version in the name.
   const apkHref = getApkDownloadHref(apkMeta.fileName);
