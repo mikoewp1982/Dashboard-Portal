@@ -8,7 +8,12 @@ Catatan:
 
 ## [Unreleased]
 
-### Student / Web Admin
+- Fixed: **v1.3.24 (50) rebuild 2026-09-02 — Audit & Perbaikan Total Force Update Overlay (Native Activity + Bypass Browser & Installer)**:
+  1. Menghapus floating window programmatic overlay mentah di `MonitoringService.kt` yang sebelumnya mencegat touch event (`root.setOnTouchListener { _, _ -> true }`) sehingga tombol *"DOWNLOAD UPDATE"* dan *"TUTUP APLIKASI"* di HP siswa tidak bisa diklik sama sekali.
+  2. Mengalihkan antarmuka force update 100% ke `ForceUpdateActivity.kt` native yang responsif dan mendukung klik normal.
+  3. Menambahkan status `FORCE_UPDATE_BYPASS` / `FORCE_UPDATE_ACTIVE` pada `LockStateManager.kt`, `LockEnforcer.kt`, dan `AntiUninstallService.kt`. Saat force update aktif, sistem tidak lagi menendang siswa kembali ke gembok saat membuka browser (Google Chrome, Vivo Browser, dll) atau saat memasang file APK.
+  4. Tombol *"TUTUP APLIKASI"* di `ForceUpdateActivity.kt` kini memanggil `finishAffinity()` dan `moveTaskToBack(true)` untuk kembali ke home screen secara bersih.
+  5. Deploy APK `EduLock-1.3.24-50.apk` ke web live portal `/edulock/install` dan `/e`.
 - Fixed: **v1.3.23 (49) rebuild 2026-09-01 — Relaksasi Dialog Aksesibilitas di Luar Jam Sekolah (di Rumah)**: Dialog modal paksa *"Wajib Aktifkan Proteksi"* di `MainActivity.kt` otomatis ditiadakan di luar jam sekolah / mode libur. Siswa dan orang tua bebas membuka halaman EduLock di rumah tanpa terhalang pop-up modal.
 - Fixed: **v1.3.23 (49) rebuild 2026-09-01 — Hapus Spam Notifikasi Aksesibilitas di Luar Jam Sekolah (di Rumah)**: Mencabut pemanggilan notifikasi heads-up dan intent pembukaan Settings setiap 30 detik pada `MonitoringService.kt` saat di luar jam sekolah / di rumah. HP siswa kini 100% hening dan bebas gangguan di rumah.
 - Fixed: **v1.3.23 (49) rebuild 2026-09-01 — Fix Infinite Loop Pet Dead Lock & Hapus Dialog "Penyematan Layar" (Screen Pinning)**: Menutup bug badai activity spawn pada `PetDeadLockActivity` yang memicu dialog sistem Android *"Penyematan Layar"* berulang kali menumpuk di layar siswa.

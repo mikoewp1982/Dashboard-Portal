@@ -96,7 +96,7 @@ class AntiUninstallService : AccessibilityService() {
                 false
             }
             val shouldSkipWhitelist = !prefsManager.isProtectionActive || uninstallBypass ||
-                !prefsManager.isSetupCompleted || prefsManager.isHolidayMode || isSettingsGrace || gpsOff
+                !prefsManager.isSetupCompleted || prefsManager.isHolidayMode || isSettingsGrace || gpsOff || prefsManager.isForceUpdateRequired
 
             if (shouldSkipWhitelist) return
 

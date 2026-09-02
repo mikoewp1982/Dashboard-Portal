@@ -8,26 +8,30 @@ Dokumen ini adalah alur build release yang sesuai kondisi **EduLock siswa** saat
 Varian `admin` tidak menjadi fokus pegangan ini karena operasionalnya diperlakukan sebagai wrapper web.
 
 ## 2. Versi distribusi terkini
-- `versionName = 1.3.23`
-- `versionCode = 49`
-- Arsip versioned: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.23-49.apk`
+- `versionName = 1.3.24`
+- `versionCode = 50`
+- Arsip versioned: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.24-50.apk`
 - Alias Final: `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk`
-- Arsip sebelumnya: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.22-48.apk`
+- Arsip sebelumnya: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.23-49.apk`
 - Rollback teruji: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.12-38.apk`
 - Rollback anti-uninstall selektif: `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.19-45.apk`
 
-**Status unduhan web (`/e` dan `/edulock/install`):** file lokal `web/public/apk` **sudah di-sync & di-deploy live** ke versi `EduLock-1.3.23-49.apk` (commit `f9670945`).
+**Status unduhan web (`/e` dan `/edulock/install`):** file lokal `web/public/apk` **sudah di-sync & di-deploy live** ke versi `EduLock-1.3.24-50.apk`.
 
-### Rilis Terkini (2026-09-01) — [RELEASE v1.3.23 / 49]
-- **Acuan Final/public live (2026-09-01):** build `1.3.23 (49)`
+### Rilis Terkini (2026-09-02) — [RELEASE v1.3.24 / 50]
+- **Acuan Final/public live (2026-09-02):** build `1.3.24 (50)`
+  - SHA256: `38E97141FF45DFB49AD658211B0BA1F7699B645178E50170F68F3E9BEAEA927E`
+  - Size: `3.931.228 bytes`
+  - **Perbaikan Utama:**
+    1. **Fix Tombol Force Update Tidak Bisa Diklik**: Menghapus total floating window `TYPE_APPLICATION_OVERLAY` dan touch blocker di `MonitoringService.kt`. Dialihkan 100% ke native `ForceUpdateActivity.kt`.
+    2. **Bypass Penuh Browser & Installer**: Menambahkan status `FORCE_UPDATE_BYPASS` pada `LockStateManager.kt`, `LockEnforcer.kt`, dan `AntiUninstallService.kt` sehingga siswa bebas membuka browser dan mengunduh/memasang APK tanpa ditendang balik ke gembok.
+    3. **Tombol Tutup Aplikasi**: Menambahkan `moveTaskToBack(true)` dan `finishAffinity()` agar siswa bisa keluar ke Beranda HP secara bersih.
+  - Deploy `/e` dan `/edulock/install` live = **SUDAH (Deployed to GitHub origin/main)**.
+
+### Rilis sebelumnya (2026-09-01) — [RELEASE v1.3.23 / 49]
+- **Acuan Final:** build `1.3.23 (49)`
   - SHA256: `255ED1FA9261223D36A33F919540D005C8A65D8E52E2A4A29BEBF324D9C437DF`
   - Size: `3.932.567 bytes`
-  - **Perbaikan Utama:**
-    1. **Fix Infinite Loop Pet Dead Lock**: Menutup badai activity spawn dan menghapus dialog sistem Android *"Penyematan Layar"* (`startLockTask`).
-    2. **Hapus Spam Notifikasi Aksesibilitas di Rumah**: Mencabut prompt notifikasi heads-up 30 detik di `MonitoringService.kt` saat di luar jam sekolah.
-    3. **Relaksasi Dialog Aksesibilitas di `MainActivity`**: Dialog modal paksa *"Wajib Aktifkan Proteksi"* otomatis ditiadakan di rumah / mode libur.
-    4. **Hardening Device Admin Policy**: Menghapus tag `<wipe-data />`, `<reset-password />`, dll dari `device_admin.xml`, hanya mempertahankan `<force-lock />`.
-  - Deploy `/e` dan `/edulock/install` live = **SUDAH (Deployed to GitHub origin/main)**.
 
 ### Patch sebelumnya (2026-08-31) — [BUG FIX IFP SMART TV]
 - **Acuan Final/public lokal (2026-08-31):** build `1.3.22 (48)` patch **Fix Kompatibilitas Smart TV/IFP tanpa GPS satellite hardware**

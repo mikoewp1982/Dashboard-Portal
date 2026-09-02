@@ -6,7 +6,26 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-09-01 21:55 (Release EduLock v1.3.23 / 49 — Hapus Spam Aksesibilitas di Luar Jam Sekolah + Fix Loop Pet Dead Lock)
+Update terakhir: 2026-09-02 07:45 (Release EduLock v1.3.24 / 50 — Audit & Perbaikan Total Force Update Overlay)
+
+## ✅ [BUGFIX & UX IMPROVEMENT EDULOCK SISWA] EduLock v1.3.24 (50) Release (2026-09-02 07:45)
+
+- [x] **Fix Tombol Force Update Tidak Bisa Diklik / "Mati Rasa"**:
+  - [x] Menghapus floating window programmatic overlay (`SYSTEM_ALERT_WINDOW`) di `MonitoringService.kt` yang sebelumnya mencegat touch event (`root.setOnTouchListener { _, _ -> true }`).
+  - [x] Dialihkan 100% ke native Android `ForceUpdateActivity.kt` + XML layout yang responsif.
+- [x] **Bypass Penuh Browser & Installer Saat Force Update Aktif**:
+  - [x] Menambahkan status `FORCE_UPDATE_BYPASS` / `FORCE_UPDATE_ACTIVE` pada `LockStateManager.kt`, `LockEnforcer.kt`, dan `AntiUninstallService.kt`.
+  - [x] Saat Force Update aktif, HP siswa bebas membuka browser Chrome/Web, File Manager, dan Package Installer untuk mengunduh serta memasang file APK baru tanpa ditendang kembali ke gembok EduLock.
+- [x] **Tombol "TUTUP APLIKASI" Berfungsi Penuh**:
+  - [x] Menambahkan `moveTaskToBack(true)` dan `finishAffinity()` di `ForceUpdateActivity.kt` sehingga siswa bisa keluar ke Beranda HP secara bersih.
+- [x] **Rebuild Release APK**:
+  - [x] Version bumped: `versionCode = 50`, `versionName = "1.3.24"`.
+  - [x] Build `./gradlew :app:assembleStudentRelease` sukses (size ~3.75 MB, SHA256 `38E97141FF45DFB49AD658211B0BA1F7699B645178E50170F68F3E9BEAEA927E`).
+  - [x] Disalin ke `Apk Release/Final/EduLock-studentRelease.apk` dan `Apk Release/Final/EduLock-1.3.24-50.apk`.
+- [x] **Deploy Live Web Portal (`/edulock/install` & `/e`)**:
+  - [x] Disalin ke `web/public/apk/EduLock-1.3.24-50.apk` dan `web/public/apk/EduLock-studentRelease.apk`.
+  - [x] Manifest `apk-manifest.json` diperbarui.
+  - [x] Halaman `web/src/app/edulock/install/page.tsx` diperbarui menyajikan link download versi 1.3.24 (50).
 
 ## ✅ [BUGFIX & UX IMPROVEMENT EDULOCK SISWA] EduLock v1.3.23 (49) Release (2026-09-01 21:55)
 

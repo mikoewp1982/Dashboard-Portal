@@ -39,14 +39,23 @@
                                                 "versionCode":  49,
                                                 "sizeBytes":  3932567
                                             },
+                  "EduLock-1.3.24-50.apk":  {
+                                                "lastModified":  "2026-09-02T07:45:00",
+                                                "packageName":  "com.sekolah.edulock",
+                                                "sizeMB":  3.75,
+                                                "sha256":  "38E97141FF45DFB49AD658211B0BA1F7699B645178E50170F68F3E9BEAEA927E",
+                                                "versionName":  "1.3.24",
+                                                "versionCode":  50,
+                                                "sizeBytes":  3931228
+                                            },
                   "EduLock-studentRelease.apk":  {
-                                                     "lastModified":  "2026-09-01T22:20:00",
+                                                     "lastModified":  "2026-09-02T07:45:00",
                                                      "packageName":  "com.sekolah.edulock",
                                                      "sizeMB":  3.75,
-                                                     "sha256":  "255ED1FA9261223D36A33F919540D005C8A65D8E52E2A4A29BEBF324D9C437DF",
-                                                     "versionName":  "1.3.23",
-                                                     "versionCode":  49,
-                                                     "sizeBytes":  3932567
+                                                     "sha256":  "38E97141FF45DFB49AD658211B0BA1F7699B645178E50170F68F3E9BEAEA927E",
+                                                     "versionName":  "1.3.24",
+                                                     "versionCode":  50,
+                                                     "sizeBytes":  3931228
                                                  },
                   "GAS-Siswa-1.0.93-siswa-23090.apk":  {
                                                            "versionCode":  23090,

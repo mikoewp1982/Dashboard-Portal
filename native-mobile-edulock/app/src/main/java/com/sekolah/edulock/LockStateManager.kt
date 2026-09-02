@@ -11,6 +11,7 @@ enum class LockState {
     TEMP_PERMISSION,
     SETTINGS_GRACE,
     UNINSTALL_BYPASS,
+    FORCE_UPDATE_BYPASS,
     EMERGENCY_UNLOCK,
     HOLIDAY_FREE,
     PROTECTION_OFF
@@ -22,6 +23,7 @@ enum class LockReason {
     TEMP_PERMISSION_ACTIVE,
     SETTINGS_GRACE_ACTIVE,
     UNINSTALL_BYPASS_ACTIVE,
+    FORCE_UPDATE_ACTIVE,
     HOLIDAY_MODE_ACTIVE,
     PROTECTION_DISABLED,
     EMERGENCY_UNLOCK_ACTIVE,
@@ -49,6 +51,7 @@ data class LockContextSnapshot(
     val isHolidayMode: Boolean,
     val isEmergencyUnlocked: Boolean,
     val isUninstallBypassActive: Boolean,
+    val isForceUpdateRequired: Boolean,
     val isSettingsGraceActive: Boolean,
     val isPermissionActive: Boolean,
     val isSchoolTime: Boolean,
@@ -90,6 +93,7 @@ class LockStateManager private constructor(private val appContext: android.conte
             isHolidayMode = prefsManager.isHolidayMode,
             isEmergencyUnlocked = prefsManager.isEmergencyUnlocked,
             isUninstallBypassActive = prefsManager.isUninstallBypassActive(now),
+            isForceUpdateRequired = prefsManager.isForceUpdateRequired,
             isSettingsGraceActive = settingsGraceActive,
             isPermissionActive = permissionManager.isPermissionActive(),
             isSchoolTime = scheduleManager.isSchoolTime(),
@@ -120,6 +124,9 @@ class LockStateManager private constructor(private val appContext: android.conte
     private fun evaluate(snapshot: LockContextSnapshot): LockDecision {
         if (!snapshot.isSetupCompleted) {
             return unlockedDecision(LockReason.SETUP_INCOMPLETE, snapshot.currentForegroundPackage)
+        }
+        if (snapshot.isForceUpdateRequired) {
+            return bypassDecision(LockState.FORCE_UPDATE_BYPASS, LockReason.FORCE_UPDATE_ACTIVE, snapshot.currentForegroundPackage)
         }
         if (!snapshot.isSchoolServiceActive) {
             return unlockedDecision(LockReason.SCHOOL_SERVICE_INACTIVE, snapshot.currentForegroundPackage)
@@ -199,8 +206,21 @@ class LockStateManager private constructor(private val appContext: android.conte
         }
     }
 
+    private val offlineMonitor = OfflineMonitor(appContext, prefsManager)
+
     private fun isStrictModeNow(): Boolean {
         if (prefsManager.isHolidayMode) return false
+
+        // Aturan ketat: Jika di jam sekolah, offline / mode pesawat memaksa strict mode AKTIF
+        if (scheduleManager.isSchoolTime()) {
+            val isAirplaneOn = offlineMonitor.isAirplaneModeActive()
+            val isOfflineTooLong = offlineMonitor.getOfflineDuration() > 2 * 60 * 1000L
+            
+            if (isAirplaneOn || isOfflineTooLong) {
+                return true
+            }
+        }
+
         if (!prefsManager.isProtectionActive) return false
         if (!scheduleManager.isSchoolTime()) return false
         return true

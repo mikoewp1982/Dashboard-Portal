@@ -116,7 +116,6 @@ class MonitoringService : Service() {
     private var versionCheckService: VersionCheckService? = null
     private var forceUpdateListener: ValueEventListener? = null
     private var overlayLockView: View? = null
-    private var forceUpdateOverlayView: View? = null
     private lateinit var windowManager: WindowManager
     private var hasTriggeredSchoolServiceExit = false
     private val protectionPollingIntervalMs = 30_000L
@@ -453,16 +452,9 @@ class MonitoringService : Service() {
         }
         syncSchoolConfigFromApi()
 
-        // Safety net: tampilkan force update overlay jika diperlukan tapi belum tampil
-        if (prefsManager.isForceUpdateRequired && forceUpdateOverlayView == null) {
-            handler.post {
-                showForceUpdateOverlay(
-                    prefsManager.forceUpdateMessage,
-                    prefsManager.forceUpdateDownloadUrl
-                )
-            }
-        } else if (!prefsManager.isForceUpdateRequired && forceUpdateOverlayView != null) {
-            handler.post { hideForceUpdateOverlay() }
+        // Safety net: jika force update aktif, pastikan kiosk dimatikan
+        if (prefsManager.isForceUpdateRequired) {
+            lockEnforcer.stopKiosk()
         }
 
         // ==========================================
@@ -1176,184 +1168,7 @@ class MonitoringService : Service() {
         }
     }
 
-    // ==========================================
-    // FORCE UPDATE OVERLAY (SYSTEM_ALERT_WINDOW)
-    // ==========================================
 
-    private fun showForceUpdateOverlay(message: String?, downloadUrl: String?) {
-        try {
-            if (forceUpdateOverlayView != null) return
-            if (!hasOverlayPermission()) {
-                requestOverlayPermissionRecovery("forceUpdateOverlay")
-                return
-            }
-
-            val displayMessage = message?.takeIf { it.isNotBlank() }
-                ?: "Versi EduLock Anda sudah usang dan dikunci oleh Super Admin.\n\nSilakan unduh APK terbaru melalui tombol di bawah ini, lalu install manual di HP ini."
-            val targetUrl = downloadUrl?.trim()?.takeIf { it.isNotEmpty() }
-                ?: VersionCheckService.DEFAULT_EDULOCK_DOWNLOAD_URL
-
-            val root = FrameLayout(this)
-            root.setBackgroundColor(Color.parseColor("#B91C1C"))
-            // Block semua touch agar tidak bisa berinteraksi dengan app di belakang
-            root.setOnTouchListener { _, _ -> true }
-
-            val scrollView = ScrollView(this)
-            scrollView.isFillViewport = true
-
-            val container = LinearLayout(this)
-            container.orientation = LinearLayout.VERTICAL
-            container.gravity = Gravity.CENTER
-            container.setPadding(80, 80, 80, 80)
-
-            // Warning icon
-            val iconTv = TextView(this)
-            iconTv.text = "⚠\uFE0F"
-            iconTv.textSize = 48f
-            iconTv.gravity = Gravity.CENTER
-            container.addView(iconTv)
-
-            // Spacer
-            container.addView(Space(this), LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 40
-            ))
-
-            // Title
-            val titleTv = TextView(this)
-            titleTv.text = "APLIKASI KADALUARSA!"
-            titleTv.setTextColor(Color.WHITE)
-            titleTv.textSize = 24f
-            titleTv.typeface = Typeface.DEFAULT_BOLD
-            titleTv.gravity = Gravity.CENTER
-            container.addView(titleTv)
-
-            // Spacer
-            container.addView(Space(this), LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 32
-            ))
-
-            // Message
-            val msgTv = TextView(this)
-            msgTv.text = displayMessage
-            msgTv.setTextColor(Color.WHITE)
-            msgTv.textSize = 16f
-            msgTv.gravity = Gravity.CENTER
-            container.addView(msgTv)
-
-            // Spacer
-            container.addView(Space(this), LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 64
-            ))
-
-            // Download button
-            val btnDownload = Button(this)
-            btnDownload.text = "DOWNLOAD UPDATE"
-            btnDownload.setTextColor(Color.WHITE)
-            btnDownload.textSize = 16f
-            btnDownload.typeface = Typeface.DEFAULT_BOLD
-            val downloadBg = GradientDrawable()
-            downloadBg.setColor(Color.parseColor("#1E3A8A"))
-            downloadBg.cornerRadius = 16f
-            btnDownload.background = downloadBg
-            btnDownload.setPadding(32, 28, 32, 28)
-            btnDownload.setOnClickListener {
-                try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    startActivity(intent)
-                } catch (_: Exception) {
-                }
-            }
-            val lpDownload = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            container.addView(btnDownload, lpDownload)
-
-            // Spacer
-            container.addView(Space(this), LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 24
-            ))
-
-            // Close button
-            val btnClose = Button(this)
-            btnClose.text = "TUTUP APLIKASI"
-            btnClose.setTextColor(Color.parseColor("#B91C1C"))
-            btnClose.textSize = 16f
-            btnClose.typeface = Typeface.DEFAULT_BOLD
-            val closeBg = GradientDrawable()
-            closeBg.setColor(Color.WHITE)
-            closeBg.cornerRadius = 16f
-            btnClose.background = closeBg
-            btnClose.setPadding(32, 28, 32, 28)
-            btnClose.setOnClickListener {
-                // Kirim broadcast untuk mematikan semua activity
-                try {
-                    val intent = Intent("com.sekolah.edulock.ACTION_FORCE_CLOSE")
-                    sendBroadcast(intent)
-                } catch (_: Exception) {
-                }
-            }
-            val lpClose = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            container.addView(btnClose, lpClose)
-
-            // Spacer
-            container.addView(Space(this), LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 32
-            ))
-
-            // Footer note
-            val footerTv = TextView(this)
-            footerTv.text = "Setelah unduh selesai, pasang APK lalu buka kembali EduLock."
-            footerTv.setTextColor(Color.parseColor("#FFD7D7"))
-            footerTv.textSize = 13f
-            footerTv.gravity = Gravity.CENTER
-            container.addView(footerTv)
-
-            scrollView.addView(container, FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            ))
-
-            root.addView(scrollView, FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            ))
-
-            val type =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
-            val params = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.MATCH_PARENT,
-                type,
-                // FLAG_NOT_FOCUSABLE dihilangkan agar tombol bisa diklik
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                android.graphics.PixelFormat.TRANSLUCENT
-            )
-            params.gravity = Gravity.CENTER
-
-            forceUpdateOverlayView = root
-            windowManager.addView(root, params)
-        } catch (_: Exception) {
-            forceUpdateOverlayView = null
-        }
-    }
-
-    private fun hideForceUpdateOverlay() {
-        val v = forceUpdateOverlayView ?: return
-        try {
-            windowManager.removeView(v)
-        } catch (_: Exception) {
-        } finally {
-            forceUpdateOverlayView = null
-        }
-    }
 
     private fun showToast(message: String) {
         handler.post {
@@ -2453,7 +2268,6 @@ class MonitoringService : Service() {
         }
 
         hideOverlayLock()
-        hideForceUpdateOverlay()
         DeviceLocatorAlarm.stop()
 
         // Remove listener
@@ -2606,14 +2420,16 @@ class MonitoringService : Service() {
             prefsManager.forceUpdateMessage = policy.message.orEmpty()
             policy.downloadUrl?.let { prefsManager.forceUpdateDownloadUrl = it }
 
-            handler.post {
-                if (policy.updateRequired) {
-                    showForceUpdateOverlay(
-                        policy.message ?: prefsManager.forceUpdateMessage,
-                        policy.downloadUrl ?: prefsManager.forceUpdateDownloadUrl
-                    )
-                } else {
-                    hideForceUpdateOverlay()
+            if (policy.updateRequired) {
+                lockEnforcer.stopKiosk()
+                try {
+                    val intent = Intent(this, ForceUpdateActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        putExtra(ForceUpdateActivity.EXTRA_MESSAGE, policy.message)
+                        putExtra(ForceUpdateActivity.EXTRA_DOWNLOAD_URL, policy.downloadUrl)
+                    }
+                    startActivity(intent)
+                } catch (_: Exception) {
                 }
             }
         }

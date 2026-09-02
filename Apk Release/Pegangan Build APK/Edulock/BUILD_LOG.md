@@ -26,6 +26,40 @@ Field berikut wajib dipakai di setiap entri:
 - Belum diuji
 - Catatan
 
+## 2026-09-02 07:45 — Release EduLock v1.3.24 (50): Audit & Perbaikan Total Force Update Overlay (Native Activity + Bypass Browser)
+
+- **Waktu:** 2026-09-02 07:45
+- **Pelaksana:** Assistant
+- **Jenis perubahan:** `fix` + `architecture-cleanup` + `version-bump`
+- **Scope terdampak:** `student` (APK EduLock Siswa)
+- **Tujuan perubahan:**
+  1. **Fix Tombol Force Update Tidak Bisa Diklik / "Mati Rasa"**: Menghapus total floating programmatic overlay (`SYSTEM_ALERT_WINDOW`) di `MonitoringService.kt` yang sebelumnya mencegat touch event (`root.setOnTouchListener { _, _ -> true }`). Penanganan dialihkan 100% ke native Android `ForceUpdateActivity.kt` + XML layout yang responsif.
+  2. **Fix Siswa Ditendang Balik ke Layar Merah Saat Download Update**:
+     - Menambahkan status `FORCE_UPDATE_BYPASS` / `FORCE_UPDATE_ACTIVE` pada `LockStateManager.kt`, `LockEnforcer.kt`, dan `AntiUninstallService.kt`.
+     - Saat Force Update aktif, HP siswa bebas membuka browser Chrome/Web, File Manager, dan Package Installer untuk mengunduh serta memasang file APK baru tanpa ditendang kembali ke gembok EduLock.
+  3. **Tombol "TUTUP APLIKASI" Berfungsi Penuh**: Menambahkan `moveTaskToBack(true)` dan `finishAffinity()` di `ForceUpdateActivity.kt` sehingga siswa bisa keluar ke Beranda HP secara bersih.
+  4. **Deploy Live Web Portal**: File `EduLock-1.3.24-50.apk` disalin ke `web/public/apk/`, manifest diperbarui, dan halaman `/edulock/install` serta `/e` otomatis menyajikan versi terbaru.
+  5. **Version Bump**: Naik ke **`1.3.24 (versionCode 50)`**.
+- **File utama yang diubah:**
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LockStateManager.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/LockEnforcer.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/AntiUninstallService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/ForceUpdateActivity.kt`
+  - `native-mobile-edulock/app/build.gradle.kts`
+  - `web/src/app/edulock/install/page.tsx`
+  - `web/src/data/apk-manifest.json`
+- **Fitur lama yang wajib ikut dicek:**
+  - Hukuman layar Pet Mati (`PetDeadLockActivity`) tetap muncul sesuai interval
+  - Relaksasi dialog modal aksesibilitas di rumah tetap berlaku
+- **Build yang dijalankan:** `./gradlew :app:assembleStudentRelease` → BUILD SUCCESS (2m 9s)
+- **Output APK:** `native-mobile-edulock/app/build/outputs/apk/student/release/EduLock-studentRelease.apk`
+- **Disalin ke:**
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-studentRelease.apk`
+  - `D:\Dashboard Portal\Apk Release\Final\EduLock-1.3.24-50.apk`
+  - `D:\Dashboard Portal\web\public\apk\EduLock-1.3.24-50.apk`
+  - `D:\Dashboard Portal\web\public\apk\EduLock-studentRelease.apk`
+
 ## 2026-09-01 22:10 — Release EduLock v1.3.23 (49): Relaksasi Dialog Aksesibilitas di Luar Jam Sekolah (di Rumah) & Hapus Spam Service
 
 - **Waktu:** 2026-09-01 22:10
