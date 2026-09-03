@@ -166,6 +166,7 @@ export function AttendanceRecapPanel({
   const [viewMode, setViewMode] = useState<"summary" | "weekly" | "daily" | "statistics">("summary");
   const [selectedClassName, setSelectedClassName] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDailyDateStr, setSelectedDailyDateStr] = useState<string>("");
 
   const filteredStudents = useMemo(() => {
     let result = students || [];
@@ -378,9 +379,95 @@ export function AttendanceRecapPanel({
     return rows;
   }, [filteredStudents, weeklyDates, weeklyLogMap]);
 
+  const sortedValidDatesAsc = useMemo(() => {
+    return [...validDates].sort((a, b) => a.getTime() - b.getTime());
+  }, [validDates]);
+
+  const defaultDailyDateStr = useMemo(() => {
+    if (sortedValidDatesAsc.length === 0) return "";
+    const todayKey = toDateKey(new Date());
+    const todayValid = sortedValidDatesAsc.find((d) => toDateKey(d) === todayKey);
+    if (todayValid) return todayKey;
+    return toDateKey(sortedValidDatesAsc[sortedValidDatesAsc.length - 1]);
+  }, [sortedValidDatesAsc]);
+
+  const activeDailyDateStr = selectedDailyDateStr || defaultDailyDateStr;
+
+  const activeDailyDate = useMemo(() => {
+    if (!activeDailyDateStr) return new Date();
+    const [y, m, d] = activeDailyDateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }, [activeDailyDateStr]);
+
+  const formattedDailyDateLabel = useMemo(() => {
+    if (!activeDailyDate) return "-";
+    return activeDailyDate.toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }, [activeDailyDate]);
+
+  const handlePrevDay = () => {
+    if (sortedValidDatesAsc.length > 0) {
+      const currentIndex = sortedValidDatesAsc.findIndex((d) => toDateKey(d) === activeDailyDateStr);
+      if (currentIndex > 0) {
+        setSelectedDailyDateStr(toDateKey(sortedValidDatesAsc[currentIndex - 1]));
+        return;
+      }
+    }
+    const d = new Date(activeDailyDate);
+    d.setDate(d.getDate() - 1);
+    const prevKey = toDateKey(d);
+    if (d.getMonth() + 1 !== selectedMonth) setSelectedMonth(d.getMonth() + 1);
+    if (d.getFullYear() !== selectedYear) setSelectedYear(d.getFullYear());
+    setSelectedDailyDateStr(prevKey);
+  };
+
+  const handleNextDay = () => {
+    if (sortedValidDatesAsc.length > 0) {
+      const currentIndex = sortedValidDatesAsc.findIndex((d) => toDateKey(d) === activeDailyDateStr);
+      if (currentIndex >= 0 && currentIndex < sortedValidDatesAsc.length - 1) {
+        setSelectedDailyDateStr(toDateKey(sortedValidDatesAsc[currentIndex + 1]));
+        return;
+      }
+    }
+    const d = new Date(activeDailyDate);
+    d.setDate(d.getDate() + 1);
+    const nextKey = toDateKey(d);
+    if (d.getMonth() + 1 !== selectedMonth) setSelectedMonth(d.getMonth() + 1);
+    if (d.getFullYear() !== selectedYear) setSelectedYear(d.getFullYear());
+    setSelectedDailyDateStr(nextKey);
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!val) return;
+    const [y, m] = val.split("-").map(Number);
+    if (m !== selectedMonth) setSelectedMonth(m);
+    if (y !== selectedYear) setSelectedYear(y);
+    setSelectedDailyDateStr(val);
+  };
+
+  const handleToday = () => {
+    const today = new Date();
+    const todayKey = toDateKey(today);
+    if (today.getMonth() + 1 !== selectedMonth) setSelectedMonth(today.getMonth() + 1);
+    if (today.getFullYear() !== selectedYear) setSelectedYear(today.getFullYear());
+    setSelectedDailyDateStr(todayKey);
+  };
+
+  const dailyRecapRows = useMemo(() => {
+    if (!activeDailyDateStr) return [];
+    return recapRows.filter((row) => row.dateKey === activeDailyDateStr);
+  }, [recapRows, activeDailyDateStr]);
+
   const activeRecapRows = useMemo(() => {
-    return viewMode === "weekly" ? weeklyRecapRows : recapRows;
-  }, [recapRows, viewMode, weeklyRecapRows]);
+    if (viewMode === "weekly") return weeklyRecapRows;
+    if (viewMode === "daily") return dailyRecapRows;
+    return recapRows;
+  }, [recapRows, viewMode, weeklyRecapRows, dailyRecapRows]);
 
   const sourceStats = useMemo(() => {
     const totals: Record<AttendanceSource, number> = {
@@ -770,10 +857,70 @@ export function AttendanceRecapPanel({
         />
       ) : (
       <>
+      {viewMode === "daily" && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-slate-700/60 bg-slate-900/50 p-4 text-slate-200 no-print">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400">
+              <Calendar className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Tanggal Rekap Terpilih</div>
+              <div className="text-base font-bold text-white capitalize">
+                {formattedDailyDateLabel}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrevDay}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-600 bg-slate-950/80 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900 cursor-pointer"
+              title="Hari Sebelumnya"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Sebelumnya
+            </button>
+
+            <div className="relative flex items-center">
+              <input
+                type="date"
+                value={activeDailyDateStr}
+                onChange={handleDateChange}
+                onClick={(e) => {
+                  try {
+                    (e.currentTarget as any).showPicker?.();
+                  } catch {}
+                }}
+                className="rounded-md border border-blue-500/60 bg-slate-950/90 px-3 py-1.5 text-xs font-semibold text-blue-300 shadow-sm outline-none transition hover:border-blue-400 focus:ring-2 focus:ring-blue-500/60 cursor-pointer"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleNextDay}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-600 bg-slate-950/80 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900 cursor-pointer"
+              title="Hari Berikutnya"
+            >
+              Berikutnya
+              <ChevronRight className="h-4 w-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToday}
+              className="rounded-md border border-blue-500/40 bg-blue-600/20 px-3 py-2 text-xs font-semibold text-blue-300 transition hover:bg-blue-600/30 cursor-pointer"
+            >
+              Hari Ini
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-lg border border-slate-700/60 bg-slate-950/40 px-4 py-3 text-sm text-slate-300 no-print">
-        {viewMode === "weekly" ? "Rekap mingguan menampilkan seluruh siswa terfilter pada hari sekolah aktif di minggu terpilih." : "Rekap menampilkan seluruh siswa terfilter pada setiap hari sekolah aktif."}
+        {viewMode === "weekly" ? "Rekap mingguan menampilkan seluruh siswa terfilter pada hari sekolah aktif di minggu terpilih." : viewMode === "daily" ? `Riwayat harian menampilkan seluruh siswa terfilter pada ${formattedDailyDateLabel}.` : "Rekap menampilkan seluruh siswa terfilter pada setiap hari sekolah aktif."}
         {" "}Untuk filter saat ini: <span className="font-semibold text-slate-100">{filteredStudents.length} siswa</span>
-        {" "}x <span className="font-semibold text-slate-100">{activeValidDates.length} hari aktif</span>
+        {" "}x <span className="font-semibold text-slate-100">{viewMode === "daily" ? "1" : activeValidDates.length} hari aktif</span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6 no-print">
@@ -812,7 +959,7 @@ export function AttendanceRecapPanel({
             </h2>
             <div className="mt-2 flex justify-center gap-8 font-medium text-black text-sm">
               <p>Kelas: {selectedClassName || "Semua Kelas"}</p>
-              <p>Periode: {viewMode === "weekly" ? formatWeekRange(selectedWeekStart) : `${MONTHS[selectedMonth - 1]} ${selectedYear}`}</p>
+              <p>Periode: {viewMode === "weekly" ? formatWeekRange(selectedWeekStart) : viewMode === "daily" ? formattedDailyDateLabel : `${MONTHS[selectedMonth - 1]} ${selectedYear}`}</p>
             </div>
           </div>
           <div className="mt-4 border-b-[3px] border-black"></div>
@@ -883,8 +1030,8 @@ export function AttendanceRecapPanel({
               </tr>
             </thead>
             <tbody className="bg-slate-900/20 divide-y divide-slate-700">
-              {recapRows.length > 0 ? (
-                recapRows.map((log) => (
+              {activeRecapRows.length > 0 ? (
+                activeRecapRows.map((log) => (
                   <tr key={log.rowKey} className="hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                       {new Date(log.date).toLocaleDateString('id-ID')}
