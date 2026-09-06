@@ -10,6 +10,8 @@ export interface ManualAttendancePayload {
   status: string;
   date: string;
   note?: string;
+  recordedBy?: string;
+  checkInMethod?: string;
 }
 
 export const manualAttendanceInput = async (payload: ManualAttendancePayload) => {

@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Search, Printer, List, Calendar, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
 import { buildHolidaySet, createStudentDateKey, getValidDatesInMonth, pickNewestLog, toDateKey } from "@/utils/presensiRules";
-import { AttendanceRecord, AttendanceSource } from "@/types/gas";
+import { AttendanceRecord, AttendanceSource, AttendanceStatus } from "@/types/gas";
 import { AttendanceStatisticsPanel } from "./AttendanceStatisticsPanel";
+import { manualAttendanceInput } from "@/lib/gas/api/attendance";
 
 const MONTHS = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -148,6 +149,7 @@ interface Props {
 }
 
 export function AttendanceRecapPanel({
+  schoolId,
   classes,
   students,
   attendances,
@@ -159,6 +161,7 @@ export function AttendanceRecapPanel({
   setSelectedWeekStart,
   schedules,
   holidays,
+  onRefresh,
 }: Props) {
   const dropdownClassName =
     "px-3 py-2 rounded-md border border-slate-500/70 bg-slate-950/90 text-sm font-medium text-slate-50 shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/60";
@@ -167,6 +170,7 @@ export function AttendanceRecapPanel({
   const [selectedClassName, setSelectedClassName] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDailyDateStr, setSelectedDailyDateStr] = useState<string>("");
+  const [submittingStudentId, setSubmittingStudentId] = useState<string | null>(null);
 
   const filteredStudents = useMemo(() => {
     let result = students || [];
@@ -667,6 +671,71 @@ export function AttendanceRecapPanel({
   const activeValidDates = viewMode === "weekly" ? weeklyDates : validDates;
   const activeSummaryRows = viewMode === "weekly" ? weeklySummaryRows : monthlySummaryRows;
 
+  const handleManualInput = useCallback(
+    async (studentId: string, status: AttendanceStatus) => {
+      const lockKey = `${studentId}-${activeDailyDateStr || defaultDailyDateStr}`;
+      setSubmittingStudentId(lockKey);
+      try {
+        const dateStr = activeDailyDateStr || defaultDailyDateStr;
+        await manualAttendanceInput({
+          schoolId,
+          studentId,
+          date: dateStr,
+          status,
+          note: "Diubah manual oleh admin",
+          recordedBy: "admin_manual",
+          checkInMethod: "MANUAL_ADMIN",
+        });
+        if (onRefresh) {
+          await onRefresh();
+        }
+      } catch (error) {
+        console.error("Gagal mengupdate presensi admin:", error);
+        alert("Gagal menyimpan presensi.");
+      } finally {
+        setSubmittingStudentId(null);
+      }
+    },
+    [schoolId, activeDailyDateStr, defaultDailyDateStr, onRefresh]
+  );
+
+  const getManualActionButton = (
+    studentId: string,
+    dateKey: string,
+    currentStatus?: string
+  ) => {
+    const lockKey = `${studentId}-${dateKey}`;
+    const isSubmitting = submittingStudentId === lockKey;
+
+    const buttons: Array<{ key: string; label: string; colorCls: string; activeCls: string; status: AttendanceStatus }> = [
+      { key: "H", label: "H", colorCls: "text-emerald-400 hover:bg-emerald-500/20", activeCls: "bg-emerald-500/25 text-emerald-200 ring-1 ring-emerald-500/40", status: "PRESENT" },
+      { key: "T", label: "T", colorCls: "text-amber-400 hover:bg-amber-500/20", activeCls: "bg-amber-500/25 text-amber-200 ring-1 ring-amber-500/40", status: "LATE" },
+      { key: "I", label: "I", colorCls: "text-blue-400 hover:bg-blue-500/20", activeCls: "bg-blue-500/25 text-blue-200 ring-1 ring-blue-500/40", status: "IZIN" },
+      { key: "S", label: "S", colorCls: "text-orange-400 hover:bg-orange-500/20", activeCls: "bg-orange-500/25 text-orange-200 ring-1 ring-orange-500/40", status: "SAKIT" },
+      { key: "A", label: "A", colorCls: "text-red-400 hover:bg-red-500/20", activeCls: "bg-red-500/25 text-red-200 ring-1 ring-red-500/40", status: "ALPHA" },
+    ];
+
+    return (
+      <div className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-slate-900 p-1">
+        {buttons.map((btn) => {
+          const active = currentStatus === btn.status;
+          return (
+            <button
+              key={btn.key}
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => void handleManualInput(studentId, btn.status)}
+              className={`rounded px-2 py-1 text-xs font-bold transition disabled:opacity-30 ${active ? btn.activeCls : btn.colorCls}`}
+              title={`Ubah status menjadi ${btn.label}`}
+            >
+              {btn.label}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -1078,7 +1147,7 @@ export function AttendanceRecapPanel({
                       {log.notes || (log.isSystemGenerated ? "Otomatis dari hari sekolah aktif tanpa log presensi." : "-")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300 no-print">
-                      <span className="text-xs text-slate-500">-</span>
+                      {getManualActionButton(log.studentId, log.dateKey, log.status)}
                     </td>
                   </tr>
                 ))

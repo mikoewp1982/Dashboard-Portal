@@ -56,6 +56,7 @@ function parseAttendanceDate(value: unknown): Date | null {
 function deriveAttendanceSource(record: Record<string, unknown>): AttendanceSource {
   const recordedBy = String(record.recordedBy || "").trim().toLowerCase();
   const checkInMethod = String(record.checkInMethod || "").trim().toUpperCase();
+  const note = String(record.notes || record.note || "").trim().toLowerCase();
 
   if (
     checkInMethod === "MANUAL_CLASS_SECRETARY" ||
@@ -74,8 +75,10 @@ function deriveAttendanceSource(record: Record<string, unknown>): AttendanceSour
   }
 
   if (
+    checkInMethod === "MANUAL_ADMIN" ||
     recordedBy.includes("admin") ||
-    checkInMethod === "MANUAL_ADMIN"
+    note.includes("diubah manual oleh admin") ||
+    note.includes("admin_manual")
   ) {
     return "ADMIN_MANUAL";
   }
