@@ -138,14 +138,41 @@ export async function POST(req: NextRequest) {
       }
     }
 
+function toCanonicalDbStatus(raw: unknown): string {
+  const upper = String(raw || "").trim().toUpperCase();
+  switch (upper) {
+    case "SAKIT":
+    case "SICK":
+    case "S":
+      return "SICK";
+    case "IZIN":
+    case "PERMIT":
+    case "I":
+      return "PERMIT";
+    case "ALPHA":
+    case "ABSENT":
+    case "A":
+      return "ABSENT";
+    case "LATE":
+    case "TERLAMBAT":
+    case "T":
+      return "LATE";
+    case "PRESENT":
+    case "HADIR":
+    case "H":
+    default:
+      return "PRESENT";
+  }
+}
+
     // Tentukan checkInTime default jika diperlukan
+    const canonicalStatus = toCanonicalDbStatus(status);
     let checkInTimeVal = existingData?.checkInTime ?? null;
-    const upperStatus = String(status).trim().toUpperCase();
-    if (upperStatus === "PRESENT" && !checkInTimeVal) {
+    if (canonicalStatus === "PRESENT" && !checkInTimeVal) {
       checkInTimeVal = "07:00";
-    } else if (upperStatus === "LATE" && !checkInTimeVal) {
+    } else if (canonicalStatus === "LATE" && !checkInTimeVal) {
       checkInTimeVal = "07:35";
-    } else if (["IZIN", "SAKIT", "ALPHA", "ABSENT"].includes(upperStatus)) {
+    } else if (["PERMIT", "SICK", "ABSENT"].includes(canonicalStatus)) {
       checkInTimeVal = null;
     }
 
@@ -158,7 +185,7 @@ export async function POST(req: NextRequest) {
       studentId: String(studentId).trim(),
       schoolId: canonicalSchoolId,
       date: dateMillis,
-      status: upperStatus,
+      status: canonicalStatus,
       checkInTime: checkInTimeVal,
       checkOutTime: existingData?.checkOutTime ?? null,
       checkInMethod: checkInMethod || "MANUAL_ADMIN",
