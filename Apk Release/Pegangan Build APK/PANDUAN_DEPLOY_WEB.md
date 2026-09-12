@@ -216,6 +216,13 @@ npm ci --quiet --no-fund --no-audit
 
 Harus exit `0`. Jika EUSAGE / Missing dari lock file → regenerasi lock dulu.
 
+### Status progres 2026-09-12 (Hotfix Web Admin Input Presensi Manual)
+
+- **Web Admin Commit:** `a4cb641f` (`fix(web): manual attendance input direct RTDB update and admin API fallback`)
+- **App Hosting:** Rollout otomatis backend `gerbang-aplikasi-sekolah` (project `kompas-5f0b4`, lokasi `asia-southeast1`)
+- **Fitur diperbaiki:** Tombol aksi presensi manual (**H**, **T**, **I**, **S**, **A**) di menu **Monitoring & Laporan > Rekap Kehadiran** (`gas?tab=attendance-report`) kini menulis langsung ke RTDB dengan deduplikasi idempoten dan fallback ke route Next.js `/api/admin/attendance`.
+- **Detail operasional:** `CHECKLIST_PERUBAHAN_APK_TERKINI.md`, `walkthrough.md`.
+
 ### Status progres 2026-08-16 (akhir hari)
 
 - **GAS Siswa live unduhan:** `1.0.80-siswa` / `versionCode 23077` (SHA256 `CB5CF413…`)

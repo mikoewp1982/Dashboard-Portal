@@ -371,7 +371,7 @@ Diupdate setiap kali satu Function selesai dibuat dan lulus unit test.
 | `createSchoolUser` | ⬜ Belum dibuat | |
 | `changePassword` | ⬜ Belum dibuat | |
 | `submitAttendance` | ⬜ Belum dibuat | Prioritas kedua, wajib load test |
-| `manualAttendanceInput` | ⬜ Belum dibuat | |
+| `manualAttendanceInput` | 🔄 Digantikan Next.js API & Direct RTDB (2026-09-12) | Web Admin kini menulis langsung ke RTDB dengan fan-out ke schoolId variants & fallback ke route Next.js /api/admin/attendance |
 | `pruneOldAttendance` | ⬜ Belum dibuat | |
 | `calculatePetDecay` | ⬜ Belum dibuat | |
 | `revivePet` | ⬜ Belum dibuat | |

@@ -6,7 +6,93 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-09-02 09:30 (Release EduLock v1.3.25 / 51 — Fix Celah Bypass Internet Kuota Sosmed)
+Update terakhir: 2026-09-12 18:40 (Web Admin GAS: Hotfix Input Presensi Manual Rekap Kehadiran via Direct RTDB & Admin API Fallback - Commit a4cb641f)
+
+## ✅ [WEB ADMIN HOTFIX] Input Presensi Manual Rekap Kehadiran via Direct RTDB & Admin API Fallback (2026-09-12 18:40)
+
+- [x] **Fix Error "Gagal menyimpan presensi" pada Menu Rekap Kehadiran Web Admin:**
+  - [x] **Akar Masalah**: Cloud Function `manualAttendanceInput` belum dibuat di backend Firebase (`06_KONTRAK_API_FUNCTIONS.md`), menghasilkan HTTP 404 saat tombol aksi H/T/I/S/A ditekan.
+  - [x] **Solusi Lapis 1 (Client-side)**: Mengganti `httpsCallable` dengan direct write ke Firebase RTDB (`update(rtdbRef(rtdb), updates)`).
+  - [x] **Fan-out Kanonikal**: Menyimpan ke `attendance/${recordId}` dan seluruh varian `attendance_by_school/${variant}/${recordId}`.
+  - [x] **Deduplikasi Idempoten**: Memperbarui record eksis secara in-place jika sudah ada, atau menggunakan deterministic key `manual_${schoolId}_${studentId}_${cleanDateKey}` untuk mencegah duplikasi data.
+  - [x] **Solusi Lapis 2 (Server-side Fallback)**: Membuat endpoint route Next.js `/api/admin/attendance` (POST) menggunakan Firebase Admin SDK (`adminDb`) dengan proteksi role admin/super-admin sebagai fallback tangguh.
+  - [x] **Presisi Tanggal & Metadata**: Mengirimkan target `dateKey` baris tabel secara akurat beserta `studentName`, `className`, dan `nisn` pada `AttendanceRecapPanel.tsx` dan `AttendanceMonitorTable.tsx`.
+- [x] **Verifikasi & Deploy:**
+  - [x] TypeScript check (`npx tsc --noEmit`) 0 error pada seluruh file terkait.
+  - [x] Git commit `a4cb641f` berhasil di-push ke `origin/main`.
+  - [x] Rollout otomatis Firebase App Hosting (`gerbang-aplikasi-sekolah`, project `kompas-5f0b4`) aktif.
+
+## ✅ [RELEASE RESMI & VERIFIED] GAS Siswa v1.0.125 (23122) — Offline Mode Sekretaris/OSIS, Auto Pre-Cache, & Idempotency Deduplication Fix (2026-09-12 12:30)
+
+- [x] **Dukungan Penuh Mode Offline Menu Khusus Peran:**
+  - [x] **Presensi Siswa (Sekretaris Kelas)**: Caching roster siswa dan presensi lokal. Input presensi saat offline otomatis masuk antrean `SECRETARY_ATTENDANCE_SAVE_RECORD` dan terkirim rapi saat online.
+  - [x] **Catat Pelanggaran (Petugas OSIS)**: Caching daftar siswa sekolah dan aturan kedisiplinan. Input pelanggaran saat offline otomatis masuk antrean `OSIS_DISCIPLINE_SAVE_RECORD`.
+- [x] **Silent Background Auto Pre-Cache (`RoleOfflinePreloadHelper.kt`):**
+  - [x] Pre-cache otomatis di background saat HomeScreen dibuka saat online tanpa perlu membuka menu manual satu per satu.
+  - [x] Integrasi dengan Initial Sync / Update Data Hybrid.
+  - [x] Filter siswa diperbaiki agar siswa dengan schoolId default tidak terbuang.
+  - [x] State peran di HomeScreen tidak ter-reset ke false saat koneksi putus (`onCancelled`).
+- [x] **Fix Duplikasi Data Pelanggaran OSIS (Idempotency & Deduplication):**
+  - [x] Objek `DisciplineRecord` diberi ID unik deterministik tetap `recordId = "osis_" + UUID.randomUUID()` sejak dibuat.
+  - [x] Sinkronisasi ke Firebase RTDB bersifat **100% IDEMPOTENT** (overwrite path `discipline_records/$recordId` dan `discipline_records_by_school/$schoolId/$recordId`), mencegah duplikasi baris saat retry loop `PendingFlushWorker`.
+  - [x] Proteksi `inFlightItemIds` di `HybridActionQueue.kt` mencegah race condition saat multi-trigger jaringan.
+  - [x] Deduplikasi `enqueue()` mencegah item antrean ganda berstatus PENDING dengan payload identik.
+  - [x] UI debouncing dengan state `isSubmitting` pada `StaffDisciplineScreen.kt`.
+- [x] **Build & Deploy Release:**
+  - [x] Build `:app:compileSiswaDebugKotlin` dan `:app:assembleSiswaRelease` SUCCESS.
+  - [x] Disalin ke `Final_V2\GAS\GAS-Siswa-1.0.125-siswa-23122-OFFLINE-IDEMPOTENT-OSIS-DEDUP-release.apk`, alias `GAS-Siswa-1.0.125-siswa-23122.apk`, dan `GAS-Siswa-release.apk`.
+  - [x] SHA256 sidecar: `0F42499D69EDB809953FBFA53FFC7791CADD8DF3E5ED71FE215EF7B256A30B76` (Ukuran: 22.231.129 bytes).
+- [x] **Verifikasi Lapangan Fisik:**
+  - [x] Uji offline presensi sekretaris: Lulus, 1 data terkirim bersih ke web admin.
+  - [x] Uji offline catatan pelanggaran OSIS: Lulus, 1 data terkirim bersih tanpa duplikasi ke web admin ("ok mantap sudah berjalan normal").
+
+## ✅ [RELEASE RESMI FASE 1 & 2] EduLock Siswa v1.3.48 (74) — OEM Hardening + FCM Commands + Offline Telemetry + Operator Field Handoff (2026-09-05 11:30)
+
+- [x] **Fase 1 OEM Hardening (Langkah 1-5):**
+  - [x] Helper `EduLockOEMHardeningHelper.kt` mencakup 9 brand OEM + intent shortcut fallback App Details.
+  - [x] Tambahan 11 `<queries>` vendor OEM + intent battery optimization di `AndroidManifest.xml`.
+  - [x] SetupActivity kartu ke-7 OEM Hardening (stroke oranye): shortcut Xiaomi Unlimited Access + shortcut Autostart 16 vendor intent + panduan merk. Gate 6 izin utama TETAP syarat tunggal tombol MULAI APLIKASI.
+  - [x] MainActivity recovery warning grace-aware (skip jika grace window aktif) sebelum enforcement ketat berjalan.
+- [x] **Fase 2 FCM Commands, Background Reminders, & Offline Telemetry (Langkah 6-10):**
+  - [x] 5 FCM Remote Commands: `edulock_check_perm`, `edulock_sync_now`, `edulock_force_relock`, `edulock_kill_lock` (5m..24j), `edulock_restore_lock`.
+  - [x] Short circuit enforcement kill switch di `performChecks` & `LockEnforcer`.
+  - [x] AlarmManager periodic reminder 2 jam via `PermissionReminderReceiver` ke `ACTION_CHECK_PERM`.
+  - [x] Dual offline queues: `ActiveDeviceStatusQueue` (persist status device) dan `EventAuditQueue` (persist audit pelanggaran) di SharedPreferences.
+  - [x] Payload telemetry lengkap di `sendStatusUpdate`: 11 field health termasuk brandOEM, modelOEM, status 4 izin, kill switch, brokenPermsList.
+  - [x] Penerbitan dokumen SOP lapangan operator `CHECKLIST_LAPANGAN_DAN_HANDOFF_OPERATOR.md`.
+- [x] **Build & Deploy Release:**
+  - [x] Bump `versionCode = 74`, `versionName = "1.3.48"`.
+  - [x] `:app:assembleStudentRelease` BUILD SUCCESSFUL (27s, size 3.78 MB, SHA256: `6AAFCC61111FE180682C0EA77B3C3AEA72F19B3400110697F06853D5A9EFFE3B`).
+  - [x] Dideploy ke `Final_V2\EduLock_V2-1.3.48-74.apk`, alias `EduLock_V2-studentRelease.apk`, sidecar `.sha256`, dan backup `.dbg\EduLock_V2-1.3.48-74.apk`.
+- [ ] **QA Lapangan Device Fisik (mengacu CHECKLIST_LAPANGAN_DAN_HANDOFF_OPERATOR.md):**
+  - [ ] Uji HP Vivo (unit fisik aktif): Gate 6 izin pass → tombol Mulai Aplikasi aktif.
+  - [ ] Uji kartu ke-7 OEM shortcut: Autostart intent masuk ke iManager tanpa crash.
+  - [ ] Uji recovery dialog: matikan Accessibility → buka EduLock setelah grace → dialog perbaiki izin muncul.
+  - [ ] Uji 5 FCM Command via Firebase Console.
+
+## ✅ [UI IMPROVEMENT & SHIP FINAL GAS GURU] GAS Guru v1.0.73 (1065) Layout Presensi Dhuha & Jum'at Parity Dzuhur (2026-09-03 00:00)
+
+- [x] **Rewrite Layout Presensi Dhuha & Jum'at (Guru) 100% Parity Dzuhur:**
+  - [x] 4 statistik ganti `StatPill` pil label 8 huruf (yang wrap "Halangan") menjadi `PrayerStatCard` format Dzuhur: **Card 80×70dp** (angka besar `titleLarge`+bold di atas, label kecil di bawah, warna accent per status), 4 card jejer `SpaceBetween` tanpa wrap vertikal.
+  - [x] **Card tanggal dipisah** dari statistik (dulu gabung → tanggal tinggi mendorong Nama Siswa turun 2 baris). Sekarang Card tanggal sendiri: 2 baris `[label Tanggal Presensi] → [tanggal teks besar]`, parity Dzuhur.
+  - [x] **Tabel status di-rewrite total**: Header per kolom `NO | NAMA SISWA | S | TS | I | H` (bukan satu header "Status"); `PrayerStatusOption` full-height dengan **icon Check warna accent** kalau terpilih; pemisah `TableColumnDivider` per kolom; Nama Siswa 2 baris maksimal ellipsis, vertikal tengah.
+  - [x] **Footer keterangan S/TS/I/H** ditambahkan di bawah tombol Simpan persis Dzuhur: *"Gunakan kolom S, TS, I, atau H untuk memilih status manual siswa."*
+- [x] **Version Bump Structural (WAJIB — UI model click berbeda):**
+  - [x] `guru`: `versionCode 1064 → 1065`, `versionName 1.0.72 → 1.0.73` (+suffix `-guru`) di `build.gradle.kts` flavor guru L50-L51. Hindari `INSTALL_FAILED_VERSION_DOWNGRADE` update HP guru.
+- [x] **Build Release APK:**
+  - [x] Cross-check 2 flavor: `./gradlew :app:assembleSiswaRelease :app:assembleGuruRelease -x lint -x lintVitalAnalyzeGuruRelease -x lintVitalAnalyzeSiswaRelease` → **BUILD SUCCESSFUL** (skip lint work-around known bug GradleDetector ConcurrentModificationException analyzer).
+  - [x] Size: 21.527.385 byte (~20,5 MB). SHA256 3 copy identik: `C74A0DBFDA092695D3A485248A574E8189948459F866EFC9CCF727AF0F3A8EDD`.
+- [x] **Ship ke Folder Final (HANYA GURU — sesuai instruksi user):**
+  - [x] Alias default install: `Apk Release/Final/GAS-Guru-release.apk` (overwrite build 1064).
+  - [x] Arsip permanen versioned: `Apk Release/Final/GAS-Guru-1.0.73-guru-1065.apk`.
+  - [x] **Tidak disync ke `web/public/apk/` atau deploy ke `/gas/install`** (user minta hanya Final folder, jalur install manual device guru).
+- [ ] **QA device fisik HP guru (belum diuji):**
+  - [ ] Install APK 1.0.73-guru (1065) → login akun guru → buka menu **Presensi Dhuha** / **Jum'at** → pastikan:
+    - [ ] 4 card statistik (Sholat / Tidak / Izin / Halangan) jejer rapi, label "Halangan" ada di bawah angka besar (tidak wrap turun).
+    - [ ] Header kolom tabel muncul `NO | NAMA SISWA | S | TS | I | H` (tidak cuma header "Status").
+    - [ ] Klik cell status → cell full-height berwarna accent dengan icon Check ✓ (bukan kotak kecil border).
+    - [ ] Footer teks keterangan S/TS/I/H muncul di bawah tombol Simpan.
+    - [ ] Kolom Nama Siswa TIDAK terdorong turun 2 baris (bug StatPill lama sudah tertutup).
 
 ## ✅ [BUGFIX & UX IMPROVEMENT EDULOCK SISWA] EduLock v1.3.25 (51) Release (2026-09-02 09:30)
 
