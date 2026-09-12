@@ -672,11 +672,21 @@ export function AttendanceRecapPanel({
   const activeSummaryRows = viewMode === "weekly" ? weeklySummaryRows : monthlySummaryRows;
 
   const handleManualInput = useCallback(
-    async (studentId: string, status: AttendanceStatus) => {
-      const lockKey = `${studentId}-${activeDailyDateStr || defaultDailyDateStr}`;
+    async (
+      studentId: string,
+      status: AttendanceStatus,
+      targetDateStr?: string,
+      extra?: {
+        recordId?: string;
+        studentName?: string;
+        studentClass?: string;
+        studentNisn?: string;
+      }
+    ) => {
+      const dateStr = targetDateStr || activeDailyDateStr || defaultDailyDateStr;
+      const lockKey = `${studentId}-${dateStr}`;
       setSubmittingStudentId(lockKey);
       try {
-        const dateStr = activeDailyDateStr || defaultDailyDateStr;
         await manualAttendanceInput({
           schoolId,
           studentId,
@@ -685,6 +695,10 @@ export function AttendanceRecapPanel({
           note: "Diubah manual oleh admin",
           recordedBy: "admin_manual",
           checkInMethod: "MANUAL_ADMIN",
+          recordId: extra?.recordId,
+          studentName: extra?.studentName,
+          className: extra?.studentClass,
+          nisn: extra?.studentNisn,
         });
         if (onRefresh) {
           await onRefresh();
@@ -702,7 +716,13 @@ export function AttendanceRecapPanel({
   const getManualActionButton = (
     studentId: string,
     dateKey: string,
-    currentStatus?: string
+    currentStatus?: string,
+    extra?: {
+      recordId?: string;
+      studentName?: string;
+      studentClass?: string;
+      studentNisn?: string;
+    }
   ) => {
     const lockKey = `${studentId}-${dateKey}`;
     const isSubmitting = submittingStudentId === lockKey;
@@ -724,7 +744,7 @@ export function AttendanceRecapPanel({
               key={btn.key}
               type="button"
               disabled={isSubmitting}
-              onClick={() => void handleManualInput(studentId, btn.status)}
+              onClick={() => void handleManualInput(studentId, btn.status, dateKey, extra)}
               className={`rounded px-2 py-1 text-xs font-bold transition disabled:opacity-30 ${active ? btn.activeCls : btn.colorCls}`}
               title={`Ubah status menjadi ${btn.label}`}
             >
@@ -1147,7 +1167,18 @@ export function AttendanceRecapPanel({
                       {log.notes || (log.isSystemGenerated ? "Otomatis dari hari sekolah aktif tanpa log presensi." : "-")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300 no-print">
-                      {getManualActionButton(log.studentId, log.dateKey, log.status)}
+                      {(() => {
+                        const isRealRecord =
+                          Boolean(log.id) &&
+                          !log.isSystemGenerated &&
+                          !String(log.id).startsWith("missing-");
+                        return getManualActionButton(log.studentId, log.dateKey, log.status, {
+                          recordId: isRealRecord ? log.id : undefined,
+                          studentName: log.studentName,
+                          studentClass: log.studentClass,
+                          studentNisn: log.studentNisn,
+                        });
+                      })()}
                     </td>
                   </tr>
                 ))

@@ -15,7 +15,11 @@ interface Props {
 export function AttendanceMonitorTable({ schoolId, students, attendances, loading, selectedDate }: Props) {
   const [submitting, setSubmitting] = useState<string | null>(null);
 
-  const handleManualInput = async (studentId: string, status: AttendanceStatus) => {
+  const handleManualInput = async (
+    studentId: string,
+    status: AttendanceStatus,
+    extra?: { recordId?: string; studentName?: string; nisn?: string; className?: string }
+  ) => {
     setSubmitting(studentId);
     try {
       await manualAttendanceInput({
@@ -24,6 +28,10 @@ export function AttendanceMonitorTable({ schoolId, students, attendances, loadin
         date: selectedDate,
         status,
         note: "Diubah manual oleh admin",
+        recordId: extra?.recordId,
+        studentName: extra?.studentName,
+        nisn: extra?.nisn,
+        className: extra?.className,
       });
     } catch (error) {
       console.error("Gagal mengupdate presensi:", error);
@@ -77,35 +85,70 @@ export function AttendanceMonitorTable({ schoolId, students, attendances, loadin
                   <div className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-slate-900 p-1">
                     <button
                       disabled={isSubmitting || att?.status === "PRESENT"}
-                      onClick={() => handleManualInput(student.id, "PRESENT")}
+                      onClick={() =>
+                        handleManualInput(student.id, "PRESENT", {
+                          recordId: att?.id,
+                          studentName: student.name,
+                          nisn: student.nisn,
+                          className: student.className || student.class,
+                        })
+                      }
                       className="rounded px-2 py-1 text-xs font-medium text-emerald-400 transition hover:bg-emerald-500/20 disabled:opacity-30"
                     >
                       H
                     </button>
                     <button
                       disabled={isSubmitting || att?.status === "LATE"}
-                      onClick={() => handleManualInput(student.id, "LATE")}
+                      onClick={() =>
+                        handleManualInput(student.id, "LATE", {
+                          recordId: att?.id,
+                          studentName: student.name,
+                          nisn: student.nisn,
+                          className: student.className || student.class,
+                        })
+                      }
                       className="rounded px-2 py-1 text-xs font-medium text-amber-400 transition hover:bg-amber-500/20 disabled:opacity-30"
                     >
                       T
                     </button>
                     <button
                       disabled={isSubmitting || att?.status === "IZIN"}
-                      onClick={() => handleManualInput(student.id, "IZIN")}
+                      onClick={() =>
+                        handleManualInput(student.id, "IZIN", {
+                          recordId: att?.id,
+                          studentName: student.name,
+                          nisn: student.nisn,
+                          className: student.className || student.class,
+                        })
+                      }
                       className="rounded px-2 py-1 text-xs font-medium text-blue-400 transition hover:bg-blue-500/20 disabled:opacity-30"
                     >
                       I
                     </button>
                     <button
                       disabled={isSubmitting || att?.status === "SAKIT"}
-                      onClick={() => handleManualInput(student.id, "SAKIT")}
+                      onClick={() =>
+                        handleManualInput(student.id, "SAKIT", {
+                          recordId: att?.id,
+                          studentName: student.name,
+                          nisn: student.nisn,
+                          className: student.className || student.class,
+                        })
+                      }
                       className="rounded px-2 py-1 text-xs font-medium text-orange-400 transition hover:bg-orange-500/20 disabled:opacity-30"
                     >
                       S
                     </button>
                     <button
                       disabled={isSubmitting || att?.status === "ALPHA"}
-                      onClick={() => handleManualInput(student.id, "ALPHA")}
+                      onClick={() =>
+                        handleManualInput(student.id, "ALPHA", {
+                          recordId: att?.id,
+                          studentName: student.name,
+                          nisn: student.nisn,
+                          className: student.className || student.class,
+                        })
+                      }
                       className="rounded px-2 py-1 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-30"
                     >
                       A
