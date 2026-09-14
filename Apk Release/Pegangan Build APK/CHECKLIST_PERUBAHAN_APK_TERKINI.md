@@ -6,7 +6,105 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-09-12 18:40 (Web Admin GAS: Hotfix Input Presensi Manual Rekap Kehadiran via Direct RTDB & Admin API Fallback - Commit a4cb641f)
+Update terakhir: 2026-09-14 19:40 (Web Admin: No HP Wali Kelas & Deploy; GAS Ortu: Hubungi Wali Kelas, Realtime Riwayat Sholat & 7 KAIH)
+
+## ✅ [RELEASE RESMI & VERIFIED] Web Admin & GAS Orang Tua v1.0.1-ortu (1001) — No HP Wali Kelas, Hubungi Wali Kelas, Realtime Riwayat Sholat & 7 KAIH (2026-09-14 19:40)
+
+- [x] **Web Admin — Kolom & Manajemen No HP Wali Kelas (`/dashboard/database` -> Guru/Wali Kelas):**
+  - [x] Menambahkan field `phone` / `noHp` pada konfigurasi database, form tambah/edit wali kelas (`TeacherFormModal.tsx`), dan tabel data guru/wali kelas (`TeachersTable.tsx`).
+  - [x] Menambahkan filter pencarian berdasarkan Nomor HP di `TeachersPanel.tsx`.
+  - [x] Tersimpan langsung ke database RTDB `gas/schools/$schoolId/teachers/$teacherId` dengan pembersihan format nomor standar.
+- [x] **GAS Orang Tua — Aksi Cepat & Kontak Tunggal "Hubungi Wali Kelas":**
+  - [x] Mengubah `EmergencyContactCard` di `ParentDashboardScreen.kt` menjadi tombol tunggal elegan **"Hubungi Wali Kelas"** (menampilkan nama wali kelas jika terdaftar).
+  - [x] Menambahkan listener realtime di `ParentDashboardViewModel.kt` yang secara otomatis mencocokkan kelas ananda dengan wali kelas di `gas/schools/$schoolId/teachers` (`matchesHomeroomClass`).
+  - [x] Saat ditekan, langsung membuka dialer telepon ponsel orang tua (`Intent.ACTION_DIAL`) dengan nomor HP wali kelas yang terdaftar di admin.
+- [x] **GAS Orang Tua — Kartu Riwayat Sholat Berjamaah Hidup & Realtime:**
+  - [x] Mendesain ulang kartu Riwayat Sholat di `ParentDashboardScreen.kt` dengan badge "● Realtime", container card modern, icon centang hijau, jam sholat format WIB (`formattedTime`), serta tanggal ramah pengguna (`formattedDate`: "Hari Ini, 12:15 WIB" dsb).
+  - [x] Memperbaiki pemetaan status sholat di `ParentDashboardViewModel.kt` untuk mengenali log `"PRAY"`, `"PRAYED"`, `"HADIR"` sebagai status `"Sudah Sholat"` (hijau emerald).
+- [x] **GAS Orang Tua — Sinkronisasi Realtime 7 KAIH:**
+  - [x] Memperbaiki listener 7 KAIH di `ParentDashboardViewModel.kt` agar mendengarkan path `seven_habits_logs/$studentId/$dateKey` dan `seven_habits_logs_by_school` menggunakan multi-alias (`studentId` dan `nisn`).
+  - [x] Mendukung struktur data `habits/habit1` hingga `habit7` yang ditulis oleh APK Siswa maupun Web Admin, sehingga centang kebiasaan langsung ter-update realtime di layar orang tua.
+- [x] **Build & Distribusi Release APK:**
+  - [x] Build Gradle `:app:assembleOrtuRelease` sukses (`1.0.1-ortu`, versionCode `1001`).
+  - [x] Disalin ke `D:\Dashboard Portal\Apk Release\Orang Tua\GAS-OrangTua-1.0.1-ortu-1001.apk` dan `D:\Dashboard Portal\web\public\apk\GAS-OrangTua-1.0.1-ortu-1001.apk`.
+  - [x] SHA-256: `1ac35ff8aee8d92e02c43b3be8112c93d3bfab272bf3cb744616084016e1f9fe` (Ukuran: 22.329.436 bytes).
+  - [x] Manifest `apk-manifest.json` dan `.sha256` diperbarui.
+- [x] **Deploy Web Admin ke Firebase App Hosting:**
+  - [x] Mengikuti panduan resmi `docs/PANDUAN_DEPLOY_APPHOSTING.md`.
+  - [x] Eksekusi `git add .`, `git commit`, dan `git push` dari root directory `Dashboard Portal`.
+
+## ✅ [HOTFIX] GAS Orang Tua - Kartu Sholat Dzuhur Tidak Memperbarui Status saat Jadwal Diubah di Web Admin (2026-09-14 10:53)
+
+- [x] **Fix Status Kartu Sholat Tidak Realtime saat Admin Mengubah Jadwal:**
+  - [x] **Akar Masalah 1**: Ketika admin mengaktifkan kembali hari sholat (dari nonaktif → aktif), `todayPrayerStatus` yang sudah berisi `"Tidak ada jadwal sholat"` tidak pernah di-reset. Kondisi lama hanya menangani arah nonaktif → tampil, bukan sebaliknya.
+  - [x] **Akar Masalah 2**: `isPrayerLibur` di prayer attendance listener hanya mengecek string `"Libur"`, tidak menangkap `"Tidak ada jadwal sholat"`.
+  - [x] **Solusi**: Menambahkan logika `resetToDefault` di `ParentDashboardViewModel.kt` — jika `!isPrayerLibur && (currentStatus == "Tidak ada jadwal sholat" || currentStatus == "Libur")`, status direset ke `"Belum Sholat"` agar kartu sholat kembali aktif secara realtime.
+  - [x] **Deploy**: Re-build GAS Orang Tua, disalin ke `Apk Release/Orang Tua` dan `web/public/apk`. SHA-256: `E6979C121464038DE76C0C14E3B7A738E273457231720BCF67BFFF0FAC163B65`.
+- [x] **Verifikasi Lapangan**: Dikonfirmasi berjalan normal oleh user ("ok mantap, sudah beres").
+
+## ✅ [HOTFIX] GAS Orang Tua - Fix Jadwal Sholat Dzuhur Dinamis Tidak Sinkron (2026-09-14 10:20)
+
+- [x] **Fix Sinkronisasi Jadwal Kelas Spesifik (Dzuhur/Dhuha) dengan Web Admin:**
+  - [x] **Akar Masalah**: Variabel `adminDayOfWeek` tidak didefinisikan secara lokal di dalam scope `prayerListener` pada `ParentDashboardViewModel.kt`, menyebabkan logika pencocokan jadwal kelas spesifik (`sDay == adminDayOfWeek`) dan pengecekan hari aktif global gagal tereksekusi dengan benar atau jatuh ke fallback default. Selain itu, hari tidak aktif di web admin (seperti Senin) memunculkan status "Libur", bukan "Tidak ada jadwal sholat" seperti yang diharapkan.
+  - [x] **Solusi**: 
+    - Menambahkan deklarasi eksplisit `val adminDayOfWeek = toAdminDayOfWeek(Calendar.getInstance().get(Calendar.DAY_OF_WEEK))` di dalam `onDataChange` milik `prayerListener`.
+    - Mengganti teks output dari "Libur" menjadi "Tidak ada jadwal sholat" di `ParentDashboardViewModel.kt` jika `!isDzuhurActiveToday`.
+  - [x] **Dampak**: Jadwal waktu Dzuhur (atau Dhuha) sekarang akan akurat dan persis sama dengan yang dikonfigurasi di halaman Web Admin untuk masing-masing kelas dan hari. Jika bukan hari wajib sholat, layar Pantau Aktivitas akan menampilkan "Tidak ada jadwal sholat".
+  - [x] **Deploy**: Re-build GAS Orang Tua `1.0.1-ortu-1001.apk`, disalin ke direktori `Apk Release/Orang Tua` dan `web/public/apk` dengan SHA-256 baru `B2FB408B39CC0C62D5E0CCFE862B161F2844348D1E2A8D4014FA28821657C29A`.
+## ✅ [RELEASE RESMI & VERIFIED] GAS Orang Tua v1.0.1-ortu (1001) — Fix Format Jam Masuk/Pulang, Sinkronisasi Jadwal Web Admin, Jadwal Sholat Dinamis, & Logika Rekap Alpa (2026-09-14 08:36)
+
+- [x] **A.1. Perbaikan Format Jam Presensi Masuk & Pulang (Epoch Millis -> HH:mm WIB):**
+  - [x] Menambahkan utility fungsi `formatAttendanceTime(raw: String?)` di [PresensiRuleUtils.kt](file:///d:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/util/PresensiRuleUtils.kt) yang mendukung konversi epoch timestamp milidetik / detik (misal `1789344068549` -> `07:01`), format waktu standar `HH:mm`, dan ISO string dengan timezone Asia/Jakarta (WIB).
+  - [x] Menerapkan `formatAttendanceTime` pada parsing query kehadiran anak (`parseAttendanceList`) dan pada rendering UI: `TodayAttendanceHeroCard`, `ActivityReturnHeroCard`, dan `TodayMovementTimelineCard` di [ParentDashboardScreen.kt](file:///d:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/parent/ParentDashboardScreen.kt).
+- [x] **A.2. Sinkronisasi Jam Masuk & Jam Pulang Resmi Sekolah dari Web Admin:**
+  - [x] Mendengarkan node Firebase `school_settings/$variant/attendance/schedules` di [ParentDashboardViewModel.kt](file:///d:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/ParentDashboardViewModel.kt) dengan dukungan multi-varian ID sekolah (`getSchoolIdVariants(child.schoolId)`).
+  - [x] Menghitung jam masuk (`startTime`) dan jam pulang (`endTime`) hari berjalan secara dinamis berdasarkan hari dalam pekan (`dayOfWeek`). Contoh: Senin masuk 08:45 WIB & pulang 13:45 WIB.
+  - [x] Menampilkan jam jadwal resmi di kartu pahlawan "Status Kepulangan Hari Ini" (`Jadwal Masuk` & `Jadwal Pulang`) serta pada node timeline aktivitas.
+- [x] **A.3. Sinkronisasi Jadwal Sholat / Ibadah Dinamis dari Web Admin:**
+  - [x] Mendengarkan node `school_settings/$variant/prayer_v2/types` dan `schedules` di [ParentDashboardViewModel.kt](file:///d:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/ParentDashboardViewModel.kt).
+  - [x] Menampilkan judul ibadah aktif (contoh: "Sholat Dzuhur Berjamaah" atau "Sholat Dhuha") beserta rentang waktu sholat yang dikonfigurasi di web admin (contoh `09:30 - 17:30 WIB`).
+  - [x] Mengalirkan `prayerTitle` dan `prayerDzuhurHour` ke state `ChildActivityState` dan timeline aktivitas anak di [ParentDashboardScreen.kt](file:///d:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/parent/ParentDashboardScreen.kt).
+- [x] **B. Penyelarasan Menu Rekap Kehadiran Bulanan dengan Web Admin (Perhitungan Alpa / A):**
+  - [x] Menyelaraskan algoritma perhitungan di `calculateMonthlySummary` dengan aturan web admin (`isValidSchoolDay`, `cachedSchedules`, `cachedHolidays`): Hari sekolah efektif lampau yang tidak memiliki log presensi sekarang dihitung sebagai **Alpa ("A")** dan menambah total `totalA`, bukan lagi `-` (strip).
+  - [x] Menambahkan header hari kalender (`Sen`, `Sel`, `Rab`, `Kam`, `Jum`, `Sab`, `Min`) pada grid kalender presensi bulanan dengan offset hari pertama yang presisi.
+  - [x] Menampilkan lencana warna merah untuk status "A" (Alpa) dan memperbarui legenda keterangan rekap kehadiran (Hadir, Sakit, Izin, Alpa, Libur).
+- [x] **Build & Distribusi Release APK:**
+  - [x] Build Gradle `:app:assembleOrtuRelease` sukses (flavor: `ortu`, versionCode: `1001`, versionName: `1.0.1-ortu`).
+  - [x] Disalin ke:
+    - `D:\Dashboard Portal\Apk Release\Orang Tua\GAS-OrangTua-1.0.1-ortu-1001.apk`
+    - `D:\Dashboard Portal\web\public\apk\GAS-OrangTua-1.0.1-ortu-1001.apk`
+  - [x] SHA-256: `52C6E06BCCBCD6FB850C469BF61FD82AB999DE193E1895C695E5DEEF8E69EEF9` (Ukuran: 22.329.424 bytes).
+  - [x] Manifest [web/public/apk/apk-manifest.json](file:///d:/Dashboard%20Portal/web/public/apk/apk-manifest.json) diperbarui.
+
+## ✅ [RELEASE RESMI & VERIFIED] GAS Orang Tua v1.0.1-ortu (1001) — Sub-Fitur Pantau Aktivitas Live Sync EduLock, Alur Aktivitas Dinamis & Otomatisasi Hari Libur (2026-09-13 16:35)
+
+- [x] **Sub-Fitur Pantau Aktivitas Terkini (Live Sync EduLock & Web Admin):**
+  - [x] **Integrasi Realtime Telemetri EduLock Ananda**: Membaca node Firebase `edulock_devices/$studentId` secara realtime (Level Baterai, Screen-on time / durasi layar, status online, dan waktu aktif terakhir).
+  - [x] **Pembersihan Kartu Tingkat Admin/Operator**: Menghapus kartu `EduLockProtectionCard`, `TrustScoreCard`, dan `FindDeviceActionCard` dari beranda orang tua agar antarmuka fokus pada informasi penting ananda dan tidak membingungkan orang tua dengan kontrol administratif.
+  - [x] **Restrukturisasi Kartu Telemetri Ramah Ortu**: Mengubah judul kartu menjadi **"Kondisi HP Ananda"** dengan indikator visual baterai, status layar, dan badge informasi yang bersih.
+- [x] **Jadwal Sekolah Dinamis & Otomatisasi Hari Libur (Fix Timeline & Inactive Hours):**
+  - [x] **Pembaruan Judul Kartu Alur**: Mengubah judul dari "Alur Kepulangan dan aktivitas hari ini" menjadi **"Alur Aktivitas Hari Ini"** di [ParentDashboardScreen.kt](file:///d:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/screens/parent/ParentDashboardScreen.kt).
+  - [x] **Integrasi Jadwal Sekolah Realtime**: [ParentDashboardViewModel.kt](file:///d:/Dashboard%20Portal/native-mobile-gas/app/src/main/java/com/satupintu/mobile/ui/viewmodel/ParentDashboardViewModel.kt) mendengarkan perubahan jadwal presensi dari `school_settings/$schoolId/attendance` (fallback `schools/$schoolId/schedule`) dan jadwal sholat Dzuhur dari `school_settings/$schoolId/prayer_v2/types`.
+  - [x] **Deteksi Hari Libur Otomatis**: Mendeteksi hari Minggu (`Calendar.SUNDAY`), hari tidak aktif pada jadwal mingguan sekolah (`schedules[dayOfWeek]?.isActive == false`), atau tanggal merah kalender.
+  - [x] **Pencegahan Penimpaan Jam Nonaktif (`23:58 WIB`)**: Jika hari ini adalah hari libur (`isHolidayCached = true`), jam sekolah tidak ditimpa oleh fallback jam tidak aktif (seperti `23:58`), melainkan langsung disetel ke status **"Libur"**.
+  - [x] **Penyesuaian Metrik Hero Card & Timeline saat Libur**:
+    - `Tap Masuk` menampilkan **"Libur"** (aksen Cyan) alih-alih `--:--` atau `Belum Tap`.
+    - `Jadwal Pulang` menampilkan **"Libur"** alih-alih `23:58 WIB`.
+    - `Tap Pulang` menampilkan **"Libur"** alih-alih `--:--` atau `Belum Tap`.
+    - Node timeline "Masuk Sekolah", "Sholat Dzuhur Berjamaah", dan "Pulang Sekolah" otomatis menampilkan keterangan **"Hari ini libur"** atau **"Libur"**.
+- [x] **Build & Distribusi Release APK:**
+  - [x] Build Gradle `:app:assembleOrtuRelease` sukses (flavor: `ortu`, versionCode: `1001`, versionName: `1.0.1-ortu`).
+  - [x] Signed dengan keystore release resmi `gas-release.jks`.
+  - [x] Disalin ke direktori rilis:
+    - `D:\Dashboard Portal\Apk Release\Orang Tua\GAS-OrangTua-1.0.1-ortu-1001.apk`
+    - `D:\Dashboard Portal\web\public\apk\GAS-OrangTua-1.0.1-ortu-1001.apk`
+  - [x] SHA-256 sidecar terverifikasi: `90DC75CA96652282DDF0058F3A2312356F5B1A682D9E39F025F57179CDD93382` (Ukuran: 22.329.431 bytes).
+  - [x] Katalog unduhan web terintegrasi di [web/public/apk/apk-manifest.json](file:///d:/Dashboard%20Portal/web/public/apk/apk-manifest.json) dan halaman download [web/src/app/gas/install/page.tsx](file:///d:/Dashboard%20Portal/web/src/app/gas/install/page.tsx).
+- [ ] **QA Lapangan Device Fisik Orang Tua:**
+  - [ ] Install APK `GAS-OrangTua-1.0.1-ortu-1001.apk` pada smartphone orang tua.
+  - [ ] Login menggunakan nomor HP / akun orang tua yang terdaftar.
+  - [ ] Pastikan kartu "Alur Aktivitas Hari Ini" menampilkan status "Libur" pada hari libur / akhir pekan.
+  - [ ] Pastikan kartu "Kondisi HP Ananda" menyinkronkan status baterai dan layar dari EduLock ananda secara realtime.
 
 ## ✅ [WEB ADMIN HOTFIX] Input Presensi Manual Rekap Kehadiran via Direct RTDB & Admin API Fallback (2026-09-12 18:40)
 

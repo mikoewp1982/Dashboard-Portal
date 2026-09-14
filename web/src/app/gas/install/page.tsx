@@ -286,14 +286,77 @@ const gasMenuItems = [
 ];
 
 export default function GasStudentInstallPage() {
-  const apkMeta = getLatestApkMetaByPackageName("com.satupintu.mobile.siswa", {
+  const siswaMeta = getLatestApkMetaByPackageName("com.satupintu.mobile.siswa", {
     fileName: "GAS-Siswa-1.0.96-siswa-23093.apk",
-    versionName: "1.0.95-siswa",
+    versionName: "1.0.96-siswa",
     versionCode: 23093,
   });
+  const ortuMeta = getLatestApkMetaByPackageName("com.satupintu.mobile.ortu", {
+    fileName: "GAS-OrangTua-1.0.1-ortu-1001.apk",
+    versionName: "1.0.1-ortu",
+    versionCode: 1001,
+  });
+  const guruMeta = getLatestApkMetaByPackageName("com.satupintu.mobile.guru", {
+    fileName: "GAS-Guru-1.0.1-guru-1001.apk",
+    versionName: "1.0.1-guru",
+    versionCode: 1001,
+  });
+  const kepalaMeta = getLatestApkMetaByPackageName("com.satupintu.mobile.kepala", {
+    fileName: "GAS-Kepala-1.0.1-kepala-1001.apk",
+    versionName: "1.0.1-kepala",
+    versionCode: 1001,
+  });
+
+  const apkVariants = [
+    {
+      id: "siswa",
+      name: "GAS Siswa",
+      badge: "Siswa",
+      color: "from-sky-500 to-blue-600",
+      border: "border-sky-400/30",
+      bgBadge: "bg-sky-400/10 text-sky-200 border-sky-400/30",
+      description: "Presensi GPS & Manual, Sholat Berjamaah, 7 KAIH, Virtual Pet & Literasi.",
+      meta: siswaMeta,
+      href: getApkDownloadHref(siswaMeta.fileName),
+    },
+    {
+      id: "ortu",
+      name: "GAS Orang Tua",
+      badge: "Wali Murid",
+      color: "from-cyan-400 to-teal-500",
+      border: "border-cyan-400/30",
+      bgBadge: "bg-cyan-400/10 text-cyan-200 border-cyan-400/30",
+      description: "Pantau presensi realtime, radar kepulangan & peta lokasi, kondisi HP anak, sholat & 7 KAIH, serta multi-anak.",
+      meta: ortuMeta,
+      href: getApkDownloadHref(ortuMeta.fileName),
+    },
+    {
+      id: "guru",
+      name: "GAS Guru",
+      badge: "Guru & Staf",
+      color: "from-emerald-400 to-teal-600",
+      border: "border-emerald-400/30",
+      bgBadge: "bg-emerald-400/10 text-emerald-200 border-emerald-400/30",
+      description: "Presensi mandiri guru, rekap presensi siswa per kelas, pantau ibadah & catatan pembinaan.",
+      meta: guruMeta,
+      href: getApkDownloadHref(guruMeta.fileName),
+    },
+    {
+      id: "kepala",
+      name: "GAS Kepala Sekolah",
+      badge: "Kepala Sekolah",
+      color: "from-purple-400 to-indigo-600",
+      border: "border-purple-400/30",
+      bgBadge: "bg-purple-400/10 text-purple-200 border-purple-400/30",
+      description: "Executive dashboard statistik kehadiran guru & siswa se-sekolah secara real-time.",
+      meta: kepalaMeta,
+      href: getApkDownloadHref(kepalaMeta.fileName),
+    },
+  ];
+
   // URL must be the versioned file so mobile Save-As keeps the version in the name.
-  const apkHref = getApkDownloadHref(apkMeta.fileName);
-  const downloadFileName = apkMeta.fileName;
+  const apkHref = getApkDownloadHref(siswaMeta.fileName);
+  const downloadFileName = siswaMeta.fileName;
   const installSteps = getInstallSteps(downloadFileName);
 
   return (
@@ -340,12 +403,12 @@ export default function GasStudentInstallPage() {
               <p className="mt-3 text-sm text-slate-300">
                 File unduhan:{" "}
                 <span className="font-semibold text-sky-200">{downloadFileName}</span>
-                {apkMeta.versionName ? (
+                {siswaMeta.versionName ? (
                   <>
                     {" "}
-                    (versi {apkMeta.versionName}
-                    {typeof apkMeta.versionCode === "number"
-                      ? ` / ${apkMeta.versionCode}`
+                    (versi {siswaMeta.versionName}
+                    {typeof siswaMeta.versionCode === "number"
+                      ? ` / ${siswaMeta.versionCode}`
                       : ""}
                     )
                   </>
@@ -401,6 +464,75 @@ export default function GasStudentInstallPage() {
             </div>
           </div>
         </div>
+
+        {/* Pilihan Varian Aplikasi GAS */}
+        <section id="pilihan-varian" className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-sky-200">
+                Ekosistem Aplikasi Sekolah
+              </div>
+              <h2 className="mt-1 text-2xl font-black text-white sm:text-3xl">
+                Pilih Varian Aplikasi GAS Sesuai Peran Anda
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {apkVariants.map((variant) => (
+              <div
+                key={variant.id}
+                className={`flex flex-col justify-between rounded-[24px] border ${variant.border} bg-slate-950/40 p-5 shadow-xl backdrop-blur transition hover:border-white/30`}
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${variant.bgBadge}`}
+                    >
+                      {variant.badge}
+                    </span>
+                    <span className="text-[11px] font-mono text-slate-400">
+                      v{variant.meta.versionName || "1.0.1"}
+                    </span>
+                  </div>
+
+                  <h3 className="mt-4 text-xl font-black text-white">
+                    {variant.name}
+                  </h3>
+                  <p className="mt-2 text-xs leading-5 text-slate-300">
+                    {variant.description}
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-white/10">
+                  <a
+                    href={variant.href}
+                    download={variant.meta.fileName}
+                    className={`flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${variant.color} px-4 py-3 text-sm font-bold text-slate-950 transition hover:brightness-110`}
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                    Unduh APK
+                  </a>
+                  <div className="mt-2 text-center text-[10px] text-slate-400 truncate">
+                    {variant.meta.fileName}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section id="langkah-instalasi" className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-[28px] border border-white/10 bg-slate-950/40 p-6 shadow-xl backdrop-blur sm:p-8">

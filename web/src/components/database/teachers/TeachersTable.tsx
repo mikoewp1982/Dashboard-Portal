@@ -21,6 +21,7 @@ export function TeachersTable({ rows, loading, onEdit, onDelete, onResetDevice }
               <th className="px-6 py-4 font-semibold">NAMA LENGKAP</th>
               <th className="px-6 py-4 font-semibold">NUPTK / PASSWORD LOGIN</th>
               <th className="px-6 py-4 font-semibold">KELAS</th>
+              <th className="px-6 py-4 font-semibold">NO HP WALI KELAS</th>
               <th className="px-6 py-4 font-semibold">DEVICE</th>
               <th className="px-6 py-4 font-semibold">STATUS</th>
               <th className="px-6 py-4 text-right font-semibold">AKSI</th>
@@ -29,13 +30,13 @@ export function TeachersTable({ rows, loading, onEdit, onDelete, onResetDevice }
           <tbody className="divide-y divide-white/5">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
                   Memuat data...
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center">
+                <td colSpan={7} className="px-6 py-12 text-center">
                   <Users className="mx-auto mb-3 h-8 w-8 text-slate-500 opacity-50" />
                   <p className="font-medium text-slate-400">Belum ada data Guru/Wali Kelas</p>
                 </td>
@@ -44,12 +45,22 @@ export function TeachersTable({ rows, loading, onEdit, onDelete, onResetDevice }
               rows.map((row) => {
                 const deviceHash = String(row.deviceId || row.device_uuid || row.device || "").trim();
                 const hasDevice = Boolean(deviceHash);
+                const teacherPhone = row.phone || row.noHp || "";
 
                 return (
                   <tr key={row.id} className="transition hover:bg-white/5">
                     <td className="px-6 py-4 font-medium text-white">{row.name || "-"}</td>
                     <td className="px-6 py-4 font-semibold text-slate-300">{row.nuptk || row.id}</td>
                     <td className="px-6 py-4 text-slate-300">{row.class || "-"}</td>
+                    <td className="px-6 py-4">
+                      {teacherPhone ? (
+                        <span className="font-mono text-xs font-medium text-emerald-400">
+                          {teacherPhone}
+                        </span>
+                      ) : (
+                        <span className="text-xs italic text-slate-500">Belum diisi</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 font-mono text-xs text-slate-400 max-w-[160px] truncate" title={deviceHash || undefined}>
                       {hasDevice ? (
                         <div>

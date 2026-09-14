@@ -160,7 +160,7 @@ export const registerStudentDevice = functions.https.onRequest(async (req, res) 
       return;
     }
 
-    const registeredDeviceId = readString(student, "deviceId", "device");
+    const registeredDeviceId = readString(student, "gasDeviceId", "deviceId", "device");
     if (registeredDeviceId && registeredDeviceId !== deviceId) {
       res.status(409).json({ success: false, message: "Akun ini terkunci pada perangkat lain. Hubungi Admin/Wali Kelas untuk reset." });
       return;
@@ -171,10 +171,12 @@ export const registerStudentDevice = functions.https.onRequest(async (req, res) 
     const studentPath = `gas/schools/${schoolContext.schoolId}/students/${studentKey}`;
 
     await admin.database().ref().update({
+      [`${studentPath}/gasDeviceId`]: deviceId,
       [`${studentPath}/deviceId`]: deviceId,
       [`${studentPath}/device`]: deviceId,
       [`${studentPath}/lastLogin`]: now,
       [`${studentPath}/lastLoginAt`]: now,
+      [`master_students/${nisnValue}/gasDeviceId`]: deviceId,
       [`master_students/${nisnValue}/deviceId`]: deviceId,
       [`master_students/${nisnValue}/device`]: deviceId,
     });

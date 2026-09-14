@@ -63,7 +63,7 @@
               "username"
             ],
             "$studentId": {
-              ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || !newData.child('deviceId').exists() || newData.child('deviceId').val() == '' || !newData.child('device').exists() || newData.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
+              ".write": "!data.child('gasDeviceId').exists() || data.child('gasDeviceId').val() == '' || !newData.child('gasDeviceId').exists() || newData.child('gasDeviceId').val() == '' || data.child('gasDeviceId').val() == newData.child('gasDeviceId').val() || !data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || !newData.child('deviceId').exists() || newData.child('deviceId').val() == '' || !newData.child('device').exists() || newData.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
             }
           },
           "teachers": {
@@ -90,7 +90,7 @@
     "master_students": {
       ".read": true,
       "$nisn": {
-        ".write": "!data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || !newData.child('deviceId').exists() || newData.child('deviceId').val() == '' || !newData.child('device').exists() || newData.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
+        ".write": "!data.child('gasDeviceId').exists() || data.child('gasDeviceId').val() == '' || !newData.child('gasDeviceId').exists() || newData.child('gasDeviceId').val() == '' || data.child('gasDeviceId').val() == newData.child('gasDeviceId').val() || !data.child('deviceId').exists() || data.child('deviceId').val() == '' || !data.child('device').exists() || data.child('device').val() == '' || !newData.child('deviceId').exists() || newData.child('deviceId').val() == '' || !newData.child('device').exists() || newData.child('device').val() == '' || data.child('deviceId').val() == newData.child('deviceId').val() || data.child('device').val() == newData.child('device').val() || (auth != null && auth.token.role === 'admin')"
       }
     },
     "students": {

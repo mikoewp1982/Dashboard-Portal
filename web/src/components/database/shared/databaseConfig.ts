@@ -37,6 +37,8 @@ export type DatabaseRecord = {
   activityLabel?: string;
   latestActivityAt?: number | null;
   hasActiveEduLockSession?: boolean;
+  phone?: string;
+  noHp?: string;
 };
 
 export type OverviewCounts = {
@@ -54,6 +56,7 @@ export type DatabaseFormData = {
   status: string;
   gender: string;
   religion: string;
+  phone?: string;
 };
 
 export const defaultFormData: DatabaseFormData = {
@@ -65,6 +68,7 @@ export const defaultFormData: DatabaseFormData = {
   status: "Aktif",
   gender: "L",
   religion: "ISLAM",
+  phone: "",
 };
 
 export const getDatabasePath = (tab: DatabaseTab, schoolId: string) => {

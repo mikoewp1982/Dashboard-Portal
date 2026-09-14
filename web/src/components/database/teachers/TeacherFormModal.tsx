@@ -88,6 +88,20 @@ export function TeacherFormModal({
             <div className="mt-2 text-xs text-slate-400">Nama guru dipakai sebagai username login.</div>
           </div>
 
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-300">
+              NO HP / WHATSAPP WALI KELAS
+            </label>
+            <input
+              type="tel"
+              value={formData.phone || ""}
+              onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+              className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-2.5 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Contoh: 081234567890"
+            />
+            <div className="mt-2 text-xs text-slate-400">Nomor HP ini akan terhubung ke tombol Hubungi Wali Kelas di APK GAS Orang Tua.</div>
+          </div>
+
           <div className="mt-6 flex items-center justify-end gap-3 border-t border-white/10 pt-4">
             <button
               type="button"

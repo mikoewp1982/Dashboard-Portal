@@ -213,12 +213,12 @@ export default function MobileAppsControlPage() {
                     </div>
                   </div>
 
-                  {/* Info Status Guru & Kepala Sekolah */}
+                  {/* Info Status Guru, Kepala Sekolah & Orang Tua */}
                   <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
                     <div className="flex items-start gap-3">
                       <ShieldCheck className="h-5 w-5 text-emerald-400 mt-0.5 shrink-0" />
                       <div className="text-xs text-emerald-200/90 leading-relaxed">
-                        <span className="font-bold text-emerald-300">Status GAS Guru & Kepala Sekolah:</span> Kebal / Bypass. APK Guru & Kepala Sekolah tidak dibatasi oleh angka versi di atas sehingga tidak akan pernah terkunci.
+                        <span className="font-bold text-emerald-300">Status GAS Guru, Kepala Sekolah & Orang Tua:</span> Kebal / Bypass. APK Guru, Kepala Sekolah, dan Orang Tua tidak dibatasi oleh angka versi di atas sehingga tidak akan pernah terkunci.
                       </div>
                     </div>
                   </div>

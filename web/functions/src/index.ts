@@ -8,3 +8,4 @@ export * from "./auth/firstLoginBootstrap";
 export * from "./auth/changePassword";
 export * from "./api/superAdmin";
 export * from "./api/mobileAuth";
+export * from "./api/adminSyncAllStudents";

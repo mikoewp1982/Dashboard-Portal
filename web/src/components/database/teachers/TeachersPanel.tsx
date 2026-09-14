@@ -27,7 +27,13 @@ export function TeachersPanel({ schoolId }: TeachersPanelProps) {
 
   const filteredData = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    return data.filter((row) => row.name?.toLowerCase().includes(query) || row.nuptk?.toLowerCase().includes(query) || row.class?.toLowerCase().includes(query));
+    return data.filter(
+      (row) =>
+        row.name?.toLowerCase().includes(query) ||
+        row.nuptk?.toLowerCase().includes(query) ||
+        row.class?.toLowerCase().includes(query) ||
+        (row.phone || row.noHp)?.toLowerCase().includes(query)
+    );
   }, [data, searchQuery]);
 
   const openAddModal = () => {
@@ -48,6 +54,7 @@ export function TeachersPanel({ schoolId }: TeachersPanelProps) {
       status: row.status || "Aktif",
       gender: row.gender || "L",
       religion: row.religion || "ISLAM",
+      phone: row.phone || row.noHp || "",
     });
     setModalMode("edit");
     setIsModalOpen(true);
@@ -59,6 +66,7 @@ export function TeachersPanel({ schoolId }: TeachersPanelProps) {
 
     setIsSubmitting(true);
     try {
+      const cleanPhone = (formData.phone || "").trim();
       await callAdminDatabaseApi({
         action: modalMode === "add" ? "create" : "update",
         tab: "Guru/Wali Kelas",
@@ -67,6 +75,8 @@ export function TeachersPanel({ schoolId }: TeachersPanelProps) {
           name: formData.name,
           nuptk: formData.nuptk,
           class: formData.class,
+          phone: cleanPhone,
+          noHp: cleanPhone,
           status: "Aktif",
         },
       });
