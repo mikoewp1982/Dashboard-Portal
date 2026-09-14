@@ -6,28 +6,30 @@ Aturan baca:
 - `[x]` = perubahan sudah diimplementasikan
 - `[ ]` = belum diuji di perangkat / web live dan perlu dicek manual
 
-Update terakhir: 2026-09-14 19:58 (GAS Ortu: Direct WhatsApp Hubungi Wali Kelas & Audit Sinkronisasi Riwayat Sholat "Tidak Sholat")
+Update terakhir: 2026-09-14 20:15 (GAS Ortu: Force Update Overlay Terintegrasi Super Admin & Multi-Role Force Update Control)
 
-## ✅ [RELEASE RESMI & VERIFIED] Web Admin & GAS Orang Tua v1.0.1-ortu (1001) — Direct WhatsApp Wali Kelas, Audit Sinkronisasi Riwayat Sholat, No HP Admin, & 7 KAIH (2026-09-14 19:58)
+## ✅ [RELEASE RESMI & VERIFIED] Web Admin & GAS Orang Tua v1.0.1-ortu (1001) — Force Update Overlay, Direct WhatsApp, Audit Sholat, & Pemisahan Portal Download (2026-09-14 20:15)
 
+- [x] **GAS Orang Tua — Proteksi Force Update Overlay (Unbypassable):**
+  - [x] Mengintegrasikan `VersionCheckService.kt` dan `Navigation.kt` dengan node RTDB `app_settings/android/min_version_code_ortu`.
+  - [x] Jika `BuildConfig.VERSION_CODE < min_version_code_ortu`, aplikasi langsung menampilkan overlay layar merah `ForceUpdateScreen.kt` yang mengunci aplikasi, memblokir tombol Back (`BackHandler {}`), dan menyediakan tombol direct link unduh ke portal resmi `https://.../ortu`.
+- [x] **Web Admin — Force Update Control untuk Seluruh Peran (`/super-admin/mobile-apps`):**
+  - [x] Menambahkan kontrol batas versi minimal (`VERSION_CODE`) untuk 5 aplikasi mobile: GAS Siswa, EduLock Siswa, GAS Orang Tua, GAS Guru, dan GAS Kepala Sekolah.
+  - [x] Dilengkapi pembacaan otomatis versi APK terkini dari `apk-manifest.json` serta petunjuk nilai `0 = Bypass`.
+- [x] **Pemisahan Halaman Download APK per Peran (Bebas Salah Unduh):**
+  - [x] Khusus Wali Murid: `/ortu` (dan alias `/gas/ortu`).
+  - [x] Khusus Siswa: `/g` atau `/gas/install` (bersih tanpa tombol peran lain).
+  - [x] Khusus Guru: `/guru/install` (dan alias `/gas/guru`).
+  - [x] Khusus Kepala Sekolah: `/kepala/install` (dan alias `/gas/kepala`).
 - [x] **GAS Orang Tua — Tombol "Hubungi Wali Kelas" Langsung Membuka WhatsApp:**
-  - [x] Mengatur tombol "Hubungi Wali Kelas" di `ParentDashboardScreen.kt` agar otomatis memformat nomor telepon wali kelas ke standar internasional WhatsApp (`628xxx`).
-  - [x] Membuka aplikasi WhatsApp langsung (`com.whatsapp` / `com.whatsapp.w4b`) ke ruang chat nomor wali kelas tersebut, dengan graceful fallback ke browser/web WhatsApp (`https://api.whatsapp.com/send?phone=...`).
-  - [x] Menambahkan paket `com.whatsapp` dan `com.whatsapp.w4b` ke `<queries>` pada `AndroidManifest.xml` untuk kompatibilitas penuh Android 11+ (API 30+).
+  - [x] Format nomor otomatis disanitasi ke standar internasional WhatsApp (`628xxx`).
+  - [x] Membuka aplikasi WhatsApp langsung (`com.whatsapp` / `com.whatsapp.w4b`) atau fallback web.
 - [x] **GAS Orang Tua — Audit & Perbaikan Sinkronisasi Riwayat Sholat Berjamaah:**
-  - [x] Menyesuaikan logika pemetaan di `ParentDashboardViewModel.kt` agar sinkron 100% dengan Web Admin: jika pada hari aktif sekolah siswa belum memiliki log sholat (seperti siswa tester hari ini yang belum sholat), status disintesis menjadi `"Tidak Sholat"` (merah) atau `"Belum Sholat"` (oranye), BUKAN melompat ke log lawas tanggal lampau ("Sudah Sholat").
-  - [x] Kartu Riwayat Sholat di `ParentDashboardScreen.kt` kini menampilkan badge lengkap: Hijau (`✓ Sudah Sholat`), Merah (`✕ Tidak Sholat`), Oranye (`⚠ Belum Sholat`), dan Abu-abu (`Tidak Ada Jadwal`).
-- [x] **Web Admin — Kolom & Manajemen No HP Wali Kelas (`/dashboard/database` -> Guru/Wali Kelas):**
-  - [x] Menambahkan field `phone` / `noHp` pada konfigurasi database, form tambah/edit wali kelas (`TeacherFormModal.tsx`), dan tabel data guru/wali kelas (`TeachersTable.tsx`).
-  - [x] Menambahkan filter pencarian berdasarkan Nomor HP di `TeachersPanel.tsx`.
-  - [x] Tersimpan langsung ke database RTDB `gas/schools/$schoolId/teachers/$teacherId` dengan pembersihan format nomor standar.
-- [x] **GAS Orang Tua — Sinkronisasi Realtime 7 KAIH:**
-  - [x] Memperbaiki listener 7 KAIH di `ParentDashboardViewModel.kt` agar mendengarkan path `seven_habits_logs/$studentId/$dateKey` dan `seven_habits_logs_by_school` menggunakan multi-alias (`studentId` dan `nisn`).
-  - [x] Mendukung struktur data `habits/habit1` hingga `habit7` yang ditulis oleh APK Siswa maupun Web Admin, sehingga centang kebiasaan langsung ter-update realtime di layar orang tua.
+  - [x] Menyesuaikan logika pemetaan agar sinkron 100% dengan Web Admin (siswa yang belum sholat hari ini berstatus merah "Tidak Sholat").
 - [x] **Build & Distribusi Release APK:**
   - [x] Build Gradle `:app:assembleOrtuRelease` sukses (`1.0.1-ortu`, versionCode `1001`).
   - [x] Disalin ke `D:\Dashboard Portal\Apk Release\Orang Tua\GAS-OrangTua-1.0.1-ortu-1001.apk` dan `D:\Dashboard Portal\web\public\apk\GAS-OrangTua-1.0.1-ortu-1001.apk`.
-  - [x] SHA-256: `f704bf8391794e8899489577712f797672c12917fc7c8412d153fa2157260d97` (Ukuran: 22.329.471 bytes).
+  - [x] SHA-256: `d43a1d83818a41785f06b6db4335c4048d4c362c91321776f43899192cc40672` (Ukuran: 22.329.478 bytes).
   - [x] Manifest `apk-manifest.json` dan `.sha256` diperbarui.
 
 ## ✅ [HOTFIX] GAS Orang Tua - Kartu Sholat Dzuhur Tidak Memperbarui Status saat Jadwal Diubah di Web Admin (2026-09-14 10:53)

@@ -5,6 +5,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +30,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ForceUpdateScreen(customMessage: String? = null) {
+fun ForceUpdateScreen(
+    customMessage: String? = null,
+    downloadUrl: String? = null,
+    roleTitle: String = "Aplikasi GAS"
+) {
     val context = LocalContext.current
 
     // Block back button explicitly
@@ -58,12 +64,21 @@ fun ForceUpdateScreen(customMessage: String? = null) {
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = roleTitle,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White.copy(alpha = 0.9f)
+        )
         
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
             text = customMessage.takeIf { !it.isNullOrBlank() }
-                ?: "Versi aplikasi Anda sudah usang dan tidak aman.\n\nSilakan download file APK GAS terbaru dari admin / Grup WhatsApp Kelas / Sekolah, lalu install manual APK yang sudah diperbarui di HP ini.\n\nUpdate tidak dilakukan otomatis dari dalam aplikasi.",
+                ?: "Versi $roleTitle Anda sudah usang dan memerlukan pembaruan.\n\nSilakan tekan tombol di bawah untuk mengunduh dan memasang versi terbaru dari portal resmi sekolah.",
             style = MaterialTheme.typography.bodyLarge,
             color = Color.White,
             textAlign = TextAlign.Center,
@@ -71,6 +86,37 @@ fun ForceUpdateScreen(customMessage: String? = null) {
         )
         
         Spacer(modifier = Modifier.height(48.dp))
+
+        if (!downloadUrl.isNullOrBlank()) {
+            Button(
+                onClick = {
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl.trim())).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        // Ignore intent errors if URL is badly formed
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1E3A8A), // Dark blue
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+                    .height(56.dp)
+            ) {
+                Text(
+                    text = "DOWNLOAD UPDATE SEKARANG",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         
         Button(
             onClick = {

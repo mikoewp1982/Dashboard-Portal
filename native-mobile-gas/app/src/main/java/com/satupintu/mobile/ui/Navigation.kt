@@ -52,8 +52,12 @@ import com.satupintu.mobile.data.model.isDeadByRule
 import com.satupintu.mobile.data.repository.VirtualPetRepository
 import com.satupintu.mobile.data.service.ForceUpdatePolicy
 import com.satupintu.mobile.data.service.VersionCheckService
+import com.satupintu.mobile.util.HybridSnapshotStore
 import com.satupintu.mobile.util.SecurityUtils
 import com.satupintu.mobile.utils.SecurePreferences
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppNavigation(
@@ -83,16 +87,48 @@ fun AppNavigation(
         }
     }
 
-    val initialRole = prefs.getString("user_role", "") ?: ""
+    // #region debug-point B:navigation-start-dest
+    val initialRole = runCatching { prefs.getString("user_role", "") ?: "" }.getOrDefault("").also { role ->
+        SecurityUtils.debugReportEvent("B",
+            "Navigation.kt:initialRole",
+            "[DEBUG] Navigation initialRole resolved",
+            "{\"role\":${SecurityUtils.escapeJson(role)},\"flavor\":${SecurityUtils.escapeJson(BuildConfig.FLAVOR)}}")
+    }
     val initialBoundaryOk = SecurityUtils.isFirebaseProjectAllowed(SecurityUtils.getActiveFirebaseProjectId())
     val initialSessionValid = SecurityUtils.isSessionConsistent(prefs, flavor)
     val initialSessionExpired = SecurityUtils.isSessionExpired(prefs)
     val initialHomeAllowed = SecurityUtils.isRouteAllowed("home", initialRole, flavor, prefs)
-    val startDestination = if (initialBoundaryOk && !initialSessionExpired && initialSessionValid && initialHomeAllowed) {
-        "home"
-    } else {
-        "login"
+    SecurityUtils.debugReportEvent("B",
+        "Navigation.kt:sessionFlags",
+        "[DEBUG] Navigation session flags before startDest",
+        "{\"flavor\":${SecurityUtils.escapeJson(BuildConfig.FLAVOR)}," +
+            "\"boundaryOk\":$initialBoundaryOk," +
+            "\"sessionValid\":$initialSessionValid," +
+            "\"sessionExpired\":$initialSessionExpired," +
+            "\"homeAllowed\":$initialHomeAllowed}")
+    val initialNeedsHybridSync = (flavor == "siswa" &&
+        SecurityUtils.normalizeScope(initialRole) == "student").also { scopeMatch ->
+            SecurityUtils.debugReportEvent("B",
+                "Navigation.kt:hybridSyncCheck",
+                "[DEBUG] Navigation hybrid sync eligibility evaluated",
+                "{\"flavor\":${SecurityUtils.escapeJson(BuildConfig.FLAVOR)}," +
+                    "\"normalizedRole\":${SecurityUtils.escapeJson(SecurityUtils.normalizeScope(initialRole))}," +
+                    "\"scopeMatchSiswaStudent\":$scopeMatch}")
+        } && !SecurityUtils.hasHybridInitialSyncCompleted(prefs)
+    val startDestination = when {
+        initialBoundaryOk && !initialSessionExpired && initialSessionValid && initialHomeAllowed && initialNeedsHybridSync ->
+            "student_initial_sync/home"
+        initialBoundaryOk && !initialSessionExpired && initialSessionValid && initialHomeAllowed ->
+            "home"
+        else -> "login"
+    }.also { dest ->
+        SecurityUtils.debugReportEvent("B",
+            "Navigation.kt:startDestination",
+            "[DEBUG] Navigation final startDestination decided",
+            "{\"startDestination\":${SecurityUtils.escapeJson(dest)}," +
+                "\"initialNeedsHybridSync\":$initialNeedsHybridSync}")
     }
+    // #endregion
 
     LaunchedEffect(pendingRoute, startDestination, initialRole, initialBoundaryOk, initialSessionExpired, initialSessionValid) {
         val targetRoute = pendingRoute ?: return@LaunchedEffect
@@ -130,6 +166,13 @@ fun AppNavigation(
                 if (schoolActive != false && serviceActive != false) return
 
                 isKicked = true
+                SecurityUtils.debugReportEvent(
+                    "J",
+                    "Navigation.kt:schoolLockKick",
+                    "[DEBUG] School lock forced logout",
+                    """{"schoolId":"${SecurityUtils.escapeJson(sessionSchoolId)}","schoolActive":${schoolActive ?: true},"serviceActive":${serviceActive ?: true}}""",
+                    runId = "post-fix2"
+                )
                 runCatching { SecurityUtils.clearLastLoginIdentity(context) }
                 prefs.edit().clear().apply()
                 runCatching { FirebaseAuth.getInstance().signOut() }
@@ -158,15 +201,30 @@ fun AppNavigation(
 
         LaunchedEffect(route, role, expired, sessionValid, boundaryOk) {
             if (!allowed) {
-                runCatching { SecurityUtils.clearLastLoginIdentity(context) }
-                prefs.edit().clear().apply()
-                runCatching { FirebaseAuth.getInstance().signOut() }
+                SecurityUtils.debugReportEvent(
+                    "J",
+                    "Navigation.kt:guardedRouteDenied",
+                    "[DEBUG] GuardedRoute denied access (soft redirect, no wipe)",
+                    """{"route":"${SecurityUtils.escapeJson(route)}","role":"${SecurityUtils.escapeJson(role)}","expired":$expired,"sessionValid":$sessionValid,"boundaryOk":$boundaryOk}""",
+                    runId = "post-fix3"
+                )
                 if (!boundaryOk) {
+                    runCatching { SecurityUtils.clearLastLoginIdentity(context) }
+                    prefs.edit().clear().apply()
+                    runCatching { FirebaseAuth.getInstance().signOut() }
                     Toast.makeText(
                         context,
                         "Konfigurasi Firebase aplikasi tidak sesuai boundary ${BuildConfig.MOBILE_BOUNDARY}.",
                         Toast.LENGTH_LONG
                     ).show()
+                } else {
+                    val reason = when {
+                        expired -> "Sesi Anda kadaluarsa. Silakan login ulang."
+                        !sessionValid -> "Data sesi tidak lengkap. Silakan login ulang."
+                        role.isBlank() -> "Peran pengguna belum terdeteksi. Silakan login ulang."
+                        else -> "Akses menu $route belum diizinkan untuk akun Anda."
+                    }
+                    Toast.makeText(context, reason, Toast.LENGTH_LONG).show()
                 }
                 navController.navigate("login") {
                     popUpTo(0) { inclusive = true }
@@ -184,7 +242,13 @@ fun AppNavigation(
         }
     }
 
-    val petLockState = rememberStudentPetLockState(prefs).value
+    val petLockState = rememberStudentPetLockState(context, prefs).value
+    LaunchedEffect(petLockState.infoMessage) {
+        val info = petLockState.infoMessage
+        if (!info.isNullOrBlank()) {
+            Toast.makeText(context, info, Toast.LENGTH_LONG).show()
+        }
+    }
     val eduLockAliases = remember(
         sessionRole,
         sessionSchoolId,
@@ -220,12 +284,27 @@ fun AppNavigation(
             Toast.makeText(context, warning, Toast.LENGTH_LONG).show()
         }
     }
-    // Force update HANYA berlaku untuk varian siswa (siswa/legacySiswa).
-    // Flavor guru dan kepala sekolah bebas dan kebal dari force update siswa.
+    // Force update aktif untuk varian siswa dan orang tua.
     val isStudentFlavor = flavor == "siswa" || flavor == "legacySiswa" || sessionRole == "student"
+    val isParentFlavor = flavor == "ortu" || sessionRole == "parent"
+    val isTeacherFlavor = flavor == "guru" || sessionRole == "teacher"
+    val isPrincipalFlavor = flavor == "kepala" || sessionRole == "principal"
+
+    val currentAppType = when {
+        isParentFlavor -> "ortu"
+        isStudentFlavor -> "siswa"
+        isTeacherFlavor -> "guru"
+        isPrincipalFlavor -> "kepala"
+        else -> "universal"
+    }
+
+    // Mengaktifkan force update untuk varian siswa dan orang tua
+    val isForceUpdateEnabled = isStudentFlavor || isParentFlavor
+
     val forceUpdatePolicy = rememberForceUpdatePolicy(
         currentVersionCode = BuildConfig.VERSION_CODE,
-        enabled = isStudentFlavor
+        appType = currentAppType,
+        enabled = isForceUpdateEnabled
     ).value
 
     val studentPetViewModel: com.satupintu.mobile.ui.viewmodel.VirtualPetViewModel? = if (sessionRole == "student") {
@@ -299,11 +378,13 @@ fun AppNavigation(
             )
         }
 
-        // Prioritas tertinggi: force update dari Super Admin khusus varian siswa.
-        if (isStudentFlavor && forceUpdatePolicy.updateRequired) {
+        // Prioritas tertinggi: force update dari Super Admin (Siswa & Orang Tua)
+        if (isForceUpdateEnabled && forceUpdatePolicy.updateRequired) {
+            val roleTitle = if (isParentFlavor) "GAS Orang Tua" else "GAS Siswa"
             ForceUpdateScreen(
                 customMessage = forceUpdatePolicy.message,
-                downloadUrl = forceUpdatePolicy.downloadUrl
+                downloadUrl = forceUpdatePolicy.downloadUrl,
+                roleTitle = roleTitle
             )
         }
     }
@@ -312,9 +393,10 @@ fun AppNavigation(
 @Composable
 private fun rememberForceUpdatePolicy(
     currentVersionCode: Int,
+    appType: String = "siswa",
     enabled: Boolean = true
 ): State<ForceUpdatePolicy> {
-    val state = remember(currentVersionCode, enabled) {
+    val state = remember(currentVersionCode, appType, enabled) {
         mutableStateOf(ForceUpdatePolicy(updateRequired = false))
     }
 
@@ -322,9 +404,9 @@ private fun rememberForceUpdatePolicy(
         return state
     }
 
-    DisposableEffect(currentVersionCode, enabled) {
+    DisposableEffect(currentVersionCode, appType, enabled) {
         val service = VersionCheckService()
-        val listener = service.observeVersionPolicy(currentVersionCode, continuous = true) { policy ->
+        val listener = service.observeVersionPolicy(currentVersionCode, appType = appType, continuous = true) { policy ->
             state.value = policy
         }
         onDispose {
@@ -339,17 +421,63 @@ private data class StudentPetLockState(
     val isChecking: Boolean = false,
     val isDead: Boolean = false,
     val petName: String = "Sahabat Belajar",
-    val studentName: String = "Siswa"
+    val studentName: String = "Siswa",
+    val infoMessage: String? = null
 )
+
+private fun readPetLockSnapshot(
+    context: android.content.Context,
+    sessionPrefs: android.content.SharedPreferences
+): VirtualPet? {
+    val sessionSnapshot = HybridSnapshotStore.readPet(sessionPrefs)
+    if (sessionSnapshot != null) return sessionSnapshot
+    val legacyPrefs = context.applicationContext.getSharedPreferences(
+        "vp_pet_snapshot_v1",
+        android.content.Context.MODE_PRIVATE
+    )
+    return HybridSnapshotStore.readPet(legacyPrefs)
+}
+
+private fun lastPetLockSnapshotUpdatedAt(
+    context: android.content.Context,
+    sessionPrefs: android.content.SharedPreferences
+): Long {
+    val sessionUpdatedAt = HybridSnapshotStore.lastPetUpdatedAt(sessionPrefs)
+    if (sessionUpdatedAt > 0L) return sessionUpdatedAt
+    val legacyPrefs = context.applicationContext.getSharedPreferences(
+        "vp_pet_snapshot_v1",
+        android.content.Context.MODE_PRIVATE
+    )
+    return HybridSnapshotStore.lastPetUpdatedAt(legacyPrefs)
+}
 
 @Composable
 private fun rememberStudentPetLockState(
+    context: android.content.Context,
     prefs: android.content.SharedPreferences
 ) = produceState(
-    initialValue = StudentPetLockState(
-        isChecking = SecurityUtils.getStoredRole(prefs) == "student" &&
-            SecurityUtils.getStoredStudentKey(prefs).isNotBlank()
-    ),
+    initialValue = run {
+        val role = SecurityUtils.getStoredRole(prefs)
+        val aliases = SecurityUtils.getStoredStudentAliases(prefs)
+        val cached = if (role == "student" && aliases.isNotEmpty()) {
+            readPetLockSnapshot(context, prefs)
+        } else null
+        val studentName = prefs.getString("user_student_name", "")?.ifBlank { "Siswa" } ?: "Siswa"
+        val base = StudentPetLockState(
+            isChecking = role == "student" && SecurityUtils.getStoredStudentKey(prefs).isNotBlank()
+        )
+        if (cached == null) {
+            base
+        } else {
+            base.copy(
+                isChecking = false,
+                isDead = isStudentPetLockedDead(cached),
+                petName = cached.petName.ifBlank { "Sahabat Belajar" },
+                studentName = studentName,
+                infoMessage = "Mode Offline: Status Sahabat Belajar ditampilkan dari data terakhir."
+            )
+        }
+    },
     SecurityUtils.getStoredRole(prefs),
     SecurityUtils.getStoredSchoolId(prefs),
     SecurityUtils.getStoredStudentKey(prefs),
@@ -366,14 +494,41 @@ private fun rememberStudentPetLockState(
     }
 
     val studentName = prefs.getString("user_student_name", "")?.ifBlank { "Siswa" } ?: "Siswa"
+    var didReceiveInitialPetState = lastPetLockSnapshotUpdatedAt(context, prefs) > 0L
+    val cachedPetForTimeout = readPetLockSnapshot(context, prefs)
+    val cachedIsDeadForTimeout = cachedPetForTimeout?.let(::isStudentPetLockedDead) == true
+    val timeoutJob = launch {
+        delay(10_000L)
+        if (!didReceiveInitialPetState) {
+            value = StudentPetLockState(
+                isChecking = false,
+                isDead = cachedIsDeadForTimeout,
+                petName = cachedPetForTimeout?.petName?.ifBlank { "Sahabat Belajar" } ?: "Sahabat Belajar",
+                studentName = studentName,
+                infoMessage = if (cachedIsDeadForTimeout) {
+                    "Mode Offline: Status Sahabat Belajar dari data terakhir = MATI."
+                } else {
+                    "Mode Offline: Status Sahabat Belajar belum tersedia"
+                }
+            )
+        }
+    }
 
     val repository = VirtualPetRepository()
-    repository.getVirtualPetByStudentIds(aliases, schoolId).collect { pet ->
+    repository.getVirtualPetByStudentIds(
+        studentIds = aliases,
+        schoolId = schoolId,
+        appContext = null,
+        emitSnapshotFirst = false
+    ).collectLatest { pet ->
+        didReceiveInitialPetState = true
+        timeoutJob.cancel()
         value = StudentPetLockState(
             isChecking = false,
             isDead = pet?.let(::isStudentPetLockedDead) == true,
             petName = pet?.petName?.ifBlank { "Sahabat Belajar" } ?: "Sahabat Belajar",
-            studentName = studentName
+            studentName = studentName,
+            infoMessage = null
         )
     }
 }
@@ -458,7 +613,7 @@ private fun StudentPetLockOverlay(
                     text = if (isChecking) {
                         "Mohon tunggu, aplikasi sedang memastikan kondisi pet kamu."
                     } else {
-                        "Hai! $studentName, pet kamu membutuhkan bantuan admin. Akses APK GAS Siswa baru bisa dipakai lagi setelah pet kamu direvive (dihidupkan kembali)."
+                        "Hai! $studentName. Pet kamu telah MATI. Akses APK GAS Siswa baru bisa dipakai lagi setelah pet kamu direvive (dihidupkan kembali)."
                     },
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color.White.copy(alpha = 0.88f)
