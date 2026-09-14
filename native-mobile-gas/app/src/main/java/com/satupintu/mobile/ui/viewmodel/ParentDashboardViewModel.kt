@@ -167,7 +167,15 @@ class ParentDashboardViewModel(application: Application) : AndroidViewModel(appl
     private var prayerTitleCached: String = "Sholat Dzuhur Berjamaah"
     private var cachedSchedules: Map<Int, DayScheduleRule> = emptyMap()
     private var cachedHolidays: List<HolidayRule> = emptyList()
+    private var dzuhurActiveDaysCached: List<Int> = listOf(1, 2, 3, 4, 5, 6)
     private var schoolSettingsListeners = mutableListOf<Pair<com.google.firebase.database.Query, ValueEventListener>>()
+
+    private val prayerTimeFormat = SimpleDateFormat("HH:mm 'WIB'", Locale("id", "ID")).apply {
+        timeZone = TimeZone.getTimeZone("Asia/Jakarta")
+    }
+    private val prayerDateFormat = SimpleDateFormat("EEEE, d MMM yyyy", Locale("id", "ID")).apply {
+        timeZone = TimeZone.getTimeZone("Asia/Jakarta")
+    }
 
     private var schoolLatCached: Double? = null
     private var schoolLngCached: Double? = null
@@ -604,33 +612,7 @@ class ParentDashboardViewModel(application: Application) : AndroidViewModel(appl
         prayerListeners.forEach { (query, listener) -> query.removeEventListener(listener) }
         prayerListeners.clear()
         prayerLogsBySource.clear()
-
-        val prayerTimeFormat = SimpleDateFormat("HH:mm 'WIB'", Locale("id", "ID")).apply {
-            timeZone = TimeZone.getTimeZone("Asia/Jakarta")
-        }
-        val prayerDateFormat = SimpleDateFormat("EEEE, d MMM yyyy", Locale("id", "ID")).apply {
-            timeZone = TimeZone.getTimeZone("Asia/Jakarta")
-        }
-
-        fun recomputeCombinedPrayers() {
-            val todayStr = toDateKey(Calendar.getInstance())
-            val combined = prayerLogsBySource.values.flatten()
-                .distinctBy { "${it.dateStr}_${it.prayerType}_${it.timestamp}" }
-                .sortedByDescending { it.timestamp }
-
-            val todayLog = combined.firstOrNull { it.dateStr == todayStr }
-            val isPrayerLibur = isHolidayCached || prayerDzuhurHourCached.equals("Libur", ignoreCase = true) || prayerDzuhurHourCached.equals("Tidak ada jadwal sholat", ignoreCase = true)
-            val finalTodayStatus = when {
-                todayLog != null -> todayLog.status
-                isPrayerLibur -> "Tidak ada jadwal sholat"
-                else -> "Belum Sholat"
-            }
-
-            _uiState.value = _uiState.value.copy(
-                todayPrayerStatus = finalTodayStatus,
-                prayerHistory = combined
-            )
-        }
+        recomputeCombinedPrayers()
 
         variants.forEach { sVar ->
             val prayerQuery = db.getReference("prayer_attendance_by_school").child(sVar)
@@ -1057,6 +1039,7 @@ class ParentDashboardViewModel(application: Application) : AndroidViewModel(appl
                         holidayDescription = holidayDescCached,
                         monthlySummary = calculateMonthlySummary(_uiState.value.attendanceHistory)
                     )
+                    recomputeCombinedPrayers()
                     recomputeChildActivity()
                 }
 
@@ -1087,6 +1070,9 @@ class ParentDashboardViewModel(application: Application) : AndroidViewModel(appl
                         val label = dzuhurSnap.child("label").getValue(String::class.java) ?: "Sholat Dzuhur"
                         val activeDaysList = dzuhurSnap.child("activeDays").children.mapNotNull {
                             it.getValue(Long::class.java)?.toInt() ?: it.getValue(Int::class.java)
+                        }
+                        if (activeDaysList.isNotEmpty()) {
+                            dzuhurActiveDaysCached = activeDaysList
                         }
                         isDzuhurActiveToday = if (activeDaysList.isNotEmpty()) activeDaysList.contains(adminDayOfWeek) else true
 
@@ -1141,19 +1127,7 @@ class ParentDashboardViewModel(application: Application) : AndroidViewModel(appl
                     if (!isHolidayCached) {
                         prayerDzuhurHourCached = timeWindow
                     }
-                    val isPrayerLibur = isHolidayCached || prayerDzuhurHourCached.equals("Libur", ignoreCase = true) || prayerDzuhurHourCached.equals("Tidak ada jadwal sholat", ignoreCase = true)
-                    val currentStatus = _uiState.value.todayPrayerStatus
-                    // Jika jadwal berubah dari nonaktif menjadi aktif, reset status ke "Belum Sholat"
-                    val resetToDefault = !isPrayerLibur && (currentStatus == "Tidak ada jadwal sholat" || currentStatus == "Libur")
-                    val finalStatus = when {
-                        resetToDefault -> "Belum Sholat"
-                        currentStatus == "Belum Sholat" && isPrayerLibur -> "Tidak ada jadwal sholat"
-                        else -> currentStatus
-                    }
-
-                    _uiState.value = _uiState.value.copy(
-                        todayPrayerStatus = finalStatus
-                    )
+                    recomputeCombinedPrayers()
                     recomputeChildActivity()
                 }
 
@@ -1268,6 +1242,102 @@ class ParentDashboardViewModel(application: Application) : AndroidViewModel(appl
         }
 
         return MonthlyAttendanceSummary(summaries, totalH, totalS, totalI, totalA)
+    }
+
+    private fun recomputeCombinedPrayers() {
+        val nowCal = Calendar.getInstance()
+        val todayStr = toDateKey(nowCal)
+        val combined = prayerLogsBySource.values.flatten()
+            .distinctBy { "${it.dateStr}_${it.prayerType}_${it.timestamp}" }
+            .sortedByDescending { it.timestamp }
+
+        val todayLog = combined.firstOrNull { it.dateStr == todayStr }
+        val isTodayPrayerLibur = isHolidayCached || prayerDzuhurHourCached.equals("Libur", ignoreCase = true) || prayerDzuhurHourCached.equals("Tidak ada jadwal sholat", ignoreCase = true)
+
+        val parts = schoolEndHourCached.split(":")
+        val endHour = parts.getOrNull(0)?.toIntOrNull() ?: 14
+        val endMin = parts.getOrNull(1)?.toIntOrNull() ?: 0
+        val endTotalMinutes = endHour * 60 + endMin
+        val curTotalMinutes = nowCal.get(Calendar.HOUR_OF_DAY) * 60 + nowCal.get(Calendar.MINUTE)
+        val isPastDismissal = curTotalMinutes >= endTotalMinutes
+
+        val finalTodayStatus = when {
+            todayLog != null -> todayLog.status
+            isTodayPrayerLibur -> "Tidak ada jadwal sholat"
+            isPastDismissal -> "Tidak Sholat"
+            else -> "Belum Sholat"
+        }
+
+        val fullHistory = mutableListOf<ParentDailyPrayer>()
+        val existingByDate = combined.groupBy { it.dateStr }
+
+        for (offset in 0..14) {
+            val dayCal = Calendar.getInstance().apply { add(Calendar.DATE, -offset) }
+            val dStr = toDateKey(dayCal)
+            val dayOfWeek = dayCal.get(Calendar.DAY_OF_WEEK)
+            val adminDay = toAdminDayOfWeek(dayOfWeek)
+
+            if (dayOfWeek == Calendar.SUNDAY) continue
+            if (findHoliday(cachedHolidays, dStr) != null) continue
+
+            val rule = resolveScheduleRule(dayOfWeek, cachedSchedules, "07:00", "13:30")
+            if (rule.isHoliday) continue
+
+            val isPrayerDay = if (dzuhurActiveDaysCached.isNotEmpty()) dzuhurActiveDaysCached.contains(adminDay) else (adminDay in 1..6)
+            if (!isPrayerDay) continue
+
+            val existing = existingByDate[dStr]
+            if (!existing.isNullOrEmpty()) {
+                fullHistory.addAll(existing)
+            } else {
+                val isToday = (offset == 0)
+                val prayerName = if (prayerTitleCached.contains("Dhuha", ignoreCase = true)) "Dhuha" else "Dzuhur"
+
+                if (isToday) {
+                    val status = when {
+                        isTodayPrayerLibur -> "Tidak ada jadwal sholat"
+                        isPastDismissal -> "Tidak Sholat"
+                        else -> "Belum Sholat"
+                    }
+                    val fDate = "Hari Ini • ${prayerDateFormat.format(dayCal.time)}"
+                    fullHistory.add(
+                        ParentDailyPrayer(
+                            dateStr = dStr,
+                            prayerType = prayerName,
+                            status = status,
+                            timestamp = dayCal.timeInMillis,
+                            formattedTime = if (isTodayPrayerLibur) "-" else prayerDzuhurHourCached,
+                            formattedDate = fDate
+                        )
+                    )
+                } else {
+                    fullHistory.add(
+                        ParentDailyPrayer(
+                            dateStr = dStr,
+                            prayerType = prayerName,
+                            status = "Tidak Sholat",
+                            timestamp = dayCal.timeInMillis,
+                            formattedTime = "-",
+                            formattedDate = prayerDateFormat.format(dayCal.time)
+                        )
+                    )
+                }
+            }
+        }
+
+        val synthesizedDates = fullHistory.map { it.dateStr }.toSet()
+        val olderLogs = combined.filter { it.dateStr !in synthesizedDates }
+        fullHistory.addAll(olderLogs)
+
+        val sortedFullHistory = fullHistory.sortedWith(
+            compareByDescending<ParentDailyPrayer> { it.dateStr }
+                .thenByDescending { it.timestamp }
+        )
+
+        _uiState.value = _uiState.value.copy(
+            todayPrayerStatus = finalTodayStatus,
+            prayerHistory = sortedFullHistory
+        )
     }
 
     private fun recomputeChildActivity() {

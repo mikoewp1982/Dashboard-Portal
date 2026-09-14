@@ -633,18 +633,30 @@ private fun TodayOverviewTab(
                         )
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = if (state.todayPrayerStatus.contains("Sudah", ignoreCase = true))
-                                ParentPalette.AccentGreen.copy(alpha = 0.2f)
-                            else
-                                Color.White.copy(alpha = 0.1f)
+                            color = when {
+                                state.todayPrayerStatus.contains("Sudah", ignoreCase = true) ->
+                                    ParentPalette.AccentGreen.copy(alpha = 0.2f)
+                                state.todayPrayerStatus.contains("Tidak Sholat", ignoreCase = true) ->
+                                    ParentPalette.AccentRed.copy(alpha = 0.2f)
+                                state.todayPrayerStatus.contains("Libur", ignoreCase = true) || state.todayPrayerStatus.contains("Tidak ada", ignoreCase = true) ->
+                                    Color.White.copy(alpha = 0.08f)
+                                else ->
+                                    ParentPalette.AccentOrange.copy(alpha = 0.2f)
+                            }
                         ) {
                             Text(
                                 text = state.todayPrayerStatus,
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = if (state.todayPrayerStatus.contains("Sudah", ignoreCase = true))
-                                    ParentPalette.AccentGreen
-                                else
-                                    ParentPalette.AccentOrange,
+                                color = when {
+                                    state.todayPrayerStatus.contains("Sudah", ignoreCase = true) ->
+                                        ParentPalette.AccentGreen
+                                    state.todayPrayerStatus.contains("Tidak Sholat", ignoreCase = true) ->
+                                        ParentPalette.AccentRed
+                                    state.todayPrayerStatus.contains("Libur", ignoreCase = true) || state.todayPrayerStatus.contains("Tidak ada", ignoreCase = true) ->
+                                        ParentPalette.TextMuted
+                                    else ->
+                                        ParentPalette.AccentOrange
+                                },
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
@@ -904,17 +916,41 @@ private fun ChildActivityMonitorTab(
                 val phone = rawPhone.trim()
                 if (phone.isNotBlank()) {
                     try {
-                        val cleanPhone = phone.replace("[^0-9+]".toRegex(), "")
-                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$cleanPhone")).apply {
+                        val cleanDigits = phone.replace("[^0-9]".toRegex(), "")
+                        val waNumber = when {
+                            cleanDigits.startsWith("0") -> "62" + cleanDigits.substring(1)
+                            cleanDigits.startsWith("62") -> cleanDigits
+                            cleanDigits.startsWith("8") -> "62$cleanDigits"
+                            else -> cleanDigits
+                        }
+
+                        val waUri = Uri.parse("https://api.whatsapp.com/send?phone=$waNumber")
+                        val waIntent = Intent(Intent.ACTION_VIEW, waUri).apply {
+                            setPackage("com.whatsapp")
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
-                        context.startActivity(intent)
+                        try {
+                            context.startActivity(waIntent)
+                        } catch (e: Exception) {
+                            try {
+                                val waBusinessIntent = Intent(Intent.ACTION_VIEW, waUri).apply {
+                                    setPackage("com.whatsapp.w4b")
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(waBusinessIntent)
+                            } catch (e2: Exception) {
+                                val fallbackIntent = Intent(Intent.ACTION_VIEW, waUri).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(fallbackIntent)
+                            }
+                        }
                     } catch (e: Exception) {
-                        Toast.makeText(context, "Gagal membuka panggilan telepon", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Gagal membuka WhatsApp: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 } else {
                     val teacherInfo = if (activity.homeroomTeacherName.isNotBlank()) " untuk ${activity.homeroomTeacherName}" else ""
-                    Toast.makeText(context, "Nomor HP Wali Kelas$teacherInfo belum terdaftar di halaman admin.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Nomor WhatsApp Wali Kelas$teacherInfo belum terdaftar di halaman admin.", Toast.LENGTH_SHORT).show()
                 }
             }
         )
@@ -2028,32 +2064,43 @@ private fun PrayerAndHabitsTab(state: com.satupintu.mobile.ui.viewmodel.ParentDa
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.prayerHistory.take(7).forEach { log ->
+                        state.prayerHistory.take(10).forEach { log ->
                             val isPrayed = log.status.contains("Sudah", ignoreCase = true) ||
                                 log.status.equals("PRAY", ignoreCase = true) ||
                                 log.status.equals("HADIR", ignoreCase = true)
                             val isPermit = log.status.contains("Izin", ignoreCase = true) ||
                                 log.status.contains("Halangan", ignoreCase = true) ||
                                 log.status.contains("Sakit", ignoreCase = true)
+                            val isLibur = log.status.contains("Libur", ignoreCase = true) ||
+                                log.status.contains("Tidak ada", ignoreCase = true)
+                            val isBelum = log.status.contains("Belum", ignoreCase = true)
 
                             val badgeBg = when {
                                 isPrayed -> ParentPalette.AccentGreen.copy(alpha = 0.15f)
                                 isPermit -> ParentPalette.AccentBlue.copy(alpha = 0.15f)
+                                isBelum -> ParentPalette.AccentOrange.copy(alpha = 0.15f)
+                                isLibur -> ParentPalette.TextMuted.copy(alpha = 0.15f)
                                 else -> ParentPalette.AccentRed.copy(alpha = 0.15f)
                             }
                             val badgeBorder = when {
                                 isPrayed -> ParentPalette.AccentGreen.copy(alpha = 0.4f)
                                 isPermit -> ParentPalette.AccentBlue.copy(alpha = 0.4f)
+                                isBelum -> ParentPalette.AccentOrange.copy(alpha = 0.4f)
+                                isLibur -> ParentPalette.TextMuted.copy(alpha = 0.4f)
                                 else -> ParentPalette.AccentRed.copy(alpha = 0.4f)
                             }
                             val badgeTextColor = when {
                                 isPrayed -> ParentPalette.AccentGreen
                                 isPermit -> ParentPalette.AccentBlue
+                                isBelum -> ParentPalette.AccentOrange
+                                isLibur -> ParentPalette.TextMuted
                                 else -> ParentPalette.AccentRed
                             }
                             val statusLabel = when {
                                 isPrayed -> "Sudah Sholat"
                                 isPermit -> log.status
+                                isBelum -> "Belum Sholat"
+                                isLibur -> "Tidak Ada Jadwal"
                                 else -> "Tidak Sholat"
                             }
 
@@ -2077,16 +2124,19 @@ private fun PrayerAndHabitsTab(state: com.satupintu.mobile.ui.viewmodel.ParentDa
                                         Box(
                                             modifier = Modifier
                                                 .size(36.dp)
-                                                .background(
-                                                    if (isPrayed) ParentPalette.AccentGreen.copy(alpha = 0.15f) else ParentPalette.CardBorder.copy(alpha = 0.3f),
-                                                    CircleShape
-                                                ),
+                                                .background(badgeBg, CircleShape),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
-                                                imageVector = if (isPrayed) Icons.Default.CheckCircle else Icons.Default.Info,
+                                                imageVector = when {
+                                                    isPrayed -> Icons.Default.CheckCircle
+                                                    isPermit -> Icons.Default.Info
+                                                    isBelum -> Icons.Default.Warning
+                                                    isLibur -> Icons.Default.DateRange
+                                                    else -> Icons.Default.Close
+                                                },
                                                 contentDescription = null,
-                                                tint = if (isPrayed) ParentPalette.AccentGreen else ParentPalette.TextSecondary,
+                                                tint = badgeTextColor,
                                                 modifier = Modifier.size(18.dp)
                                             )
                                         }
@@ -2124,6 +2174,14 @@ private fun PrayerAndHabitsTab(state: com.satupintu.mobile.ui.viewmodel.ParentDa
                                                     imageVector = Icons.Default.Check,
                                                     contentDescription = null,
                                                     tint = ParentPalette.AccentGreen,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                            } else if (!isPermit && !isLibur) {
+                                                Icon(
+                                                    imageVector = if (isBelum) Icons.Default.Warning else Icons.Default.Close,
+                                                    contentDescription = null,
+                                                    tint = badgeTextColor,
                                                     modifier = Modifier.size(12.dp)
                                                 )
                                                 Spacer(modifier = Modifier.width(4.dp))

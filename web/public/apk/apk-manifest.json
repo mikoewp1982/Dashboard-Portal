@@ -1,15 +1,15 @@
 {
-    "updatedAt": "2026-09-14T19:38:00",
+    "updatedAt": "2026-09-14T19:58:00",
     "files": {
         "GAS-OrangTua-1.0.1-ortu-1001.apk": {
-            "lastModified": "2026-09-14T19:38:00",
+            "lastModified": "2026-09-14T19:58:00",
             "packageName": "com.satupintu.mobile.ortu",
             "sizeMB": 21.29,
-            "sha256": "1AC35FF8AEE8D92E02C43B3BE8112C93D3BFAB272BF3CB744616084016E1F9FE",
+            "sha256": "F704BF8391794E8899489577712F797672C12917FC7C8412D153FA2157260D97",
             "versionName": "1.0.1-ortu",
             "versionCode": 1001,
-            "sizeBytes": 22329436,
-            "releaseNotes": "Pembaruan APK Orang Tua: (1) Kontak & aksi cepat disederhanakan menjadi 'Hubungi Wali Kelas' dengan integrasi No HP wali kelas realtime dari web admin, (2) Kartu Riwayat Sholat Berjamaah tampil modern dengan badge realtime, jam WIB, dan pemetaan status sholat yang akurat, (3) Sinkronisasi log 7 KAIH realtime dari pengisian APK Siswa maupun web admin."
+            "sizeBytes": 22329471,
+            "releaseNotes": "Pembaruan APK Orang Tua: (1) Tombol 'Hubungi Wali Kelas' otomatis terhubung langsung ke WhatsApp nomor wali kelas (dengan sanitasi format internasional 62), (2) Kartu Riwayat Sholat Berjamaah tampil modern dengan badge realtime, jam WIB, dan pemetaan status sholat yang akurat (Belum Sholat / Tidak Sholat / Sudah Sholat), (3) Sinkronisasi log 7 KAIH realtime dari pengisian APK Siswa maupun web admin."
         },
         "EduLock-1.3.24-50.apk": {
             "lastModified": "2026-09-02T07:45:00",
