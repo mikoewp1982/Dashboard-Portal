@@ -23,8 +23,8 @@ android {
         applicationId = "com.satupintu.mobile"
         minSdk = 26
         targetSdk = 34
-        versionCode = 23093
-        versionName = "1.0.96"
+        versionCode = 23123
+        versionName = "1.0.126"
         buildConfigField("String", "MOBILE_BOUNDARY", "\"${mobileBoundary}\"")
         buildConfigField("String", "ALLOWED_FIREBASE_PROJECT_IDS", "\"${allowedFirebaseProjectIds}\"")
 
@@ -38,8 +38,8 @@ android {
         create("siswa") {
             dimension = "audience"
             minSdk = 23
-            versionCode = 23093
-            versionName = "1.0.96"
+            versionCode = 23125
+            versionName = "1.0.128"
             resValue("string", "app_name", "GAS Siswa")
             applicationIdSuffix = ".siswa"
             versionNameSuffix = "-siswa"
@@ -47,8 +47,8 @@ android {
         create("guru") {
             dimension = "audience"
             minSdk = 23
-            versionCode = 1064
-            versionName = "1.0.72"
+            versionCode = 1066
+            versionName = "1.0.74"
             resValue("string", "app_name", "GAS Guru")
             applicationIdSuffix = ".guru"
             versionNameSuffix = "-guru"
@@ -59,6 +59,15 @@ android {
             resValue("string", "app_name", "GAS Kepala Sekolah")
             applicationIdSuffix = ".kepala"
             versionNameSuffix = "-kepala"
+        }
+        create("ortu") {
+            dimension = "audience"
+            minSdk = 23
+            versionCode = 1002
+            versionName = "1.0.2"
+            resValue("string", "app_name", "GAS Orang Tua")
+            applicationIdSuffix = ".ortu"
+            versionNameSuffix = "-ortu"
         }
 
         create("legacySiswa") {
@@ -162,6 +171,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     
     // Location
@@ -175,6 +185,9 @@ dependencies {
 
     // Lottie Animation
     implementation("com.airbnb.android:lottie-compose:6.4.0")
+
+    // WorkManager (Fase C1 Background Auto-Sync Periodic 15m)
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

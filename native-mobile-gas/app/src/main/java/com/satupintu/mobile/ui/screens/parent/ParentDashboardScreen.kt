@@ -1082,12 +1082,12 @@ private fun ActivityReturnHeroCard(
                 val tapMasukVal = when {
                     formattedCheckIn.isNotBlank() -> "$formattedCheckIn WIB"
                     isHoliday -> "Libur"
-                    else -> "--:--"
+                    else -> "Belum Tap"
                 }
                 val tapMasukColor = when {
                     formattedCheckIn.isNotBlank() -> ParentPalette.AccentGreen
                     isHoliday -> ParentPalette.AccentCyan
-                    else -> ParentPalette.TextMuted
+                    else -> ParentPalette.AccentOrange
                 }
 
                 val jadwalPulangVal = when {
@@ -1362,18 +1362,45 @@ private fun DeviceTelemetryCard(activity: com.satupintu.mobile.ui.viewmodel.Chil
                 }
             }
 
-            if (activity.lastSeenAt > 0) {
-                Spacer(modifier = Modifier.height(10.dp))
-                val timeStr = remember(activity.lastSeenAt) {
+            Spacer(modifier = Modifier.height(10.dp))
+            val (syncText, syncColor) = remember(activity.lastSeenAt) {
+                if (activity.lastSeenAt > 0L) {
                     val millis = if (activity.lastSeenAt < 10000000000L) activity.lastSeenAt * 1000L else activity.lastSeenAt
-                    runCatching {
-                        SimpleDateFormat("HH:mm:ss WIB", Locale.getDefault()).format(Date(millis))
+                    val formatted = runCatching {
+                        val calNow = Calendar.getInstance()
+                        val calThen = Calendar.getInstance().apply { timeInMillis = millis }
+                        val isToday = calNow.get(Calendar.YEAR) == calThen.get(Calendar.YEAR) &&
+                                calNow.get(Calendar.DAY_OF_YEAR) == calThen.get(Calendar.DAY_OF_YEAR)
+                        val isYesterday = calNow.get(Calendar.YEAR) == calThen.get(Calendar.YEAR) &&
+                                (calNow.get(Calendar.DAY_OF_YEAR) - calThen.get(Calendar.DAY_OF_YEAR)) == 1
+
+                        val timeFormatter = SimpleDateFormat("HH:mm:ss 'WIB'", Locale("id", "ID"))
+                        val timeStr = timeFormatter.format(Date(millis))
+                        when {
+                            isToday -> "Hari Ini, $timeStr"
+                            isYesterday -> "Kemarin, $timeStr"
+                            else -> SimpleDateFormat("d MMM yyyy, HH:mm 'WIB'", Locale("id", "ID")).format(Date(millis))
+                        }
                     }.getOrDefault("-")
+                    "Sinkronisasi Terakhir: $formatted" to ParentPalette.TextMuted
+                } else {
+                    "Sinkronisasi Terakhir: Menunggu sinyal EduLock HP ananda..." to ParentPalette.AccentOrange.copy(alpha = 0.9f)
                 }
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = null,
+                    tint = syncColor,
+                    modifier = Modifier.size(12.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Sinkronisasi Terakhir: $timeStr",
+                    text = syncText,
                     style = MaterialTheme.typography.labelSmall,
-                    color = ParentPalette.TextMuted
+                    color = syncColor
                 )
             }
         }
