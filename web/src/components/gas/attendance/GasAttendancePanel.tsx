@@ -9,8 +9,6 @@ interface Props {
 
 /** Presensi Sekolah: fokus pengaturan sistem saja (rekap/statistik di menu Rekap Kehadiran). */
 export function GasAttendancePanel({ schoolId }: Props) {
-  void schoolId;
-
   return (
     <div className="flex-1 space-y-6 overflow-y-auto p-6 text-slate-200">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -32,7 +30,7 @@ export function GasAttendancePanel({ schoolId }: Props) {
         </Link>
       </div>
 
-      <AttendanceSettingsPanel mode="school" />
+      <AttendanceSettingsPanel mode="school" schoolId={schoolId} />
     </div>
   );
 }

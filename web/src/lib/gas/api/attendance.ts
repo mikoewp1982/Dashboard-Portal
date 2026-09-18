@@ -121,15 +121,20 @@ export const manualAttendanceInput = async (payload: ManualAttendancePayload) =>
       }
     } else {
       try {
+        const targetStudentId = String(payload.studentId || "").trim();
+        const targetNisn = String(payload.nisn || "").trim();
         const schoolSnap = await get(rtdbRef(rtdb, `attendance_by_school/${canonicalSchoolId}`));
         const records = schoolSnap.val() || {};
         for (const [id, val] of Object.entries(records as Record<string, any>)) {
           if (!val) continue;
           const valMillis = resolveDateMillis(val.date);
-          if (
-            String(val.studentId || "").trim() === String(payload.studentId).trim() &&
-            toDateKey(valMillis) === targetDateKey
-          ) {
+          if (toDateKey(valMillis) !== targetDateKey) continue;
+          const valStudentId = String(val.studentId || "").trim();
+          const valNisn = String(val.nisn || "").trim();
+          const matchesStudent =
+            (targetStudentId && (valStudentId === targetStudentId || (targetNisn && valStudentId === targetNisn))) ||
+            (targetNisn && (valNisn === targetNisn || valNisn === targetStudentId));
+          if (matchesStudent) {
             recordId = id;
             existingData = val;
             break;

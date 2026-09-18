@@ -110,6 +110,27 @@ const troubleshootingMenus = [
     quickFix: "2L WAJIB FISIK di Info Aplikasi EduLock: (L1) Lanjutan → Izinkan akses setelan terbatas. (L2) Mati toggle Jeda aktivitas aplikasi jika tak dipakai. 3 toggle Dev Options ON sebelum setup: USB debugging (Security settings), Nonaktifkan validasi izin, Install via USB.",
   },
   {
+    vendor: "Xiaomi / POCO / Redmi",
+    subtitle: "MIUI / HyperOS (Android 13+)",
+    icon: "🟧",
+    symptoms: [
+      'Aksesibilitas terkunci abu-abu / dialog "Setelan dibatasi"',
+      "Peringatan bahaya hitung mundur 10 detik saat aktifkan izin",
+      "Aplikasi dimatikan otomatis di latar belakang oleh Security Cleaner",
+    ],
+    quickFix: "2 LANGKAH WAJIB: (1) LongPress ikon EduLock → Info Aplikasi → tekan TITIK 3 di kanan atas → pilih 'Izinkan setelan terbatas' → masukkan PIN HP. (2) Masuk Pengaturan → Aksesibilitas → EduLock Protection → ON (tunggu 10 dtk, centang, OK). Tambahan: Baterai → Tidak ada pembatasan, dan aktifkan Mulai Otomatis (Autostart).",
+  },
+  {
+    vendor: "SAMSUNG",
+    subtitle: "One UI 5 / 6 (Android 13+)",
+    icon: "🔷",
+    symptoms: [
+      'Tombol Aksesibilitas abu-abu / "Setelan Dibatasi"',
+      "Layanan EduLock dimatikan otomatis saat HP masuk mode Sleep",
+    ],
+    quickFix: "BUKA SETELAN DIBATASI: Pengaturan → Aplikasi → EduLock → tekan TITIK 3 di kanan atas → pilih 'Izinkan setelan terbatas' → masukkan PIN/Pola. Baru buka Pengaturan → Aksesibilitas → Aplikasi Terinstal → EduLock Protection → ON. Baterai: Atur ke 'Tidak Dibatasi' (Unrestricted).",
+  },
+  {
     vendor: "GAS Compliance Gate",
     subtitle: "5 Badge Merah Semua HP",
     icon: "🛡️",

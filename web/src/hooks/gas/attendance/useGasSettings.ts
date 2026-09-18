@@ -71,24 +71,40 @@ export function useGasSettings(schoolId: string) {
       }
     });
 
+    const rootMushollaRef = ref(rtdb, "musholla_location");
+    let hasVariantMusholla = false;
+
     const mushollaUnsubs = mushollaRefs.map((mRef) =>
       onValue(mRef, (snap) => {
         const data = snap.val();
-        if (data) {
+        if (data && Number.isFinite(Number(data.latitude)) && Number.isFinite(Number(data.longitude))) {
+          hasVariantMusholla = true;
           setMushollaLocation({
-            latitude: data.latitude,
-            longitude: data.longitude,
-            radius: data.radius || 25,
+            latitude: Number(data.latitude),
+            longitude: Number(data.longitude),
+            radius: Number(data.radius || 25),
           });
         }
       })
     );
+
+    const unsubRootMusholla = onValue(rootMushollaRef, (snap) => {
+      const data = snap.val();
+      if (!hasVariantMusholla && data && Number.isFinite(Number(data.latitude)) && Number.isFinite(Number(data.longitude))) {
+        setMushollaLocation({
+          latitude: Number(data.latitude),
+          longitude: Number(data.longitude),
+          radius: Number(data.radius || 25),
+        });
+      }
+    });
 
     return () => {
       unsubSchedules();
       unsubHolidays();
       unsubLoc();
       mushollaUnsubs.forEach((unsub) => unsub());
+      unsubRootMusholla();
     };
   }, [schoolId]);
 

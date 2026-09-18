@@ -100,7 +100,7 @@ export async function dispatchMasterSwitchCommand(params: {
     },
     android: {
       priority: "high",
-      ttl: 60 * 1000,
+      ttl: 24 * 60 * 60 * 1000,
     },
   });
 

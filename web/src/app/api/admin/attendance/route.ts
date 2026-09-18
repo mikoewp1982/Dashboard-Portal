@@ -113,8 +113,9 @@ export async function POST(req: NextRequest) {
       recordId = String(requestedRecordId).trim();
       const existingSnap = await adminDb.ref(`attendance/${recordId}`).once("value");
       existingData = existingSnap.val();
-    } else {
       // Cari apakah sudah ada record attendance untuk siswa dan tanggal yang sama
+      const targetStudentId = String(studentId || "").trim();
+      const targetNisn = String(providedNisn || "").trim();
       const schoolAttendanceSnap = await adminDb
         .ref(`attendance_by_school/${canonicalSchoolId}`)
         .once("value");
@@ -123,10 +124,13 @@ export async function POST(req: NextRequest) {
       for (const [id, val] of Object.entries(schoolAttendances as Record<string, any>)) {
         if (!val) continue;
         const valDate = resolveDateMillis(val.date);
-        if (
-          String(val.studentId || "").trim() === String(studentId).trim() &&
-          toDateKey(valDate) === targetDateKey
-        ) {
+        if (toDateKey(valDate) !== targetDateKey) continue;
+        const valStudentId = String(val.studentId || "").trim();
+        const valNisn = String(val.nisn || "").trim();
+        const matchesStudent =
+          (targetStudentId && (valStudentId === targetStudentId || (targetNisn && valStudentId === targetNisn))) ||
+          (targetNisn && (valNisn === targetNisn || valNisn === targetStudentId));
+        if (matchesStudent) {
           recordId = id;
           existingData = val;
           break;

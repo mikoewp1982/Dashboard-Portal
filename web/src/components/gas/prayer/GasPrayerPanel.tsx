@@ -9,8 +9,6 @@ interface Props {
 
 /** Presensi Sholat: fokus pengaturan sistem (rekap/statistik di menu Rekap Sholat). */
 export function GasPrayerPanel({ schoolId }: Props) {
-  void schoolId;
-
   return (
     <div className="flex-1 space-y-6 overflow-y-auto p-6 text-slate-200">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -35,7 +33,7 @@ export function GasPrayerPanel({ schoolId }: Props) {
         </Link>
       </div>
 
-      <AttendanceSettingsPanel mode="prayer" />
+      <AttendanceSettingsPanel mode="prayer" schoolId={schoolId} />
     </div>
   );
 }

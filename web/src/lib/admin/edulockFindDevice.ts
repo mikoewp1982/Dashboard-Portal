@@ -90,7 +90,7 @@ export async function dispatchFindDeviceCommand(params: {
     },
     android: {
       priority: "high",
-      ttl: 60 * 1000,
+      ttl: 5 * 60 * 1000,
     },
   });
 

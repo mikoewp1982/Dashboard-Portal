@@ -81,10 +81,16 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
           runtimeByIdentity.get(nisn) ||
           runtimeByIdentity.get(username);
 
+        const lastSeenAt = runtime?.lastSeenAt ?? null;
+        const minutesSinceLastSeen = lastSeenAt ? Math.round((nowTs - Number(lastSeenAt)) / 1000 / 60) : null;
+        const isLongOffline = Boolean(deviceId) && !runtime?.isOnline && (minutesSinceLastSeen === null || minutesSinceLastSeen > 45);
+
         const status = runtime?.isOnline
           ? "ONLINE"
           : deviceId
-            ? "OFFLINE"
+            ? isLongOffline
+              ? "HILANG KONTAK"
+              : "OFFLINE"
             : "BELUM BINDING";
         const trustScore =
           runtime?.trustScore ??
@@ -299,10 +305,12 @@ export function EduLockMonitoringPanel({ schoolId }: { schoolId: string }) {
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                             student.status === "ONLINE"
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : student.status === "OFFLINE"
-                                ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                                : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
-                          }`}>
+                              : student.status === "HILANG KONTAK"
+                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse"
+                                : student.status === "OFFLINE"
+                                  ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                  : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                          }`} title={student.status === "HILANG KONTAK" ? "Perangkat tidak aktif >45 menit (diduga dihapus / dimatikan paksa)" : undefined}>
                             {student.status}
                           </span>
                           {student.battery !== null && (

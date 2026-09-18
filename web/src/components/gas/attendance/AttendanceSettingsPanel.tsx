@@ -10,11 +10,12 @@ import { PrayerSystemSettingsPanel } from "../prayer/PrayerSystemSettingsPanel";
 
 interface Props {
   mode?: "school" | "prayer" | "all";
+  schoolId?: string;
 }
 
-export function AttendanceSettingsPanel({ mode = "all" }: Props) {
+export function AttendanceSettingsPanel({ mode = "all", schoolId: propSchoolId }: Props) {
   const { user } = useAuthStore();
-  const schoolId = user?.schoolId || "";
+  const schoolId = (propSchoolId || user?.schoolId || "").trim();
 
   const {
     schedules,

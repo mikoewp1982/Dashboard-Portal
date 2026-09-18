@@ -53,11 +53,9 @@ export function isManualReviveGraceActive(
 export function isDeadByRule(pet: PetVitalInput, now = Date.now()): boolean {
   if (isManualReviveGraceActive(pet, now)) return false;
 
-  // Honour sticky DEAD status written by the APK
-  if (typeof pet.status === "string" && pet.status.toUpperCase() === "DEAD") return true;
-
+  const isMarkedDead = typeof pet.status === "string" && pet.status.toUpperCase() === "DEAD";
   const health = Number(pet.health ?? 100);
-  return health <= 0 || lowestVitalScore(pet) <= 0;
+  return isMarkedDead && (health <= 0 || lowestVitalScore(pet) <= 0);
 }
 
 /** Labels/colors from TeacherStudentsScreen PET column. */
