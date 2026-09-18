@@ -23,6 +23,7 @@ Sistem sekolah terintegrasi: **dashboard web + APK GAS + APK EduLock**, data di 
 | Spesifikasi / PRD | `docs\` — mulai dari [`docs/00_BACA_SAYA_PERTAMA.md`](docs/00_BACA_SAYA_PERTAMA.md) |
 | Ambil APK untuk lapangan | `Apk Release\Final\` |
 | Cara build / ship APK + gate `git push` | [`Apk Release/Pegangan Build APK/README.md`](Apk%20Release/Pegangan%20Build%20APK/README.md) |
+| Daftar Fitur Sakral & Anti-Regresi | [`FITUR_STABIL_JANGAN_DISENTUH.md`](FITUR_STABIL_JANGAN_DISENTUH.md) + [`AGENTS.md`](AGENTS.md) |
 | Skrip ADB lapangan | `scripts\field-adb\` |
 
 Jangan mengedit salinan di `Apk Release\Archived\` atau `docs\arsip-akar\` — itu arsip, bukan source aktif.
