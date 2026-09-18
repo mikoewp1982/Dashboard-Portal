@@ -98,25 +98,31 @@ export function GasPetRiskTab({
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-400">
-                      {pet.risk.isDead ? (
-                        <button
-                          onClick={() => onRevivePet(pet.id, pet.studentName)}
-                          className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
-                        >
-                          <Zap className="w-3 h-3" />
-                          Hidupkan
-                        </button>
-                      ) : pet.risk.isLowStatus ? (
-                        <button
-                          onClick={() => onResetPetLevel(pet.id, pet.studentName)}
-                          className="px-3 py-1.5 bg-yellow-600 text-white rounded-lg text-xs font-bold hover:bg-yellow-700 transition-colors shadow-sm flex items-center gap-1"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          Reset Lvl
-                        </button>
-                      ) : (
-                        <span className="text-slate-600">-</span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {(pet.risk.isDead || condition.label === "Mati" || condition.label === "Sekarat") ? (
+                          <button
+                            onClick={() => onRevivePet(pet.id, pet.studentName)}
+                            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1"
+                            title={`Hidupkan kembali pet milik ${pet.studentName} dan pulihkan vitals ke 50%`}
+                          >
+                            <Zap className="w-3 h-3" />
+                            Hidupkan
+                          </button>
+                        ) : null}
+                        {pet.risk.isLowStatus && !pet.risk.isDead ? (
+                          <button
+                            onClick={() => onResetPetLevel(pet.id, pet.studentName)}
+                            className="px-3 py-1.5 bg-yellow-600 text-white rounded-lg text-xs font-bold hover:bg-yellow-700 transition-colors shadow-sm flex items-center gap-1"
+                            title={`Reset level pet milik ${pet.studentName} kembali ke Lvl 1`}
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            Reset Lvl
+                          </button>
+                        ) : null}
+                        {!(pet.risk.isDead || condition.label === "Mati" || condition.label === "Sekarat") && !pet.risk.isLowStatus ? (
+                          <span className="text-slate-600">-</span>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 );

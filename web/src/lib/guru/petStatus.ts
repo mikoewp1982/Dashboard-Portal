@@ -55,7 +55,12 @@ export function isDeadByRule(pet: PetVitalInput, now = Date.now()): boolean {
 
   const isMarkedDead = typeof pet.status === "string" && pet.status.toUpperCase() === "DEAD";
   const health = Number(pet.health ?? 100);
-  return isMarkedDead && (health <= 0 || lowestVitalScore(pet) <= 0);
+  const lowest = lowestVitalScore(pet);
+  // Pet dianggap MATI / butuh revive jika:
+  // 1. Status resmi tercatat "DEAD", ATAU
+  // 2. Health habis (<= 0), ATAU
+  // 3. Vitals habis total (lowestVital <= 0, misal Kelaparan 100% atau Bahagia/Energi 0%) yang memicu lock overlay di HP siswa.
+  return isMarkedDead || health <= 0 || lowest <= 0;
 }
 
 /** Labels/colors from TeacherStudentsScreen PET column. */
