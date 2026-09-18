@@ -10,11 +10,86 @@ Live Dashboard = isi **`origin/main`** saja. Yang hanya jalan di laptop (belum c
 
 | Mau apa | Buka |
 |---------|------|
-| **Fitur Sakral & Anti-Regresi** | [FITUR_STABIL_JANGAN_DISENTUH.md](../../FITUR_STABIL_JANGAN_DISENTUH.md) + [AGENTS.md](../../AGENTS.md) |
+| **Fitur Sakral & Anti-Regresi** | [Lihat Bagian Fitur Sakral di bawah](#-katalog-13-fitur-sakral-frozen-core--dilarang-keras-diubah--di-refactor) |
 | Deploy / ubah **web admin** | [PANDUAN_DEPLOY_WEB.md](./PANDUAN_DEPLOY_WEB.md) + **gate push** di bawah |
 | Build / ship **GAS** | [GAS/README.md](./GAS/README.md) → [GAS/RELEASE.md](./GAS/RELEASE.md) |
 | Build / ship **EduLock** | [Edulock/README.md](./Edulock/README.md) → [Edulock/RELEASE.md](./Edulock/RELEASE.md) |
 | Aturan AI / script ship | [# Aturan wajib untuk AI assistant.txt](./%23%20Aturan%20wajib%20untuk%20AI%20assistant.txt) |
+
+---
+
+## 🛡️ KATALOG 13 FITUR SAKRAL (FROZEN CORE) — DILARANG KERAS DIUBAH / DI-REFACTOR
+
+> **KONTRAK MATI:** Fitur-fitur di bawah ini sudah **100% SELESAI, AMAN, DAN TERUJI DI LAPANGAN**. Siapa pun (Developer atau AI) yang menambahkan fitur baru **DILARANG MEROMBAK/MENGOTAK-ATIK** file atau logika di bawah ini kecuali ada instruksi tertulis dari pengguna.
+
+### 1. Virtual Pet Death & Revive Logic (Web & APK)
+- **File:** `web/src/lib/guru/petStatus.ts`, `GasPetRiskTab.tsx`, `VirtualPet.kt`, `MonitoringService.kt`
+- **Rumus Mutlak:** `return isMarkedDead || health <= 0 || lowest <= 0;` (HARAM pakai `&&`).
+- **Aturan:** Pet vitals 0% berstatus `"SICK"` di database. Jika disyaratkan `&&`, pet kelaparan dicap "Sekarat" dan tombol "⚡ Hidupkan" hilang dari Web Admin padahal HP siswa terkunci. Tombol **"⚡ Hidupkan"** WAJIB selalu tampil untuk status **Mati** maupun **Sekarat**.
+
+### 2. EduLock di Rumah: "Fail-Open (Hening Total Bebas Gangguan)"
+- **File:** `GpsEnableOverlay.kt`, `MonitoringService.kt`, `OverlayLockActivity.kt`, `SchoolScheduleManager.kt`, `MainActivity.kt`
+- **Rumus Mutlak:**
+  - Di luar radius sekolah (>1km, rumah, 0 presence) = **HP bebas 100%**. Dilarang mengunci WhatsApp, TikTok, YouTube, dll.
+  - Jam sekolah saja TIDAK CUKUP untuk mengunci HP jika tidak ada bukti lokasi di sekolah (`shouldAllowKioskAtSchool`).
+  - **GPS Mati di Rumah:** DILARANG KERAS memunculkan overlay *"Aktifkan GPS"* maupun mengunci HP.
+  - **Pulang Awal:** Sticky flag `isInsideSchoolZone` otomatis reset ke `false` setelah 30 menit di luar area sekolah.
+  - **Akhir Pekan Offline:** Fallback offline jadwal Sabtu/Minggu wajib `enabled = false` agar tidak salah mengira hari aktif.
+
+### 3. Overlay Virtual Pet Mati di EduLock (Satu-satunya Pengecualian di Rumah)
+- **File:** `PetDeadLockActivity.kt`, `MonitoringService.kt`, `LockEnforcer.kt`, `activity_pet_dead_lock.xml`
+- **Rumus Mutlak:**
+  - **Waktu:** HANYA aktif di luar jam sekolah / saat di rumah. Jam sekolah masuk → overlay otomatis ditutup.
+  - **Bukan Kunci Permanen:** Mengikuti interval admin `first → second → repeat` (misal 30m → 20m → tiap 10m).
+  - **Tombol "Saya Mengerti" WAJIB BISA DI-KLIK:** Saat ditekan, overlay menutup sementara dan kiosk dilepas agar HP bisa digunakan normal hingga reminder berikutnya tiba. Memiliki debounce klik 2 detik.
+  - **Proteksi Tombol HOME:** Menekan tombol HOME mereset flag `isShowing` (`onUserLeaveHint`) agar reminder berikutnya tetap bisa muncul.
+  - **Teks Verbatim:** Menampilkan nama siswa asli dan catatan: `Catatan : \n jika tidak segera di hidupkan maka sistem akan mengingatkan sampai pet anda hidup kembali`.
+  - **Auto-Dismiss:** Begitu admin klik "Hidupkan" di Web Admin, overlay di HP siswa otomatis tertutup seketika.
+
+### 4. Pemisahan 3 Jalur Jaringan: Offline vs Mode Pesawat vs GPS Mati
+- **File:** `OfflineMonitor.kt`, `MonitoringService.kt`, `LockScreenActivity.kt`, `GpsEnableOverlay.kt`
+- **Rumus Mutlak:**
+  - **Offline Biasa (>2 menit):** Fail-safe dihapus 100% (Keputusan User 2026-09-03). Tidak ada overlay merah "KONEKSI HILANG!", tidak ada countdown lockdown. Offline tidak menambah sanksi kunci.
+  - **Mode Pesawat di Jam Sekolah:** TETAP DIKUNCI / LOCKDOWN KERAS MERAH (anti-bypass radio). Bebas hanya jika Admin aktifkan **Mode Libur (Holiday Mode)**.
+  - **GPS Mati di Sekolah:** Munculkan overlay "GPS MATI DI AREA SEKOLAH" + tombol Buka Pengaturan Lokasi. DILARANG langsung pasang kiosk lockscreen merah agar siswa bisa menyalakan GPS.
+
+### 5. Transisi EduLock → GAS Siswa (Anti-Kickback & 0 Frame Home)
+- **File:** `MainActivity.kt`, `AllowedPackagesProvider.kt`, `AntiUninstallService.kt`, `LockPolicy.kt`, `ScreenReceiver.kt`
+- **Rumus Mutlak:** 0 frame launcher home terlihat, 0 keyguard PIN/pola, **Anti-Kickback** (GAS menetap di layar tidak terlempar balik ke EduLock via unpin di lifecycle `onStop`), dan whitelist helper keyboard/system UI vendor HP.
+
+### 6. Anti-Uninstall & Anti-Deactivation Device Admin 24/7/365
+- **File:** `AntiUninstallService.kt`, `device_admin.xml`
+- **Rumus Mutlak:** Aktif 24/7 tidak terikat jam sekolah maupun geofence. Akses ke Device Admin, detail aplikasi, atau dialog uninstall EduLock seketika ditendang keluar.
+
+### 7. EduLock Master Switch & Background Wakeup FCM
+- **File:** `edulockMasterSwitch.ts`, `edulockFindDevice.ts`, `EduLockMessagingService.kt`
+- **Rumus Mutlak:** TTL FCM Master Switch minimal **86.400s (24 jam)**, Find Device minimal **300s (5 menit)**. Android FCM pakai Partial WakeLock 30s. Dilarang menurunkan TTL.
+
+### 8. Aksesibilitas Android 13+ & Bypass Setelan Dibatasi (Titik 3)
+- **File:** `SetupActivity.kt`, `OverlayLockActivity.kt`, `MainActivity.kt`, `/edulock/install/page.tsx`
+- **Rumus Mutlak:** Alur 2-langkah: Tombol *Langkah 1: Info Aplikasi* (klik titik 3 izinkan setelan terbatas) → *Langkah 2: Aksesibilitas*. Grace period 5 menit.
+
+### 9. Pemisahan UI GAS Guru vs GAS Siswa (HARAM DISAMAKAN)
+- **File:** `HomeScreen.kt`
+- **Rumus Mutlak:**
+  - **GAS SISWA:** 4 kolom kartu kecil + Bottom Nav 3 tab (Beranda / Absen hitam floating / Profil).
+  - **GAS GURU:** 2 kolom kartu BESAR glassmorphism 2 baris (label di pill). **HARAM ADA BOTTOM NAV 3 TAB**.
+
+### 10. Anti-Tamper Waktu & Zona Waktu (Kasus Tecno Pova)
+- **File:** `SchoolScheduleManager.kt`, `MonitoringService.kt`
+- **Rumus Mutlak:** Jadwal mengacu pada WIB (`Asia/Jakarta`) dan waktu server Firebase (`.info/serverTimeOffset`). Manipulasi jam manual tetap terkunci di sekolah siang hari (06.00–15.00).
+
+### 11. Batas Waktu Sholat Dzuhur Pukul 15.00
+- **File:** `StudentPrayerScreen.kt`
+- **Rumus Mutlak:** Presensi sholat Dzuhur otomatis terkunci pukul 15.00 jika waktu tidak di-override oleh web admin.
+
+### 12. Aturan Hari Libur Virtual Pet (GAS Siswa)
+- **File:** `VirtualPetViewModel.kt`, `PresensiRuleUtils.kt`, `VirtualPetRepository.kt`
+- **Rumus Mutlak:** Hari libur/Minggu: 4 Vitals Pet tidak dikurangi / bebas penalti. Fitur *Holiday Bonus E-Perpus* (+10 Kecerdasan).
+
+### 13. Hak Tertinggi Super Admin & Presensi Final Langsung
+- **File:** `/api/admin/override/route.ts`, `TeacherAttendanceScreen.kt`
+- **Rumus Mutlak:** Admin Override *Force Lock/Unlock* mengalahkan semua status geofence/jam HP. Presensi Sekretaris & Wali Kelas berstatus *Final Langsung*.
 
 ---
 
