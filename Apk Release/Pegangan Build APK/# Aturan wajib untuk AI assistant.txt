@@ -1,5 +1,10 @@
 # Aturan wajib untuk AI assistant di project ini
 
+> 🚨 **ATURAN TERTINGGI & ANTI-REGRESI (MUTLAK UNTUK SEMUA AI ASSISTANT):**
+> 1. WAJIB patuhi [AGENTS.md](../../AGENTS.md) — Jalankan **Strict Scope Isolation** (HANYA edit file yang diminta user).
+> 2. WAJIB patuhi [FITUR_STABIL_JANGAN_DISENTUH.md](../../FITUR_STABIL_JANGAN_DISENTUH.md) — Dilarang keras mengubah logic Virtual Pet Revive/Death, TTL FCM Master Switch 24 Jam, Android 13+ Accessibility Bypass, dan Pemisahan UI Guru vs Siswa.
+> 3. Setiap sebelum commit/build: Wajib jalankan verifikasi `node ./scripts/verify-critical-rules.mjs` di folder `web/`.
+
 ## === BAGIAN 1: ATURAN DASAR KODE APK (Native Android Kotlin/Java) ===
 
 - src/main HANYA boleh berisi kode yang identik di ketiga flavor (siswa/guru/kepsek)
@@ -240,3 +245,15 @@ Untuk cegah kejadian terulang, WAJIB IKUTI 6 butir ini SEBELUM & SESUDAH ubah UI
   (100% bypass Play Protect + Realme Security Scan).
 - VIVO OriginOS/FuntouchOS khusus: Default USB Configuration di Dev Options WAJIB SET
   ke "File Transfer (MTP)". Jika Charge only → `adb devices` konek-tidak konek / corrupt pipe.
+
+## === BAGIAN 6: ATURAN KHUSUS EDULOCK (PENCEGAHAN BUG REGRESI) ===
+
+1. **Overlay GPS di Luar Jam Sekolah (Bug v1.3.27)**
+   - JANGAN PERNAH menampilkan overlay pemaksaan GPS (GpsEnableOverlay) saat berada di luar jam sekolah (saat siswa di rumah), baik saat aplikasi di latar belakang maupun saat dibuka manual oleh siswa.
+   - Pengecekan isSchoolTime() adalah WAJIB di dalam fungsi GpsEnableOverlay.isRequired() dan enforceGpsOnWhenEduLockOpen().
+   - Ini untuk memastikan privasi lokasi siswa di luar jam sekolah tetap terjaga (mereka bebas mematikan GPS saat di rumah).
+
+2. **Laporan Firebase & Setup Completed**
+   - JANGAN PERNAH memblokir pengiriman sendStatusUpdate di FirebaseReporter.kt hanya karena isSetupCompleted bernilai false.
+   - Aplikasi harus tetap bisa mengirim status heartbeat asalkan deviceId sudah terisi. Jika ini diblokir, dashboard admin akan melihat siswa selalu OFFLINE jika setup-nya tersangkut.
+   - Hal ini sudah di-rollback dan disempurnakan di v1.3.28, jangan mengulang bug ini di masa depan!
