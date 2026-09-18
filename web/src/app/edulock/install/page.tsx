@@ -40,14 +40,15 @@ function getInstallSteps(downloadFileName: string) {
       body: "Setelah akun diisi dengan benar, tekan tombol Daftar untuk melanjutkan proses aktivasi awal aplikasi.",
     },
     {
-      title: "Setup konfigurasi lalu mulai aplikasi",
-      body: "Ikuti setup konfigurasi yang muncul di layar sampai selesai, lalu lanjutkan ke tahap mulai aplikasi.",
+      title: "Setup konfigurasi & izin aksesibilitas",
+      body: "Ikuti panduan setup izin sampai selesai. Khusus Android 13+ (Xiaomi/POCO, Samsung, OPPO/Realme, TECNO): jika tombol Aksesibilitas terkunci abu-abu ('Setelan Dibatasi'), tekan tombol 'Langkah 1: Info Aplikasi' → tekan TITIK 3 di pojok kanan atas → pilih 'Izinkan setelan terbatas' terlebih dahulu, baru aktifkan Aksesibilitas.",
     },
   ];
 }
 
 const notes = [
   "Gunakan HP Android. Instalasi APK tidak berlaku untuk iPhone.",
+  "Khusus Android 13+ (Xiaomi/POCO/Samsung/Oppo/Tecno): Jika Aksesibilitas terkunci abu-abu ('Setelan Dibatasi'), buka Info Aplikasi EduLock → tekan TITIK 3 di kanan atas → pilih 'Izinkan setelan terbatas'.",
   "Pastikan ruang penyimpanan cukup sebelum mengunduh dan menginstal.",
   "Jangan menghapus aplikasi setelah berhasil login tanpa arahan dari sekolah.",
   "Jika tombol Instal tidak muncul, cek lagi izin instal aplikasi dari browser/File Manager.",
@@ -68,7 +69,7 @@ const visualSteps = [
   },
   {
     title: "3. Selesaikan setup konfigurasi lalu mulai aplikasi",
-    body: "Ikuti petunjuk setup konfigurasi yang tampil di layar sampai selesai, kemudian lanjutkan ke tahap mulai aplikasi.",
+    body: "Ikuti petunjuk setup konfigurasi di layar sampai selesai. Jika muncul 'Setelan Dibatasi' pada Aksesibilitas (Android 13+), tekan tombol Info Aplikasi → Titik 3 di kanan atas → Izinkan setelan terbatas.",
     imageSrc: edulockSetupImage,
     imageAlt: "Halaman setup konfigurasi EduLock",
   },
