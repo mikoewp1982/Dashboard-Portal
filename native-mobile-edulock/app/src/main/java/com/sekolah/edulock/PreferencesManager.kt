@@ -36,9 +36,13 @@ class PreferencesManager(context: Context) {
         private const val KEY_SCHOOL_START_MINUTE = "school_start_minute"
         private const val KEY_SCHOOL_END_MINUTE = "school_end_minute"
         private const val KEY_WEEKDAY_SCHEDULE_JSON = "weekday_schedule_json"
+        private const val KEY_WEEKDAY_SCHEDULE_SOURCE = "weekday_schedule_source"
+        const val SOURCE_ATTENDANCE_SCHEDULES = "ATTENDANCE_SCHEDULES"
+        const val SOURCE_LEGACY_WEEKDAYS = "LEGACY_WEEKDAYS"
         private const val KEY_HOLIDAY_LIST_JSON = "holiday_list_json"
         private const val KEY_GPS_OFF_WARN_MS = "gps_off_warn_ms"
         private const val KEY_GPS_OFF_LOCK_MS = "gps_off_lock_ms"
+        private const val KEY_SERVER_TIME_OFFSET = "server_time_offset"
         private const val KEY_ADMIN_PASSWORD = "admin_password_final" // Kunci baru versi final
         private const val KEY_FIRST_LAUNCH = "first_launch"
         private const val KEY_STUDENT_ID = "student_id"
@@ -99,6 +103,69 @@ class PreferencesManager(context: Context) {
 
         /** Default TTL for "last fix near school" presence evidence (covers a school day). */
         const val NEAR_SCHOOL_PRESENCE_FRESHNESS_MS = 12 * 60 * 60 * 1000L
+
+        private const val KEY_LAST_INSIDE_SCHOOL_ZONE_AT = "last_inside_school_zone_at"
+        private const val KEY_PROTECTION_ACTIVATION_TOAST_AT = "protection_activation_toast_at"
+        private const val KEY_PROTECTION_ACTIVATION_NOTIF_AT = "protection_activation_notif_at"
+        private const val KEY_PROTECTION_ACTIVATION_DIALOG_AT = "protection_activation_dialog_at"
+        private const val KEY_PROTECTION_PENDING_A11Y_RECOVERY = "protection_pending_a11y_recovery"
+        private const val KEY_PROTECTION_PENDING_OEM_RECOVERY = "protection_pending_oem_recovery"
+        private const val KEY_LAST_PROTECTION_PERFORM_CHECKS_AT = "last_protection_perform_checks_at"
+        private const val KEY_LAST_OEM_RECOVERY_SHOWN_AT = "last_oem_recovery_shown_at"
+        private const val KEY_LAST_OEM_RECOVERY_BROKEN_PERMS = "last_oem_recovery_broken_perms"
+        private const val KEY_OEM_RECOVERY_SUPPRESS_NEXT_ACCESSIBILITY_DIALOG = "oem_recovery_suppress_next_accessibility_dialog"
+
+        const val PROTECTION_TOAST_COOLDOWN_MS = 10_000L
+        const val PROTECTION_NOTIF_COOLDOWN_MS = 15_000L
+        const val PROTECTION_DIALOG_COOLDOWN_MS = 15_000L
+        const val PROTECTION_PERFORM_CHECKS_DEBOUNCE_MS = 2_000L
+
+        private const val KEY_ACTIVE_DEVICE_QUEUE_JSON = "active_device_queue_json"
+        private const val KEY_VIOLATION_AUDIT_QUEUE_JSON = "violation_audit_queue_json"
+        private const val KEY_LAST_AUDIT_EVENT_KEY = "last_audit_event_key"
+        private const val KEY_LAST_AUDIT_EVENT_AT = "last_audit_event_at"
+        private const val KEY_LAST_GEOFENCE_SYNC_SIGNATURE = "last_geofence_sync_signature"
+        private const val KEY_LAST_GEOFENCE_SYNC_AT = "last_geofence_sync_at"
+        private const val KEY_LAST_KILL_SWITCH_COMMAND_ID = "last_kill_switch_command_id"
+        private const val KEY_KILL_SWITCH_UNTIL = "kill_switch_until"
+
+        private const val KEY_SCHOOL_LOCAL_PAYLOAD_JSON = "school_local_payload_json"
+        private const val KEY_SCHOOL_LOCAL_VERSION_HASH = "school_local_version_hash"
+        private const val KEY_SCHOOL_LOCAL_REVISION = "school_local_revision"
+        private const val KEY_SCHOOL_LOCAL_LAST_SOURCE = "school_local_last_source"
+        private const val KEY_SCHOOL_LOCAL_LAST_ATTEMPT_AT = "school_local_last_attempt_at"
+        private const val KEY_SCHOOL_LOCAL_LAST_SUCCESS_AT = "school_local_last_success_at"
+        private const val KEY_SCHOOL_LOCAL_SYNC_STATE = "school_local_sync_state"
+        private const val KEY_SCHOOL_LOCAL_LAST_ERROR = "school_local_last_error"
+        private const val KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_PAYLOAD_JSON = "school_local_last_known_good_payload_json"
+        private const val KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_VERSION_HASH = "school_local_last_known_good_version_hash"
+        private const val KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_REVISION = "school_local_last_known_good_revision"
+        private const val KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_SOURCE = "school_local_last_known_good_source"
+        private const val KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_AT = "school_local_last_known_good_at"
+
+        private const val KEY_RUNTIME_LAST_TRIGGER_SOURCE = "runtime_last_trigger_source"
+        private const val KEY_RUNTIME_LAST_TRIGGER_AT = "runtime_last_trigger_at"
+        private const val KEY_RUNTIME_LAST_TRIGGER_DETAIL = "runtime_last_trigger_detail"
+        private const val KEY_RUNTIME_LAST_HEALTH = "runtime_last_health"
+        private const val KEY_RUNTIME_LAST_HEALTH_REASON = "runtime_last_health_reason"
+        private const val KEY_RUNTIME_LAST_SERVICE_START_AT = "runtime_last_service_start_at"
+        private const val KEY_RUNTIME_LAST_SERVICE_HEARTBEAT_AT = "runtime_last_service_heartbeat_at"
+        private const val KEY_RUNTIME_LAST_SERVICE_DESTROYED_AT = "runtime_last_service_destroyed_at"
+        private const val KEY_RUNTIME_LAST_BOOT_AT = "runtime_last_boot_at"
+        private const val KEY_RUNTIME_LAST_BOOT_ACTION = "runtime_last_boot_action"
+        private const val KEY_RUNTIME_LAST_WAKE_RECOVERY_AT = "runtime_last_wake_recovery_at"
+        private const val KEY_RUNTIME_LAST_WAKE_REASON = "runtime_last_wake_reason"
+        private const val KEY_RUNTIME_LAST_KEEPALIVE_AT = "runtime_last_keepalive_at"
+        private const val KEY_RUNTIME_LAST_KEEPALIVE_STATUS = "runtime_last_keepalive_status"
+        private const val KEY_RUNTIME_LAST_FCM_AT = "runtime_last_fcm_at"
+        private const val KEY_RUNTIME_LAST_FCM_TYPE = "runtime_last_fcm_type"
+        private const val KEY_RUNTIME_LAST_LISTENER_SOURCE = "runtime_last_listener_source"
+        private const val KEY_RUNTIME_LAST_LISTENER_ATTACH_AT = "runtime_last_listener_attach_at"
+        private const val KEY_RUNTIME_LAST_SYNC_SOURCE = "runtime_last_sync_source"
+        private const val KEY_RUNTIME_LAST_SYNC_REQUEST_AT = "runtime_last_sync_request_at"
+        private const val KEY_RUNTIME_LAST_SYNC_SUCCESS_AT = "runtime_last_sync_success_at"
+        private const val KEY_RUNTIME_LAST_SYNC_ERROR = "runtime_last_sync_error"
+
     }
 
     var isForceUpdateRequired: Boolean
@@ -244,6 +311,65 @@ class PreferencesManager(context: Context) {
         get() = prefs.getBoolean("is_emergency_unlocked", false)
         set(value) = prefs.edit().putBoolean("is_emergency_unlocked", value).apply()
 
+    var protectionActivationToastAt: Long
+        get() = prefs.getLong(KEY_PROTECTION_ACTIVATION_TOAST_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_PROTECTION_ACTIVATION_TOAST_AT, value).apply()
+
+    var protectionActivationNotifAt: Long
+        get() = prefs.getLong(KEY_PROTECTION_ACTIVATION_NOTIF_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_PROTECTION_ACTIVATION_NOTIF_AT, value).apply()
+
+    var protectionActivationDialogAt: Long
+        get() = prefs.getLong(KEY_PROTECTION_ACTIVATION_DIALOG_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_PROTECTION_ACTIVATION_DIALOG_AT, value).apply()
+
+    var protectionPendingA11yRecovery: Boolean
+        get() = prefs.getBoolean(KEY_PROTECTION_PENDING_A11Y_RECOVERY, false)
+        set(value) = prefs.edit().putBoolean(KEY_PROTECTION_PENDING_A11Y_RECOVERY, value).apply()
+
+    var protectionPendingOemRecovery: Boolean
+        get() = prefs.getBoolean(KEY_PROTECTION_PENDING_OEM_RECOVERY, false)
+        set(value) = prefs.edit().putBoolean(KEY_PROTECTION_PENDING_OEM_RECOVERY, value).apply()
+
+    var lastProtectionPerformChecksAt: Long
+        get() = prefs.getLong(KEY_LAST_PROTECTION_PERFORM_CHECKS_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_LAST_PROTECTION_PERFORM_CHECKS_AT, value).apply()
+
+    fun shouldThrottleProtectionToast(now: Long = System.currentTimeMillis()): Boolean {
+        return now - protectionActivationToastAt < PROTECTION_TOAST_COOLDOWN_MS
+    }
+    fun shouldThrottleProtectionNotif(now: Long = System.currentTimeMillis()): Boolean {
+        return now - protectionActivationNotifAt < PROTECTION_NOTIF_COOLDOWN_MS
+    }
+    fun shouldThrottleProtectionDialog(now: Long = System.currentTimeMillis()): Boolean {
+        return now - protectionActivationDialogAt < PROTECTION_DIALOG_COOLDOWN_MS
+    }
+    fun shouldThrottlePerformChecks(now: Long = System.currentTimeMillis()): Boolean {
+        return now - lastProtectionPerformChecksAt < PROTECTION_PERFORM_CHECKS_DEBOUNCE_MS
+    }
+    fun clearProtectionPendingRecovery() {
+        protectionPendingA11yRecovery = false
+        protectionPendingOemRecovery = false
+    }
+
+    var lastOemRecoveryShownAt: Long
+        get() = prefs.getLong(KEY_LAST_OEM_RECOVERY_SHOWN_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_LAST_OEM_RECOVERY_SHOWN_AT, value).apply()
+
+    var lastOemRecoveryBrokenPerms: String
+        get() = prefs.getString(KEY_LAST_OEM_RECOVERY_BROKEN_PERMS, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_LAST_OEM_RECOVERY_BROKEN_PERMS, value).apply()
+
+    var oemRecoverySuppressNextAccessibilityDialog: Boolean
+        get() = prefs.getBoolean(KEY_OEM_RECOVERY_SUPPRESS_NEXT_ACCESSIBILITY_DIALOG, false)
+        set(value) = prefs.edit().putBoolean(KEY_OEM_RECOVERY_SUPPRESS_NEXT_ACCESSIBILITY_DIALOG, value).apply()
+
+    fun clearOemRecoveryMarker() {
+        lastOemRecoveryShownAt = 0L
+        lastOemRecoveryBrokenPerms = ""
+        oemRecoverySuppressNextAccessibilityDialog = false
+    }
+
     var emergencyUnlockTimestamp: Long
         get() = prefs.getLong("emergency_unlock_timestamp", 0L)
         set(value) = prefs.edit().putLong("emergency_unlock_timestamp", value).apply()
@@ -268,6 +394,10 @@ class PreferencesManager(context: Context) {
     var isInsideSchoolZone: Boolean
         get() = prefs.getBoolean(KEY_IS_INSIDE_SCHOOL_ZONE, false)
         set(value) = prefs.edit().putBoolean(KEY_IS_INSIDE_SCHOOL_ZONE, value).apply()
+
+    var lastInsideSchoolZoneAt: Long
+        get() = prefs.getLong(KEY_LAST_INSIDE_SCHOOL_ZONE_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_LAST_INSIDE_SCHOOL_ZONE_AT, value).apply()
 
     var lastOnlineTimestamp: Long
         get() = prefs.getLong(KEY_LAST_ONLINE_TIMESTAMP, System.currentTimeMillis())
@@ -371,6 +501,10 @@ class PreferencesManager(context: Context) {
         get() = prefs.getString(KEY_WEEKDAY_SCHEDULE_JSON, "") ?: ""
         set(value) = prefs.edit().putString(KEY_WEEKDAY_SCHEDULE_JSON, value).apply()
 
+    var weekdayScheduleSource: String
+        get() = prefs.getString(KEY_WEEKDAY_SCHEDULE_SOURCE, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_WEEKDAY_SCHEDULE_SOURCE, value).apply()
+
     var holidayListJson: String
         get() = prefs.getString(KEY_HOLIDAY_LIST_JSON, "") ?: ""
         set(value) = prefs.edit().putString(KEY_HOLIDAY_LIST_JSON, value).apply()
@@ -382,6 +516,10 @@ class PreferencesManager(context: Context) {
     var gpsOffLockMs: Long
         get() = prefs.getLong(KEY_GPS_OFF_LOCK_MS, 5 * 60 * 1000L)
         set(value) = prefs.edit().putLong(KEY_GPS_OFF_LOCK_MS, value).apply()
+
+    var serverTimeOffset: Long
+        get() = prefs.getLong(KEY_SERVER_TIME_OFFSET, 0L)
+        set(value) = prefs.edit().putLong(KEY_SERVER_TIME_OFFSET, value).apply()
 
     // Admin settings
     var adminPassword: String
@@ -418,6 +556,268 @@ class PreferencesManager(context: Context) {
         if (stored.isBlank()) return true
         val candidates = setOf(getDeviceBindingId(context), getAndroidDeviceId(context)).filter { it.isNotBlank() }
         return candidates.contains(stored)
+    }
+
+    var activeDeviceQueueJson: String
+        get() = prefs.getString(KEY_ACTIVE_DEVICE_QUEUE_JSON, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_ACTIVE_DEVICE_QUEUE_JSON, value).apply()
+
+    var violationAuditQueueJson: String
+        get() = prefs.getString(KEY_VIOLATION_AUDIT_QUEUE_JSON, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_VIOLATION_AUDIT_QUEUE_JSON, value).apply()
+
+    var lastAuditEventKey: String
+        get() = prefs.getString(KEY_LAST_AUDIT_EVENT_KEY, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_LAST_AUDIT_EVENT_KEY, value).apply()
+
+    var lastAuditEventAt: Long
+        get() = prefs.getLong(KEY_LAST_AUDIT_EVENT_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_LAST_AUDIT_EVENT_AT, value).apply()
+
+    var lastGeofenceSyncSignature: String
+        get() = prefs.getString(KEY_LAST_GEOFENCE_SYNC_SIGNATURE, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_LAST_GEOFENCE_SYNC_SIGNATURE, value).apply()
+
+    var lastGeofenceSyncAt: Long
+        get() = prefs.getLong(KEY_LAST_GEOFENCE_SYNC_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_LAST_GEOFENCE_SYNC_AT, value).apply()
+
+    var lastKillSwitchCommandId: String
+        get() = prefs.getString(KEY_LAST_KILL_SWITCH_COMMAND_ID, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_LAST_KILL_SWITCH_COMMAND_ID, value).apply()
+
+    var killSwitchUntil: Long
+        get() = prefs.getLong(KEY_KILL_SWITCH_UNTIL, 0L)
+        set(value) = prefs.edit().putLong(KEY_KILL_SWITCH_UNTIL, value).apply()
+
+    fun isKillSwitchActive(now: Long = System.currentTimeMillis()): Boolean {
+        return now < killSwitchUntil
+    }
+
+    // School Local Data Management
+    var schoolLocalPayloadJson: String
+        get() = prefs.getString(KEY_SCHOOL_LOCAL_PAYLOAD_JSON, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_LOCAL_PAYLOAD_JSON, value).apply()
+
+    var schoolLocalVersionHash: String
+        get() = prefs.getString(KEY_SCHOOL_LOCAL_VERSION_HASH, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_LOCAL_VERSION_HASH, value).apply()
+
+    var schoolLocalRevision: String
+        get() = prefs.getString(KEY_SCHOOL_LOCAL_REVISION, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_LOCAL_REVISION, value).apply()
+
+    var schoolLocalLastSource: String
+        get() = prefs.getString(KEY_SCHOOL_LOCAL_LAST_SOURCE, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_LOCAL_LAST_SOURCE, value).apply()
+
+    var schoolLocalLastAttemptAt: Long
+        get() = prefs.getLong(KEY_SCHOOL_LOCAL_LAST_ATTEMPT_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_SCHOOL_LOCAL_LAST_ATTEMPT_AT, value).apply()
+
+    var schoolLocalLastSuccessAt: Long
+        get() = prefs.getLong(KEY_SCHOOL_LOCAL_LAST_SUCCESS_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_SCHOOL_LOCAL_LAST_SUCCESS_AT, value).apply()
+
+    var schoolLocalSyncState: String
+        get() = prefs.getString(KEY_SCHOOL_LOCAL_SYNC_STATE, SchoolLocalDataManager.SYNC_STATE_IDLE) ?: SchoolLocalDataManager.SYNC_STATE_IDLE
+        set(value) = prefs.edit().putString(KEY_SCHOOL_LOCAL_SYNC_STATE, value).apply()
+
+    var schoolLocalLastError: String
+        get() = prefs.getString(KEY_SCHOOL_LOCAL_LAST_ERROR, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_LOCAL_LAST_ERROR, value).apply()
+
+    var schoolLocalLastKnownGoodPayloadJson: String
+        get() = prefs.getString(KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_PAYLOAD_JSON, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_PAYLOAD_JSON, value).apply()
+
+    var schoolLocalLastKnownGoodVersionHash: String
+        get() = prefs.getString(KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_VERSION_HASH, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_VERSION_HASH, value).apply()
+
+    var schoolLocalLastKnownGoodRevision: String
+        get() = prefs.getString(KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_REVISION, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_REVISION, value).apply()
+
+    var schoolLocalLastKnownGoodSource: String
+        get() = prefs.getString(KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_SOURCE, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_SOURCE, value).apply()
+
+    var schoolLocalLastKnownGoodAt: Long
+        get() = prefs.getLong(KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_SCHOOL_LOCAL_LAST_KNOWN_GOOD_AT, value).apply()
+
+    // Runtime Telemetry
+    var runtimeLastTriggerSource: String
+        get() = prefs.getString(KEY_RUNTIME_LAST_TRIGGER_SOURCE, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RUNTIME_LAST_TRIGGER_SOURCE, value).apply()
+
+    var runtimeLastTriggerAt: Long
+        get() = prefs.getLong(KEY_RUNTIME_LAST_TRIGGER_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_RUNTIME_LAST_TRIGGER_AT, value).apply()
+
+    var runtimeLastTriggerDetail: String
+        get() = prefs.getString(KEY_RUNTIME_LAST_TRIGGER_DETAIL, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RUNTIME_LAST_TRIGGER_DETAIL, value).apply()
+
+    var runtimeLastHealth: String
+        get() = prefs.getString(KEY_RUNTIME_LAST_HEALTH, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RUNTIME_LAST_HEALTH, value).apply()
+
+    var runtimeLastHealthReason: String
+        get() = prefs.getString(KEY_RUNTIME_LAST_HEALTH_REASON, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RUNTIME_LAST_HEALTH_REASON, value).apply()
+
+    var runtimeLastServiceStartAt: Long
+        get() = prefs.getLong(KEY_RUNTIME_LAST_SERVICE_START_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_RUNTIME_LAST_SERVICE_START_AT, value).apply()
+
+    var runtimeLastServiceHeartbeatAt: Long
+        get() = prefs.getLong(KEY_RUNTIME_LAST_SERVICE_HEARTBEAT_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_RUNTIME_LAST_SERVICE_HEARTBEAT_AT, value).apply()
+
+    var runtimeLastServiceDestroyedAt: Long
+        get() = prefs.getLong(KEY_RUNTIME_LAST_SERVICE_DESTROYED_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_RUNTIME_LAST_SERVICE_DESTROYED_AT, value).apply()
+
+    var runtimeLastBootAt: Long
+        get() = prefs.getLong(KEY_RUNTIME_LAST_BOOT_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_RUNTIME_LAST_BOOT_AT, value).apply()
+
+    var runtimeLastBootAction: String
+        get() = prefs.getString(KEY_RUNTIME_LAST_BOOT_ACTION, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RUNTIME_LAST_BOOT_ACTION, value).apply()
+
+    var runtimeLastWakeRecoveryAt: Long
+        get() = prefs.getLong(KEY_RUNTIME_LAST_WAKE_RECOVERY_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_RUNTIME_LAST_WAKE_RECOVERY_AT, value).apply()
+
+    var runtimeLastWakeReason: String
+        get() = prefs.getString(KEY_RUNTIME_LAST_WAKE_REASON, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RUNTIME_LAST_WAKE_REASON, value).apply()
+
+    var runtimeLastSyncSource: String
+        get() = prefs.getString(KEY_RUNTIME_LAST_SYNC_SOURCE, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RUNTIME_LAST_SYNC_SOURCE, value).apply()
+
+    var runtimeLastSyncRequestAt: Long
+        get() = prefs.getLong(KEY_RUNTIME_LAST_SYNC_REQUEST_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_RUNTIME_LAST_SYNC_REQUEST_AT, value).apply()
+
+    var runtimeLastSyncSuccessAt: Long
+        get() = prefs.getLong(KEY_RUNTIME_LAST_SYNC_SUCCESS_AT, 0L)
+        set(value) = prefs.edit().putLong(KEY_RUNTIME_LAST_SYNC_SUCCESS_AT, value).apply()
+
+    var runtimeLastSyncError: String
+        get() = prefs.getString(KEY_RUNTIME_LAST_SYNC_ERROR, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_RUNTIME_LAST_SYNC_ERROR, value).apply()
+
+    fun markRuntimeTrigger(
+        source: String,
+        detail: String? = null,
+        now: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit().apply {
+            putString(KEY_RUNTIME_LAST_TRIGGER_SOURCE, source)
+            putLong(KEY_RUNTIME_LAST_TRIGGER_AT, now)
+            putString(KEY_RUNTIME_LAST_TRIGGER_DETAIL, detail.orEmpty())
+        }.apply()
+    }
+
+    fun markRuntimeHealth(
+        health: String,
+        reason: String? = null,
+        now: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit().apply {
+            putString(KEY_RUNTIME_LAST_HEALTH, health)
+            putString(KEY_RUNTIME_LAST_HEALTH_REASON, reason.orEmpty())
+            putLong(KEY_RUNTIME_LAST_SERVICE_HEARTBEAT_AT, now)
+        }.apply()
+    }
+
+    fun markRuntimeListenerRefresh(
+        source: String,
+        now: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit().apply {
+            putString(KEY_RUNTIME_LAST_LISTENER_SOURCE, source)
+            putLong(KEY_RUNTIME_LAST_LISTENER_ATTACH_AT, now)
+        }.apply()
+    }
+
+    fun markRuntimeSyncRequested(
+        source: String,
+        now: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit().apply {
+            putString(KEY_RUNTIME_LAST_SYNC_SOURCE, source)
+            putLong(KEY_RUNTIME_LAST_SYNC_REQUEST_AT, now)
+            putString(KEY_RUNTIME_LAST_SYNC_ERROR, "")
+        }.apply()
+    }
+
+    fun markRuntimeSyncSucceeded(
+        source: String,
+        now: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit().apply {
+            putString(KEY_RUNTIME_LAST_SYNC_SOURCE, source)
+            putLong(KEY_RUNTIME_LAST_SYNC_SUCCESS_AT, now)
+            putString(KEY_RUNTIME_LAST_SYNC_ERROR, "")
+        }.apply()
+    }
+
+    fun markRuntimeSyncFailed(
+        source: String,
+        error: String?,
+        now: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit().apply {
+            putString(KEY_RUNTIME_LAST_SYNC_SOURCE, source)
+            putLong(KEY_RUNTIME_LAST_SYNC_REQUEST_AT, now)
+            putString(KEY_RUNTIME_LAST_SYNC_ERROR, error.orEmpty())
+        }.apply()
+    }
+
+    fun markBootRecovery(
+        action: String,
+        now: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit().apply {
+            putLong(KEY_RUNTIME_LAST_BOOT_AT, now)
+            putString(KEY_RUNTIME_LAST_BOOT_ACTION, action)
+        }.apply()
+    }
+
+    fun markWakeRecovery(
+        reason: String,
+        now: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit().apply {
+            putLong(KEY_RUNTIME_LAST_WAKE_RECOVERY_AT, now)
+            putString(KEY_RUNTIME_LAST_WAKE_REASON, reason)
+        }.apply()
+    }
+
+    fun markKeepAlive(
+        status: String,
+        now: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit().apply {
+            putLong(KEY_RUNTIME_LAST_KEEPALIVE_AT, now)
+            putString(KEY_RUNTIME_LAST_KEEPALIVE_STATUS, status)
+        }.apply()
+    }
+
+    fun markFcmWake(
+        type: String,
+        now: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit().apply {
+            putLong(KEY_RUNTIME_LAST_FCM_AT, now)
+            putString(KEY_RUNTIME_LAST_FCM_TYPE, type)
+        }.apply()
     }
 
     // Clear all data
@@ -575,9 +975,28 @@ class PreferencesManager(context: Context) {
             RECOVERY_TARGET_DEVICE_ADMIN
         )
         // Juga cek legacy global grace sebagai safety net
+        val hasModernActive = targets.any { isRecoveryActiveForTarget(it, now) }
+        if (!hasModernActive && isSettingsOpen && now >= settingsGraceUntil && now >= deviceAdminRequestUntil) {
+            isSettingsOpen = false
+        }
         val legacyActive = isSettingsOpen || now < settingsGraceUntil || now < deviceAdminRequestUntil
         if (legacyActive) return true
-        return targets.any { isRecoveryActiveForTarget(it, now) }
+        return hasModernActive
+    }
+
+    fun shouldPauseEnforcementForRecovery(
+        now: Long = System.currentTimeMillis(),
+        isSettingsPackage: Boolean = false
+    ): Boolean {
+        val hasModernActive = getActiveRecoveryTargets(now).isNotEmpty()
+        if (hasModernActive) return true
+        if (now < deviceAdminRequestUntil) return true
+
+        if (!isSettingsPackage && isSettingsOpen && now >= settingsGraceUntil) {
+            isSettingsOpen = false
+        }
+
+        return isSettingsPackage && (isSettingsOpen || now < settingsGraceUntil)
     }
 
     /** Dapatkan daftar target recovery yang masih aktif (untuk logging/debug). */

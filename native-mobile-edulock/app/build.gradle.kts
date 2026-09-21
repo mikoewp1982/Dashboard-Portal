@@ -21,14 +21,18 @@ android {
         applicationId = "com.sekolah.edulock"
         minSdk = 21
         targetSdk = 34
-        versionCode = 82
-        versionName = "1.3.56"
+        versionCode = 83
+        versionName = "1.3.57"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Default to V2 Hybrid functionality
         buildConfigField("boolean", "USE_MANUAL_LOCATION_POLLING", "true")
         buildConfigField("boolean", "USE_GEOFENCING", "true")
+    }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
     }
 
     flavorDimensions += listOf("mode")
@@ -131,6 +135,8 @@ dependencies {
 
     // Testing
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
+    testImplementation("org.mockito:mockito-core:5.11.0")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }

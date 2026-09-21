@@ -721,8 +721,13 @@ class MainActivity : AppCompatActivity() {
                         root.put(k, obj)
                     }
                     if (root.length() > 0) {
-                        prefsManager.weekdayScheduleJson = root.toString()
-                        persistSchoolLocalDataSnapshot("listener_weekday_schedule")
+                        // SSOT Rule: Jika data berasal dari ATTENDANCE_SCHEDULES (admin modern),
+                        // path legacy schedule/weekdays DILARANG KERAS MENIMPA!
+                        if (prefsManager.weekdayScheduleSource != PreferencesManager.SOURCE_ATTENDANCE_SCHEDULES) {
+                            prefsManager.weekdayScheduleSource = PreferencesManager.SOURCE_LEGACY_WEEKDAYS
+                            prefsManager.weekdayScheduleJson = root.toString()
+                            persistSchoolLocalDataSnapshot("listener_weekday_schedule")
+                        }
                     }
                 } catch (e: Exception) {
                     android.util.Log.w("MainActivity", "Parse weekday schedule snapshot failed: ${e.message}")

@@ -3082,16 +3082,18 @@ class MonitoringService : Service() {
                         root.put(k, obj)
                     }
                     if (root.length() > 0) {
-                        val existing = try { JSONObject(prefsManager.weekdayScheduleJson) } catch (_: Exception) { null }
-                        val shouldUpdate = existing == null || existing.length() == 0 || root.length() >= existing.length()
-                        if (shouldUpdate) {
-                            prefsManager.weekdayScheduleJson = root.toString()
-                            persistSchoolLocalDataSnapshot("listener_weekday_schedule_service")
-                            handler.post {
-                                try {
-                                    performChecks()
-                                } catch (_: Exception) {
-                                }
+                        // SSOT Rule: Jika data berasal dari ATTENDANCE_SCHEDULES (admin modern),
+                        // path legacy schedule/weekdays DILARANG KERAS MENIMPA!
+                        if (prefsManager.weekdayScheduleSource == PreferencesManager.SOURCE_ATTENDANCE_SCHEDULES) {
+                            return
+                        }
+                        prefsManager.weekdayScheduleSource = PreferencesManager.SOURCE_LEGACY_WEEKDAYS
+                        prefsManager.weekdayScheduleJson = root.toString()
+                        persistSchoolLocalDataSnapshot("listener_weekday_schedule_service")
+                        handler.post {
+                            try {
+                                performChecks()
+                            } catch (_: Exception) {
                             }
                         }
                     }
@@ -3144,6 +3146,7 @@ class MonitoringService : Service() {
                         root.put(dayKey, obj)
                     }
                     if (root.length() > 0) {
+                        prefsManager.weekdayScheduleSource = PreferencesManager.SOURCE_ATTENDANCE_SCHEDULES
                         prefsManager.weekdayScheduleJson = root.toString()
                         persistSchoolLocalDataSnapshot("listener_school_settings_schedule")
                         handler.post {
