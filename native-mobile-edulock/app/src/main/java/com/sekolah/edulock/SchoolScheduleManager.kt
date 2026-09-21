@@ -4,6 +4,7 @@ import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
 
 class SchoolScheduleManager(private val prefs: PreferencesManager) {
 
@@ -19,17 +20,48 @@ class SchoolScheduleManager(private val prefs: PreferencesManager) {
     private var lastHolidayJson: String? = null
     private var holidayCache: Map<String, String> = emptyMap()
 
+    /**
+     * Menentukan zona waktu sekolah berdasarkan koordinat bujur sekolah (Indonesia):
+     * - Bujur < 114.0  -> WIB (Asia/Jakarta, GMT+7)
+     * - Bujur 114..125 -> WITA (Asia/Makassar, GMT+8)
+     * - Bujur > 125.0  -> WIT (Asia/Jayapura, GMT+9)
+     * Default: Asia/Jakarta (WIB)
+     */
+    fun resolveSchoolTimeZone(): TimeZone {
+        val lon = prefs.schoolLongitude
+        return when {
+            lon in 114.0..125.0 -> TimeZone.getTimeZone("Asia/Makassar")
+            lon > 125.0 -> TimeZone.getTimeZone("Asia/Jayapura")
+            else -> TimeZone.getTimeZone("Asia/Jakarta")
+        }
+    }
+
+    /**
+     * Mengambil Calendar yang terikat pada zona waktu sekolah dan waktu server Firebase (anti-tamper jam lokal).
+     */
+    fun getSchoolCalendar(): Calendar {
+        val tz = resolveSchoolTimeZone()
+        val cal = Calendar.getInstance(tz)
+        val accurateTime = System.currentTimeMillis() + prefs.serverTimeOffset
+        cal.timeInMillis = accurateTime
+        return cal
+    }
+
     private fun getTodayDateKey(): String {
         return try {
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-            sdf.format(System.currentTimeMillis())
+            val tz = resolveSchoolTimeZone()
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+                timeZone = tz
+            }
+            val accurateTime = System.currentTimeMillis() + prefs.serverTimeOffset
+            sdf.format(accurateTime)
         } catch (_: Exception) {
             ""
         }
     }
 
-    private fun getTodayWeekdayKey(): String {
-        val calendar = Calendar.getInstance()
+    fun getTodayWeekdayKey(): String {
+        val calendar = getSchoolCalendar()
         return when (calendar.get(Calendar.DAY_OF_WEEK)) {
             Calendar.MONDAY -> "mon"
             Calendar.TUESDAY -> "tue"
@@ -57,18 +89,23 @@ class SchoolScheduleManager(private val prefs: PreferencesManager) {
         if (raw == lastScheduleJson && scheduleCache.isNotEmpty()) return scheduleCache
         lastScheduleJson = raw
 
+        val legacyStart = String.format(Locale.getDefault(), "%02d:%02d", prefs.schoolStartHour, prefs.schoolStartMinute)
+            .takeIf { it != "00:00" } ?: "06:35"
+        val legacyEnd = String.format(Locale.getDefault(), "%02d:%02d", prefs.schoolEndHour, prefs.schoolEndMinute)
+            .takeIf { it != "00:00" } ?: "13:00"
+
+        val fallbackMap = mapOf(
+            "mon" to DaySchedule(true, legacyStart, legacyEnd),
+            "tue" to DaySchedule(true, legacyStart, legacyEnd),
+            "wed" to DaySchedule(true, legacyStart, legacyEnd),
+            "thu" to DaySchedule(true, legacyStart, legacyEnd),
+            "fri" to DaySchedule(true, legacyStart, "10:50"),
+            "sat" to DaySchedule(false, "00:00", "14:00"),
+            "sun" to DaySchedule(false, "00:00", "14:00")
+        )
+
         if (raw.isBlank()) {
-            val legacyStart = String.format(Locale.getDefault(), "%02d:%02d", prefs.schoolStartHour, prefs.schoolStartMinute)
-            val legacyEnd = String.format(Locale.getDefault(), "%02d:%02d", prefs.schoolEndHour, prefs.schoolEndMinute)
-            scheduleCache = mapOf(
-                "mon" to DaySchedule(true, legacyStart, legacyEnd),
-                "tue" to DaySchedule(true, legacyStart, legacyEnd),
-                "wed" to DaySchedule(true, legacyStart, legacyEnd),
-                "thu" to DaySchedule(true, legacyStart, legacyEnd),
-                "fri" to DaySchedule(true, legacyStart, legacyEnd),
-                "sat" to DaySchedule(true, legacyStart, legacyEnd),
-                "sun" to DaySchedule(false, legacyStart, legacyEnd)
-            )
+            scheduleCache = fallbackMap
             return scheduleCache
         }
 
@@ -79,15 +116,25 @@ class SchoolScheduleManager(private val prefs: PreferencesManager) {
             for (k in keys) {
                 val obj = root.optJSONObject(k) ?: continue
                 map[k] = DaySchedule(
-                    enabled = obj.optBoolean("enabled", k != "sun"),
-                    start = obj.optString("start", "07:00"),
-                    end = obj.optString("end", "14:00")
+                    enabled = obj.optBoolean("enabled", k != "sun" && k != "sat"),
+                    start = obj.optString("start", legacyStart),
+                    end = obj.optString("end", if (k == "fri") "10:50" else if (k == "sat") "11:40" else legacyEnd)
                 )
             }
-            scheduleCache = map.toMap()
+            if (map.isEmpty()) {
+                scheduleCache = fallbackMap
+            } else {
+                // Lengkapi hari yang belum tercatat dengan fallback standar
+                for ((day, fallbackSchedule) in fallbackMap) {
+                    if (!map.containsKey(day)) {
+                        map[day] = fallbackSchedule
+                    }
+                }
+                scheduleCache = map.toMap()
+            }
             scheduleCache
         } catch (_: Exception) {
-            scheduleCache = emptyMap()
+            scheduleCache = fallbackMap
             scheduleCache
         }
     }
@@ -135,22 +182,20 @@ class SchoolScheduleManager(private val prefs: PreferencesManager) {
 
     fun isEffectiveSchoolDayToday(): Boolean {
         if (isHolidayToday()) return false
-        val schedule = getScheduleMap()[getTodayWeekdayKey()]
-        return schedule?.enabled ?: true
+        val dayKey = getTodayWeekdayKey()
+        val schedule = getScheduleMap()[dayKey]
+        val defaultEnabled = dayKey != "sun" && dayKey != "sat"
+        return schedule?.enabled ?: defaultEnabled
     }
 
     fun isSchoolTime(): Boolean {
         if (isHolidayToday()) return false
 
         val dayKey = getTodayWeekdayKey()
-        val schedule = getScheduleMap()[dayKey] ?: run {
-            val startMinutes = prefs.schoolStartHour * 60 + prefs.schoolStartMinute
-            val endMinutes = prefs.schoolEndHour * 60 + prefs.schoolEndMinute
-            return isWithinTimeRange(startMinutes, endMinutes)
-        }
+        val schedule = getScheduleMap()[dayKey] ?: return false
         if (!schedule.enabled) return false
 
-        val calendar = Calendar.getInstance()
+        val calendar = getSchoolCalendar()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
         val minute = calendar.get(Calendar.MINUTE)
 
@@ -162,19 +207,10 @@ class SchoolScheduleManager(private val prefs: PreferencesManager) {
         return if (startMinutes < endMinutes) currentMinutes in startMinutes..endMinutes else currentMinutes >= startMinutes || currentMinutes <= endMinutes
     }
 
-    private fun isWithinTimeRange(startMinutes: Int, endMinutes: Int): Boolean {
-        val calendar = Calendar.getInstance()
-        val hour = calendar.get(Calendar.HOUR_OF_DAY)
-        val minute = calendar.get(Calendar.MINUTE)
-        val currentMinutes = hour * 60 + minute
-        if (startMinutes == endMinutes) return true
-        return if (startMinutes < endMinutes) currentMinutes in startMinutes..endMinutes else currentMinutes >= startMinutes || currentMinutes <= endMinutes
-    }
-
     fun isAfterSchoolHours(): Boolean {
         if (isHolidayToday()) return false
 
-        val calendar = Calendar.getInstance()
+        val calendar = getSchoolCalendar()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
         val minute = calendar.get(Calendar.MINUTE)
 

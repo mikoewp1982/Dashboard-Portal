@@ -21,8 +21,8 @@ android {
         applicationId = "com.sekolah.edulock"
         minSdk = 21
         targetSdk = 34
-        versionCode = 54
-        versionName = "1.3.28"
+        versionCode = 82
+        versionName = "1.3.56"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
@@ -87,7 +87,12 @@ android {
         val variant = this
         variant.outputs.all {
             val output = this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            output?.outputFileName = "EduLock-${variant.name}.apk"
+            val versionName = variant.versionName ?: "0.0.0"
+            val versionCode = variant.versionCode
+            output?.outputFileName = when (variant.name) {
+                "studentRelease" -> "EduLock_V2-${versionName}-${versionCode}.apk"
+                else -> "EduLock-${variant.name}.apk"
+            }
         }
     }
 }
