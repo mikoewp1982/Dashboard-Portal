@@ -45,6 +45,12 @@ Read `FITUR_STABIL_JANGAN_DISENTUH.md` before making changes. The following area
    - Student = 4-column compact cards + 3-tab bottom nav.
    - Teacher = 2-column large glassmorphism cards. NO BOTTOM NAV ALLOWED.
 
+9. **Schedule Sync SSOT & Saturday Holiday Integrity (`PreferencesManager.kt`, `MonitoringService.kt`, `MainActivity.kt`, `SchoolScheduleManager.kt`)**:
+   - Modern path `school_settings/{id}/attendance/schedules` is the SSOT, tagged `SOURCE_ATTENDANCE_SCHEDULES`.
+   - Legacy path `schools/{id}/schedule/weekdays` and `MainActivity` rogue writer MUST NEVER overwrite SSOT data. Flawed key-count heuristic (`root.length() >= existing.length()`) is strictly prohibited.
+   - Internal fallback for Saturday & Sunday MUST default to `enabled = false` (holiday).
+   - All JUnit test cases in `SchoolScheduleManagerTest.kt` MUST pass 100% before building APK.
+
 ## 🛠️ RULE 3: PRE-BUILD & PRE-COMMIT VALIDATION
 - Always run `node ./scripts/verify-critical-rules.mjs` inside `web/` before proposing any web changes.
 - If the verification fails, do NOT bypass it. Fix the code to adhere to the critical rules.

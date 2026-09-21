@@ -5,6 +5,11 @@ Folder ini berisi dokumen panduan operasional dan arsitektur resmi EduLock V2 un
 Dokumen lengkap dapat diakses pada tautan berikut:
 👉 **[PANDUAN CARA KERJA DAN FITUR SAKRAL EDULOCK V2](./PANDUAN_CARA_KERJA_DAN_FITUR_SAKRAL_EDULOCK_V2.md)**
 
+- **Versi Aktif Uji:** `v1.3.57` (Build `83`)
+- **File APK:** `Apk Release/Final_V2/EduLock_V2-1.3.57-83.apk`
+- **SHA-256:** `C60E3FE9F077A12A03F53F8D233974174CA56597189DC7F286DF4477AC494FCE`
+- **Unit Test Coverage:** 5 Automated JUnit 4 Tests (100% Passed)
+
 ---
 
 ## 📌 Ringkasan Penting ("INI BUKAN BUG!")

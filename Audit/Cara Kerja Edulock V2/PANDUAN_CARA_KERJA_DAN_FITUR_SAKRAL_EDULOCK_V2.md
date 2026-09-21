@@ -1,7 +1,7 @@
 # 🛡️ PANDUAN RESMI TIM BUG HUNTER: CARA KERJA & BATASAN SAKRAL EDULOCK SISWA V2
 
 > **Target Pengguna:** Tim Bug Hunter, QA Penguji Lapangan, dan Security Pentester  
-> **Objek Aplikasi:** EduLock Siswa V2 (Versi Aktif: `v1.3.54-80` / `v1.3.55-81`)  
+> **Objek Aplikasi:** EduLock Siswa V2 (Versi Aktif: `v1.3.57-83` | SHA256: `C60E3FE9F077A12A03F53F8D233974174CA56597189DC7F286DF4477AC494FCE`)  
 > **Prinsip Utama:** *Temukan celah keamanan nyata (Kiosk Breakout / Anti-Uninstall Bypass), dan **JANGAN** laporkan perilaku yang memang sengaja didesain demi kenyamanan siswa (Aturan Sakral).*
 
 ---
@@ -123,9 +123,15 @@ EduLock tidak bergantung 100% pada koneksi internet:
    - Berjalan 24 jam sehari tanpa terikat jam sekolah maupun geofence.
    - Akses ke menu Device Admin EduLock, detail aplikasi (Paksa Berhenti / Copot Pemasangan), atau dialog uninstall EduLock **wajib seketika ditendang keluar**.
    - Daftar aplikasi umum lainnya di HP tetap boleh dikelola oleh siswa di rumah.
-7. **Anti-Tamper Waktu & Zona Waktu (Kasus Tecno Pova)**
+7. **Anti-Tamper Waktu, Zona Waktu & Arsitektur SSOT Sinkronisasi Jadwal (Build 83+)**
    - Evaluasi jam sekolah mengacu pada **WIB (`Asia/Jakarta`)** dan waktu server Firebase (`.info/serverTimeOffset`).
    - Siswa yang mengubah jam HP manual (misal mengubah siang 12.48 PM jadi 00.48 AM) tetap terbaca siang dan **tetap terkunci secara tegas di sekolah (06.00–15.00)**.
+   - **Arsitektur SSOT Provenance Jadwal (`SOURCE_ATTENDANCE_SCHEDULES`):**
+     - Path admin modern (`school_settings/{schoolId}/attendance/schedules`) adalah *Single Source of Truth* (SSOT) mutlak bertanda provenance `SOURCE_ATTENDANCE_SCHEDULES`.
+     - Path cermin lama (`schools/{schoolId}/schedule/weekdays`) **DIHARAMKAN MENIMPA** cache jika sumber data sudah berstatus SSOT. Heuristik cacat perbandingan jumlah kunci (`root.length() >= existing.length()`) resmi dihapus total agar sekolah 5 hari kerja (5 kunci) tidak dikalahkan oleh data lama 7 hari.
+     - **Penjinakan Penulis Liar MainActivity:** Listener di `MainActivity` dilarang menulis ke cache saat sumber sudah SSOT, mencegah race condition saat Activity dibuka.
+     - **Fallback Default Sabtu Libur:** Fallback internal `"sat"` dan `"sun"` dipatok `enabled = false`. Hari yang tidak diatur di web dilarang disulap menjadi hari sekolah aktif.
+     - **Unit Test Otomatis Wajib Lulus:** Seluruh unit test di `SchoolScheduleManagerTest.kt` wajib lulus 100% sebelum rilis APK.
 8. **Aksesibilitas Android 13+ (Bypass Titik 3 / Setelan Dibatasi)**
    - Alur 2-langkah: Tombol *Langkah 1: Info Aplikasi* (langsung membuka info app untuk klik titik 3 *"Izinkan setelan terbatas"*) $\to$ *Langkah 2: Aksesibilitas*. Grace period 5 menit.
 9. **FCM Master Switch & Background Wakeup**
@@ -191,6 +197,7 @@ Fokuskan tenaga tim Anda untuk mencari celah pada skenario-skenario nyata di baw
 | **E2** | **GPS Dimatikan di Area Sekolah** | Di area sekolah saat jam sekolah, matikan GPS. | Muncul overlay *"GPS MATI DI AREA SEKOLAH"* + tombol *"Buka Pengaturan Lokasi"*. Tombol **bisa diklik** untuk menyalakan GPS kembali. |
 | **E3** | **Manipulasi Jam Sistem (Format 12 Jam AM/PM)** | Matikan waktu otomatis jaringan, ubah jam siang 12.00 siang menjadi 12.00 AM (tengah malam) di HP. | EduLock tetap terkunci tegas di sekolah karena mengacu pada waktu server Firebase dan zona waktu WIB. |
 | **E4** | **Lokasi Palsu (Fake GPS / Mock Location)** | Pasang aplikasi Fake GPS dari Opsi Pengembang untuk memalsukan posisi di luar sekolah. | Sistem mendeteksi koordinat mock dan menolak status "di luar sekolah". |
+| **E5** | **Integritas Sinkronisasi Jadwal (SSOT Provenance & Libur Sabtu 5 Hari Kerja)** | Ubah jadwal di Admin Web (5 hari kerja: Senin–Jumat). Buka UI EduLock dan picu listener legacy `schools/.../schedule/weekdays`. Periksa hari Sabtu. | Jadwal admin modern (`attendance/schedules`) tidak pernah tertimpa oleh path legacy maupun `MainActivity`. Pada hari Sabtu, HP siswa tidak terkunci (bebas). Unit test `SchoolScheduleManagerTest` lulus 100%. |
 
 ---
 
@@ -215,9 +222,9 @@ Setiap temuan celah keamanan atau bug yang **VALID** wajib dilaporkan menggunaka
 ### [TEMUAN-EDULOCK] <Judul Celah Singkat>
 - **Tingkat Keparahan (Severity):** [CRITICAL / HIGH / MEDIUM / LOW]
 - **Tipe Perangkat & OS:** [Contoh: Vivo Y18 / Android 14 / Funtouch OS 14]
-- **Versi EduLock:** [Contoh: 1.3.54 (Build 80)]
+- **Versi EduLock:** [Contoh: 1.3.57 (Build 83)]
 - **Lokasi Pengujian:** [Di Area Sekolah / Di Rumah]
-- **Vektor Uji:** [Pilih dari ID A1-A6, B1-B4, C1-C3, D1-D3, E1-E4]
+- **Vektor Uji:** [Pilih dari ID A1-A6, B1-B4, C1-C3, D1-D3, E1-E5, F1-F5]
 - **Langkah-langkah Mereproduksi (Steps to Reproduce):**
   1. ...
   2. ...

@@ -193,6 +193,22 @@ Siapa pun yang mengerjakan task baru pada **Web Admin**, **APK GAS Siswa/Guru**,
 
 ---
 
+### 14. Integritas Sinkronisasi Jadwal SSOT & Sabtu Libur (Build 83+)
+- **File Sakral:**
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/PreferencesManager.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MonitoringService.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/MainActivity.kt`
+  - `native-mobile-edulock/app/src/main/java/com/sekolah/edulock/SchoolScheduleManager.kt`
+  - `native-mobile-edulock/app/src/test/java/com/sekolah/edulock/SchoolScheduleManagerTest.kt`
+- **Rumus Mutlak:**
+  - **SSOT Provenance Tagging:** Path modern `school_settings/{schoolId}/attendance/schedules` adalah Single Source of Truth (SSOT) mutlak bertanda `SOURCE_ATTENDANCE_SCHEDULES`.
+  - **Dilarang Overwrite:** Path lama `schools/{schoolId}/schedule/weekdays` **DIHARAMKAN MENIMPA** jika cache sudah berstatus `SOURCE_ATTENDANCE_SCHEDULES`. Heuristik cacat perbandingan jumlah kunci (`root.length() >= existing.length()`) DILARANG dihidupkan kembali karena merusak sekolah 5 hari kerja.
+  - **Penjinakan Penulis Liar MainActivity:** `MainActivity.startWeekdayScheduleListener` dilarang menulis ke cache jika status sudah `SOURCE_ATTENDANCE_SCHEDULES`.
+  - **Sabtu & Minggu Default Libur:** Nilai fallback internal `"sat"` dan `"sun"` wajib default `enabled = false`. Hari yang tidak diisi admin di web dilarang disulap menjadi hari sekolah aktif.
+  - **Unit Test Otomatis Wajib Lulus:** Seluruh unit test di `SchoolScheduleManagerTest.kt` wajib 100% lulus sebelum build APK.
+
+---
+
 ## 📝 PROSEDUR WAJIB BAGI DEVELOPER / AI SAAT ADA TASK BARU
 
 1. **Sebelum mengetik kode:**
