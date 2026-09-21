@@ -20,6 +20,7 @@
    - 3.3 Kategori C: Siklus Daya, Reboot & Hardware Key Attack
    - 3.4 Kategori D: Anti-Tamper Izin Sistem & Anti-Uninstall 24/7
    - 3.5 Kategori E: Manipulasi Waktu & Jaringan
+   - 3.6 Kategori F: Siklus Overlay Pet Mati & Kenyamanan Siswa di Rumah
 4. [BAGIAN 4: Format Standar Pelaporan Temuan Celah](#bagian-4-format-standar-pelaporan-temuan-celah)
 
 ---
@@ -89,7 +90,7 @@ EduLock tidak bergantung 100% pada koneksi internet:
 |---|---|---|---|
 | 1 | *"Waktu jam sekolah, tapi HP siswa di rumah tidak terkunci sama sekali."* | **BUKAN BUG.** Kebijakan EduLock di rumah adalah **Fail-Open**. Siswa sakit/izin di rumah (>1 km dari sekolah) bebas memakai HP normal. Jam sekolah saja **TIDAK CUKUP** untuk mengunci HP tanpa bukti fisik lokasi di sekolah. | ✅ **DESAIN BENAR** |
 | 2 | *"GPS dimatikan saat di rumah, kok tidak muncul overlay peringatan 'Aktifkan GPS'?"* | **BUKAN BUG.** Siswa di rumah berhak mematikan GPS demi privasi/hemat baterai. Overlay recovery GPS **hanya boleh muncul jika siswa berada di lingkungan sekolah**. | ✅ **DESAIN BENAR** |
-| 3 | *"Pet siswa mati, muncul overlay pengingat, tapi tombol 'Saya Mengerti' bisa diklik dan layarnya tertutup."* | **BUKAN BUG.** Tombol *"Saya Mengerti"* **MEMANG WAJIB BISA DIKLIK**. Konsepnya adalah **Pengingat Berkala (Reminder)**, bukan kurungan mati. HP bisa dipakai sementara sampai jeda reminder berikutnya tiba (misal: 30m $\to$ 20m $\to$ tiap 10m). | ✅ **DESAIN BENAR** |
+| 3 | *"Pet siswa mati, muncul overlay pengingat, tapi tombol 'Saya Mengerti' bisa diklik dan layarnya tertutup ke beranda tanpa memunculkan EduLock."* | **BUKAN BUG.** Tombol *"Saya Mengerti"* **MEMANG WAJIB BISA DIKLIK**. Konsepnya adalah **Pengingat Berkala (Reminder)**, bukan kurungan mati. EduLock dilarang muncul terus-menerus (spamming). Saat tombol ditekan, overlay tertutup bersih **TANPA memunculkan UI/kiosk EduLock di beranda**, dan HP siswa bisa dipakai normal sampai jeda reminder berikutnya (30m $\to$ 20m $\to$ tiap 10m). | ✅ **DESAIN BENAR** |
 | 4 | *"Internet dimatikan saat jam sekolah, tapi tidak ada hitung mundur atau layar merah 'Koneksi Hilang'."* | **BUKAN BUG.** Aturan fail-safe offline 2 menit **RESMI DIHAPUS TOTAL** sejak 3 September 2026. Offline biasa tidak boleh menghukum siswa dengan lockdown tambahan. Hanya **Mode Pesawat** yang memicu lockdown keras. | ✅ **DESAIN BENAR** |
 | 5 | *"Siswa pulang awal jam 13.00, awalnya terkunci di jalan tapi 30 menit kemudian kuncinya lepas sendiri."* | **BUKAN BUG.** Terdapat fitur **Sticky Reset 30 Menit**. Begitu siswa terdeteksi keluar area sekolah selama >30 menit, sistem menganggap siswa sudah pulang dan otomatis melepas kunci. | ✅ **DESAIN BENAR** |
 | 6 | *"Hari Sabtu pagi siswa membuka EduLock di rumah secara offline, aplikasi tidak mengunci."* | **BUKAN BUG.** Sekolah menerapkan 5 hari kerja (Senin–Jumat). Fallback offline sengaja menyetel Sabtu & Minggu = Libur (`enabled = false`). | ✅ **DESAIN BENAR** |
@@ -103,11 +104,12 @@ EduLock tidak bergantung 100% pada koneksi internet:
    - Pengecekan jam sekolah wajib disertai gate kehadiran (`shouldAllowKioskAtSchool`). Jam efektif tanpa bukti lokasi di sekolah **HARAM** mengunci HP.
 2. **GPS Mati di Rumah**
    - **DILARANG KERAS** memunculkan overlay *"Aktifkan GPS"* maupun mengunci HP jika siswa berada di rumah (gate `hasPresence` di `GpsEnableOverlay.kt`).
-3. **Overlay Pet Mati di EduLock (Satu-satunya Pengecualian di Rumah)**
-   - **Hanya aktif di luar jam sekolah / saat di rumah**. Begitu jam sekolah masuk, overlay pet mati otomatis ditutup agar tidak mengganggu pembelajaran.
-   - **Tombol "Saya Mengerti" Wajib Berfungsi:** Menutup overlay sementara dan melepas kiosk agar HP bisa dipakai normal hingga reminder berikutnya tiba. Dilengkapi debounce klik 2 detik (`UNDERSTOOD_CLICK_DEBOUNCE_MS = 2000`).
-   - **Tombol HOME HP:** Menekan tombol HOME mereset flag `isShowing` (`onUserLeaveHint`) agar reminder berikutnya tetap bisa muncul (tidak hilang selamanya).
-   - **Auto-Dismiss:** Begitu admin/guru menekan tombol *"Hidupkan"* di Web Admin, overlay di HP siswa otomatis tertutup seketika.
+3. **Overlay Pet Mati di Rumah: Pengingat Berkala & Keluar Bersih Tanpa Buka EduLock**
+   - **Hanya aktif di luar jam sekolah / saat di rumah**. Begitu jam sekolah masuk, overlay pet mati otomatis ditutup agar tidak mengganggu proses pembelajaran di sekolah.
+   - **Bukan Spamming (Ada Interval Jeda):** EduLock **DILARANG** muncul terus-menerus secara agresif ketika pet mati. Sistem wajib menghormati jeda bertahap (`pet_dead_reminder_*_ms`), misalnya: jeda 30 menit $\to$ 20 menit $\to$ tiap 10 menit.
+   - **Tombol "Saya Mengerti" Wajib Berfungsi & Keluar Bersih:** Menutup overlay pengingat seketika dan melepas seluruh kiosk/lock. Sistem **TIDAK BOLEH menampilkan aplikasi EduLock (`MainActivity`) di layar beranda siswa**. Layar harus langsung kembali ke desktop launcher bawaan ponsel atau aplikasi yang sedang dipakai siswa. Dilengkapi debounce klik 2 detik (`UNDERSTOOD_CLICK_DEBOUNCE_MS = 2000`).
+   - **Tombol HOME HP:** Menekan tombol HOME mereset flag `isShowing` (`onUserLeaveHint`) agar reminder berikutnya tetap bisa muncul di jadwal berikutnya (tidak hilang selamanya).
+   - **Auto-Dismiss Seketika Saat Dihidupkan:** Begitu admin/guru menekan tombol *"Hidupkan"* di Web Admin, overlay di HP siswa otomatis tertutup seketika tanpa perlu menekan tombol apa pun.
 4. **Pemisahan 3 Jalur: Offline Biasa vs Mode Pesawat vs GPS Mati**
    - **Offline Biasa (>2 menit):** Tidak ada overlay merah, tidak ada countdown. Sistem menggunakan cache lokal secara hening.
    - **Mode Pesawat (`AIRPLANE_MODE_ON == 1`):** **TETAP DIKUNCI / LOCKDOWN KERAS MERAH** di jam sekolah untuk mencegah celah pematian seluruh radio HP. Pengecualian hanya jika admin mengaktifkan **Mode Libur (Holiday Mode)**.
@@ -189,6 +191,19 @@ Fokuskan tenaga tim Anda untuk mencari celah pada skenario-skenario nyata di baw
 | **E2** | **GPS Dimatikan di Area Sekolah** | Di area sekolah saat jam sekolah, matikan GPS. | Muncul overlay *"GPS MATI DI AREA SEKOLAH"* + tombol *"Buka Pengaturan Lokasi"*. Tombol **bisa diklik** untuk menyalakan GPS kembali. |
 | **E3** | **Manipulasi Jam Sistem (Format 12 Jam AM/PM)** | Matikan waktu otomatis jaringan, ubah jam siang 12.00 siang menjadi 12.00 AM (tengah malam) di HP. | EduLock tetap terkunci tegas di sekolah karena mengacu pada waktu server Firebase dan zona waktu WIB. |
 | **E4** | **Lokasi Palsu (Fake GPS / Mock Location)** | Pasang aplikasi Fake GPS dari Opsi Pengembang untuk memalsukan posisi di luar sekolah. | Sistem mendeteksi koordinat mock dan menolak status "di luar sekolah". |
+
+---
+
+### 3.6 Kategori F: Siklus Overlay Pet Mati & Kenyamanan Siswa di Rumah
+*Kondisi Uji: Berada di Luar Radius Sekolah (>1 km) atau di Luar Jam Sekolah.*
+
+| ID | Vektor Uji / Skenario Serangan | Langkah Pengujian di HP Fisik | Kriteria Lolos (Aman & Nyaman) |
+|---|---|---|---|
+| **F1** | **Dismiss Bersih Tanpa Buka EduLock di Beranda** | Picu status Pet Mati dari Web Admin hingga overlay *"PET BUTUH PERHATIAN"* muncul di HP siswa di rumah. Tekan tombol **"Saya Mengerti"**. | Overlay tertutup seketika. Layar HP **langsung kembali ke beranda launcher bawaan HP** atau aplikasi yang sedang dibuka sebelumnya. **DILARANG KERAS memunculkan aplikasi EduLock (`MainActivity` / kiosk) di beranda siswa.** |
+| **F2** | **Bebas Spamming (Interval Reminder Bertahap)** | Setelah menekan *"Saya Mengerti"*, siswa memakai HP untuk menonton YouTube, chat WhatsApp, atau main game. | EduLock **tidak boleh langsung muncul kembali secara terus-menerus**. Sistem wajib memberi jeda damai sesuai setting reminder admin (misal jeda 30 menit). HP siswa dapat digunakan dengan nyaman. |
+| **F3** | **Debounce Klik Tombol "Saya Mengerti"** | Tekan tombol *"Saya Mengerti"* secara sangat cepat bertubi-tubi (double tap / spam tap). | Debounce 2 detik aktif (`UNDERSTOOD_CLICK_DEBOUNCE_MS = 2000`). Tombol langsung disabled, counter reminder tidak meloncat ganda, dan overlay tertutup mulus. |
+| **F4** | **Hardware HOME Button & Stale Flag Test** | Saat overlay Pet Mati muncul, tekan tombol fisik HOME HP alih-alih menekan tombol di layar. Tunggu hingga jadwal reminder berikutnya. | Callback `onUserLeaveHint()` mereset flag `isShowing` seketika. Pada jadwal reminder berikutnya, overlay **tetap mampu muncul kembali** (tidak hilang selamanya). |
+| **F5** | **Auto-Dismiss Realtime Saat Dihidupkan Admin** | Biarkan overlay Pet Mati terpampang di layar HP siswa. Dari Web Admin, klik tombol **"Hidupkan"** (Revive). | Tanpa siswa menyentuh layar, overlay Pet Mati **langsung tertutup otomatis seketika** via event FCM/RTDB, dan layar kembali ke beranda normal. |
 
 ---
 
