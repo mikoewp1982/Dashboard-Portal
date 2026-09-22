@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("all", "gas", "edulock")]
+    [ValidateSet("all", "gas", "edulock", "ortu")]
     [string]$App = "all"
 )
 
@@ -96,25 +96,70 @@ function Get-ApkSignerDigest {
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $finalDir = Join-Path $repoRoot "..\Apk Release\Final"
+$finalV2Dir = Join-Path $repoRoot "..\Apk Release\Final_V2"
+$finalV2GasDir = Join-Path $finalV2Dir "GAS"
 $publicApkDir = Join-Path $repoRoot "public\apk"
 $manifestPath = Join-Path $publicApkDir "apk-manifest.json"
 
 $targets = @(
     @{
         Key = "edulock"
-        FileName = "EduLock-studentRelease.apk"
+        ExpectedPackageName = "com.sekolah.edulock"
+        MinimumVersionCode = 80
+        ResolveSource = {
+            $candidates = @(
+                (Join-Path $finalV2Dir "EduLock_V2-1.3.57-83.apk"),
+                (Join-Path $finalV2Dir "EduLock_V2-studentRelease.apk"),
+                (Join-Path $finalDir "EduLock-studentRelease.apk")
+            )
+            foreach ($c in $candidates) {
+                if (Test-Path $c) { return $c }
+            }
+            throw "File sumber EduLock tidak ditemukan di Final_V2 atau Final"
+        }
+        VersionedName = "EduLock_V2-1.3.57-83.apk"
+        AliasNames = @("EduLock_V2-studentRelease.apk", "EduLock-studentRelease.apk")
+        ObsoletePatterns = @("EduLock-1.3.*.apk", "EduLock_V2-1.3.[0-5][0-6]*.apk")
     },
     @{
         Key = "gas"
-        FileName = "GAS-Siswa-release.apk"
         ExpectedPackageName = "com.satupintu.mobile.siswa"
-        MinimumVersionCode = 23004
+        MinimumVersionCode = 23090
+        ResolveSource = {
+            $candidates = @(
+                (Join-Path $finalV2GasDir "GAS-Siswa-1.0.128-siswa-23125-DZUHUR-TIMEWINDOW-FIX-release.apk"),
+                (Join-Path $finalV2GasDir "GAS-Siswa-1.0.128-siswa-23125.apk"),
+                (Join-Path $finalV2GasDir "GAS-Siswa-release.apk"),
+                (Join-Path $finalDir "GAS-Siswa-release.apk")
+            )
+            foreach ($c in $candidates) {
+                if (Test-Path $c) { return $c }
+            }
+            throw "File sumber GAS Siswa tidak ditemukan di Final_V2\GAS atau Final"
+        }
+        VersionedName = "GAS-Siswa-1.0.128-siswa-23125.apk"
+        AliasNames = @("GAS-Siswa-release.apk")
+        ObsoletePatterns = @("GAS-Siswa-1.0.9*.apk", "GAS-Siswa-1.0.1[0-2][0-7]*.apk")
+    },
+    @{
+        Key = "ortu"
+        ExpectedPackageName = "com.satupintu.mobile.ortu"
+        MinimumVersionCode = 1000
+        ResolveSource = {
+            $candidates = @(
+                (Join-Path $repoRoot "..\Apk Release\Orang Tua\GAS-OrangTua-1.0.2-ortu-1002.apk"),
+                (Join-Path $repoRoot "..\Apk Release\Orang Tua\GAS-OrangTua-release.apk")
+            )
+            foreach ($c in $candidates) {
+                if (Test-Path $c) { return $c }
+            }
+            throw "File sumber GAS Orang Tua tidak ditemukan di Apk Release\Orang Tua"
+        }
+        VersionedName = "GAS-OrangTua-1.0.2-ortu-1002.apk"
+        AliasNames = @("GAS-OrangTua-release.apk")
+        ObsoletePatterns = @("GAS-OrangTua-1.0.1*.apk", "GAS-OrangTua-1.0.1*.sha256")
     }
 )
-
-if (-not (Test-Path $finalDir)) {
-    throw "Folder sumber tidak ditemukan: $finalDir"
-}
 
 if (-not (Test-Path $publicApkDir)) {
     throw "Folder tujuan tidak ditemukan: $publicApkDir"
@@ -141,93 +186,82 @@ if (Test-Path $manifestPath) {
 }
 
 foreach ($target in $selectedTargets) {
-    $sourcePath = Join-Path $finalDir $target.FileName
-    $destinationPath = Join-Path $publicApkDir $target.FileName
-
-    if (-not (Test-Path $sourcePath)) {
-        throw "File sumber tidak ditemukan: $sourcePath"
-    }
-
+    $sourcePath = & $target.ResolveSource
     $sourceInfo = Get-Item $sourcePath
     $sourceHash = (Get-FileHash -Algorithm SHA256 $sourcePath).Hash
-    $sourceMeta = $null
-    $destinationMeta = $null
-    $sourceSignerDigest = $null
-    $destinationSignerDigest = $null
-    $destinationHash = $null
-
     $sourceMeta = Get-ApkMetadata -ApkPath $sourcePath
 
-    if ($target.Key -eq "gas") {
-        if ($sourceMeta.packageName -ne $target.ExpectedPackageName) {
-            throw "Package GAS siswa tidak sesuai. Ditemukan '$($sourceMeta.packageName)', seharusnya '$($target.ExpectedPackageName)'."
-        }
-
-        if ($sourceMeta.versionCode -lt $target.MinimumVersionCode) {
-            throw "versionCode GAS siswa terlalu rendah ($($sourceMeta.versionCode)). Minimal yang diizinkan sekarang adalah $($target.MinimumVersionCode) agar update siswa tidak tertolak."
-        }
-
-        $sourceSignerDigest = Get-ApkSignerDigest -ApkPath $sourcePath
+    if ($target.ExpectedPackageName -and $sourceMeta.packageName -ne $target.ExpectedPackageName) {
+        throw "Package $($target.Key) tidak sesuai. Ditemukan '$($sourceMeta.packageName)', seharusnya '$($target.ExpectedPackageName)'."
     }
 
-    if (Test-Path $destinationPath) {
-        $destinationHash = (Get-FileHash -Algorithm SHA256 $destinationPath).Hash
+    if ($target.MinimumVersionCode -and $sourceMeta.versionCode -lt $target.MinimumVersionCode) {
+        throw "versionCode $($target.Key) terlalu rendah ($($sourceMeta.versionCode)). Minimal $($target.MinimumVersionCode)."
+    }
 
-        if ($target.Key -eq "gas") {
-            $destinationMeta = Get-ApkMetadata -ApkPath $destinationPath
-            $destinationSignerDigest = Get-ApkSignerDigest -ApkPath $destinationPath
+    $sourceSignerDigest = Get-ApkSignerDigest -ApkPath $sourcePath
 
-            if ($sourceMeta.versionCode -lt $destinationMeta.versionCode) {
-                throw "versionCode GAS siswa turun dari $($destinationMeta.versionCode) ke $($sourceMeta.versionCode). Sinkronisasi dibatalkan."
-            }
-
-            if ($sourceMeta.versionCode -eq $destinationMeta.versionCode -and $sourceHash -ne $destinationHash) {
-                throw "versionCode GAS siswa tetap $($sourceMeta.versionCode) tetapi isi APK berbeda. Naikkan versionCode dulu sebelum sinkronisasi."
-            }
-
-            if ($sourceSignerDigest -and $destinationSignerDigest -and $sourceSignerDigest -ne $destinationSignerDigest) {
-                throw "Signature APK GAS siswa berbeda dari file publik sebelumnya. Sinkronisasi dibatalkan."
+    # Bersihkan file obsolete agar folder public/apk tetap slim sesuai PANDUAN_DEPLOY_WEB.md
+    if ($target.ObsoletePatterns) {
+        foreach ($pattern in $target.ObsoletePatterns) {
+            Get-ChildItem -Path $publicApkDir -Filter $pattern -File -ErrorAction SilentlyContinue | ForEach-Object {
+                Write-Host "  Menghapus arsip lama: $($_.Name)" -ForegroundColor DarkGray
+                $manifestFiles.Remove($_.Name)
+                Remove-Item -Path $_.FullName -Force -ErrorAction SilentlyContinue
             }
         }
     }
 
-    Copy-Item -Path $sourcePath -Destination $destinationPath -Force
+    # Salin file versioned
+    $versionedDest = Join-Path $publicApkDir $target.VersionedName
+    Copy-Item -Path $sourcePath -Destination $versionedDest -Force
+    $versionedInfo = Get-Item $versionedDest
+    $versionedHash = (Get-FileHash -Algorithm SHA256 $versionedDest).Hash
 
-    $destinationInfo = Get-Item $destinationPath
-    $hash = (Get-FileHash -Algorithm SHA256 $destinationPath).Hash
-
-    $manifestFiles[$target.FileName] = @{
-        sha256 = $hash
-        sizeBytes = $destinationInfo.Length
-        sizeMB = [math]::Round($destinationInfo.Length / 1MB, 2)
+    $manifestFiles[$target.VersionedName] = @{
+        sha256 = $versionedHash
+        sizeBytes = $versionedInfo.Length
+        sizeMB = [math]::Round($versionedInfo.Length / 1MB, 2)
         lastModified = $sourceInfo.LastWriteTime.ToString("s")
+        packageName = $sourceMeta.packageName
+        versionCode = $sourceMeta.versionCode
+        versionName = $sourceMeta.versionName
     }
-
-    if ($sourceMeta) {
-        $manifestFiles[$target.FileName].packageName = $sourceMeta.packageName
-        $manifestFiles[$target.FileName].versionCode = $sourceMeta.versionCode
-        $manifestFiles[$target.FileName].versionName = $sourceMeta.versionName
-    }
-
     if ($sourceSignerDigest) {
-        $manifestFiles[$target.FileName].signerSha256 = $sourceSignerDigest
+        $manifestFiles[$target.VersionedName].signerSha256 = $sourceSignerDigest
+    }
+
+    # Salin alias-alias
+    foreach ($alias in $target.AliasNames) {
+        $aliasDest = Join-Path $publicApkDir $alias
+        Copy-Item -Path $sourcePath -Destination $aliasDest -Force
+        $aliasInfo = Get-Item $aliasDest
+        $aliasHash = (Get-FileHash -Algorithm SHA256 $aliasDest).Hash
+
+        $manifestFiles[$alias] = @{
+            sha256 = $aliasHash
+            sizeBytes = $aliasInfo.Length
+            sizeMB = [math]::Round($aliasInfo.Length / 1MB, 2)
+            lastModified = $sourceInfo.LastWriteTime.ToString("s")
+            packageName = $sourceMeta.packageName
+            versionCode = $sourceMeta.versionCode
+            versionName = $sourceMeta.versionName
+        }
+        if ($sourceSignerDigest) {
+            $manifestFiles[$alias].signerSha256 = $sourceSignerDigest
+        }
     }
 
     Write-Host ""
-    Write-Host "APK berhasil disinkronkan:" -ForegroundColor Cyan
-    Write-Host "  App        : $($target.Key)"
+    Write-Host "APK $($target.Key) berhasil disinkronkan:" -ForegroundColor Cyan
     Write-Host "  Sumber     : $sourcePath"
-    Write-Host "  Tujuan     : $destinationPath"
-    Write-Host "  Ukuran     : $([math]::Round($destinationInfo.Length / 1MB, 2)) MB"
+    Write-Host "  Versioned  : $($target.VersionedName)"
+    Write-Host "  Alias      : $($target.AliasNames -join ', ')"
+    Write-Host "  Ukuran     : $([math]::Round($versionedInfo.Length / 1MB, 2)) MB"
     Write-Host "  Modified   : $($sourceInfo.LastWriteTime)"
-    Write-Host "  SHA256     : $hash"
-    if ($sourceMeta) {
-        Write-Host "  Package    : $($sourceMeta.packageName)"
-        Write-Host "  Version    : $($sourceMeta.versionName) ($($sourceMeta.versionCode))"
-    }
-    if ($sourceSignerDigest) {
-        Write-Host "  Signer     : $sourceSignerDigest"
-    }
+    Write-Host "  SHA256     : $versionedHash"
+    Write-Host "  Package    : $($sourceMeta.packageName)"
+    Write-Host "  Version    : $($sourceMeta.versionName) ($($sourceMeta.versionCode))"
 }
 
 $manifest = @{

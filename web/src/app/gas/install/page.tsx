@@ -56,6 +56,9 @@ function getInstallSteps(downloadFileName: string) {
 
 const notes = [
   "Gunakan HP Android. Instalasi APK tidak berlaku untuk iPhone.",
+  "Batas Waktu Presensi Dzuhur: Presensi Sholat Dzuhur otomatis ditutup setelah pukul 15.00 WIB sesuai aturan sekolah.",
+  "Sahabat Belajar (Virtual Pet): Mode offline cepat dan responsif tanpa spinner abadi.",
+  "Lokasi Musholla Realtime: Titik koordinat dan radius musholla langsung sinkron dengan pengaturan admin sekolah.",
   "Pastikan ruang penyimpanan cukup sebelum mengunduh dan menginstal.",
   "Jika tombol Instal tidak muncul, cek lagi izin instal aplikasi dari browser/File Manager.",
   "Jika tidak bisa login, pastikan NPSN dan NISN benar, lalu hubungi admin sekolah.",
@@ -286,9 +289,9 @@ const gasMenuItems = [
 
 export default function GasStudentInstallPage() {
   const siswaMeta = getLatestApkMetaByPackageName("com.satupintu.mobile.siswa", {
-    fileName: "GAS-Siswa-1.0.96-siswa-23093.apk",
-    versionName: "1.0.96-siswa",
-    versionCode: 23093,
+    fileName: "GAS-Siswa-1.0.128-siswa-23125.apk",
+    versionName: "1.0.128-siswa",
+    versionCode: 23125,
   });
 
   // URL must be the versioned file so mobile Save-As keeps the version in the name.
