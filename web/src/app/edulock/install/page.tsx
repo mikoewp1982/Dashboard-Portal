@@ -49,6 +49,7 @@ function getInstallSteps(downloadFileName: string) {
 const notes = [
   "Gunakan HP Android. Instalasi APK tidak berlaku untuk iPhone.",
   "Khusus Android 13+ (Xiaomi/POCO/Samsung/Oppo/Tecno): Jika Aksesibilitas terkunci abu-abu ('Setelan Dibatasi'), buka Info Aplikasi EduLock → tekan TITIK 3 di kanan atas → pilih 'Izinkan setelan terbatas'.",
+  "Transisi Halus GAS Siswa (V2 Build 86): Anti-kickback saat berpindah ke GAS Siswa, dan proteksi Home terkunci aman begitu berada di dalam aplikasi GAS.",
   "Kenyamanan di Rumah (Fail-Open): Di luar lingkungan sekolah (>1 km), HP siswa 100% bebas digunakan normal untuk game, YouTube, dan media sosial.",
   "Pengingat Pet Mati di Rumah: Tombol 'Saya Mengerti' dapat ditekan untuk menutup pengingat dengan nyaman tanpa memunculkan aplikasi EduLock di beranda siswa.",
   "Integritas Jadwal Otomatis: Sinkronisasi SSOT memastikan jadwal 5 hari sekolah terjaga rapi dan hari Sabtu libur bebas penguncian.",
@@ -165,9 +166,9 @@ const oppoStepsFisik = [
 
 export default function EduLockInstallPage() {
   const apkMeta = getLatestApkMetaByPackageName("com.sekolah.edulock", {
-    fileName: "EduLock_V2-1.3.57-83.apk",
-    versionName: "1.3.57",
-    versionCode: 83,
+    fileName: "EduLock_V2-1.3.60-86.apk",
+    versionName: "1.3.60",
+    versionCode: 86,
   });
   // URL must be the versioned file so mobile Save-As keeps the version in the name.
   const apkHref = getApkDownloadHref(apkMeta.fileName);

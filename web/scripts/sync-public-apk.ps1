@@ -108,7 +108,7 @@ $targets = @(
         MinimumVersionCode = 80
         ResolveSource = {
             $candidates = @(
-                (Join-Path $finalV2Dir "EduLock_V2-1.3.57-83.apk"),
+                (Join-Path $finalV2Dir "EduLock_V2-1.3.60-86.apk"),
                 (Join-Path $finalV2Dir "EduLock_V2-studentRelease.apk"),
                 (Join-Path $finalDir "EduLock-studentRelease.apk")
             )
@@ -117,9 +117,9 @@ $targets = @(
             }
             throw "File sumber EduLock tidak ditemukan di Final_V2 atau Final"
         }
-        VersionedName = "EduLock_V2-1.3.57-83.apk"
+        VersionedName = "EduLock_V2-1.3.60-86.apk"
         AliasNames = @("EduLock_V2-studentRelease.apk", "EduLock-studentRelease.apk")
-        ObsoletePatterns = @("EduLock-1.3.*.apk", "EduLock_V2-1.3.[0-5][0-6]*.apk")
+        ObsoletePatterns = @("EduLock*.apk")
     },
     @{
         Key = "gas"
@@ -139,7 +139,7 @@ $targets = @(
         }
         VersionedName = "GAS-Siswa-1.0.128-siswa-23125.apk"
         AliasNames = @("GAS-Siswa-release.apk")
-        ObsoletePatterns = @("GAS-Siswa-1.0.9*.apk", "GAS-Siswa-1.0.1[0-2][0-7]*.apk")
+        ObsoletePatterns = @("GAS-Siswa*.apk")
     },
     @{
         Key = "ortu"
@@ -157,7 +157,7 @@ $targets = @(
         }
         VersionedName = "GAS-OrangTua-1.0.2-ortu-1002.apk"
         AliasNames = @("GAS-OrangTua-release.apk")
-        ObsoletePatterns = @("GAS-OrangTua-1.0.1*.apk", "GAS-OrangTua-1.0.1*.sha256")
+        ObsoletePatterns = @("GAS-OrangTua*.apk", "GAS-OrangTua*.sha256")
     }
 )
 
@@ -203,11 +203,19 @@ foreach ($target in $selectedTargets) {
 
     # Bersihkan file obsolete agar folder public/apk tetap slim sesuai PANDUAN_DEPLOY_WEB.md
     if ($target.ObsoletePatterns) {
-        foreach ($pattern in $target.ObsoletePatterns) {
-            Get-ChildItem -Path $publicApkDir -Filter $pattern -File -ErrorAction SilentlyContinue | ForEach-Object {
-                Write-Host "  Menghapus arsip lama: $($_.Name)" -ForegroundColor DarkGray
-                $manifestFiles.Remove($_.Name)
-                Remove-Item -Path $_.FullName -Force -ErrorAction SilentlyContinue
+        Get-ChildItem -Path $publicApkDir -File -ErrorAction SilentlyContinue | ForEach-Object {
+            $file = $_
+            $isObsolete = $false
+            foreach ($pattern in $target.ObsoletePatterns) {
+                if ($file.Name -like $pattern -and $file.Name -ne $target.VersionedName -and $target.AliasNames -notcontains $file.Name) {
+                    $isObsolete = $true
+                    break
+                }
+            }
+            if ($isObsolete) {
+                Write-Host "  Menghapus arsip lama: $($file.Name)" -ForegroundColor DarkGray
+                $manifestFiles.Remove($file.Name)
+                Remove-Item -Path $file.FullName -Force -ErrorAction SilentlyContinue
             }
         }
     }

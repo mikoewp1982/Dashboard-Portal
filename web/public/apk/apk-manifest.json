@@ -1,5 +1,5 @@
 ﻿{
-    "updatedAt":  "2026-09-22T07:41:56",
+    "updatedAt":  "2026-09-22T07:55:14",
     "files":  {
                   "GAS-Siswa-1.0.128-siswa-23125.apk":  {
                                                             "lastModified":  "2026-09-15T23:18:12",
@@ -11,16 +11,6 @@
                                                             "versionName":  "1.0.128-siswa",
                                                             "sha256":  "F1417825AFCAA52887F282FF5FAC278AC0AFDD52EAC3FE6B144F5A9F84EBB0F2"
                                                         },
-                  "EduLock_V2-1.3.57-83.apk":  {
-                                                   "lastModified":  "2026-09-21T09:24:53",
-                                                   "versionCode":  83,
-                                                   "sizeMB":  3.79,
-                                                   "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",
-                                                   "sizeBytes":  3975511,
-                                                   "packageName":  "com.sekolah.edulock",
-                                                   "versionName":  "1.3.57",
-                                                   "sha256":  "C60E3FE9F077A12A03F53F8D233974174CA56597189DC7F286DF4477AC494FCE"
-                                               },
                   "GAS-OrangTua-release.apk":  {
                                                    "lastModified":  "2026-09-18T20:28:21",
                                                    "versionCode":  1002,
@@ -32,14 +22,14 @@
                                                    "sha256":  "8EC2FA80CB5C76BC4E84CDC4FEE3227E6471D0C0B803A8EA6B1A430D674F797E"
                                                },
                   "EduLock-studentRelease.apk":  {
-                                                     "lastModified":  "2026-09-21T09:24:53",
-                                                     "versionCode":  83,
+                                                     "lastModified":  "2026-09-21T20:58:14",
+                                                     "versionCode":  86,
                                                      "sizeMB":  3.79,
                                                      "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",
-                                                     "sizeBytes":  3975511,
+                                                     "sizeBytes":  3977534,
                                                      "packageName":  "com.sekolah.edulock",
-                                                     "versionName":  "1.3.57",
-                                                     "sha256":  "C60E3FE9F077A12A03F53F8D233974174CA56597189DC7F286DF4477AC494FCE"
+                                                     "versionName":  "1.3.60",
+                                                     "sha256":  "76D5C9C0A2FD73DA0101B67CE92330457216DD45179B17DE20970593C7384AB7"
                                                  },
                   "GAS-Siswa-release.apk":  {
                                                 "lastModified":  "2026-09-15T23:18:12",
@@ -51,15 +41,25 @@
                                                 "versionName":  "1.0.128-siswa",
                                                 "sha256":  "F1417825AFCAA52887F282FF5FAC278AC0AFDD52EAC3FE6B144F5A9F84EBB0F2"
                                             },
+                  "EduLock_V2-1.3.60-86.apk":  {
+                                                   "lastModified":  "2026-09-21T20:58:14",
+                                                   "versionCode":  86,
+                                                   "sizeMB":  3.79,
+                                                   "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",
+                                                   "sizeBytes":  3977534,
+                                                   "packageName":  "com.sekolah.edulock",
+                                                   "versionName":  "1.3.60",
+                                                   "sha256":  "76D5C9C0A2FD73DA0101B67CE92330457216DD45179B17DE20970593C7384AB7"
+                                               },
                   "EduLock_V2-studentRelease.apk":  {
-                                                        "lastModified":  "2026-09-21T09:24:53",
-                                                        "versionCode":  83,
+                                                        "lastModified":  "2026-09-21T20:58:14",
+                                                        "versionCode":  86,
                                                         "sizeMB":  3.79,
                                                         "signerSha256":  "64738955225d36c64990ebadfba9f2aad03e17739522630466621f0a1eb31f63",
-                                                        "sizeBytes":  3975511,
+                                                        "sizeBytes":  3977534,
                                                         "packageName":  "com.sekolah.edulock",
-                                                        "versionName":  "1.3.57",
-                                                        "sha256":  "C60E3FE9F077A12A03F53F8D233974174CA56597189DC7F286DF4477AC494FCE"
+                                                        "versionName":  "1.3.60",
+                                                        "sha256":  "76D5C9C0A2FD73DA0101B67CE92330457216DD45179B17DE20970593C7384AB7"
                                                     },
                   "GAS-OrangTua-1.0.2-ortu-1002.apk":  {
                                                            "lastModified":  "2026-09-18T20:28:21",
