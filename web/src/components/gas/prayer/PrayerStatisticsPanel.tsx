@@ -3,6 +3,7 @@ import { Activity, AlertCircle, CalendarDays, UserCheck, UserMinus, UserRound, U
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PrayerLog } from "@/hooks/gas/attendance/useGasPrayerAttendance";
 import {
+  canonicalStudentIdsForPrayerLog,
   createStudentDateKey,
   getValidPrayerDatesInMonth,
   pickNewestLog,
@@ -127,21 +128,20 @@ export function PrayerStatisticsPanel({
     const grouped = new Map<string, any>();
 
     for (const log of logs || []) {
-      const canonicalId = log.studentId;
-      if (!canonicalId) continue;
-
       const logDate = new Date(log.date);
       if (logDate.getMonth() + 1 !== selectedMonth || logDate.getFullYear() !== selectedYear) continue;
 
       const dateKey = toDateKey(logDate);
       if (!validDateSet.has(dateKey)) continue;
 
-      const key = createStudentDateKey(canonicalId, dateKey);
-      grouped.set(key, pickNewestLog(grouped.get(key), log));
+      for (const canonicalId of canonicalStudentIdsForPrayerLog(log, students || [])) {
+        const key = createStudentDateKey(canonicalId, dateKey);
+        grouped.set(key, pickNewestLog(grouped.get(key), log));
+      }
     }
 
     return grouped;
-  }, [logs, selectedMonth, selectedYear, validDates]);
+  }, [logs, selectedMonth, selectedYear, validDates, students]);
 
   const summary = useMemo(() => {
     const totals = {

@@ -97,6 +97,57 @@ export function createStudentDateKey(studentId: string, dateKey: string) {
   return `${String(studentId || "").trim()}__${dateKey}`;
 }
 
+type PrayerIdentityLog = {
+  studentId?: string;
+  nisn?: string;
+  username?: string;
+};
+
+type PrayerIdentityStudent = {
+  id?: string;
+  nisn?: string;
+  username?: string;
+  recordId?: string;
+};
+
+function uniqueIdentityValues(values: unknown[]) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    const key = String(value || "").trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(key);
+  }
+  return result;
+}
+
+/** Kunci siswa yang dipakai rekap web. Log guru memakai NISN, log siswa memakai kunci record. */
+export function canonicalStudentIdsForPrayerLog(
+  log: PrayerIdentityLog,
+  students: PrayerIdentityStudent[]
+) {
+  const aliases = new Set(uniqueIdentityValues([log.studentId, log.nisn, log.username]));
+  const canonical = new Set<string>();
+  for (const student of students) {
+    const studentId = String(student?.id || "").trim();
+    if (!studentId) continue;
+    const studentAliases = uniqueIdentityValues([
+      student.id,
+      student.nisn,
+      student.username,
+      student.recordId,
+    ]);
+    if (studentAliases.some((alias) => aliases.has(alias))) {
+      canonical.add(studentId);
+    }
+  }
+  if (canonical.size === 0) {
+    aliases.forEach((alias) => canonical.add(alias));
+  }
+  return Array.from(canonical);
+}
+
 export function pickNewestLog<T extends { updatedAt?: number; createdAt?: number; date?: number | string }>(current: T | undefined, next: T) {
   if (!current) return next;
   // Gunakan timestamp terbaru

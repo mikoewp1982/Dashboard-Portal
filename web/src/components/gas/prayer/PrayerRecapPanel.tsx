@@ -2,6 +2,7 @@ import { useCallback, useState, useMemo } from "react";
 import { exportToExcel } from "@/utils/export";
 import { Search, Download, List, Calendar, Printer, BarChart3 } from "lucide-react";
 import {
+  canonicalStudentIdsForPrayerLog,
   createStudentDateKey,
   getValidPrayerDatesInMonth,
   pickNewestLog,
@@ -164,23 +165,20 @@ export function PrayerRecapPanel({
     const grouped = new Map<string, any>();
 
     for (const log of logs || []) {
-      const canonicalId = log.studentId;
-      if (!canonicalId) continue;
-
       const logDate = new Date(log.date);
       if (logDate.getMonth() + 1 !== selectedMonth || logDate.getFullYear() !== selectedYear) continue;
 
       const dateKey = toDateKey(logDate);
       if (!validDateSet.has(dateKey)) continue;
 
-      grouped.set(
-        createStudentDateKey(canonicalId, dateKey),
-        pickNewestLog(grouped.get(createStudentDateKey(canonicalId, dateKey)), log)
-      );
+      for (const canonicalId of canonicalStudentIdsForPrayerLog(log, students || [])) {
+        const mapKey = createStudentDateKey(canonicalId, dateKey);
+        grouped.set(mapKey, pickNewestLog(grouped.get(mapKey), log));
+      }
     }
 
     return grouped;
-  }, [logs, selectedMonth, selectedYear, validDateSet]);
+  }, [logs, selectedMonth, selectedYear, validDateSet, students]);
 
   const recapRows = useMemo(() => {
     const rows: any[] = [];
