@@ -22,6 +22,7 @@ export type SuperSchoolRow = {
 export type PrincipalRow = {
   username: string;
   name: string;
+  nip: string;
   schoolId: string;
   schoolName: string;
   npsn?: string;
@@ -79,6 +80,7 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
   const [principalForm, setPrincipalForm] = useState({
     username: "",
     name: "",
+    nip: "",
     schoolId: "",
     schoolName: "",
     password: "",
@@ -230,6 +232,7 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
           return {
             username: String(record.username || ""),
             name: String(record.name || ""),
+            nip: String(record.nip || "").replace(/\D/g, ""),
             schoolId: String(record.schoolId || ""),
             schoolName: String(record.schoolName || ""),
             npsn: String(record.npsn || ""),
@@ -343,6 +346,10 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
       setStatusMsg({ type: "error", text: "Username dan School ID wajib diisi." });
       return;
     }
+    if (!principalForm.nip.replace(/\D/g, "")) {
+      setStatusMsg({ type: "error", text: "NIP kepala sekolah wajib diisi. NIP ini yang dipakai login APK." });
+      return;
+    }
     if (!principalEditing && !principalForm.password) {
       setStatusMsg({ type: "error", text: "Password wajib diisi untuk akun baru." });
       return;
@@ -361,7 +368,7 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
       });
       setStatusMsg({ type: "success", text: "Akun kepala sekolah berhasil disimpan." });
       setPrincipalEditing("");
-      setPrincipalForm({ username: "", name: "", schoolId: "", schoolName: "", password: "", isActive: true });
+      setPrincipalForm({ username: "", name: "", nip: "", schoolId: "", schoolName: "", password: "", isActive: true });
     } catch (error: unknown) {
       setStatusMsg({ type: "error", text: getErrorMessage(error, "Gagal menyimpan akun.") });
     } finally {
@@ -374,6 +381,7 @@ export function useSuperAdminDatabase(isAuthLoading: boolean) {
     setPrincipalForm({
       username: p.username,
       name: p.name,
+      nip: p.nip,
       schoolId: p.schoolId,
       schoolName: p.schoolName,
       password: "",

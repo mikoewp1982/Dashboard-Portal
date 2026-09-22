@@ -648,7 +648,7 @@ export default function StandaloneDatabasePage() {
                     <div>
                       <div className="text-sm font-semibold text-white">Tambah / Update Akun Kepala Sekolah</div>
                       <div className="mt-1 text-sm text-slate-300">
-                        Akun ini dipakai untuk login APK Kepala Sekolah. Scope data terkunci lewat schoolId.
+                        Akun ini dipakai untuk login APK Kepala Sekolah. NPSN sekolah dan NIP membuat nama kepala sekolah muncul otomatis di halaman login APK.
                       </div>
                     </div>
                     {principalEditing && (
@@ -656,7 +656,7 @@ export default function StandaloneDatabasePage() {
                         type="button"
                         onClick={() => {
                           setPrincipalEditing("");
-                          setPrincipalForm({ username: "", name: "", schoolId: "", schoolName: "", password: "", isActive: true });
+                          setPrincipalForm({ username: "", name: "", nip: "", schoolId: "", schoolName: "", password: "", isActive: true });
                         }}
                         className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10"
                       >
@@ -714,14 +714,27 @@ export default function StandaloneDatabasePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold tracking-widest text-slate-400">PASSWORD / NIP</label>
+                      <label className="block text-xs font-semibold tracking-widest text-slate-400">NIP</label>
+                      <input
+                        value={principalForm.nip}
+                        onChange={(e) => setPrincipalForm((s) => ({ ...s, nip: e.target.value.replace(/\D/g, "") }))}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        autoComplete="off"
+                        className="mt-2 w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white placeholder:text-slate-400"
+                        placeholder="NIP kepala sekolah, angka saja"
+                      />
+                      <div className="mt-1 text-xs text-slate-400">Dipakai login APK: NPSN + NIP, nama muncul otomatis.</div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold tracking-widest text-slate-400">PASSWORD</label>
                       <input
                         value={principalForm.password}
                         onChange={(e) => setPrincipalForm((s) => ({ ...s, password: e.target.value }))}
                         className="mt-2 w-full rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white placeholder:text-slate-400"
                         placeholder={principalEditing ? "Kosongkan jika tidak diubah" : "Wajib untuk akun baru"}
                       />
-                      <div className="mt-1 text-xs text-slate-400">Tersimpan dengan Firebase Auth hash.</div>
+                      <div className="mt-1 text-xs text-slate-400">Tersimpan dengan Firebase Auth hash. Bukan NIP login APK.</div>
                     </div>
                     <div className="flex items-center gap-2 sm:mt-7">
                       <input
@@ -788,6 +801,7 @@ export default function StandaloneDatabasePage() {
                               <td className="px-4 py-3">
                                 <div className="font-semibold text-white">{p.username}</div>
                                 <div className="text-xs text-slate-400">{p.name || "-"}</div>
+                                <div className="text-xs text-slate-500">NIP: {p.nip || "belum diisi"}</div>
                                 <div className="mt-1 text-xs text-slate-500">Reset default: admin123</div>
                               </td>
                               <td className="px-4 py-3">

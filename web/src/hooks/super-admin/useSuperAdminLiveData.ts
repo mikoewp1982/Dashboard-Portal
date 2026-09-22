@@ -26,6 +26,7 @@ export type SuperAdminSchoolRow = {
 export type SuperAdminPrincipalRow = {
   username: string;
   name: string;
+  nip: string;
   schoolId: string;
   schoolName: string;
   npsn: string;
@@ -263,6 +264,7 @@ export function useSuperAdminLiveData() {
         return {
           username: String(record.username || "").trim(),
           name: String(record.name || "").trim(),
+          nip: String(record.nip || "").replace(/\D/g, ""),
           schoolId: String(record.schoolId || "").trim().toLowerCase(),
           schoolName: String(record.schoolName || "").trim(),
           npsn: String(record.npsn || "").trim(),

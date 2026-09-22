@@ -133,8 +133,13 @@ async function handleSavePrincipal(body: SuperAdminRequestBody) {
   }
 
   const username = String(principal.username).trim().toLowerCase();
+  const nip = String(principal.nip || "").replace(/\D/g, "");
   const email = `${username}@kepsek.edulock.local`;
   const principalDisplayName = String(principal.name || username);
+
+  if (!nip) {
+    return NextResponse.json({ error: "NIP kepala sekolah wajib diisi." }, { status: 400 });
+  }
 
   // Check if this is an update or create
   const existingSnap = await adminDb.ref(`principals/${username}`).once("value");
@@ -188,6 +193,7 @@ async function handleSavePrincipal(body: SuperAdminRequestBody) {
   const principalData: MutableRecord = {
     username,
     name: principalDisplayName,
+    nip,
     schoolId: principal.schoolId,
     schoolName: String(principal.schoolName || ""),
     npsn: String(principal.npsn || ""),
