@@ -21,6 +21,16 @@ function normalizeIdentity(value: unknown) {
   return String(value || "").trim().toLowerCase();
 }
 
+function canManagePet(role: unknown, actorSchoolId: string, pet: any) {
+  return role === "super_admin" ||
+    (actorSchoolId !== "" && normalizeSchoolId(pet?.schoolId) === actorSchoolId);
+}
+
+function isPetKey(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 &&
+    !/[.#$\[\]\/\u0000-\u001f\u007f]/.test(value);
+}
+
 function getStudentName(row: StudentRow) {
   return String(row.name || row.nama || row.nama_lengkap || "Siswa").trim();
 }
@@ -110,7 +120,14 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const schoolId = url.searchParams.get("schoolId");
-    const targetSchoolId = normalizeSchoolId(schoolId || userSchoolId);
+    const actorSchoolId = normalizeSchoolId(userSchoolId);
+    const requestedSchoolId = normalizeSchoolId(schoolId);
+    if (role === "admin" && (!actorSchoolId || (requestedSchoolId && requestedSchoolId !== actorSchoolId))) {
+      return NextResponse.json({ error: "Permission Denied" }, { status: 403 });
+    }
+    const targetSchoolId = role === "super_admin"
+      ? normalizeSchoolId(schoolId || userSchoolId)
+      : actorSchoolId;
     if (!targetSchoolId) {
       return NextResponse.json({ error: "School ID is required" }, { status: 400 });
     }
@@ -131,7 +148,7 @@ export async function GET(req: NextRequest) {
     const altSchoolId = targetSchoolId.includes("_")
       ? targetSchoolId.replace(/_/g, "")
       : targetSchoolId.replace("smpn", "smpn_");
-    if (altSchoolId !== targetSchoolId) {
+    if (role === "super_admin" && altSchoolId !== targetSchoolId) {
       const altSnap = await adminDb.ref("virtual_pets").orderByChild("schoolId").equalTo(altSchoolId).once("value");
       if (altSnap.exists()) {
         Object.assign(rawPetsMap, altSnap.val());
@@ -139,7 +156,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 3. Fallback/supplement: Match any pet by student alias (NISN, username, studentId, pushKey)
-    if (aliasSet.size > 0) {
+    if (role === "super_admin" && aliasSet.size > 0) {
       const allPetsSnap = await adminDb.ref("virtual_pets").get();
       if (allPetsSnap.exists()) {
         for (const [petKey, rawPet] of Object.entries<any>(allPetsSnap.val() || {})) {
@@ -150,7 +167,10 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const allPets = Object.entries<any>(rawPetsMap).map(([petKey, rawPet]) => {
+    const schoolPetsMap = Object.fromEntries(
+      Object.entries(rawPetsMap).filter(([, rawPet]) => canManagePet(role, actorSchoolId, rawPet))
+    );
+    const allPets = Object.entries<any>(schoolPetsMap).map(([petKey, rawPet]) => {
       const meta = resolveStudentMeta(petKey, rawPet, aliasMap);
       return {
         ...(meta || {}),
@@ -263,19 +283,27 @@ export async function POST(req: NextRequest) {
     if (role !== "super_admin" && role !== "admin") {
       return NextResponse.json({ error: "Permission Denied" }, { status: 403 });
     }
+    const actorSchoolId = normalizeSchoolId(userSchoolId);
+    if (role === "admin" && !actorSchoolId) {
+      return NextResponse.json({ error: "Permission Denied" }, { status: 403 });
+    }
 
     const body = await req.json();
     const { action, petId, petIds, rewardType, amount } = body;
 
     if (action === "revive") {
-      if (!petId) return NextResponse.json({ error: "petId missing" }, { status: 400 });
+      if (!isPetKey(petId)) return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
 
       const petRef = adminDb.ref(`virtual_pets/${petId}`);
       const petSnap = await petRef.get();
       if (!petSnap.exists()) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
       const petVal = petSnap.val() || {};
+      if (!canManagePet(role, actorSchoolId, petVal)) {
+        return NextResponse.json({ error: "Permission Denied" }, { status: 403 });
+      }
       const studentId = String(petVal.studentId || "").trim();
+      const petSchoolId = normalizeSchoolId(petVal.schoolId);
 
       const revivedStats = {
         health: 50,
@@ -292,48 +320,52 @@ export async function POST(req: NextRequest) {
         updatedAt: now,
       };
 
-      await petRef.update(updateData);
+      const updates: Record<string, any> = {};
+      for (const [field, val] of Object.entries(updateData)) {
+        updates[`virtual_pets/${petId}/${field}`] = val;
+      }
 
       // Also revive any duplicate/alias pets for the same student
-      if (studentId) {
+      if (studentId && petSchoolId) {
         const allPetsSnap = await adminDb.ref("virtual_pets").get();
         if (allPetsSnap.exists()) {
           const all = allPetsSnap.val() || {};
-          const multiUpdates: Record<string, any> = {};
           for (const [k, p] of Object.entries<any>(all)) {
-            if (k !== petId && (p.studentId === studentId || p.nisn === studentId || k === studentId)) {
+            if (k !== petId && normalizeSchoolId(p.schoolId) === petSchoolId &&
+                (p.studentId === studentId || p.nisn === studentId || k === studentId)) {
               for (const [field, val] of Object.entries(updateData)) {
-                multiUpdates[`virtual_pets/${k}/${field}`] = val;
+                updates[`virtual_pets/${k}/${field}`] = val;
               }
             }
-          }
-          if (Object.keys(multiUpdates).length > 0) {
-            await adminDb.ref().update(multiUpdates);
           }
         }
       }
 
       const eventRef = adminDb.ref('platform_events').push();
-      await eventRef.set({
+      updates[`platform_events/${eventRef.key}`] = {
         id: eventRef.key,
         type: 'VIRTUAL_PET_REVIVE',
-        schoolId: normalizeSchoolId(userSchoolId || petSnap.val().schoolId),
+        schoolId: petSchoolId || actorSchoolId,
         targetId: petId,
         actorEmail: decodedToken.email || '',
         actorRole: role,
         at: now,
         metadata: revivedStats
-      });
+      };
+      await adminDb.ref().update(updates);
 
       return NextResponse.json({ success: true, message: "Pet revived successfully" });
     }
 
     if (action === "reset-level") {
-      if (!petId) return NextResponse.json({ error: "petId missing" }, { status: 400 });
+      if (!isPetKey(petId)) return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
 
       const petRef = adminDb.ref(`virtual_pets/${petId}`);
       const petSnap = await petRef.get();
       if (!petSnap.exists()) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+      if (!canManagePet(role, actorSchoolId, petSnap.val())) {
+        return NextResponse.json({ error: "Permission Denied" }, { status: 403 });
+      }
 
       await petRef.update({
         level: 1,
@@ -345,7 +377,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "give-reward") {
-      if (!petIds || !Array.isArray(petIds) || !rewardType || !amount) {
+      if (!Array.isArray(petIds) || petIds.length === 0 ||
+          !petIds.every(isPetKey) || !rewardType || !amount) {
         return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
       }
 
@@ -354,22 +387,26 @@ export async function POST(req: NextRequest) {
 
       for (const id of petIds) {
         const petSnap = await adminDb.ref(`virtual_pets/${id}`).get();
-        if (petSnap.exists()) {
-          const pet = petSnap.val();
-          if (rewardType === "coins") {
-            updates[`virtual_pets/${id}/coins`] = Number(pet.coins || 0) + Number(amount);
-          } else if (rewardType === "exp") {
-            const next = applyExpReward(pet, Number(amount));
-            updates[`virtual_pets/${id}/experiencePoints`] = next.experiencePoints;
-            updates[`virtual_pets/${id}/level`] = next.level;
-            updates[`virtual_pets/${id}/intelligence`] = next.intelligence;
-          } else if (rewardType === "intelligence") {
-            updates[`virtual_pets/${id}/intelligence`] = clampStat(Number(pet.intelligence || 0) + Number(amount));
-          } else if (rewardType === "social") {
-            updates[`virtual_pets/${id}/social`] = clampStat(Number(pet.social || 0) + Number(amount));
-          }
-          updates[`virtual_pets/${id}/updatedAt`] = now;
+        if (!petSnap.exists()) {
+          return NextResponse.json({ error: "Pet not found" }, { status: 404 });
         }
+        const pet = petSnap.val();
+        if (!canManagePet(role, actorSchoolId, pet)) {
+          return NextResponse.json({ error: "Permission Denied" }, { status: 403 });
+        }
+        if (rewardType === "coins") {
+          updates[`virtual_pets/${id}/coins`] = Number(pet.coins || 0) + Number(amount);
+        } else if (rewardType === "exp") {
+          const next = applyExpReward(pet, Number(amount));
+          updates[`virtual_pets/${id}/experiencePoints`] = next.experiencePoints;
+          updates[`virtual_pets/${id}/level`] = next.level;
+          updates[`virtual_pets/${id}/intelligence`] = next.intelligence;
+        } else if (rewardType === "intelligence") {
+          updates[`virtual_pets/${id}/intelligence`] = clampStat(Number(pet.intelligence || 0) + Number(amount));
+        } else if (rewardType === "social") {
+          updates[`virtual_pets/${id}/social`] = clampStat(Number(pet.social || 0) + Number(amount));
+        }
+        updates[`virtual_pets/${id}/updatedAt`] = now;
       }
 
       if (Object.keys(updates).length > 0) {

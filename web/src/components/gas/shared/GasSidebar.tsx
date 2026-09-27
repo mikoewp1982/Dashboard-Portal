@@ -34,7 +34,7 @@ type GasSidebarProps = {
   onTabChange: (tab: GasTab) => void;
 };
 
-const iconImageMap = {
+const iconImageMap: Partial<Record<GasTab, StaticImageData>> = {
   attendance: gasAbsensiIcon,
   "attendance-report": gasAbsensiIcon,
   "presensi-sholat": gasPresensiSholatIcon,

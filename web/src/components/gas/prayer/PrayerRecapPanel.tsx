@@ -66,7 +66,7 @@ interface Props {
   selectedYear: number;
   setSelectedYear: (v: number) => void;
   selectedClassName: string;
-  setSelectedClassName: (v: number | string) => void;
+  setSelectedClassName: (v: string) => void;
   schedules?: any[];
   holidays?: any[];
   prayerType?: "DZUHUR" | "DHUHA" | "JUMAT" | (string & {});
@@ -572,4 +572,3 @@ export function PrayerRecapPanel({
     </div>
   );
 }
-

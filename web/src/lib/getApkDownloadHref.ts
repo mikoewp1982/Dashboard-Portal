@@ -70,7 +70,7 @@ function isApkAliasFileName(fileName: string) {
 
 export function getLatestApkMetaByPackageName(
   packageName: string,
-  fallback: { fileName: string; versionName?: string; versionCode?: number }
+  fallback: { fileName: string; versionName?: string; versionCode?: number; sizeMB?: number }
 ) {
   const manifest = loadManifestOnce();
   const entries = Object.entries(manifest.files || {}).filter(
@@ -92,6 +92,7 @@ export function getLatestApkMetaByPackageName(
       fileName,
       versionName: meta?.versionName,
       versionCode: typeof meta?.versionCode === "number" ? meta.versionCode : -1,
+      sizeMB: meta?.sizeMB,
     }))
     .sort((a, b) => {
       if (a.versionCode !== b.versionCode) return b.versionCode - a.versionCode;
@@ -102,6 +103,7 @@ export function getLatestApkMetaByPackageName(
     fileName: best?.fileName || fallback.fileName,
     versionName: best?.versionName || fallback.versionName,
     versionCode: best?.versionCode ?? fallback.versionCode,
+    sizeMB: best?.sizeMB ?? fallback.sizeMB,
   };
 }
 

@@ -115,7 +115,7 @@ function buildDailyItems(
     const validDay = isEffectivePrayerDay(
       {
         date: targetDay,
-        className: student.classId || student.class || student.className,
+        className: student.className,
         prayerType: "DZUHUR",
       },
       prayerRules,
@@ -186,7 +186,7 @@ function buildMonthlyRecap(
       const effective = isEffectivePrayerDay(
         {
           date,
-          className: student.classId || student.class || student.className,
+          className: student.className,
           prayerType: "DZUHUR",
         },
         prayerRules,

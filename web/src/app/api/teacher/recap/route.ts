@@ -552,7 +552,7 @@ export async function GET(req: NextRequest) {
       if (!row) continue;
       if (isNonMuslim(student.religion)) continue;
       const byDay = prayerByStudentDay.get(rk) || new Map();
-      const className = student.classId || student.class || student.className;
+      const className = student.className;
       for (const dayMs of days) {
         const date = new Date(dayMs);
         const baseValid = isValidPrayerDay(date, rules.schedules, rules.holidays);

@@ -103,7 +103,7 @@ const normalizeSchedules = (data: Record<string, any> | null): PrayerClassSchedu
 const normalizeOverrides = (data: Record<string, any> | null): PrayerDateOverride[] => {
   if (!data) return [];
   return Object.entries(data)
-    .map(([id, value]) => ({
+    .map(([id, value]): PrayerDateOverride => ({
       id,
       date: String(value?.date ?? ""),
       prayerType: value?.prayerType ?? "DHUHA",
